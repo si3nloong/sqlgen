@@ -1,22 +1,34 @@
 package cli
 
+type ImportPkg struct {
+	Name  string
+	Alias *string
+	Path  string
+}
+
 type Entity struct {
 	// Go package name
-	Pkg string
+	GoPkg string
 
-	// Struct name
+	// Go struct name
+	GoName string
+
+	// Table name
 	Name string
 
+	// Table primary key
+	PrimaryKey *Field
+
 	// Imported packages
-	Imports []string
+	Imports []*ImportPkg
 
 	// Struct field list
-	FieldList []*Field
+	Fields []*Field
 }
 
 type Field struct {
+	GoName     string
 	Name       string
-	Column     string
 	ActualType string
 	Type       string
 	IsScanner  bool

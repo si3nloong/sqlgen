@@ -1,7 +1,11 @@
 package customprimitivestruct
 
+func (Custom) Table() string {
+	return "C"
+}
+
 func (Custom) Columns() []string {
-    return []string{"text", "e", "Num"}
+	return []string{"text", "e", "Num"}
 }
 
 func (m Custom) Values() []any {

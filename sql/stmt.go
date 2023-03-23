@@ -1,4 +1,4 @@
-package sqlgen
+package sql
 
 import (
 	"strings"
@@ -7,7 +7,6 @@ import (
 
 type SqlStmt interface {
 	WriteQuery(string, ...any)
-	WriteQueryByte(byte)
 	Query() string
 	Args() []any
 	Reset()
@@ -32,10 +31,6 @@ var (
 func (s *sqlStmt) WriteQuery(query string, args ...any) {
 	s.w.WriteString(query)
 	s.args = append(s.args, args...)
-}
-
-func (s *sqlStmt) WriteQueryByte(b byte) {
-	s.w.WriteByte(b)
 }
 
 func (s *sqlStmt) Query() string {

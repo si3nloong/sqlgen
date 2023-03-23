@@ -7,6 +7,7 @@ import (
 	"go/types"
 	"log"
 	"os"
+	"path"
 	"path/filepath"
 	"reflect"
 	"strconv"
@@ -14,6 +15,15 @@ import (
 	"text/template"
 
 	"golang.org/x/tools/go/packages"
+)
+
+type formatCase string
+
+const (
+	snakeCase  formatCase = "snakecase"
+	kebabCase  formatCase = "kebabcase"
+	paskalCase formatCase = "paskalcase"
+	camelCase  formatCase = "camelcase"
 )
 
 var sqlTypes = map[string][2]string{
@@ -30,7 +40,7 @@ var sqlTypes = map[string][2]string{
 	"uint64":    {"uint64", "types.Integer"},
 	"float32":   {"float64", "types.Float"},
 	"time.Time": {"time.Time", "types.String"},
-	"[]string":  {"[]string", "github.com/si3nloong/sqlgen/sql/encoding.MarshalStringList"},
+	"[]string":  {"github.com/si3nloong/sqlgen/sql/encoding.MarshalStringList", "github.com/si3nloong/sqlgen/sql/encoding.MarshalStringList"},
 	"[][]byte":  {"[][]byte", "github.com/si3nloong/sqlgen/sql/encoding.MarshalStringList"},
 	"[]bool":    {"[]bool", "github.com/si3nloong/sqlgen/sql/encoding.MarshalBoolList"},
 	"[]uint64":  {"[]uint64", "github.com/si3nloong/sqlgen/sql/encoding.MarshalIntList"},
@@ -61,25 +71,32 @@ type codegen struct {
 
 func newCodegen() *codegen {
 	return &codegen{
-		tmpl: template.New("codegen").Funcs(template.FuncMap{
+		tmpl: template.New("template.go").Funcs(template.FuncMap{
 			"quote": strconv.Quote,
-			"reserveImport": func(pkg string) string {
+			"import": func(pkg string, aliases ...string) string {
 				// add to cache
+				log.Println("Imported pkg ->", pkg)
 				return pkg
 			},
 			"cast": func(n string, f Field) string {
-				if v, ok := sqlTypes[f.Type]; ok && v[0] != f.Type {
+				log.Println("actualType ->", f.ActualType, ", type ->", f.Type)
+				if v, ok := sqlTypes[f.ActualType]; ok && v[0] != f.Type {
+					pos := strings.LastIndex(v[0], ".")
+					if pos >= 0 {
+						pkg := string(v[0][:pos])
+						// log.Println(pkg, path.Base(pkg), string(v[0][pos:]))
+						// log.Println("pos is package")
+						return path.Base(pkg) + string(v[0][pos:]) + "(" + n + ")"
+					}
 					return v[0] + "(" + n + ")"
-				} else if f.ActualType != f.Type {
-					return f.Type + "(" + n + ")"
 				}
 				return n
 			},
 			"addr": func(n string, f Field) string {
 				log.Println(f.Type, f.ActualType)
-				if v, ok := sqlTypes[f.ActualType]; ok && v[0] != f.Type {
-					return v[1] + "(" + n + ")"
-				}
+				// if v, ok := sqlTypes[f.ActualType]; ok && v[0] != f.Type {
+				// 	return v[1] + "(" + n + ")"
+				// }
 				return n
 			},
 		}),
@@ -96,7 +113,7 @@ func valueOf(expr ast.Expr) ast.Expr {
 }
 
 func (c *codegen) Generate(filesrc string) error {
-	rename := RenameFunc(func(s string) string {
+	format := RenameFunc(func(s string) string {
 		return s
 	})
 	log.Println("File ->", filesrc)
@@ -115,19 +132,15 @@ func (c *codegen) Generate(filesrc string) error {
 		return err
 	}
 
-	// if gofile.Name == nil {
-	// 	return errors.New(`missing go package name`)
-	// }
-
 	// cache := make(map[string]*Entity)
 	ent := Entity{}
-	ent.Pkg = types.ExprString(gofile.Name)
+	ent.GoPkg = types.ExprString(gofile.Name)
 
 	c.importCache = make(map[string]string)
 	for _, imp := range gofile.Imports {
 		path, _ := strconv.Unquote(types.ExprString(imp.Path))
-		c.importCache[types.ExprString(imp.Name)] = path
-		// log.Println("Import ->", types.ExprString(imp.Name), )
+		// c.importCache[types.ExprString(imp.Name)] = path
+		log.Println("Import ->", imp.Name, path)
 	}
 
 	for _, d := range gofile.Decls {
@@ -181,7 +194,8 @@ func (c *codegen) Generate(filesrc string) error {
 			}
 
 			// Set the struct name
-			ent.Name = typeSpec.Name.String()
+			ent.GoName = typeSpec.Name.String()
+			ent.Name = format(typeSpec.Name.String())
 
 			for _, f := range structType.Fields.List {
 				var (
@@ -189,6 +203,7 @@ func (c *codegen) Generate(filesrc string) error {
 				)
 
 				if f.Tag != nil {
+					// Trim backtick
 					tag = reflect.StructTag(strings.TrimFunc(f.Tag.Value, func(r rune) bool {
 						return r == '`'
 					}))
@@ -209,16 +224,18 @@ func (c *codegen) Generate(filesrc string) error {
 					if column == "-" {
 						continue
 					} else if column == "" {
-						column = rename(n.Name)
+						column = format(n.Name)
 					}
 
 					p := new(Field)
-					p.Name = n.Name
-					p.Column = column
+					p.GoName = n.Name
+					p.Name = column
 					p.Type = types.ExprString(f.Type)
 					p.ActualType = fieldType
 
-					ent.FieldList = append(ent.FieldList, p)
+					log.Println("ActualType ->", fieldType, f.Type)
+
+					ent.Fields = append(ent.Fields, p)
 
 					packages.Load(&packages.Config{
 						Mode: packages.NeedName |
@@ -236,19 +253,18 @@ func (c *codegen) Generate(filesrc string) error {
 		// ast.Inspect(f, func(n ast.Node) bool {
 	}
 
-	// for _, f := range ent.FieldList {
-	// 	log.Println(f)
-	// }
+	for _, f := range ent.Fields {
+		log.Println(f)
+	}
 
-	ext := filepath.Ext(filesrc)
-	filename := strings.Replace("{name}_gen.go", "{name}", strings.TrimSuffix(filepath.Base(filesrc), ext), -1)
+	filename := strings.Replace("{name}_gen.go", "{name}", strings.TrimSuffix(filepath.Base(filesrc), filepath.Ext(filesrc)), -1)
 	filedst := filepath.Join(pwd, filepath.Dir(filesrc), filename)
 	outfile, err := os.OpenFile(filedst, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		return err
 	}
 
-	outfile.WriteString("// Code generated by sqlgen, version 1.0.0. DO NOT EDIT.\n\n")
+	// outfile.WriteString("// Code generated by sqlgen, version 1.0.0. DO NOT EDIT.\n\n")
 
 	if err := t.Execute(outfile, ent); err != nil {
 		return err
@@ -291,8 +307,6 @@ loop:
 		// Imported package
 		case *ast.SelectorExpr:
 			impPath := c.importCache[types.ExprString(t.X)]
-			// log.Println(t, reflect.TypeOf(t.Sel.Obj), reflect.TypeOf(t.X))
-			// log.Println(impPath, types.ExprString(t.X), types.ExprString(t.Sel), types.ExprString(t))
 			actualType = impPath + "." + c.getType(t.Sel)
 			break loop
 		// case *ast.InterfaceType:

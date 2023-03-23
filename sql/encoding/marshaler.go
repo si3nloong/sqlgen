@@ -61,7 +61,7 @@ func MarshalBoolList[V ~bool](list []V) string {
 func MarshalFloatList[V constraints.Float](list []V, precision ...int) string {
 	blr := bytebufferpool.Get()
 	defer bytebufferpool.Put(blr)
-	var prec = 6
+	var prec = -1
 	if len(precision) > 0 {
 		prec = precision[0]
 	}

@@ -1,13 +1,17 @@
 package arrayproperty
 
+func (Customer) Table() string {
+	return "Customer"
+}
+
 func (Customer) Columns() []string {
-	return []string{"id", "Name", "Address", "Nicknames", "Status"}
+    return []string{"id", "howOld", "Name", "Address", "Nicknames", "status"}
 }
 
-func (m Customer) Values() []any {
-	return []any{m.ID, m.Name, m.Address, m.Nicknames, string(m.Status)}
+func (v Customer) Values() []any {
+	return []any{v.ID, uint64(v.Age), v.Name, encoding.MarshalStringList(v.Address), encoding.MarshalStringList(v.Nicknames), string(v.Status)}
 }
 
-func (m *Customer) Addrs() []any {
-	return []any{&m.ID, &m.Name, &m.Address, &m.Nicknames, &m.Status}
+func (v *Customer) Addrs() []any {
+	return []any{&v.ID, &v.Age, &v.Name, &v.Address, &v.Nicknames, &v.Status}
 }

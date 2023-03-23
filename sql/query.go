@@ -1,44 +1,8 @@
-package sqlgen
+package sql
 
-import (
-	"context"
-	"database/sql"
-)
+import "context"
 
-type Scanner[T any] interface {
-	*T
-	Addrs() []any
-}
-
-type Valuer[T any] interface {
-	Columns() []string
-	Values() []any
-}
-
-type DB interface {
-	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
-	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
-}
-
-type emptyResult struct{}
-
-func (emptyResult) LastInsertId() (int64, error) {
-	return 0, nil
-}
-
-func (emptyResult) RowsAffected() (int64, error) {
-	return 0, nil
-}
-
-type sqlConn struct {
-	db   DB
-	name string
-}
-
-func SqlDB(db DB) {
-
-}
-
+// Query
 func Query[T any, Ptr interface{ *T }](
 	ctx context.Context,
 	db DB,

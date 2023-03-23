@@ -1,7 +1,11 @@
 package pointerproperty
 
+func (Ptr) Table() string {
+	return "BasePtr"
+}
+
 func (Ptr) Columns() []string {
-    return []string{"Str", "Bytes", "Bool", "Int", "Int8", "Int16", "Int32", "Int64", "Uint", "Uint8", "Uint16", "Uint32", "Uint64", "F32", "F64", "Time"}
+	return []string{"Str", "Bytes", "Bool", "Int", "Int8", "Int16", "Int32", "Int64", "Uint", "Uint8", "Uint16", "Uint32", "Uint64", "F32", "F64", "Time"}
 }
 
 func (m Ptr) Values() []any {

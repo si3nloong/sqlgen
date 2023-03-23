@@ -1,13 +1,17 @@
-package {{.Pkg}}
+package {{ .GoPkg }}
 
-func ({{.Name}}) Columns() []string {
-    return {{ "[]string{" }}{{- range $i, $f := .FieldList }}{{- if $i }}{{ ", " }}{{ end }}{{ quote $f.Column }}{{ end }}{{- "}" }}
+func ({{ .GoName }}) Table() string {
+	return {{ quote .Name }}
 }
 
-func (m {{.Name}}) Values() []any {
-	return {{ `[]any{` }}{{ range $i, $f := .FieldList }}{{- if $i }}{{ ", " }}{{ end }}{{ cast (print `m.` $f.Name) $f }}{{ end }}{{- `}` }}
+func ({{ .GoName }}) Columns() []string {
+    return {{ "[]string{" }}{{- range $i, $f := .Fields }}{{- if $i }}{{ ", " }}{{ end }}{{ quote $f.Name }}{{ end }}{{- "}" }}
 }
 
-func (m *{{.Name}}) Addrs() []any {
-	return {{ `[]any{` }}{{ range $i, $f := .FieldList }}{{- if $i }}{{ `, ` }}{{ end }}{{ addr (print `&m.` $f.Name) $f }}{{ end }}{{- `}` }}
+func (v {{ .GoName }}) Values() []any {
+	return {{ `[]any{` }}{{ range $i, $f := .Fields }}{{- if $i }}{{ ", " }}{{ end }}{{ cast (print `v.` $f.Name) $f }}{{ end }}{{- `}` }}
+}
+
+func (v *{{ .GoName }}) Addrs() []any {
+	return {{ `[]any{` }}{{ range $i, $f := .Fields }}{{- if $i }}{{ `, ` }}{{ end }}{{ addr (print `&v.` $f.Name) $f }}{{ end }}{{- `}` }}
 }

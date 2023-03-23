@@ -7,7 +7,6 @@ import (
 )
 
 func watcher() error {
-	log.Println("watching!!")
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return err
