@@ -57,7 +57,23 @@ func (i *IntLike[T]) Scan(v any) error {
 		val = T(m)
 	case uint64:
 		val = T(vi)
+	case uint32:
+		val = T(vi)
+	case uint16:
+		val = T(vi)
+	case uint8:
+		val = T(vi)
+	case uint:
+		val = T(vi)
 	case int64:
+		val = T(vi)
+	case int32:
+		val = T(vi)
+	case int16:
+		val = T(vi)
+	case int8:
+		val = T(vi)
+	case int:
 		val = T(vi)
 	}
 	*i.addr = val

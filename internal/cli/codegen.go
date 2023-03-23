@@ -35,14 +35,13 @@ var sqlTypes = map[string][2]string{
 
 type RenameFunc func(string) string
 
-func getType(expr ast.Expr) string {
+func (c *codegen) getType(expr ast.Expr) string {
 	var (
 		actualType = "any"
 	)
 
 loop:
 	for expr != nil {
-		log.Println(reflect.TypeOf(expr))
 		switch t := expr.(type) {
 		// Base primitive type
 		case *ast.Ident:
@@ -62,15 +61,21 @@ loop:
 				el += v.Value
 			}
 			el += `]`
-			actualType = el + getType(t.Elt)
+			actualType = el + c.getType(t.Elt)
 			break loop
 		// Map type
 		case *ast.MapType:
-			actualType = `map[` + getType(t.Key) + `]` + getType(t.Value)
+			actualType = `map[` + c.getType(t.Key) + `]` + c.getType(t.Value)
 			break loop
-		// case *ast.SelectorExpr:
+		// Imported package
+		case *ast.SelectorExpr:
+			impPath := c.importCache[types.ExprString(t.X)]
+			// log.Println(t, reflect.TypeOf(t.Sel.Obj), reflect.TypeOf(t.X))
+			// log.Println(impPath, types.ExprString(t.X), types.ExprString(t.Sel), types.ExprString(t))
+			actualType = impPath + "." + c.getType(t.Sel)
+			break loop
 		// case *ast.InterfaceType:
-		case *ast.IndexExpr:
+		// case *ast.IndexExpr:
 		default:
 			break loop
 		}
@@ -81,12 +86,21 @@ loop:
 type codegen struct {
 	// Go template engine
 	tmpl *template.Template
+
+	// Go ast
+	goast *ast.File
+
+	importCache map[string]string
 }
 
 func newCodegen() *codegen {
 	return &codegen{
 		tmpl: template.New("codegen").Funcs(template.FuncMap{
 			"quote": strconv.Quote,
+			"reserveImport": func(pkg string) string {
+				// add to cache
+				return pkg
+			},
 			"cast": func(n string, f Field) string {
 				if v, ok := sqlTypes[f.Type]; ok && v[0] != f.Type {
 					return v[0] + "(" + n + ")"
@@ -96,9 +110,9 @@ func newCodegen() *codegen {
 				return n
 			},
 			"addr": func(n string, f Field) string {
-				if v, ok := sqlTypes[f.Type]; ok && v[0] != f.Type {
-					return v[1] + "(" + n + ")"
-				}
+				// if v, ok := sqlTypes[f.Type]; ok && v[0] != f.Type {
+				// 	return v[1] + "(" + n + ")"
+				// }
 				return n
 			},
 		}),
@@ -114,21 +128,20 @@ func valueOf(expr ast.Expr) ast.Expr {
 	}
 }
 
-func (cg *codegen) run(filesrc string) error {
-	// cli := "xxx"
+func (c *codegen) generate(filesrc string) error {
 	rename := RenameFunc(func(s string) string {
 		return s
 	})
-	b, _ := os.ReadFile("./internal/template/template.go.tmpl")
-	t, err := cg.tmpl.Parse(string(b))
+	b, _ := os.ReadFile("./internal/templates/template.gotpl")
+	t, err := c.tmpl.Parse(string(b))
 	if err != nil {
 		return err
 	}
 
 	fset := token.NewFileSet() // positions are relative to fset
 	pwd, _ := os.Getwd()
-	// src, _ := os.ReadFile(filesrc)
-	// Parse src but stop after processing the imports.
+
+	// Parse src but stop after error.
 	gofile, err := parser.ParseFile(fset, filesrc, nil, parser.AllErrors)
 	if err != nil {
 		return err
@@ -142,7 +155,13 @@ func (cg *codegen) run(filesrc string) error {
 	ent := Entity{}
 	ent.Pkg = types.ExprString(gofile.Name)
 
-	log.Println(len(gofile.Decls), gofile.Decls)
+	c.importCache = make(map[string]string)
+	for _, imp := range gofile.Imports {
+		path, _ := strconv.Unquote(types.ExprString(imp.Path))
+		c.importCache[types.ExprString(imp.Name)] = path
+		// log.Println("Import ->", types.ExprString(imp.Name), )
+	}
+
 	for _, d := range gofile.Decls {
 		// log.Println("decls ->", reflect.TypeOf(d))
 		switch decl := d.(type) {
@@ -160,7 +179,7 @@ func (cg *codegen) run(filesrc string) error {
 
 				// log.Println("Func ->", types.ExprString(decl))
 				log.Println("FuncDeclRecv ->", decl.Recv.List[0])
-				log.Println(getType(decl.Recv.List[0].Type))
+				// log.Println(getType(decl.Recv.List[0].Type))
 				log.Println("FuncDeclName ->", types.ExprString(valueOf(decl.Recv.List[0].Type)))
 			}
 			log.Println("FuncDeclType ->", len(decl.Type.Params.List))
@@ -168,13 +187,13 @@ func (cg *codegen) run(filesrc string) error {
 		case *ast.GenDecl:
 
 		}
+
 		// If it's not IMPORT, CONST, TYPE, or VAR, we are not interested
 		decl := assertAs[ast.GenDecl](d)
 		if decl == nil {
 			continue
 		}
 
-		log.Println("token ->", decl.Tok.String())
 		// If the token isn't type, we are not interested
 		if decl.Tok != token.TYPE {
 			continue
@@ -187,7 +206,6 @@ func (cg *codegen) run(filesrc string) error {
 				continue
 			}
 
-			log.Println("t ->", reflect.TypeOf(typeSpec.Type))
 			// If it's not a `ast.StructType`, we are not interested
 			structType := assertAs[ast.StructType](typeSpec.Type)
 			if structType == nil {
@@ -208,11 +226,11 @@ func (cg *codegen) run(filesrc string) error {
 					}))
 				}
 
-				// f.Type.Pos()
-				log.Println("Type ->", f.Type, types.ExprString(f.Type))
-				fieldType := getType(f.Type)
+				fieldType := c.getType(f.Type)
+				log.Println("Type ->", fieldType, types.ExprString(f.Type))
 
 				for _, n := range f.Names {
+					// Skip private property
 					if !n.IsExported() {
 						continue
 					}
@@ -262,7 +280,7 @@ func (cg *codegen) run(filesrc string) error {
 		return err
 	}
 
-	// outfile.WriteString("// Code generated by " + cli + ", version 1.0.0. DO NOT EDIT.\n\n")
+	outfile.WriteString("// Code generated by sqlgen, version 1.0.0. DO NOT EDIT.\n\n")
 
 	if err := t.Execute(outfile, ent); err != nil {
 		return err

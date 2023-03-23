@@ -58,7 +58,25 @@ func MarshalBoolList[V ~bool](list []V) string {
 	return blr.String()
 }
 
-func MarshalFloatList[V constraints.Float](list []V) string {
+func MarshalFloatList[V constraints.Float](list []V, precision ...int) string {
+	blr := bytebufferpool.Get()
+	defer bytebufferpool.Put(blr)
+	var prec = 6
+	if len(precision) > 0 {
+		prec = precision[0]
+	}
+	blr.WriteByte('[')
+	for i, el := range list {
+		if i > 0 {
+			blr.WriteByte(',')
+		}
+		blr.WriteString(strconv.FormatFloat(float64(el), 'f', prec, 64))
+	}
+	blr.WriteByte(']')
+	return blr.String()
+}
+
+func MarshalTimeList[V time.Time](list []V) string {
 	blr := bytebufferpool.Get()
 	defer bytebufferpool.Put(blr)
 	blr.WriteByte('[')
@@ -66,7 +84,7 @@ func MarshalFloatList[V constraints.Float](list []V) string {
 		if i > 0 {
 			blr.WriteByte(',')
 		}
-		blr.WriteString(strconv.FormatFloat(float64(el), 'e', -1, 64))
+		blr.WriteString(time.Time(el).Format(strconv.Quote(time.RFC3339)))
 	}
 	blr.WriteByte(']')
 	return blr.String()

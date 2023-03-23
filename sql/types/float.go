@@ -27,6 +27,13 @@ func Float[T constraints.Float](addr *T, strict ...bool) *FloatLike[T] {
 	return &FloatLike[T]{addr: addr, strictType: strictType}
 }
 
+func (f *FloatLike[T]) Interface() T {
+	if f.addr == nil {
+		return *new(T)
+	}
+	return *f.addr
+}
+
 func (f *FloatLike[T]) Value() (driver.Value, error) {
 	if f.addr == nil {
 		return nil, nil
@@ -38,6 +45,10 @@ func (f *FloatLike[T]) Scan(v any) error {
 	var val T
 	switch vi := v.(type) {
 	case float64:
+		val = T(vi)
+	case int64:
+		val = T(vi)
+	case uint64:
 		val = T(vi)
 	default:
 		if !f.strictType {

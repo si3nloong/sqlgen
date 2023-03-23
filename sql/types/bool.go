@@ -23,6 +23,13 @@ func Bool[T ~bool](addr *T, strict ...bool) *BoolLike[T] {
 	return &BoolLike[T]{addr: addr, strictType: strictType}
 }
 
+func (b *BoolLike[T]) Interface() T {
+	if b.addr == nil {
+		return *new(T)
+	}
+	return *b.addr
+}
+
 func (b *BoolLike[T]) Scan(v any) error {
 	var val T
 	switch vi := v.(type) {
@@ -43,6 +50,8 @@ func (b *BoolLike[T]) Scan(v any) error {
 					return err
 				}
 				val = T(f)
+			case int64:
+				val = T(vi != 0)
 			}
 		}
 	}

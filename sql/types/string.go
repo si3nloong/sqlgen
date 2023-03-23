@@ -54,6 +54,8 @@ func (s *StringLike[T]) Scan(v any) error {
 			switch vi := v.(type) {
 			case bool:
 				val = T(strconv.FormatBool(vi))
+			case int:
+				val = T(strconv.Itoa(vi))
 			case int64:
 				val = T(strconv.FormatInt(vi, 10))
 			case uint64:

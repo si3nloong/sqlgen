@@ -3,6 +3,7 @@ package cli
 type Entity struct {
 	Pkg       string
 	Name      string
+	Imports   []string
 	FieldList []*Field
 	// Fields map[string]
 }
