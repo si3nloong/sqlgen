@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"errors"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -31,57 +30,24 @@ var sqlTypes = map[string][2]string{
 	"uint64":    {"uint64", "types.Integer"},
 	"float32":   {"float64", "types.Float"},
 	"time.Time": {"time.Time", "types.String"},
+	"[]string":  {"[]string", "github.com/si3nloong/sqlgen/sql/encoding.MarshalStringList"},
+	"[][]byte":  {"[][]byte", "github.com/si3nloong/sqlgen/sql/encoding.MarshalStringList"},
+	"[]bool":    {"[]bool", "github.com/si3nloong/sqlgen/sql/encoding.MarshalBoolList"},
+	"[]uint64":  {"[]uint64", "github.com/si3nloong/sqlgen/sql/encoding.MarshalIntList"},
+	"[]uint32":  {"[]uint32", "github.com/si3nloong/sqlgen/sql/encoding.MarshalIntList"},
+	"[]uint16":  {"[]uint16", "github.com/si3nloong/sqlgen/sql/encoding.MarshalIntList"},
+	"[]uint8":   {"[]uint8", "github.com/si3nloong/sqlgen/sql/encoding.MarshalIntList"},
+	"[]uint":    {"[]uint", "github.com/si3nloong/sqlgen/sql/encoding.MarshalIntList"},
+	"[]int64":   {"[]int64", "github.com/si3nloong/sqlgen/sql/encoding.MarshalIntList"},
+	"[]int32":   {"[]int32", "github.com/si3nloong/sqlgen/sql/encoding.MarshalIntList"},
+	"[]int16":   {"[]int16", "github.com/si3nloong/sqlgen/sql/encoding.MarshalIntList"},
+	"[]int8":    {"[]int8", "github.com/si3nloong/sqlgen/sql/encoding.MarshalIntList"},
+	"[]int":     {"[]int", "github.com/si3nloong/sqlgen/sql/encoding.MarshalIntList"},
+	"[]float32": {"[]float32", "github.com/si3nloong/sqlgen/sql/encoding.MarshalFloatList"},
+	"[]float64": {"[]float64", "github.com/si3nloong/sqlgen/sql/encoding.MarshalFloatList"},
 }
 
 type RenameFunc func(string) string
-
-func (c *codegen) getType(expr ast.Expr) string {
-	var (
-		actualType = "any"
-	)
-
-loop:
-	for expr != nil {
-		switch t := expr.(type) {
-		// Base primitive type
-		case *ast.Ident:
-			if t.Obj == nil {
-				actualType = t.String()
-				break loop
-			}
-			typeSpec := assertAs[ast.TypeSpec](t.Obj.Decl)
-			if typeSpec == nil {
-				break loop
-			}
-			expr = typeSpec.Type
-		// Array or Slice type
-		case *ast.ArrayType:
-			el := `[`
-			if v := assertAs[ast.BasicLit](t.Len); v != nil {
-				el += v.Value
-			}
-			el += `]`
-			actualType = el + c.getType(t.Elt)
-			break loop
-		// Map type
-		case *ast.MapType:
-			actualType = `map[` + c.getType(t.Key) + `]` + c.getType(t.Value)
-			break loop
-		// Imported package
-		case *ast.SelectorExpr:
-			impPath := c.importCache[types.ExprString(t.X)]
-			// log.Println(t, reflect.TypeOf(t.Sel.Obj), reflect.TypeOf(t.X))
-			// log.Println(impPath, types.ExprString(t.X), types.ExprString(t.Sel), types.ExprString(t))
-			actualType = impPath + "." + c.getType(t.Sel)
-			break loop
-		// case *ast.InterfaceType:
-		// case *ast.IndexExpr:
-		default:
-			break loop
-		}
-	}
-	return actualType
-}
 
 type codegen struct {
 	// Go template engine
@@ -104,15 +70,16 @@ func newCodegen() *codegen {
 			"cast": func(n string, f Field) string {
 				if v, ok := sqlTypes[f.Type]; ok && v[0] != f.Type {
 					return v[0] + "(" + n + ")"
-				} else if f.BaseType != f.Type {
+				} else if f.ActualType != f.Type {
 					return f.Type + "(" + n + ")"
 				}
 				return n
 			},
 			"addr": func(n string, f Field) string {
-				// if v, ok := sqlTypes[f.Type]; ok && v[0] != f.Type {
-				// 	return v[1] + "(" + n + ")"
-				// }
+				log.Println(f.Type, f.ActualType)
+				if v, ok := sqlTypes[f.ActualType]; ok && v[0] != f.Type {
+					return v[1] + "(" + n + ")"
+				}
 				return n
 			},
 		}),
@@ -128,11 +95,12 @@ func valueOf(expr ast.Expr) ast.Expr {
 	}
 }
 
-func (c *codegen) generate(filesrc string) error {
+func (c *codegen) Generate(filesrc string) error {
 	rename := RenameFunc(func(s string) string {
 		return s
 	})
-	b, _ := os.ReadFile("./internal/templates/template.gotpl")
+	log.Println("File ->", filesrc)
+	b, _ := os.ReadFile("./internal/templates/template.go.tpl")
 	t, err := c.tmpl.Parse(string(b))
 	if err != nil {
 		return err
@@ -147,9 +115,9 @@ func (c *codegen) generate(filesrc string) error {
 		return err
 	}
 
-	if gofile.Name == nil {
-		return errors.New(`missing go package name`)
-	}
+	// if gofile.Name == nil {
+	// 	return errors.New(`missing go package name`)
+	// }
 
 	// cache := make(map[string]*Entity)
 	ent := Entity{}
@@ -247,8 +215,8 @@ func (c *codegen) generate(filesrc string) error {
 					p := new(Field)
 					p.Name = n.Name
 					p.Column = column
-					p.BaseType = types.ExprString(f.Type)
-					p.Type = fieldType
+					p.Type = types.ExprString(f.Type)
+					p.ActualType = fieldType
 
 					ent.FieldList = append(ent.FieldList, p)
 
@@ -286,4 +254,52 @@ func (c *codegen) generate(filesrc string) error {
 		return err
 	}
 	return nil
+}
+
+func (c *codegen) getType(expr ast.Expr) string {
+	var (
+		actualType = "any"
+	)
+
+loop:
+	for expr != nil {
+		switch t := expr.(type) {
+		// Base primitive type
+		case *ast.Ident:
+			if t.Obj == nil {
+				actualType = t.String()
+				break loop
+			}
+			typeSpec := assertAs[ast.TypeSpec](t.Obj.Decl)
+			if typeSpec == nil {
+				break loop
+			}
+			expr = typeSpec.Type
+		// Array or Slice type
+		case *ast.ArrayType:
+			el := `[`
+			if v := assertAs[ast.BasicLit](t.Len); v != nil {
+				el += v.Value
+			}
+			el += `]`
+			actualType = el + c.getType(t.Elt)
+			break loop
+		// Map type
+		case *ast.MapType:
+			actualType = `map[` + c.getType(t.Key) + `]` + c.getType(t.Value)
+			break loop
+		// Imported package
+		case *ast.SelectorExpr:
+			impPath := c.importCache[types.ExprString(t.X)]
+			// log.Println(t, reflect.TypeOf(t.Sel.Obj), reflect.TypeOf(t.X))
+			// log.Println(impPath, types.ExprString(t.X), types.ExprString(t.Sel), types.ExprString(t))
+			actualType = impPath + "." + c.getType(t.Sel)
+			break loop
+		// case *ast.InterfaceType:
+		// case *ast.IndexExpr:
+		default:
+			break loop
+		}
+	}
+	return actualType
 }

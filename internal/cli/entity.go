@@ -1,18 +1,24 @@
 package cli
 
 type Entity struct {
-	Pkg       string
-	Name      string
-	Imports   []string
+	// Go package name
+	Pkg string
+
+	// Struct name
+	Name string
+
+	// Imported packages
+	Imports []string
+
+	// Struct field list
 	FieldList []*Field
-	// Fields map[string]
 }
 
 type Field struct {
-	Name      string
-	Column    string
-	Type      string
-	BaseType  string
-	IsScanner bool
-	IsValuer  bool
+	Name       string
+	Column     string
+	ActualType string
+	Type       string
+	IsScanner  bool
+	IsValuer   bool
 }

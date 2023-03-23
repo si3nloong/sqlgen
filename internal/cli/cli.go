@@ -19,13 +19,13 @@ var (
 			if option.watch {
 				watcher()
 			}
-			// codegen.run("./testdata/datatype/valuer-property/model.go")
-			// codegen.run("./testdata/datatype/primitive-struct/model.go")
-			// codegen.run("./testdata/datatype/custom-primitive-struct/model.go")
-			// codegen.run("./testdata/datatype/empty-struct/model.go")
-			// codegen.run("./testdata/datatype/array-property/customer.go")
-			codegen.generate("./testdata/datatype/alias-property/common.go")
-			// codegen.run("./testdata/datatype/pointer-property/model.go")
+			// codegen.Generate("./testdata/datatype/valuer-property/model.go")
+			// codegen.Generate("./testdata/datatype/primitive-struct/model.go")
+			// codegen.Generate("./testdata/datatype/custom-primitive-struct/model.go")
+			// codegen.Generate("./testdata/datatype/empty-struct/model.go")
+			codegen.Generate("./testdata/datatype/array-property/customer.go")
+			// codegen.Generate("./testdata/datatype/alias-property/common.go")
+			// codegen.Generate("./testdata/datatype/pointer-property/model.go")
 			return nil
 		},
 	}
@@ -34,7 +34,7 @@ var (
 func Execute() {
 	// watcher
 	rootCmd.Flags().BoolVarP(&option.watch, "watch", "w", false, "Watch the file changes and re-generate.")
-	// force reload
+	// force to reload
 	rootCmd.Flags().BoolVarP(&option.force, "force", "", false, "Force to re-generate.")
 	if err := rootCmd.Execute(); err != nil {
 		panic(err)

@@ -1,11 +1,11 @@
 package {{.Pkg}}
 
 func ({{.Name}}) Columns() []string {
-    return {{ `[]string{` }}{{- range $i, $f := .FieldList }}{{- if $i }}{{ `, ` }}{{ end }}{{ quote $f.Column }}{{ end }}{{- `}` }}
+    return {{ "[]string{" }}{{- range $i, $f := .FieldList }}{{- if $i }}{{ ", " }}{{ end }}{{ quote $f.Column }}{{ end }}{{- "}" }}
 }
 
 func (m {{.Name}}) Values() []any {
-	return {{ `[]any{` }}{{ range $i, $f := .FieldList }}{{- if $i }}{{ `, ` }}{{ end }}{{ cast (print `m.` $f.Name) $f }}{{ end }}{{- `}` }}
+	return {{ `[]any{` }}{{ range $i, $f := .FieldList }}{{- if $i }}{{ ", " }}{{ end }}{{ cast (print `m.` $f.Name) $f }}{{ end }}{{- `}` }}
 }
 
 func (m *{{.Name}}) Addrs() []any {

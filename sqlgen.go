@@ -3,7 +3,6 @@ package sqlgen
 import (
 	"context"
 	"database/sql"
-	"log"
 )
 
 type Scanner[T any] interface {
@@ -70,7 +69,6 @@ func QueryScan[T any, Ptr Scanner[T]](
 	query string,
 	args ...any,
 ) ([]T, error) {
-	log.Println(query)
 	return Query(ctx, db, query, args, func(p Ptr) []any {
 		return p.Addrs()
 	})
