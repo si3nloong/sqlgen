@@ -26,14 +26,14 @@ func Integer[T constraints.Integer](addr *T, strict ...bool) *IntLike[T] {
 	return &IntLike[T]{addr: addr, strictType: strictType}
 }
 
-func (i *IntLike[T]) Interface() T {
+func (i IntLike[T]) Interface() T {
 	if i.addr == nil {
 		return *new(T)
 	}
 	return *i.addr
 }
 
-func (i *IntLike[T]) Value() (driver.Value, error) {
+func (i IntLike[T]) Value() (driver.Value, error) {
 	if i.addr == nil {
 		return nil, nil
 	}
@@ -43,18 +43,6 @@ func (i *IntLike[T]) Value() (driver.Value, error) {
 func (i *IntLike[T]) Scan(v any) error {
 	var val T
 	switch vi := v.(type) {
-	case string:
-		m, err := strconv.ParseInt(string(vi), 10, 64)
-		if err != nil {
-			return err
-		}
-		val = T(m)
-	case []byte:
-		m, err := strconv.ParseInt(string(vi), 10, 64)
-		if err != nil {
-			return err
-		}
-		val = T(m)
 	case uint64:
 		val = T(vi)
 	case uint32:
@@ -75,6 +63,27 @@ func (i *IntLike[T]) Scan(v any) error {
 		val = T(vi)
 	case int:
 		val = T(vi)
+	default:
+		if !i.strictType {
+			switch vi := v.(type) {
+			case string:
+				m, err := strconv.ParseInt(string(vi), 10, 64)
+				if err != nil {
+					return err
+				}
+				val = T(m)
+			case []byte:
+				m, err := strconv.ParseInt(string(vi), 10, 64)
+				if err != nil {
+					return err
+				}
+				val = T(m)
+			case float32:
+				val = T(vi)
+			case float64:
+				val = T(vi)
+			}
+		}
 	}
 	*i.addr = val
 	return nil

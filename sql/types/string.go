@@ -28,14 +28,14 @@ func String[T stringLikeType](addr *T, strict ...bool) *StringLike[T] {
 	return &StringLike[T]{addr: addr, strictType: strictType}
 }
 
-func (s *StringLike[T]) Interface() T {
+func (s StringLike[T]) Interface() T {
 	if s.addr == nil {
 		return *new(T)
 	}
 	return *s.addr
 }
 
-func (s *StringLike[T]) Value() (driver.Value, error) {
+func (s StringLike[T]) Value() (driver.Value, error) {
 	if s.addr == nil {
 		return nil, nil
 	}
