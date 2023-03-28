@@ -2,6 +2,10 @@
 
 package pointer
 
+import (
+	"github.com/si3nloong/sqlgen/sql/types"
+)
+
 // Implements `sql.Valuer` interface.
 func (Ptr) Table() string {
 	return "ptr"
@@ -12,9 +16,9 @@ func (Ptr) Columns() []string {
 }
 
 func (v Ptr) Values() []any {
-	return []any{v.Str, v.Bytes, v.Bool, v.Int, v.Int8, v.Int16, v.Int32, v.Int64, v.Uint, v.Uint8, v.Uint16, v.Uint32, v.Uint64, v.F32, v.F64, v.Time}
+	return []any{types.String(v.Str), types.String(v.Bytes), types.Bool(v.Bool), types.Integer(v.Int), types.Integer(v.Int8), types.Integer(v.Int16), types.Integer(v.Int32), types.Integer(v.Int64), types.Integer(v.Uint), types.Integer(v.Uint8), types.Integer(v.Uint16), types.Integer(v.Uint32), types.Integer(v.Uint64), types.Float(v.F32), types.Float(v.F64), v.Time}
 }
 
 func (v *Ptr) Addrs() []any {
-	return []any{&v.Str, &v.Bytes, &v.Bool, &v.Int, &v.Int8, &v.Int16, &v.Int32, &v.Int64, &v.Uint, &v.Uint8, &v.Uint16, &v.Uint32, &v.Uint64, &v.F32, &v.F64, &v.Time}
+	return []any{types.PtrOfString(&v.Str), types.PtrOfString(&v.Bytes), types.PtrOfBool(&v.Bool), types.PtrOfInt(&v.Int), types.PtrOfInt(&v.Int8), types.PtrOfInt(&v.Int16), types.PtrOfInt(&v.Int32), types.PtrOfInt(&v.Int64), types.PtrOfInt(&v.Uint), types.PtrOfInt(&v.Uint8), types.PtrOfInt(&v.Uint16), types.PtrOfInt(&v.Uint32), types.PtrOfInt(&v.Uint64), types.PtrOfFloat(&v.F32), types.PtrOfFloat(&v.F64), &v.Time}
 }

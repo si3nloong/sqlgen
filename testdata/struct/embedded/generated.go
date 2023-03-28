@@ -12,15 +12,15 @@ func (B) Table() string {
 }
 
 func (B) Columns() []string {
-	return []string{"name"}
+	return []string{"name", "id", "name", "z"}
 }
 
 func (v B) Values() []any {
-	return []any{string(v.Name)}
+	return []any{string(v.Name), int64(v.ID), string(v.Name), bool(v.Z)}
 }
 
 func (v *B) Addrs() []any {
-	return []any{types.String(&v.Name)}
+	return []any{types.String(&v.Name), types.Integer(&v.ID), types.String(&v.Name), types.Bool(&v.Z)}
 }
 
 // Implements `sql.Valuer` interface.

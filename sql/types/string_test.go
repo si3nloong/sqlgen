@@ -42,4 +42,29 @@ func TestString(t *testing.T) {
 			require.Equal(t, CBytes("hello world"), str.Interface())
 		})
 	})
+
+	t.Run("driver.Valuer", func(t *testing.T) {
+		t.Run("default value", func(t *testing.T) {
+			s := strLike[string]{}
+			val, err := s.Value()
+			require.NoError(t, err)
+			require.Equal(t, nil, val)
+		})
+
+		t.Run("`nil` value", func(t *testing.T) {
+			var str *string
+			s := String(str)
+			val, err := s.Value()
+			require.NoError(t, err)
+			require.Equal(t, nil, val)
+		})
+
+		t.Run("`string` value", func(t *testing.T) {
+			str := "hello world"
+			s := String(&str)
+			val, err := s.Value()
+			require.NoError(t, err)
+			require.Equal(t, "hello world", val)
+		})
+	})
 }

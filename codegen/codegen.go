@@ -48,20 +48,22 @@ func init() {
 	sqlValuer = lprog.Package("database/sql/driver").Pkg.Scope().Lookup("Valuer").Type().Underlying().(*types.Interface)
 }
 
-func getUnderlyingType(t types.Type) string {
-	switch v := t.(type) {
-	case *types.Slice:
-		return "[]" + v.Elem().Underlying().String()
-	case *types.Named:
-		return t.String()
-	default:
-		return t.Underlying().String()
+type Codec string
+
+func (c Codec) isPkg() bool {
+	return strings.Contains(string(c), ".")
+}
+
+func (c Codec) Wrap(v string) string {
+	if c.isPkg() {
+		return filepath.Base(string(c)) + "(" + v + ")"
 	}
+	return string(c) + "(" + v + ")"
 }
 
 type Mapping struct {
-	Encoder string
-	Decoder string
+	Encoder Codec
+	Decoder Codec
 }
 
 type ImportPkgs []*types.Package
@@ -85,10 +87,13 @@ func Generate(cfg *config.Config) error {
 		gen.rename = strfmt.ToSnakeCase
 	case "camelcase":
 		gen.rename = strfmt.ToCamelCase
+	case "-":
+		gen.rename = func(s string) string {
+			return s
+		}
 	}
 
 	fset := token.NewFileSet() // positions are relative to fset
-	// pwd, _ := os.Getwd()
 
 	fileSrc := filepath.Dir(cfg.SrcDir)
 	pkgs, err := parser.ParseDir(fset, fileSrc, func(fi fs.FileInfo) bool {
@@ -119,8 +124,8 @@ func Generate(cfg *config.Config) error {
 				return true
 			})
 		}
-
 	}
+
 	conf := &types.Config{Importer: importer.Default()}
 	info := &types.Info{
 		Types:  make(map[ast.Expr]types.TypeAndValue),
@@ -139,11 +144,6 @@ func Generate(cfg *config.Config) error {
 
 	data := templates.ModelTmplParams{}
 	data.GoPkg = pkg.Name()
-	// log.Println(structs)
-
-	// for k, _ := range info.Types {
-	// 	log.Println(k, reflect.TypeOf(k))
-	// }
 
 	for k, st := range structTypes {
 		var (
@@ -169,21 +169,24 @@ func Generate(cfg *config.Config) error {
 					}))
 				}
 
-				fi := f.Type.(*ast.Ident)
-				// Check and process embedded struct
-				if f.Names == nil && fi.Obj != nil {
-					typeSpec, ok := fi.Obj.Decl.(*ast.TypeSpec)
-					if !ok {
+				// fi := valueOf(f.Type).(*ast.Ident)
+				switch vi := valueOf(f.Type).(type) {
+				case *ast.Ident:
+					// Check and process embedded struct
+					if f.Names == nil && vi.Obj != nil {
+						typeSpec, ok := vi.Obj.Decl.(*ast.TypeSpec)
+						if !ok {
+							continue
+						}
+
+						structType, ok := typeSpec.Type.(*ast.StructType)
+						if !ok {
+							continue
+						}
+
+						queue = append(queue, structType)
 						continue
 					}
-
-					structType, ok := typeSpec.Type.(*ast.StructType)
-					if !ok {
-						continue
-					}
-
-					queue = append(queue, structType)
-					continue
 				}
 
 				t := info.TypeOf(f.Type)
@@ -242,21 +245,36 @@ func Generate(cfg *config.Config) error {
 	})
 
 	typeMap := map[string]Mapping{
-		"string":  {"string", "github.com/si3nloong/gqlgen/sql/types.String"},
-		"[]byte":  {"string", "github.com/si3nloong/gqlgen/sql/types.String"},
-		"bool":    {"bool", "github.com/si3nloong/gqlgen/sql/types.Bool"},
-		"uint":    {"int64", "github.com/si3nloong/gqlgen/sql/types.Integer"},
-		"uint8":   {"int64", "github.com/si3nloong/gqlgen/sql/types.Integer"},
-		"uint16":  {"int64", "github.com/si3nloong/gqlgen/sql/types.Integer"},
-		"uint32":  {"int64", "github.com/si3nloong/gqlgen/sql/types.Integer"},
-		"uint64":  {"int64", "github.com/si3nloong/gqlgen/sql/types.Integer"},
-		"int":     {"int64", "github.com/si3nloong/gqlgen/sql/types.Integer"},
-		"int8":    {"int64", "github.com/si3nloong/gqlgen/sql/types.Integer"},
-		"int16":   {"int64", "github.com/si3nloong/gqlgen/sql/types.Integer"},
-		"int32":   {"int64", "github.com/si3nloong/gqlgen/sql/types.Integer"},
-		"int64":   {"int64", "github.com/si3nloong/gqlgen/sql/types.Integer"},
-		"float32": {"float64", "github.com/si3nloong/gqlgen/sql/types.Float"},
-		"float64": {"float64", "github.com/si3nloong/gqlgen/sql/types.Float"},
+		"string":   {"string", "github.com/si3nloong/gqlgen/sql/types.String"},
+		"[]byte":   {"string", "github.com/si3nloong/gqlgen/sql/types.String"},
+		"bool":     {"bool", "github.com/si3nloong/gqlgen/sql/types.Bool"},
+		"uint":     {"int64", "github.com/si3nloong/gqlgen/sql/types.Integer"},
+		"uint8":    {"int64", "github.com/si3nloong/gqlgen/sql/types.Integer"},
+		"uint16":   {"int64", "github.com/si3nloong/gqlgen/sql/types.Integer"},
+		"uint32":   {"int64", "github.com/si3nloong/gqlgen/sql/types.Integer"},
+		"uint64":   {"int64", "github.com/si3nloong/gqlgen/sql/types.Integer"},
+		"int":      {"int64", "github.com/si3nloong/gqlgen/sql/types.Integer"},
+		"int8":     {"int64", "github.com/si3nloong/gqlgen/sql/types.Integer"},
+		"int16":    {"int64", "github.com/si3nloong/gqlgen/sql/types.Integer"},
+		"int32":    {"int64", "github.com/si3nloong/gqlgen/sql/types.Integer"},
+		"int64":    {"int64", "github.com/si3nloong/gqlgen/sql/types.Integer"},
+		"float32":  {"float64", "github.com/si3nloong/gqlgen/sql/types.Float"},
+		"float64":  {"float64", "github.com/si3nloong/gqlgen/sql/types.Float"},
+		"*string":  {"github.com/si3nloong/gqlgen/sql/types.String", "github.com/si3nloong/gqlgen/sql/types.PtrOfString"},
+		"*[]byte":  {"github.com/si3nloong/gqlgen/sql/types.String", "github.com/si3nloong/gqlgen/sql/types.PtrOfString"},
+		"*bool":    {"github.com/si3nloong/gqlgen/sql/types.Bool", "github.com/si3nloong/gqlgen/sql/types.PtrOfBool"},
+		"*uint":    {"github.com/si3nloong/gqlgen/sql/types.Integer", "github.com/si3nloong/gqlgen/sql/types.PtrOfInt"},
+		"*uint8":   {"github.com/si3nloong/gqlgen/sql/types.Integer", "github.com/si3nloong/gqlgen/sql/types.PtrOfInt"},
+		"*uint16":  {"github.com/si3nloong/gqlgen/sql/types.Integer", "github.com/si3nloong/gqlgen/sql/types.PtrOfInt"},
+		"*uint32":  {"github.com/si3nloong/gqlgen/sql/types.Integer", "github.com/si3nloong/gqlgen/sql/types.PtrOfInt"},
+		"*uint64":  {"github.com/si3nloong/gqlgen/sql/types.Integer", "github.com/si3nloong/gqlgen/sql/types.PtrOfInt"},
+		"*int":     {"github.com/si3nloong/gqlgen/sql/types.Integer", "github.com/si3nloong/gqlgen/sql/types.PtrOfInt"},
+		"*int8":    {"github.com/si3nloong/gqlgen/sql/types.Integer", "github.com/si3nloong/gqlgen/sql/types.PtrOfInt"},
+		"*int16":   {"github.com/si3nloong/gqlgen/sql/types.Integer", "github.com/si3nloong/gqlgen/sql/types.PtrOfInt"},
+		"*int32":   {"github.com/si3nloong/gqlgen/sql/types.Integer", "github.com/si3nloong/gqlgen/sql/types.PtrOfInt"},
+		"*int64":   {"github.com/si3nloong/gqlgen/sql/types.Integer", "github.com/si3nloong/gqlgen/sql/types.PtrOfInt"},
+		"*float32": {"github.com/si3nloong/gqlgen/sql/types.Float", "github.com/si3nloong/gqlgen/sql/types.PtrOfFloat"},
+		"*float64": {"github.com/si3nloong/gqlgen/sql/types.Float", "github.com/si3nloong/gqlgen/sql/types.PtrOfFloat"},
 	}
 
 	tmpl := template.New("template.go").Funcs(template.FuncMap{
@@ -275,23 +293,24 @@ func Generate(cfg *config.Config) error {
 		"quote": strconv.Quote,
 		"cast": func(n string, f *templates.Field) string {
 			v := n + "." + f.GoName
-			underType := f.Type.Underlying().String()
+			underType := getUnderlyingType(f.Type)
 			if _, ok := types.MissingMethod(f.Type, sqlValuer, true); ok {
 				impPkgs.Load(types.NewPackage("database/sql/driver", "driver"))
 				return "(driver.Valuer)(" + v + ")"
 			} else if typ, ok := typeMap[underType]; ok {
-				return typ.Encoder + "(" + v + ")"
+				return typ.Encoder.Wrap(v)
 			}
 			return v
 		},
 		"addr": func(n string, f *templates.Field) string {
 			v := "&" + n + "." + f.GoName
-			underType := f.Type.Underlying().String()
+			underType := getUnderlyingType(f.Type)
+			log.Println("Underlying Type ->", underType)
 			if types.Implements(types.NewPointer(f.Type), sqlScanner) {
 				impPkgs.Load(types.NewPackage("database/sql", "sql"))
 				return "(sql.Scanner)(" + v + ")"
 			} else if typ, ok := typeMap[underType]; ok {
-				return filepath.Base(typ.Decoder) + "(" + v + ")"
+				return typ.Decoder.Wrap(v)
 			}
 			return v
 		},
@@ -336,4 +355,29 @@ func Generate(cfg *config.Config) error {
 	}
 
 	return nil
+}
+
+func getUnderlyingType(t types.Type) string {
+	switch v := t.(type) {
+	case *types.Slice:
+		return "[]" + getUnderlyingType(v.Elem())
+	case *types.Named:
+		return t.Underlying().String()
+	case *types.Pointer:
+		return "*" + getUnderlyingType(v.Elem())
+	default:
+		return t.Underlying().String()
+	}
+}
+
+func valueOf(expr ast.Expr) ast.Expr {
+	for expr != nil {
+		switch v := expr.(type) {
+		case *ast.StarExpr:
+			expr = v.X
+		default:
+			return v
+		}
+	}
+	return expr
 }

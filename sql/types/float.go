@@ -8,40 +8,40 @@ import (
 	"golang.org/x/exp/constraints"
 )
 
-type FloatLike[T constraints.Float] struct {
+type floatLike[T constraints.Float] struct {
 	addr       *T
 	strictType bool
 }
 
 var (
-	_ sql.Scanner   = (*FloatLike[float32])(nil)
-	_ driver.Valuer = (*FloatLike[float32])(nil)
+	_ sql.Scanner   = (*floatLike[float32])(nil)
+	_ driver.Valuer = (*floatLike[float32])(nil)
 )
 
 // Float returns a sql.Scanner
-func Float[T constraints.Float](addr *T, strict ...bool) *FloatLike[T] {
+func Float[T constraints.Float](addr *T, strict ...bool) floatLike[T] {
 	var strictType bool
 	if len(strict) > 0 {
 		strictType = strict[0]
 	}
-	return &FloatLike[T]{addr: addr, strictType: strictType}
+	return floatLike[T]{addr: addr, strictType: strictType}
 }
 
-func (f *FloatLike[T]) Interface() T {
+func (f floatLike[T]) Interface() T {
 	if f.addr == nil {
 		return *new(T)
 	}
 	return *f.addr
 }
 
-func (f *FloatLike[T]) Value() (driver.Value, error) {
+func (f floatLike[T]) Value() (driver.Value, error) {
 	if f.addr == nil {
 		return nil, nil
 	}
 	return float64(*f.addr), nil
 }
 
-func (f *FloatLike[T]) Scan(v any) error {
+func (f floatLike[T]) Scan(v any) error {
 	var val T
 	switch vi := v.(type) {
 	case float64:
