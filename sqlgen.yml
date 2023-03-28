@@ -1,0 +1,3 @@
+srcDir: "./testdata/**/*.go"
+namingConvention: snakecase
+tag: sql

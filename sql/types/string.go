@@ -6,43 +6,43 @@ import (
 	"strconv"
 )
 
-type stringLikeType interface {
+type StringLikeType interface {
 	~string | ~[]byte
 }
 
-type StringLike[T stringLikeType] struct {
+type strLike[T StringLikeType] struct {
 	addr       *T
 	strictType bool
 }
 
 var (
-	_ sql.Scanner   = (*StringLike[string])(nil)
-	_ driver.Valuer = (*StringLike[string])(nil)
+	_ sql.Scanner   = (*strLike[string])(nil)
+	_ driver.Valuer = (*strLike[string])(nil)
 )
 
-func String[T stringLikeType](addr *T, strict ...bool) *StringLike[T] {
+func String[T StringLikeType](addr *T, strict ...bool) strLike[T] {
 	var strictType bool
 	if len(strict) > 0 {
 		strictType = strict[0]
 	}
-	return &StringLike[T]{addr: addr, strictType: strictType}
+	return strLike[T]{addr: addr, strictType: strictType}
 }
 
-func (s *StringLike[T]) Interface() T {
+func (s strLike[T]) Interface() T {
 	if s.addr == nil {
 		return *new(T)
 	}
 	return *s.addr
 }
 
-func (s *StringLike[T]) Value() (driver.Value, error) {
+func (s strLike[T]) Value() (driver.Value, error) {
 	if s.addr == nil {
 		return nil, nil
 	}
 	return string(*s.addr), nil
 }
 
-func (s *StringLike[T]) Scan(v any) error {
+func (s strLike[T]) Scan(v any) error {
 	var val T
 	switch vi := v.(type) {
 	case string:

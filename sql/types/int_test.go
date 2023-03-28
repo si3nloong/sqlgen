@@ -29,4 +29,19 @@ func TestInteger(t *testing.T) {
 			require.Equal(t, int32(-128), v.Interface())
 		})
 	})
+
+	t.Run("sql.Scanner", func(t *testing.T) {
+		var i32 = int32(88)
+		v := Integer(&i32)
+		require.NoError(t, v.Scan(int64(1580)))
+		require.Equal(t, int32(1580), v.Interface())
+	})
+
+	t.Run("driver.Valuer", func(t *testing.T) {
+		var i32 = int32(88)
+		v := Integer(&i32)
+		value, err := v.Value()
+		require.NoError(t, err)
+		require.Equal(t, int64(88), value)
+	})
 }
