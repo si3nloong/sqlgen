@@ -19,7 +19,7 @@ func initCommand() *cobra.Command {
 func runInitCommand(cmd *cobra.Command, args []string) error {
 	questions := []*survey.Question{
 		{
-			Name: "naming",
+			Name: "namingConvention",
 			Prompt: &survey.Select{
 				Message: "What is your naming convention:",
 				Options: []string{"snake_case", "camelCase", "PascalCase"},
