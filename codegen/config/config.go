@@ -11,8 +11,8 @@ var cfgFilenames = []string{".sqlgen.yml", "sqlgen.yml", "sqlgen.yaml"}
 
 type Config struct {
 	SrcDir           string `yaml:"srcDir"`
-	NamingConvention string `yaml:"namingConvention,omitempty"`
-	Tag              string `yaml:"tag,omitempty"`
+	NamingConvention string `yaml:"namingConvention,omitempty" survey:"namingConvention"`
+	Tag              string `yaml:"tag,omitempty" survey:"tag"`
 }
 
 func pwd() string {

@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"io"
 	"log"
 
 	"github.com/si3nloong/sqlgen/codegen"
@@ -10,8 +11,9 @@ import (
 
 var (
 	options = struct {
-		watch bool
-		force bool
+		watch   bool
+		force   bool
+		verbose bool
 	}{}
 
 	rootCmd = &cobra.Command{
@@ -19,28 +21,25 @@ var (
 		Short: "`sqlgen` is a SQL model generator.",
 		// Long:  `A sql model generator.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			// if len(args) > 0 {
-			// 	cmd.AddCommand(initCommand())
-			// }
-			log.Println("args ->", args)
-			if options.watch {
-				watcher()
+			if options.verbose {
+				log.SetFlags(0)
+			} else {
+				log.SetOutput(io.Discard)
 			}
 
-			return codegen.Generate(config.DefaultConfig())
-			// log.Println(args)
-			// codegen := newCodegen()
+			// log.Println("args ->", args)
+			// if options.watch {
+			// 	watcher()
+			// }
 
-			// codegen.Generate("./testdata/datatype/array-property/customer.go")
-			// codegen.Generate("./testdata/schema/model.go")
-			// files, err := filepath.Glob(args[0])
-			// return nil
+			return codegen.Generate(config.DefaultConfig())
 		},
 	}
 )
 
 func Execute() {
 	rootCmd.AddCommand(initCommand())
+	rootCmd.Flags().BoolVarP(&options.verbose, "verbose", "v", false, "Shows details.")
 	// watcher
 	rootCmd.Flags().BoolVarP(&options.watch, "watch", "w", false, "Watch the file changes and re-generate.")
 	// force to reload
