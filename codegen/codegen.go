@@ -22,7 +22,6 @@ import (
 	"github.com/si3nloong/sqlgen/codegen/templates"
 	"github.com/si3nloong/sqlgen/internal/strfmt"
 	"golang.org/x/exp/slices"
-	"golang.org/x/tools/go/loader"
 	"golang.org/x/tools/imports"
 )
 
@@ -30,22 +29,6 @@ type RenameFunc func(string) string
 
 type Generator struct {
 	rename RenameFunc
-}
-
-var (
-	sqlScanner, sqlValuer *types.Interface
-)
-
-func init() {
-	var lconf loader.Config
-	lconf.Import("database/sql")
-	lprog, err := lconf.Load()
-	if err != nil {
-		panic(err)
-	}
-
-	sqlScanner = lprog.Package("database/sql").Pkg.Scope().Lookup("Scanner").Type().Underlying().(*types.Interface)
-	sqlValuer = lprog.Package("database/sql/driver").Pkg.Scope().Lookup("Valuer").Type().Underlying().(*types.Interface)
 }
 
 type Codec string
