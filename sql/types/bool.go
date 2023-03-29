@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"strconv"
+
+	"github.com/si3nloong/sqlgen/internal/strfmt"
 )
 
 type boolLike[T ~bool] struct {
@@ -42,6 +44,12 @@ func (b boolLike[T]) Value() (driver.Value, error) {
 func (b boolLike[T]) Scan(v any) error {
 	var val T
 	switch vi := v.(type) {
+	case []byte:
+		f, err := strconv.ParseBool(strfmt.B2s(vi))
+		if err != nil {
+			return err
+		}
+		val = T(f)
 	case bool:
 		val = T(vi)
 	default:
@@ -49,12 +57,6 @@ func (b boolLike[T]) Scan(v any) error {
 			switch vi := v.(type) {
 			case string:
 				f, err := strconv.ParseBool(vi)
-				if err != nil {
-					return err
-				}
-				val = T(f)
-			case []byte:
-				f, err := strconv.ParseBool(string(vi))
 				if err != nil {
 					return err
 				}

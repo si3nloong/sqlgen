@@ -3,6 +3,7 @@ package types
 import (
 	"strconv"
 
+	"github.com/si3nloong/sqlgen/internal/strfmt"
 	"golang.org/x/exp/constraints"
 )
 
@@ -29,7 +30,14 @@ func (p ptrOfFloatLike[T]) Scan(v any) error {
 
 	switch vi := v.(type) {
 	case []byte:
-		f, err := strconv.ParseFloat(string(vi), 64)
+		f, err := strconv.ParseFloat(strfmt.B2s(vi), 64)
+		if err != nil {
+			return err
+		}
+		val := T(f)
+		*p.addr = &val
+	case string:
+		f, err := strconv.ParseFloat(vi, 64)
 		if err != nil {
 			return err
 		}

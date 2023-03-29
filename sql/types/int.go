@@ -5,6 +5,7 @@ import (
 	"database/sql/driver"
 	"strconv"
 
+	"github.com/si3nloong/sqlgen/internal/strfmt"
 	"golang.org/x/exp/constraints"
 )
 
@@ -43,6 +44,12 @@ func (i intLike[T]) Value() (driver.Value, error) {
 func (i intLike[T]) Scan(v any) error {
 	var val T
 	switch vi := v.(type) {
+	case []byte:
+		m, err := strconv.ParseInt(strfmt.B2s(vi), 10, 64)
+		if err != nil {
+			return err
+		}
+		val = T(m)
 	case uint64:
 		val = T(vi)
 	case uint32:
@@ -67,12 +74,6 @@ func (i intLike[T]) Scan(v any) error {
 		if !i.strictType {
 			switch vi := v.(type) {
 			case string:
-				m, err := strconv.ParseInt(string(vi), 10, 64)
-				if err != nil {
-					return err
-				}
-				val = T(m)
-			case []byte:
 				m, err := strconv.ParseInt(string(vi), 10, 64)
 				if err != nil {
 					return err

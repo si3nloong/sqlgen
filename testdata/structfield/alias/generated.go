@@ -3,6 +3,9 @@
 package alias
 
 import (
+	"database/sql"
+	"database/sql/driver"
+
 	"github.com/si3nloong/sqlgen/sql/types"
 )
 
@@ -12,13 +15,17 @@ func (AliasStruct) Table() string {
 }
 
 func (AliasStruct) Columns() []string {
-	return []string{"header", "text", "created"}
+	return []string{"id", "header", "text", "created", "null_str"}
+}
+
+func (v AliasStruct) Key() (driver.Value, error) {
+	return v.ID, nil
 }
 
 func (v AliasStruct) Values() []any {
-	return []any{string(v.Header), string(v.Text), v.Created}
+	return []any{int64(v.ID), string(v.Header), string(v.Text), v.Created, (driver.Valuer)(v.NullStr)}
 }
 
 func (v *AliasStruct) Addrs() []any {
-	return []any{types.String(&v.Header), types.String(&v.Text), &v.Created}
+	return []any{types.Integer(&v.ID), types.String(&v.Header), types.String(&v.Text), &v.Created, (sql.Scanner)(&v.NullStr)}
 }

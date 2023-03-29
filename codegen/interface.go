@@ -8,6 +8,8 @@ import (
 
 var (
 	sqlValuer, sqlScanner *types.Interface
+	valuerPkg             = types.NewPackage("database/sql/driver", "driver")
+	scannerPkg            = types.NewPackage("database/sql", "sql")
 )
 
 func init() {

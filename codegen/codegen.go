@@ -8,7 +8,6 @@ import (
 	"go/token"
 	"go/types"
 	"io/fs"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -21,8 +20,47 @@ import (
 	"github.com/si3nloong/sqlgen/codegen/config"
 	"github.com/si3nloong/sqlgen/codegen/templates"
 	"github.com/si3nloong/sqlgen/internal/strfmt"
+	"github.com/si3nloong/sqlgen/sql/schema"
 	"golang.org/x/exp/slices"
 	"golang.org/x/tools/imports"
+)
+
+var (
+	schemaName = reflect.TypeOf(schema.Name{})
+
+	typeMap = map[string]Mapping{
+		"string":     {"string", "github.com/si3nloong/gqlgen/sql/types.String"},
+		"[]byte":     {"string", "github.com/si3nloong/gqlgen/sql/types.String"},
+		"bool":       {"bool", "github.com/si3nloong/gqlgen/sql/types.Bool"},
+		"uint":       {"int64", "github.com/si3nloong/gqlgen/sql/types.Integer"},
+		"uint8":      {"int64", "github.com/si3nloong/gqlgen/sql/types.Integer"},
+		"uint16":     {"int64", "github.com/si3nloong/gqlgen/sql/types.Integer"},
+		"uint32":     {"int64", "github.com/si3nloong/gqlgen/sql/types.Integer"},
+		"uint64":     {"int64", "github.com/si3nloong/gqlgen/sql/types.Integer"},
+		"int":        {"int64", "github.com/si3nloong/gqlgen/sql/types.Integer"},
+		"int8":       {"int64", "github.com/si3nloong/gqlgen/sql/types.Integer"},
+		"int16":      {"int64", "github.com/si3nloong/gqlgen/sql/types.Integer"},
+		"int32":      {"int64", "github.com/si3nloong/gqlgen/sql/types.Integer"},
+		"int64":      {"int64", "github.com/si3nloong/gqlgen/sql/types.Integer"},
+		"float32":    {"float64", "github.com/si3nloong/gqlgen/sql/types.Float"},
+		"float64":    {"float64", "github.com/si3nloong/gqlgen/sql/types.Float"},
+		"*string":    {"github.com/si3nloong/gqlgen/sql/types.String", "github.com/si3nloong/gqlgen/sql/types.PtrOfString"},
+		"*[]byte":    {"github.com/si3nloong/gqlgen/sql/types.String", "github.com/si3nloong/gqlgen/sql/types.PtrOfString"},
+		"*bool":      {"github.com/si3nloong/gqlgen/sql/types.Bool", "github.com/si3nloong/gqlgen/sql/types.PtrOfBool"},
+		"*uint":      {"github.com/si3nloong/gqlgen/sql/types.Integer", "github.com/si3nloong/gqlgen/sql/types.PtrOfInt"},
+		"*uint8":     {"github.com/si3nloong/gqlgen/sql/types.Integer", "github.com/si3nloong/gqlgen/sql/types.PtrOfInt"},
+		"*uint16":    {"github.com/si3nloong/gqlgen/sql/types.Integer", "github.com/si3nloong/gqlgen/sql/types.PtrOfInt"},
+		"*uint32":    {"github.com/si3nloong/gqlgen/sql/types.Integer", "github.com/si3nloong/gqlgen/sql/types.PtrOfInt"},
+		"*uint64":    {"github.com/si3nloong/gqlgen/sql/types.Integer", "github.com/si3nloong/gqlgen/sql/types.PtrOfInt"},
+		"*int":       {"github.com/si3nloong/gqlgen/sql/types.Integer", "github.com/si3nloong/gqlgen/sql/types.PtrOfInt"},
+		"*int8":      {"github.com/si3nloong/gqlgen/sql/types.Integer", "github.com/si3nloong/gqlgen/sql/types.PtrOfInt"},
+		"*int16":     {"github.com/si3nloong/gqlgen/sql/types.Integer", "github.com/si3nloong/gqlgen/sql/types.PtrOfInt"},
+		"*int32":     {"github.com/si3nloong/gqlgen/sql/types.Integer", "github.com/si3nloong/gqlgen/sql/types.PtrOfInt"},
+		"*int64":     {"github.com/si3nloong/gqlgen/sql/types.Integer", "github.com/si3nloong/gqlgen/sql/types.PtrOfInt"},
+		"*float32":   {"github.com/si3nloong/gqlgen/sql/types.Float", "github.com/si3nloong/gqlgen/sql/types.PtrOfFloat"},
+		"*float64":   {"github.com/si3nloong/gqlgen/sql/types.Float", "github.com/si3nloong/gqlgen/sql/types.PtrOfFloat"},
+		"*time.Time": {"github.com/si3nloong/gqlgen/sql/types.Time", "github.com/si3nloong/gqlgen/sql/types.PtrOfTime"},
+	}
 )
 
 type RenameFunc func(string) string
@@ -33,13 +71,21 @@ type Generator struct {
 
 type Codec string
 
-func (c Codec) isPkg() bool {
-	return strings.Contains(string(c), ".")
+func (c Codec) IsPkgFunc() (*types.Package, string, bool) {
+	pkg := string(c)
+	idx := strings.LastIndexByte(pkg, '.')
+	if idx > 0 {
+		path := pkg[:idx]
+		cb := pkg[idx+1:]
+		return types.NewPackage(path, filepath.Base(path)), cb, true
+	}
+	return nil, "", false
 }
 
-func (c Codec) Wrap(v string) string {
-	if c.isPkg() {
-		return filepath.Base(string(c)) + "(" + v + ")"
+func (c Codec) CastOrInvoke(pkg *Package, v string) string {
+	if p, invoke, ok := c.IsPkgFunc(); ok {
+		p, _ = pkg.Import(p)
+		return p.Name() + "." + invoke + "(" + v + ")"
 	}
 	return string(c) + "(" + v + ")"
 }
@@ -49,16 +95,37 @@ type Mapping struct {
 	Decoder Codec
 }
 
-type ImportPkgs []*types.Package
+type Package struct {
+	cache      map[string]*types.Package
+	importPkgs []*types.Package
+}
 
-func (p *ImportPkgs) Load(imp *types.Package) bool {
-	if i := slices.IndexFunc(*p, func(pkg *types.Package) bool {
-		return pkg.Path() == imp.Path()
+func (p *Package) Import(pkg *types.Package) (*types.Package, bool) {
+	if i := slices.IndexFunc(p.importPkgs, func(item *types.Package) bool {
+		return pkg.Path() == item.Path()
 	}); i > -1 {
-		return false
+		return p.importPkgs[i], false
 	}
-	*p = append(*p, imp)
-	return true
+	if p.cache == nil {
+		p.cache = make(map[string]*types.Package)
+	}
+	alias := p.newAliasIfRequired(pkg)
+	pkg.SetName(alias)
+	p.cache[alias] = pkg
+	p.importPkgs = append(p.importPkgs, pkg)
+	return pkg, true
+}
+
+func (p *Package) newAliasIfRequired(pkg *types.Package) string {
+	pkgName, newPkgName := pkg.Name(), pkg.Name()
+	for i := 1; ; i++ {
+		if _, ok := p.cache[newPkgName]; ok {
+			newPkgName = pkgName + strconv.Itoa(i)
+			continue
+		}
+		break
+	}
+	return newPkgName
 }
 
 func Generate(cfg *config.Config) error {
@@ -76,9 +143,9 @@ func Generate(cfg *config.Config) error {
 		}
 	}
 
-	fset := token.NewFileSet() // positions are relative to fset
-
 	fileSrc := filepath.Dir(cfg.SrcDir)
+	fset := token.NewFileSet()
+
 	pkgs, err := parser.ParseDir(fset, fileSrc, func(fi fs.FileInfo) bool {
 		filename := fi.Name()
 		if strings.HasSuffix(filename, "_test.go") || strings.HasSuffix(filename, "_gen.go") || filename == "generated.go" {
@@ -92,6 +159,7 @@ func Generate(cfg *config.Config) error {
 
 	structTypes := make(map[string]*ast.StructType)
 	files := make([]*ast.File, 0)
+
 	for _, pkg := range pkgs {
 		for _, f := range pkg.Files {
 			files = append(files, f)
@@ -122,9 +190,7 @@ func Generate(cfg *config.Config) error {
 		return err
 	}
 
-	impPkgs := make(ImportPkgs, 0)
-	// checker := types.NewChecker(conf, fset, pkg, info)
-
+	impPkgs := new(Package)
 	data := templates.ModelTmplParams{}
 	data.GoPkg = pkg.Name()
 
@@ -181,12 +247,14 @@ func Generate(cfg *config.Config) error {
 					v = strings.ToLower(v)
 					tagOpts[v] = v
 				}
+
 				if name == "-" {
-					goto next
+					continue
 				} else if name != "" {
-					if typ == "github.com/si3nloong/sqlgen/sql/schema.Name" {
+					log.Println(typ, schemaName.PkgPath()+"."+schemaName.Name())
+					if typ == schemaName.PkgPath()+"."+schemaName.Name() {
 						model.Name = name
-						goto next
+						continue
 					}
 				}
 
@@ -223,77 +291,46 @@ func Generate(cfg *config.Config) error {
 		data.Models = append(data.Models, model)
 	}
 
+	log.Println(data)
+
 	sort.Slice(data.Models, func(i, j int) bool {
 		return data.Models[i].GoName < data.Models[j].GoName
 	})
 
-	typeMap := map[string]Mapping{
-		"string":   {"string", "github.com/si3nloong/gqlgen/sql/types.String"},
-		"[]byte":   {"string", "github.com/si3nloong/gqlgen/sql/types.String"},
-		"bool":     {"bool", "github.com/si3nloong/gqlgen/sql/types.Bool"},
-		"uint":     {"int64", "github.com/si3nloong/gqlgen/sql/types.Integer"},
-		"uint8":    {"int64", "github.com/si3nloong/gqlgen/sql/types.Integer"},
-		"uint16":   {"int64", "github.com/si3nloong/gqlgen/sql/types.Integer"},
-		"uint32":   {"int64", "github.com/si3nloong/gqlgen/sql/types.Integer"},
-		"uint64":   {"int64", "github.com/si3nloong/gqlgen/sql/types.Integer"},
-		"int":      {"int64", "github.com/si3nloong/gqlgen/sql/types.Integer"},
-		"int8":     {"int64", "github.com/si3nloong/gqlgen/sql/types.Integer"},
-		"int16":    {"int64", "github.com/si3nloong/gqlgen/sql/types.Integer"},
-		"int32":    {"int64", "github.com/si3nloong/gqlgen/sql/types.Integer"},
-		"int64":    {"int64", "github.com/si3nloong/gqlgen/sql/types.Integer"},
-		"float32":  {"float64", "github.com/si3nloong/gqlgen/sql/types.Float"},
-		"float64":  {"float64", "github.com/si3nloong/gqlgen/sql/types.Float"},
-		"*string":  {"github.com/si3nloong/gqlgen/sql/types.String", "github.com/si3nloong/gqlgen/sql/types.PtrOfString"},
-		"*[]byte":  {"github.com/si3nloong/gqlgen/sql/types.String", "github.com/si3nloong/gqlgen/sql/types.PtrOfString"},
-		"*bool":    {"github.com/si3nloong/gqlgen/sql/types.Bool", "github.com/si3nloong/gqlgen/sql/types.PtrOfBool"},
-		"*uint":    {"github.com/si3nloong/gqlgen/sql/types.Integer", "github.com/si3nloong/gqlgen/sql/types.PtrOfInt"},
-		"*uint8":   {"github.com/si3nloong/gqlgen/sql/types.Integer", "github.com/si3nloong/gqlgen/sql/types.PtrOfInt"},
-		"*uint16":  {"github.com/si3nloong/gqlgen/sql/types.Integer", "github.com/si3nloong/gqlgen/sql/types.PtrOfInt"},
-		"*uint32":  {"github.com/si3nloong/gqlgen/sql/types.Integer", "github.com/si3nloong/gqlgen/sql/types.PtrOfInt"},
-		"*uint64":  {"github.com/si3nloong/gqlgen/sql/types.Integer", "github.com/si3nloong/gqlgen/sql/types.PtrOfInt"},
-		"*int":     {"github.com/si3nloong/gqlgen/sql/types.Integer", "github.com/si3nloong/gqlgen/sql/types.PtrOfInt"},
-		"*int8":    {"github.com/si3nloong/gqlgen/sql/types.Integer", "github.com/si3nloong/gqlgen/sql/types.PtrOfInt"},
-		"*int16":   {"github.com/si3nloong/gqlgen/sql/types.Integer", "github.com/si3nloong/gqlgen/sql/types.PtrOfInt"},
-		"*int32":   {"github.com/si3nloong/gqlgen/sql/types.Integer", "github.com/si3nloong/gqlgen/sql/types.PtrOfInt"},
-		"*int64":   {"github.com/si3nloong/gqlgen/sql/types.Integer", "github.com/si3nloong/gqlgen/sql/types.PtrOfInt"},
-		"*float32": {"github.com/si3nloong/gqlgen/sql/types.Float", "github.com/si3nloong/gqlgen/sql/types.PtrOfFloat"},
-		"*float64": {"github.com/si3nloong/gqlgen/sql/types.Float", "github.com/si3nloong/gqlgen/sql/types.PtrOfFloat"},
-	}
-
 	tmpl := template.New("template.go").Funcs(template.FuncMap{
-		"reserveImport": func(imp string, aliases ...string) string {
-			name := filepath.Base(imp)
+		"quote": strconv.Quote,
+		"reserveImport": func(pkgPath string, aliases ...string) string {
+			name := filepath.Base(pkgPath)
 			if len(aliases) > 0 {
 				name = aliases[0]
 			}
-			impPkgs.Load(types.NewPackage(imp, name))
+			impPkgs.Import(types.NewPackage(pkgPath, name))
 			return ""
 		},
 		"isValuer": func(f *templates.Field) bool {
-			_, ok := types.MissingMethod(f.Type, sqlValuer, true)
-			return ok
+			return IsImplemented(f.Type, sqlValuer)
 		},
-		"quote": strconv.Quote,
-		"cast": func(n string, f *templates.Field) string {
+		"cast": func(n string, f *templates.Field) (string, error) {
 			v := n + "." + f.GoName
 			underType := getUnderlyingType(f.Type)
-			if _, ok := types.MissingMethod(f.Type, sqlValuer, true); ok {
-				impPkgs.Load(types.NewPackage("database/sql/driver", "driver"))
-				return "(driver.Valuer)(" + v + ")"
-			} else if typ, ok := typeMap[underType]; ok {
-				return typ.Encoder.Wrap(v)
+			if IsImplemented(f.Type, sqlValuer) {
+				p, _ := impPkgs.Import(valuerPkg)
+				return "(" + p.Name() + ".Valuer)(" + v + ")", nil
 			}
-			return v
+			if typ, ok := typeMap[underType]; ok {
+				return typ.Encoder.CastOrInvoke(impPkgs, v), nil
+			}
+			return v, nil
 		},
 		"addr": func(n string, f *templates.Field) string {
 			v := "&" + n + "." + f.GoName
 			underType := getUnderlyingType(f.Type)
-			log.Println("Underlying Type ->", underType)
 			if types.Implements(types.NewPointer(f.Type), sqlScanner) {
-				impPkgs.Load(types.NewPackage("database/sql", "sql"))
-				return "(sql.Scanner)(" + v + ")"
-			} else if typ, ok := typeMap[underType]; ok {
-				return typ.Decoder.Wrap(v)
+				p, _ := impPkgs.Import(scannerPkg)
+				return "(" + p.Name() + ".Scanner)(" + v + ")"
+			}
+			if typ, ok := typeMap[underType]; ok {
+				return typ.Decoder.CastOrInvoke(impPkgs, v)
 			}
 			return v
 		},
@@ -317,10 +354,14 @@ func Generate(cfg *config.Config) error {
 		return err
 	}
 
-	if len(impPkgs) > 0 {
+	if len(impPkgs.importPkgs) > 0 {
 		w.WriteString("import (\n")
-		for _, pkg := range impPkgs {
-			w.WriteString(strconv.Quote(pkg.Path()) + "\n")
+		for _, pkg := range impPkgs.importPkgs {
+			if filepath.Base(pkg.Path()) == pkg.Name() {
+				w.WriteString(strconv.Quote(pkg.Path()) + "\n")
+			} else {
+				w.WriteString(pkg.Name() + " " + strconv.Quote(pkg.Path()) + "\n")
+			}
 		}
 		w.WriteString(")\n")
 	}
@@ -330,10 +371,11 @@ func Generate(cfg *config.Config) error {
 
 	formatted, err := imports.Process(fileDest, w.Bytes(), &imports.Options{Comments: true})
 	if err != nil {
+		log.Println(err)
 		return err
 	}
 
-	if err := ioutil.WriteFile(fileDest, formatted, 0644); err != nil {
+	if err := os.WriteFile(fileDest, formatted, 0644); err != nil {
 		return err
 	}
 
@@ -351,6 +393,11 @@ func getUnderlyingType(t types.Type) string {
 	default:
 		return t.Underlying().String()
 	}
+}
+
+func IsImplemented(t types.Type, iv *types.Interface) bool {
+	_, ok := types.MissingMethod(t, iv, true)
+	return ok
 }
 
 func valueOf(expr ast.Expr) ast.Expr {

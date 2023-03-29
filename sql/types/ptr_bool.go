@@ -1,6 +1,10 @@
 package types
 
-import "strconv"
+import (
+	"strconv"
+
+	"github.com/si3nloong/sqlgen/internal/strfmt"
+)
 
 type ptrOfBoolLike[T ~bool] struct {
 	addr **T
@@ -25,14 +29,11 @@ func (p ptrOfBoolLike[T]) Scan(v any) error {
 
 	switch vi := v.(type) {
 	case []byte:
-		b, err := strconv.ParseBool(string(vi))
+		b, err := strconv.ParseBool(strfmt.B2s(vi))
 		if err != nil {
 			return err
 		}
 		val := T(b)
-		*p.addr = &val
-	case bool:
-		val := T(vi)
 		*p.addr = &val
 	case string:
 		b, err := strconv.ParseBool(vi)
@@ -40,6 +41,9 @@ func (p ptrOfBoolLike[T]) Scan(v any) error {
 			return err
 		}
 		val := T(b)
+		*p.addr = &val
+	case bool:
+		val := T(vi)
 		*p.addr = &val
 	}
 	return nil

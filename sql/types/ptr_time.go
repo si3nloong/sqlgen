@@ -1,7 +1,16 @@
 package types
 
 import (
+	"regexp"
 	"time"
+
+	"github.com/si3nloong/sqlgen/internal/strfmt"
+)
+
+var (
+	ddmmyyyy         = regexp.MustCompile(`^\d{4}\-\d{2}\-\d{2}$`)
+	ddmmyyyyhhmmss   = regexp.MustCompile(`^\d{4}\-\d{2}\-\d{2}\s\d{2}\:\d{2}:\d{2}$`)
+	ddmmyyyyhhmmsstz = regexp.MustCompile(`^\d{4}\-\d{2}\-\d{2}\s\d{2}\:\d{2}:\d{2}\.\d+$`)
 )
 
 type ptrOfTime[T time.Time] struct {
@@ -26,16 +35,41 @@ func (p ptrOfTime[T]) Scan(v any) error {
 	}
 
 	switch vi := v.(type) {
-	case time.Time:
-		val := T(vi)
-		*p.addr = &val
-	case string:
-		b, err := time.Parse(time.RFC3339Nano, vi)
+	case []byte:
+		t, err := parseTime(strfmt.B2s(vi))
 		if err != nil {
 			return err
 		}
-		val := T(b)
+		val := T(t)
+		*p.addr = &val
+	case string:
+		t, err := parseTime(vi)
+		if err != nil {
+			return err
+		}
+		val := T(t)
+		*p.addr = &val
+	case time.Time:
+		val := T(vi)
 		*p.addr = &val
 	}
 	return nil
+}
+
+func parseTime(str string) (time.Time, error) {
+	var (
+		t   time.Time
+		err error
+	)
+	switch {
+	case ddmmyyyy.MatchString(str):
+		t, err = time.Parse("2006-01-02", str)
+	case ddmmyyyyhhmmss.MatchString(str):
+		t, err = time.Parse("2006-01-02 15:04:05", str)
+	case ddmmyyyyhhmmsstz.MatchString(str):
+		t, err = time.Parse("2006-01-02 15:04:05.999999", str)
+	default:
+		t, err = time.Parse(time.RFC3339Nano, str)
+	}
+	return t, err
 }

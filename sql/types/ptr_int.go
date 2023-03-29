@@ -3,6 +3,7 @@ package types
 import (
 	"strconv"
 
+	"github.com/si3nloong/sqlgen/internal/strfmt"
 	"golang.org/x/exp/constraints"
 )
 
@@ -29,7 +30,7 @@ func (p ptrOfIntLike[T]) Scan(v any) error {
 
 	switch vi := v.(type) {
 	case []byte:
-		i, err := strconv.ParseInt(string(vi), 10, 64)
+		i, err := strconv.ParseInt(strfmt.B2s(vi), 10, 64)
 		if err != nil {
 			return err
 		}
