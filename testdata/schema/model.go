@@ -2,22 +2,20 @@ package schema
 
 import (
 	"database/sql"
-	"time"
-
-	s "github.com/si3nloong/sqlgen/sql/schema"
+	t "time"
 )
 
 type A struct {
-	s.Name    `sql:"Apple"`
+	// schema.Name `sql:"Apple"`
 	ID        string
-	CreatedAt time.Time
+	CreatedAt t.Time
 }
 
 type B struct {
 	// go:staticcheck
-	n, p      s.Name `sql:"Boy"`
+	// n, p      schema.Name `sql:"Boy"`
 	ID        string
-	CreatedAt time.Time
+	CreatedAt t.Time
 }
 
 type C struct {

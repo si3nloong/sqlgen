@@ -18,7 +18,9 @@ import (
 	"text/template"
 
 	"github.com/si3nloong/sqlgen/codegen/config"
+
 	"github.com/si3nloong/sqlgen/codegen/templates"
+	"github.com/si3nloong/sqlgen/internal/fileutil"
 	"github.com/si3nloong/sqlgen/internal/strfmt"
 	"github.com/si3nloong/sqlgen/sql/schema"
 	"golang.org/x/exp/slices"
@@ -27,72 +29,12 @@ import (
 
 var (
 	schemaName = reflect.TypeOf(schema.Name{})
-
-	typeMap = map[string]Mapping{
-		"string":     {"string", "github.com/si3nloong/sqlgen/sql/types.String"},
-		"[]byte":     {"string", "github.com/si3nloong/sqlgen/sql/types.String"},
-		"bool":       {"bool", "github.com/si3nloong/sqlgen/sql/types.Bool"},
-		"uint":       {"int64", "github.com/si3nloong/sqlgen/sql/types.Integer"},
-		"uint8":      {"int64", "github.com/si3nloong/sqlgen/sql/types.Integer"},
-		"uint16":     {"int64", "github.com/si3nloong/sqlgen/sql/types.Integer"},
-		"uint32":     {"int64", "github.com/si3nloong/sqlgen/sql/types.Integer"},
-		"uint64":     {"int64", "github.com/si3nloong/sqlgen/sql/types.Integer"},
-		"int":        {"int64", "github.com/si3nloong/sqlgen/sql/types.Integer"},
-		"int8":       {"int64", "github.com/si3nloong/sqlgen/sql/types.Integer"},
-		"int16":      {"int64", "github.com/si3nloong/sqlgen/sql/types.Integer"},
-		"int32":      {"int64", "github.com/si3nloong/sqlgen/sql/types.Integer"},
-		"int64":      {"int64", "github.com/si3nloong/sqlgen/sql/types.Integer"},
-		"float32":    {"float64", "github.com/si3nloong/sqlgen/sql/types.Float"},
-		"float64":    {"float64", "github.com/si3nloong/sqlgen/sql/types.Float"},
-		"*string":    {"github.com/si3nloong/sqlgen/sql/types.String", "github.com/si3nloong/sqlgen/sql/types.PtrOfString"},
-		"*[]byte":    {"github.com/si3nloong/sqlgen/sql/types.String", "github.com/si3nloong/sqlgen/sql/types.PtrOfString"},
-		"*bool":      {"github.com/si3nloong/sqlgen/sql/types.Bool", "github.com/si3nloong/sqlgen/sql/types.PtrOfBool"},
-		"*uint":      {"github.com/si3nloong/sqlgen/sql/types.Integer", "github.com/si3nloong/sqlgen/sql/types.PtrOfInt"},
-		"*uint8":     {"github.com/si3nloong/sqlgen/sql/types.Integer", "github.com/si3nloong/sqlgen/sql/types.PtrOfInt"},
-		"*uint16":    {"github.com/si3nloong/sqlgen/sql/types.Integer", "github.com/si3nloong/sqlgen/sql/types.PtrOfInt"},
-		"*uint32":    {"github.com/si3nloong/sqlgen/sql/types.Integer", "github.com/si3nloong/sqlgen/sql/types.PtrOfInt"},
-		"*uint64":    {"github.com/si3nloong/sqlgen/sql/types.Integer", "github.com/si3nloong/sqlgen/sql/types.PtrOfInt"},
-		"*int":       {"github.com/si3nloong/sqlgen/sql/types.Integer", "github.com/si3nloong/sqlgen/sql/types.PtrOfInt"},
-		"*int8":      {"github.com/si3nloong/sqlgen/sql/types.Integer", "github.com/si3nloong/sqlgen/sql/types.PtrOfInt"},
-		"*int16":     {"github.com/si3nloong/sqlgen/sql/types.Integer", "github.com/si3nloong/sqlgen/sql/types.PtrOfInt"},
-		"*int32":     {"github.com/si3nloong/sqlgen/sql/types.Integer", "github.com/si3nloong/sqlgen/sql/types.PtrOfInt"},
-		"*int64":     {"github.com/si3nloong/sqlgen/sql/types.Integer", "github.com/si3nloong/sqlgen/sql/types.PtrOfInt"},
-		"*float32":   {"github.com/si3nloong/sqlgen/sql/types.Float", "github.com/si3nloong/sqlgen/sql/types.PtrOfFloat"},
-		"*float64":   {"github.com/si3nloong/sqlgen/sql/types.Float", "github.com/si3nloong/sqlgen/sql/types.PtrOfFloat"},
-		"*time.Time": {"github.com/si3nloong/sqlgen/sql/types.Time", "github.com/si3nloong/sqlgen/sql/types.PtrOfTime"},
-	}
 )
 
 type RenameFunc func(string) string
 
 type Generator struct {
 	rename RenameFunc
-}
-
-type Codec string
-
-func (c Codec) IsPkgFunc() (*types.Package, string, bool) {
-	pkg := string(c)
-	idx := strings.LastIndexByte(pkg, '.')
-	if idx > 0 {
-		path := pkg[:idx]
-		cb := pkg[idx+1:]
-		return types.NewPackage(path, filepath.Base(path)), cb, true
-	}
-	return nil, "", false
-}
-
-func (c Codec) CastOrInvoke(pkg *Package, v string) string {
-	if p, invoke, ok := c.IsPkgFunc(); ok {
-		p, _ = pkg.Import(p)
-		return p.Name() + "." + invoke + "(" + v + ")"
-	}
-	return string(c) + "(" + v + ")"
-}
-
-type Mapping struct {
-	Encoder Codec
-	Decoder Codec
 }
 
 type Package struct {
@@ -109,14 +51,14 @@ func (p *Package) Import(pkg *types.Package) (*types.Package, bool) {
 	if p.cache == nil {
 		p.cache = make(map[string]*types.Package)
 	}
-	alias := p.newAliasIfRequired(pkg)
+	alias := p.newAliasIfExists(pkg)
 	pkg.SetName(alias)
 	p.cache[alias] = pkg
 	p.importPkgs = append(p.importPkgs, pkg)
 	return pkg, true
 }
 
-func (p *Package) newAliasIfRequired(pkg *types.Package) string {
+func (p *Package) newAliasIfExists(pkg *types.Package) string {
 	pkgName, newPkgName := pkg.Name(), pkg.Name()
 	for i := 1; ; i++ {
 		if _, ok := p.cache[newPkgName]; ok {
@@ -137,16 +79,12 @@ func Generate(cfg *config.Config) error {
 		gen.rename = strfmt.ToSnakeCase
 	case "camelcase":
 		gen.rename = strfmt.ToCamelCase
-	case "-":
-		gen.rename = func(s string) string {
-			return s
-		}
 	}
 
-	fileSrc := filepath.Dir(cfg.SrcDir)
+	cfg.SrcDir = filepath.Dir(cfg.SrcDir)
 	fset := token.NewFileSet()
 
-	pkgs, err := parser.ParseDir(fset, fileSrc, func(fi fs.FileInfo) bool {
+	pkgs, err := parser.ParseDir(fset, cfg.SrcDir, func(fi fs.FileInfo) bool {
 		filename := fi.Name()
 		if strings.HasSuffix(filename, "_test.go") || strings.HasSuffix(filename, "_gen.go") || filename == "generated.go" {
 			return false
@@ -157,24 +95,40 @@ func Generate(cfg *config.Config) error {
 		return err
 	}
 
-	structTypes := make(map[string]*ast.StructType)
-	files := make([]*ast.File, 0)
+	if pkgs == nil {
+		return nil
+	}
 
-	for _, pkg := range pkgs {
-		for _, f := range pkg.Files {
-			files = append(files, f)
-			ast.Inspect(f, func(node ast.Node) bool {
-				typeSpec, ok := node.(*ast.TypeSpec)
-				if !ok {
-					return true
-				}
-				structType, ok := typeSpec.Type.(*ast.StructType)
-				if ok {
-					structTypes[types.ExprString(typeSpec.Name)] = structType
-				}
-				return true
-			})
+	for k, pkg := range pkgs {
+		if err := parsePackage(fset, pkg, cfg); err != nil {
+			log.Println(err)
 		}
+		delete(pkgs, k)
+	}
+
+	return nil
+}
+
+func parsePackage(fset *token.FileSet, pkg *ast.Package, cfg *config.Config) error {
+	fileSrc := cfg.SrcDir
+	files := make([]*ast.File, 0)
+	structTypes := make(map[string]*ast.StructType)
+
+	for _, f := range pkg.Files {
+		files = append(files, f)
+
+		ast.Inspect(f, func(node ast.Node) bool {
+			typeSpec, ok := node.(*ast.TypeSpec)
+			if !ok {
+				return true
+			}
+			// TODO: If it's an alias struct, we should skip right?
+			structType, ok := typeSpec.Type.(*ast.StructType)
+			if ok {
+				structTypes[types.ExprString(typeSpec.Name)] = structType
+			}
+			return true
+		})
 	}
 
 	conf := &types.Config{Importer: importer.Default()}
@@ -185,14 +139,14 @@ func Generate(cfg *config.Config) error {
 		Scopes: make(map[ast.Node]*types.Scope),
 	}
 
-	pkg, err := conf.Check(fileSrc, fset, files, info)
+	typePkg, err := conf.Check(fileSrc, fset, files, info)
 	if err != nil {
 		return err
 	}
 
 	impPkgs := new(Package)
 	data := templates.ModelTmplParams{}
-	data.GoPkg = pkg.Name()
+	data.GoPkg = typePkg.Name()
 
 	for k, st := range structTypes {
 		var (
@@ -207,7 +161,7 @@ func Generate(cfg *config.Config) error {
 			}
 
 			model.GoName = k
-			model.Name = gen.rename(k)
+			model.Name = strfmt.ToSnakeCase(k)
 
 			for _, f := range s.Fields.List {
 				var tag reflect.StructTag
@@ -218,8 +172,7 @@ func Generate(cfg *config.Config) error {
 					}))
 				}
 
-				// fi := valueOf(f.Type).(*ast.Ident)
-				switch vi := valueOf(f.Type).(type) {
+				switch vi := ElemOf(f.Type).(type) {
 				case *ast.Ident:
 					// Check and process embedded struct
 					if f.Names == nil && vi.Obj != nil {
@@ -251,7 +204,6 @@ func Generate(cfg *config.Config) error {
 				if name == "-" {
 					continue
 				} else if name != "" {
-					log.Println(typ, schemaName.PkgPath()+"."+schemaName.Name())
 					if typ == schemaName.PkgPath()+"."+schemaName.Name() {
 						model.Name = name
 						continue
@@ -267,7 +219,7 @@ func Generate(cfg *config.Config) error {
 					field.GoName = types.ExprString(n)
 					field.Type = t
 					if name == "" {
-						field.Name = gen.rename(field.GoName)
+						field.Name = strfmt.ToSnakeCase(field.GoName)
 					} else {
 						field.Name = name
 					}
@@ -291,8 +243,6 @@ func Generate(cfg *config.Config) error {
 		data.Models = append(data.Models, model)
 	}
 
-	log.Println(data)
-
 	sort.Slice(data.Models, func(i, j int) bool {
 		return data.Models[i].GoName < data.Models[j].GoName
 	})
@@ -310,17 +260,20 @@ func Generate(cfg *config.Config) error {
 		"isValuer": func(f *templates.Field) bool {
 			return IsImplemented(f.Type, sqlValuer)
 		},
-		"cast": func(n string, f *templates.Field) (string, error) {
+		"cast": func(n string, f *templates.Field) string {
 			v := n + "." + f.GoName
 			underType := getUnderlyingType(f.Type)
 			if IsImplemented(f.Type, sqlValuer) {
 				p, _ := impPkgs.Import(valuerPkg)
-				return "(" + p.Name() + ".Valuer)(" + v + ")", nil
+				return "(" + p.Name() + ".Valuer)(" + v + ")"
 			}
 			if typ, ok := typeMap[underType]; ok {
-				return typ.Encoder.CastOrInvoke(impPkgs, v), nil
+				if string(typ.Encoder) == f.Type.String() {
+					return v
+				}
+				return typ.Encoder.CastOrInvoke(impPkgs, v)
 			}
-			return v, nil
+			return v
 		},
 		"addr": func(n string, f *templates.Field) string {
 			v := "&" + n + "." + f.GoName
@@ -330,26 +283,36 @@ func Generate(cfg *config.Config) error {
 				return "(" + p.Name() + ".Scanner)(" + v + ")"
 			}
 			if typ, ok := typeMap[underType]; ok {
+				if string(typ.Encoder) == f.Type.String() {
+					return v
+				}
 				return typ.Decoder.CastOrInvoke(impPkgs, v)
 			}
 			return v
 		},
 	})
 
-	fileDest := fileSrc + "/generated.go"
-	w := bytes.NewBufferString("")
-	w.WriteString("// Code generated by sqlgen, version 1.0.0. DO NOT EDIT.\n\n")
-	w.WriteString("package " + data.GoPkg + "\n\n")
-	b, _ := os.ReadFile("./codegen/templates/model.go.tpl")
+	b, err := os.ReadFile(filepath.Join(fileutil.CurDir(), "templates/model.go.tpl"))
+	if err != nil {
+		return err
+	}
+
 	t, err := tmpl.Parse(string(b))
 	if err != nil {
 		return err
 	}
 
-	blr := bytes.NewBufferString(``)
+	blr := bytes.NewBufferString("")
 	if err := t.Execute(blr, data); err != nil {
 		return err
 	}
+
+	w := bytes.NewBufferString("")
+	if cfg.IncludeHeader != nil && *cfg.IncludeHeader {
+		w.WriteString("// Code generated by sqlgen, version 1.0.0. DO NOT EDIT.\n\n")
+	}
+
+	w.WriteString("package " + data.GoPkg + "\n\n")
 
 	if len(impPkgs.importPkgs) > 0 {
 		w.WriteString("import (\n")
@@ -364,31 +327,43 @@ func Generate(cfg *config.Config) error {
 	}
 	blr.WriteTo(w)
 
-	log.Println(w.String())
-
+	fileDest := filepath.Join(fileSrc, "generated.go")
 	formatted, err := imports.Process(fileDest, w.Bytes(), &imports.Options{Comments: true})
 	if err != nil {
 		return err
 	}
 
-	if err := os.WriteFile(fileDest, formatted, 0644); err != nil {
+	if err := os.WriteFile(fileDest, formatted, 0o644); err != nil {
 		return err
 	}
-
 	return nil
 }
 
 func getUnderlyingType(t types.Type) string {
-	switch v := t.(type) {
-	case *types.Slice:
-		return "[]" + getUnderlyingType(v.Elem())
-	case *types.Named:
-		return t.Underlying().String()
-	case *types.Pointer:
-		return "*" + getUnderlyingType(v.Elem())
-	default:
-		return t.Underlying().String()
+	typeStr := ""
+	for t != nil {
+		switch v := t.(type) {
+		case *types.Pointer:
+			typeStr += "*"
+			t = v.Elem()
+		case *types.Slice:
+			typeStr += "[]"
+			t = v.Elem()
+		case *types.Map:
+			typeStr += "map[" + getUnderlyingType(v.Key()) + "]"
+			t = v.Elem()
+		case *types.Named:
+			switch vt := t.Underlying().(type) {
+			case *types.Basic:
+				return typeStr + vt.String()
+			default:
+				return typeStr + t.String()
+			}
+		default:
+			return typeStr + t.Underlying().String()
+		}
 	}
+	return typeStr
 }
 
 func IsImplemented(t types.Type, iv *types.Interface) bool {
@@ -396,7 +371,7 @@ func IsImplemented(t types.Type, iv *types.Interface) bool {
 	return ok
 }
 
-func valueOf(expr ast.Expr) ast.Expr {
+func ElemOf(expr ast.Expr) ast.Expr {
 	for expr != nil {
 		switch v := expr.(type) {
 		case *ast.StarExpr:

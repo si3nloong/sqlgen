@@ -2,10 +2,6 @@
 
 package embedded
 
-import (
-	"github.com/si3nloong/sqlgen/sql/types"
-)
-
 // Implements `sql.Valuer` interface.
 func (B) Table() string {
 	return "b"
@@ -16,11 +12,11 @@ func (B) Columns() []string {
 }
 
 func (v B) Values() []any {
-	return []any{string(v.Name), int64(v.ID), string(v.Name), bool(v.Z)}
+	return []any{v.Name, v.ID, v.Name, v.Z}
 }
 
 func (v *B) Addrs() []any {
-	return []any{types.String(&v.Name), types.Integer(&v.ID), types.String(&v.Name), types.Bool(&v.Z)}
+	return []any{&v.Name, &v.ID, &v.Name, &v.Z}
 }
 
 // Implements `sql.Valuer` interface.
@@ -33,9 +29,9 @@ func (a) Columns() []string {
 }
 
 func (v a) Values() []any {
-	return []any{int64(v.ID), string(v.Name), bool(v.Z)}
+	return []any{v.ID, v.Name, v.Z}
 }
 
 func (v *a) Addrs() []any {
-	return []any{types.Integer(&v.ID), types.String(&v.Name), types.Bool(&v.Z)}
+	return []any{&v.ID, &v.Name, &v.Z}
 }

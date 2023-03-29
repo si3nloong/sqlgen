@@ -15,7 +15,7 @@ func (v {{ .GoName }}) Key() (driver.Value, error) {
 	{{ if isValuer .PK -}}
     return ((driver.Valuer)(v.{{ .PK.GoName }})).Value()
 	{{ else -}}
-	return v.{{ .PK.GoName }}, nil
+	return {{ cast "v" .PK }}, nil
 	{{- end }}
 }
 {{ end }}

@@ -5,21 +5,32 @@
 [![Go Coverage](https://codecov.io/gh/si3nloong/sqlgen/branch/main/graph/badge.svg)](https://codecov.io/gh/si3nloong/sqlgen)
 [![LICENSE](https://img.shields.io/github/license/si3nloong/sqlgen)](https://github.com/si3nloong/sqlgen/blob/main/LICENSE)
 
-> sqlgen is not an ORM, but it works very similar to ORM without introduce extra costs (reflection).
+> sqlgen is not an ORM, but it works very similar to ORM without any extra costs (reflection).
 
-## 🔨 Installation
+## Installation
 
 ```console
 go install github.com/si3nloong/sqlgen
 ```
 
-## 🎉 Big Thanks To
+## Guide
+
+## Reporting Issues
+
+If you think you've found a bug, or something isn't behaving the way you think it should, please raise an [issue](https://github.com/si3nloong/sqlgen/issues) on GitHub.
+
+## Contributing
+
+We welcome contributions, Read our [Contribution Guidelines](https://github.com/si3nloong/sqlgen/blob/main/CONTRIBUTING.md) to learn more about contributing to **sqlgen**
+
+
+## Big Thanks To
 
 Thanks to these awesome companies for their support of Open Source developers ❤
 
 [![GitHub](https://jstools.dev/img/badges/github.svg)](https://github.com/open-source)
 
-## 📄 License
+## License
 
 [MIT](https://github.com/si3nloong/sqlgen/blob/main/LICENSE)
 

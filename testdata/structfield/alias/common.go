@@ -9,7 +9,7 @@ type customStr string
 
 type aliasStr = customStr
 
-type DT t.Time
+type DT = t.Time
 
 type AliasStruct struct {
 	ID      int64 `sql:",pk"`

@@ -5,9 +5,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/AlecAivazis/survey/v2"
 	"github.com/si3nloong/sqlgen/codegen/config"
-	"github.com/si3nloong/sqlgen/internal/tools"
+	"github.com/si3nloong/sqlgen/internal/fileutil"
+
+	"github.com/AlecAivazis/survey/v2"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )
@@ -22,6 +23,14 @@ func initCommand() *cobra.Command {
 func runInitCommand(cmd *cobra.Command, args []string) error {
 	var (
 		questions = []*survey.Question{
+			{
+				Name: "driver",
+				Prompt: &survey.Select{
+					Message: "What is your sql driver:",
+					Options: []string{"mysql", "postgres", "sqlite", "sql"},
+					Default: "mysql",
+				},
+			},
 			{
 				Name: "namingConvention",
 				Prompt: &survey.Select{
@@ -38,14 +47,14 @@ func runInitCommand(cmd *cobra.Command, args []string) error {
 				},
 			},
 		}
-		answers config.Config
+		answers = config.DefaultConfig()
 	)
 
-	if err := survey.Ask(questions, &answers); err != nil {
+	if err := survey.Ask(questions, answers); err != nil {
 		return err
 	}
 
-	w := bytes.NewBufferString(``)
+	w := bytes.NewBufferString("")
 	enc := yaml.NewEncoder(w)
 	enc.SetIndent(2)
 	defer enc.Close()
@@ -53,7 +62,7 @@ func runInitCommand(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if err := os.WriteFile(filepath.Join(tools.Getpwd(), "sqlgen.yml"), w.Bytes(), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(fileutil.Getpwd(), "sqlgen.yml"), w.Bytes(), 0o644); err != nil {
 		return err
 	}
 

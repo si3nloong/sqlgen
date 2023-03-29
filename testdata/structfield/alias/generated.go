@@ -23,9 +23,9 @@ func (v AliasStruct) Key() (driver.Value, error) {
 }
 
 func (v AliasStruct) Values() []any {
-	return []any{int64(v.ID), string(v.Header), string(v.Text), v.Created, (driver.Valuer)(v.NullStr)}
+	return []any{v.ID, string(v.Header), string(v.Text), v.Created, (driver.Valuer)(v.NullStr)}
 }
 
 func (v *AliasStruct) Addrs() []any {
-	return []any{types.Integer(&v.ID), types.String(&v.Header), types.String(&v.Text), &v.Created, (sql.Scanner)(&v.NullStr)}
+	return []any{&v.ID, types.String(&v.Header), types.String(&v.Text), &v.Created, (sql.Scanner)(&v.NullStr)}
 }
