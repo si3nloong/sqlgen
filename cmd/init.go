@@ -1,10 +1,13 @@
 package cmd
 
 import (
-	"os"
+	"bytes"
+	"io/ioutil"
+	"path/filepath"
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/si3nloong/sqlgen/codegen/config"
+	"github.com/si3nloong/sqlgen/internal/tools"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )
@@ -40,19 +43,16 @@ func runInitCommand(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// FIXME: output sqlgen file
-	f, err := os.Open("./sqlgen.yaml")
-	if err != nil {
-		return err
-	}
-
-	enc := yaml.NewEncoder(f)
+	w := bytes.NewBufferString(``)
+	enc := yaml.NewEncoder(w)
 	defer enc.Close()
 	if err := enc.Encode(answers); err != nil {
 		return err
 	}
 
-	// log.Println(answers)
+	if err := ioutil.WriteFile(filepath.Join(tools.Getpwd(), "sqlgen.yml"), w.Bytes(), 0644); err != nil {
+		return err
+	}
 
 	return nil
 }
