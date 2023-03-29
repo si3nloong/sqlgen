@@ -6,3 +6,8 @@ type User struct {
 	Age   uint8
 	Email string
 }
+
+type House struct {
+	ID uint `sql:",pk"`
+	No string
+}

@@ -11,7 +11,7 @@ func DeleteOne[T KeyValuer[T]](ctx context.Context, db DB, v T) (sql.Result, err
 	defer ReleaseStmt(stmt)
 
 	pkName, pk := v.PK()
-	stmt.WriteQuery("DELETE FROM "+Wrap(v.Table())+" WHERE "+Wrap(pkName)+" = "+Var(1)+";", pk)
+	stmt.WriteQuery("DELETE FROM "+dialect.Wrap(v.Table())+" WHERE "+dialect.Wrap(pkName)+" = "+dialect.Var(1)+";", pk)
 
 	return db.ExecContext(ctx, stmt.Query(), stmt.Args()...)
 }

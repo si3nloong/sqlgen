@@ -1,9 +1,20 @@
 package sql
 
-func Var(n int) string {
+type Dialect interface {
+	Var(n int) string
+	Wrap(v string) string
+}
+
+var (
+	dialect Dialect = mysql{}
+)
+
+type mysql struct{}
+
+func (mysql) Var(n int) string {
 	return "?"
 }
 
-func Wrap(v string) string {
+func (mysql) Wrap(v string) string {
 	return "`" + v + "`"
 }

@@ -36,9 +36,9 @@ func Execute() {
 	rootCmd.Flags().BoolVarP(&options.verbose, "verbose", "v", false, "Shows the log details.")
 	// watcher
 	rootCmd.Flags().BoolVarP(&options.watch, "watch", "w", false, "Watch the file changes and re-generate.")
-	// force to reload
+	// force to regenerate
 	rootCmd.Flags().BoolVarP(&options.force, "force", "", false, "Force to re-generate.")
 	if err := rootCmd.Execute(); err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 }

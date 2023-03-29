@@ -16,7 +16,7 @@ func InsertInto[T Valuer[T]](ctx context.Context, db DB, values []T) (sql.Result
 	defer ReleaseStmt(stmt)
 	var ent T
 	columns := ent.Columns()
-	stmt.WriteQuery("INSERT INTO " + Wrap(ent.Table()) + " (" + Wrap(strings.Join(columns, Wrap(","))) + ") VALUES ")
+	stmt.WriteQuery("INSERT INTO " + dialect.Wrap(ent.Table()) + " (" + dialect.Wrap(strings.Join(columns, dialect.Wrap(","))) + ") VALUES ")
 	noOfCols := len(columns)
 	valueStr := "(" + strings.Repeat(",?", noOfCols)[1:] + ")"
 	for n := len(values); n > 0; {

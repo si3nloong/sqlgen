@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"bytes"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 
 	"github.com/AlecAivazis/survey/v2"
@@ -20,37 +20,40 @@ func initCommand() *cobra.Command {
 }
 
 func runInitCommand(cmd *cobra.Command, args []string) error {
-	questions := []*survey.Question{
-		{
-			Name: "namingConvention",
-			Prompt: &survey.Select{
-				Message: "What is your naming convention:",
-				Options: []string{"snake_case", "camelCase", "PascalCase"},
-				Default: "snake_case",
+	var (
+		questions = []*survey.Question{
+			{
+				Name: "namingConvention",
+				Prompt: &survey.Select{
+					Message: "What is your naming convention:",
+					Options: []string{"snake_case", "camelCase", "PascalCase"},
+					Default: "snake_case",
+				},
 			},
-		},
-		{
-			Name: "tag",
-			Prompt: &survey.Input{
-				Message: "Your required tag for parsing",
-				Default: "sql",
+			{
+				Name: "tag",
+				Prompt: &survey.Input{
+					Message: "Your required tag for parsing",
+					Default: "sql",
+				},
 			},
-		},
-	}
+		}
+		answers config.Config
+	)
 
-	var answers config.Config
 	if err := survey.Ask(questions, &answers); err != nil {
 		return err
 	}
 
 	w := bytes.NewBufferString(``)
 	enc := yaml.NewEncoder(w)
+	enc.SetIndent(2)
 	defer enc.Close()
 	if err := enc.Encode(answers); err != nil {
 		return err
 	}
 
-	if err := ioutil.WriteFile(filepath.Join(tools.Getpwd(), "sqlgen.yml"), w.Bytes(), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(tools.Getpwd(), "sqlgen.yml"), w.Bytes(), 0o644); err != nil {
 		return err
 	}
 
