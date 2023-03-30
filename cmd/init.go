@@ -9,6 +9,7 @@ import (
 	"github.com/si3nloong/sqlgen/internal/fileutil"
 
 	"github.com/AlecAivazis/survey/v2"
+	"github.com/AlecAivazis/survey/v2/terminal"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )
@@ -17,7 +18,7 @@ func initCommand() *cobra.Command {
 	return &cobra.Command{
 		Use:   "init",
 		Short: "Set up a new or existing npm package.",
-		PreRunE: func(cmd *cobra.Command, args []string) error {
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			cmd.Println(`This utility will walk you through creating a sqlgen.yaml file.
 It only covers the most common items, and tries to guess sensible defaults.
 
@@ -61,7 +62,7 @@ func runInitCommand(cmd *cobra.Command, args []string) error {
 	)
 
 	if err := survey.Ask(questions, answers); err != nil {
-		return err
+		return noInterruptError(err)
 	}
 
 	fileDest := filepath.Join(fileutil.Getpwd(), "sqlgen.yml")
@@ -72,7 +73,7 @@ func runInitCommand(cmd *cobra.Command, args []string) error {
 		Message: "Is this OK?",
 		Default: true,
 	}, &ok); err != nil {
-		return err
+		return noInterruptError(err)
 	}
 
 	// Do nothing when user choose "No".
@@ -93,4 +94,11 @@ func runInitCommand(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
+}
+
+func noInterruptError(err error) error {
+	if err == terminal.InterruptErr {
+		return nil
+	}
+	return err
 }
