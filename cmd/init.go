@@ -23,8 +23,7 @@ func initCommand() *cobra.Command {
 It only covers the most common items, and tries to guess sensible defaults.
 
 See ` + "`sqlgen init`" + ` for definitive documentation on these fields
-and exactly what they do.
-`)
+and exactly what they do.`)
 			return nil
 		},
 		RunE: runInitCommand,
@@ -96,6 +95,7 @@ func runInitCommand(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
+// noInterruptError returns error when it's not `terminal.InterruptErr`
 func noInterruptError(err error) error {
 	if err == terminal.InterruptErr {
 		return nil
