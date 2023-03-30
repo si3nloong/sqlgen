@@ -14,10 +14,10 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func initCommand() *cobra.Command {
-	return &cobra.Command{
+var (
+	initCmd = &cobra.Command{
 		Use:   "init",
-		Short: "Set up a new or existing npm package.",
+		Short: "Set up a new or existing `sqlgen.yaml` file.",
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			cmd.Println(`This utility will walk you through creating a sqlgen.yaml file.
 It only covers the most common items, and tries to guess sensible defaults.
@@ -28,7 +28,7 @@ and exactly what they do.`)
 		},
 		RunE: runInitCommand,
 	}
-}
+)
 
 func runInitCommand(cmd *cobra.Command, args []string) error {
 	var (
@@ -71,8 +71,17 @@ func runInitCommand(cmd *cobra.Command, args []string) error {
 		return noInterruptError(err)
 	}
 
+	w := bytes.NewBufferString("")
+	enc := yaml.NewEncoder(w)
+	enc.SetIndent(2)
+	defer enc.Close()
+	if err := enc.Encode(answers); err != nil {
+		return err
+	}
+
 	fileDest := filepath.Join(fileutil.Getpwd(), "sqlgen.yml")
 	cmd.Println("\nAbout to write to " + fileDest + ":\n")
+	cmd.Println(w.String())
 
 	var ok bool
 	if err := survey.AskOne(&survey.Confirm{
@@ -85,14 +94,6 @@ func runInitCommand(cmd *cobra.Command, args []string) error {
 	// Do nothing when user choose "No".
 	if !ok {
 		return nil
-	}
-
-	w := bytes.NewBufferString("")
-	enc := yaml.NewEncoder(w)
-	enc.SetIndent(2)
-	defer enc.Close()
-	if err := enc.Encode(answers); err != nil {
-		return err
 	}
 
 	if err := os.WriteFile(fileDest, w.Bytes(), 0o644); err != nil {

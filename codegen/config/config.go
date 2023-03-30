@@ -28,6 +28,14 @@ func (c *Config) init() {
 	c.IncludeHeader = true
 }
 
+func LoadConfigFrom(src string) (*Config, error) {
+	cfg := new(Config)
+	if err := decodeToFile(src, cfg); err != nil {
+		return nil, err
+	}
+	return cfg, nil
+}
+
 func DefaultConfig() *Config {
 	cfg := new(Config)
 	cfg.init()
@@ -35,12 +43,23 @@ func DefaultConfig() *Config {
 	if !exists {
 		return cfg
 	}
-	f, _ := os.Open(file)
-	dec := yaml.NewDecoder(f)
-	if err := dec.Decode(cfg); err != nil {
+	if err := decodeToFile(file, cfg); err != nil {
 		panic(err)
 	}
 	return cfg
+}
+
+func decodeToFile(src string, cfg *Config) error {
+	f, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	dec := yaml.NewDecoder(f)
+	if err := dec.Decode(cfg); err != nil {
+		return err
+	}
+	return nil
 }
 
 func findCfgInDir(dir string) (string, bool) {

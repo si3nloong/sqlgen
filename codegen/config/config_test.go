@@ -30,3 +30,18 @@ func TestFindCfgInDir(t *testing.T) {
 		require.NotEmpty(t, f)
 	})
 }
+
+func TestLoadConfigFrom(t *testing.T) {
+	var (
+		cfg *Config
+		err error
+	)
+	cfg, err = LoadConfigFrom(".")
+	require.Error(t, err)
+	require.Nil(t, cfg)
+
+	cfg, err = LoadConfigFrom("./testdata/config.yaml")
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+	require.True(t, cfg.Strict)
+}
