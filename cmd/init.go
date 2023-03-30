@@ -56,6 +56,13 @@ func runInitCommand(cmd *cobra.Command, args []string) error {
 					Default: "sql",
 				},
 			},
+			{
+				Name: "strict",
+				Prompt: &survey.Confirm{
+					Message: "Is it strict parsing:",
+					Default: true,
+				},
+			},
 		}
 		answers = config.DefaultConfig()
 	)

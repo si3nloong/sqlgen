@@ -16,9 +16,15 @@ type KeyValuer[T any] interface {
 	Valuer[T]
 }
 
+type KeyValueScanner[T any] interface {
+	KeyValuer[T]
+	Scanner[T]
+}
+
 type Keyer interface {
 	// Primary key
-	PK() (string, driver.Valuer)
+	PKName() string
+	PK() (driver.Value, error)
 }
 
 type Valuer[T any] interface {

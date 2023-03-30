@@ -5,15 +5,32 @@
 [![Go Coverage](https://codecov.io/gh/si3nloong/sqlgen/branch/main/graph/badge.svg)](https://codecov.io/gh/si3nloong/sqlgen)
 [![LICENSE](https://img.shields.io/github/license/si3nloong/sqlgen)](https://github.com/si3nloong/sqlgen/blob/main/LICENSE)
 
-> sqlgen is not an ORM, but it works very similar to ORM without any extra costs (reflection).
+> sqlgen is not an ORM, it's a compiler. It make mapping to go struct without any extra costs (reflection) incur.
 
-## Installation
+## What is sqlgen?
 
-```console
-go install github.com/si3nloong/sqlgen
-```
+- **sqlgen is based on a Schema first approach** — You get to Define your Model using the go struct.
+- **sqlgen prioritizes Type safety**
+- **sqlgen enables Codegen** — We generate the boring bits, so you can focus on building your app quickly.
+- **sqlgen prioritizes performance** — We use generics to avoid runtime reflection costs.
 
-## Guide
+## Quick start
+
+1.  Install sqlgen
+
+    ```console
+    go install github.com/si3nloong/sqlgen
+    ```
+
+2.  Initialise sqlgen config and generate models
+
+    ```console
+    sqlgen init
+    ```
+
+More help to get started:
+
+- [Reference docs](/docs/API.md) for the APIs
 
 ## Reporting Issues
 
@@ -22,7 +39,6 @@ If you think you've found a bug, or something isn't behaving the way you think i
 ## Contributing
 
 We welcome contributions, Read our [Contribution Guidelines](https://github.com/si3nloong/sqlgen/blob/main/CONTRIBUTING.md) to learn more about contributing to **sqlgen**
-
 
 ## Big Thanks To
 

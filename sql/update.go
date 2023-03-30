@@ -7,9 +7,13 @@ import (
 
 // UpdateOne is to update single record using primary key.
 func UpdateOne[T KeyValuer[T]](ctx context.Context, db DB, v T) (sql.Result, error) {
+	pk, err := v.PK()
+	if err != nil {
+		return nil, err
+	}
+
 	stmt := AcquireStmt()
 	defer ReleaseStmt(stmt)
-
 	columns := v.Columns()
 	values := v.Values()
 	stmt.WriteQuery("UPDATE " + dialect.Wrap(v.Table()) + " SET ")
@@ -24,8 +28,7 @@ func UpdateOne[T KeyValuer[T]](ctx context.Context, db DB, v T) (sql.Result, err
 	// TODO: support `UUID()` etc
 	switch vi := any(v).(type) {
 	case Keyer:
-		pkName, pk := vi.PK()
-		stmt.WriteQuery(" WHERE "+dialect.Wrap(pkName)+" = "+dialect.Var(noOfCols+2)+";", pk)
+		stmt.WriteQuery(" WHERE "+dialect.Wrap(vi.PKName())+" = "+dialect.Var(noOfCols+2)+";", pk)
 	default:
 
 	}

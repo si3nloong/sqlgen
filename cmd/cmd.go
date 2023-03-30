@@ -1,9 +1,10 @@
 package cmd
 
 import (
-	"github.com/si3nloong/sqlgen/codegen/config"
 	"io"
 	"log"
+
+	"github.com/si3nloong/sqlgen/codegen/config"
 
 	"github.com/si3nloong/sqlgen/codegen"
 	"github.com/spf13/cobra"

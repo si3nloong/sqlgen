@@ -11,8 +11,10 @@ func TestConfig(t *testing.T) {
 	require.Equal(t, ".", cfg.SrcDir)
 	require.Equal(t, "mysql", cfg.Driver)
 	require.Equal(t, "sql", cfg.Tag)
-	require.True(t, *cfg.IncludeHeader)
 	require.Equal(t, "snake_case", cfg.NamingConvention)
+
+	require.True(t, cfg.IncludeHeader)
+	require.True(t, cfg.Strict)
 }
 
 func TestFindCfgInDir(t *testing.T) {

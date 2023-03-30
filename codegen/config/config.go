@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 
 	"github.com/si3nloong/sqlgen/internal/fileutil"
-	"github.com/si3nloong/sqlgen/internal/gosyntax"
 	"gopkg.in/yaml.v3"
 )
 
@@ -16,7 +15,8 @@ type Config struct {
 	Driver           string `yaml:"driver" survey:"driver"`
 	NamingConvention string `yaml:"namingConvention,omitempty" survey:"namingConvention"`
 	Tag              string `yaml:"tag,omitempty" survey:"tag"`
-	IncludeHeader    *bool  `yaml:"includeHeader"`
+	Strict           bool   `yaml:"strict" survey:"strict,omitempty"`
+	IncludeHeader    bool   `yaml:"includeHeader"`
 }
 
 func (c *Config) init() {
@@ -24,7 +24,8 @@ func (c *Config) init() {
 	c.NamingConvention = "snake_case"
 	c.Tag = "sql"
 	c.Driver = "mysql"
-	c.IncludeHeader = gosyntax.PtrOf(true)
+	c.Strict = true
+	c.IncludeHeader = true
 }
 
 func DefaultConfig() *Config {

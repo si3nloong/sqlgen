@@ -17,9 +17,12 @@ func (Car) Columns() []string {
 	return []string{"id", "no", "color", "manuc_date"}
 }
 
-func (v Car) Key() (driver.Value, error) {
-	return ((driver.Valuer)(v.ID)).Value()
+func (Car) PKName() string {
+	return "id"
+}
 
+func (v Car) PK() (driver.Value, error) {
+	return ((driver.Valuer)(v.ID)).Value()
 }
 
 func (v Car) Values() []any {
@@ -39,7 +42,11 @@ func (House) Columns() []string {
 	return []string{"id", "no"}
 }
 
-func (v House) Key() (driver.Value, error) {
+func (House) PKName() string {
+	return "id"
+}
+
+func (v House) PK() (driver.Value, error) {
 	return int64(v.ID), nil
 }
 
@@ -60,7 +67,11 @@ func (User) Columns() []string {
 	return []string{"id", "name", "age", "email"}
 }
 
-func (v User) Key() (driver.Value, error) {
+func (User) PKName() string {
+	return "id"
+}
+
+func (v User) PK() (driver.Value, error) {
 	return v.ID, nil
 }
 

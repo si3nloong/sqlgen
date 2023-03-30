@@ -23,7 +23,8 @@ var (
 			// The Pool's New function should generally only return pointer
 			// types, since a pointer can be put into the return interface
 			// value without an allocation:
-			return new(sqlStmt)
+			stmt := new(sqlStmt)
+			return stmt
 		},
 	}
 )
@@ -54,5 +55,5 @@ func AcquireStmt() SqlStmt {
 // ReleaseStmt
 func ReleaseStmt(stmt SqlStmt) {
 	stmt.Reset()
-	pool.Put(stmt.(*sqlStmt))
+	pool.Put(stmt)
 }

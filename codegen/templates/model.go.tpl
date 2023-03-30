@@ -11,10 +11,14 @@ func ({{ .GoName }}) Columns() []string {
 }
 
 {{ if ne .PK nil -}}
-func (v {{ .GoName }}) Key() (driver.Value, error) {
-	{{ if isValuer .PK -}}
+func ({{ .GoName }}) PKName() string {
+	return {{ quote .PK.Name }}
+}
+
+func (v {{ .GoName }}) PK() (driver.Value, error) {
+	{{- if isValuer .PK }}
     return ((driver.Valuer)(v.{{ .PK.GoName }})).Value()
-	{{ else -}}
+	{{- else }}
 	return {{ cast "v" .PK }}, nil
 	{{- end }}
 }
