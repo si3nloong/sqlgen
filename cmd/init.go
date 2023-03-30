@@ -52,7 +52,7 @@ func runInitCommand(cmd *cobra.Command, args []string) error {
 			{
 				Name: "tag",
 				Prompt: &survey.Input{
-					Message: "Your required tag for parsing",
+					Message: "What is your tag for parsing:",
 					Default: "sql",
 				},
 			},
