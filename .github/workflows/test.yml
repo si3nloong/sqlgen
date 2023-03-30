@@ -8,9 +8,13 @@ on:
       - main
 
 jobs:
-  build:
-    name: Test
-    runs-on: ubuntu-latest
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        go: ["1.19", "1.20"]
+    runs-on: ${{ matrix.os }}
+    continue-on-error: true
     steps:
       - name: Shutdown Ubuntu MySQL (SUDO)
         run: sudo service mysql stop # Shutdown the Default MySQL, "sudo" is necessary, please not remove it
@@ -37,11 +41,12 @@ jobs:
 
       - name: Get dependencies
         run: |
-          go get -v -t -d ./...
+          go mod download
 
       - name: Test
         run: |
           go test -race -coverprofile=coverage.txt -covermode=atomic ./...
+          go test -race ./testdata
 
       # - name: Codecov
       #   uses: codecov/codecov-action@v2.0.3

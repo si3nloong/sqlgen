@@ -10,7 +10,12 @@ import (
 )
 
 func TestAll(t *testing.T) {
-	if err := filepath.Walk(".", func(path string, info fs.FileInfo, err error) error {
+	// Re-generate all files
+	if err := filepath.Walk(".", func(path string, info fs.FileInfo, e error) error {
+		if e != nil {
+			return e
+		}
+
 		if info.IsDir() || filepath.Base(path) != "generated.go" {
 			return nil
 		}
@@ -25,7 +30,10 @@ func TestAll(t *testing.T) {
 			return err
 		}
 
-		require.Equal(t, expected, actual)
+		t.Run(path, func(t *testing.T) {
+			require.Equal(t, expected, actual)
+		})
+
 		return nil
 	}); err != nil {
 		t.Fatal(err)

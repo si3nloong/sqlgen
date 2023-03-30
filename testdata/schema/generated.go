@@ -50,7 +50,11 @@ func (C) Columns() []string {
 	return []string{"id"}
 }
 
-func (v C) Key() (driver.Value, error) {
+func (C) PKName() string {
+	return "id"
+}
+
+func (v C) PK() (driver.Value, error) {
 	return v.ID, nil
 }
 
@@ -71,9 +75,12 @@ func (D) Columns() []string {
 	return []string{"id"}
 }
 
-func (v D) Key() (driver.Value, error) {
-	return ((driver.Valuer)(v.ID)).Value()
+func (D) PKName() string {
+	return "id"
+}
 
+func (v D) PK() (driver.Value, error) {
+	return ((driver.Valuer)(v.ID)).Value()
 }
 
 func (v D) Values() []any {

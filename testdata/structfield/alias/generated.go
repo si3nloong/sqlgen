@@ -15,17 +15,13 @@ func (AliasStruct) Table() string {
 }
 
 func (AliasStruct) Columns() []string {
-	return []string{"id", "header", "text", "created", "null_str"}
-}
-
-func (v AliasStruct) Key() (driver.Value, error) {
-	return v.ID, nil
+	return []string{"header", "text", "created", "null_str"}
 }
 
 func (v AliasStruct) Values() []any {
-	return []any{v.ID, string(v.Header), string(v.Text), v.Created, (driver.Valuer)(v.NullStr)}
+	return []any{string(v.Header), string(v.Text), v.Created, (driver.Valuer)(v.NullStr)}
 }
 
 func (v *AliasStruct) Addrs() []any {
-	return []any{&v.ID, types.String(&v.Header), types.String(&v.Text), &v.Created, (sql.Scanner)(&v.NullStr)}
+	return []any{types.String(&v.Header), types.String(&v.Text), &v.Created, (sql.Scanner)(&v.NullStr)}
 }
