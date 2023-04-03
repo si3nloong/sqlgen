@@ -1,4 +1,6 @@
-# How to use `sqlgen`?
+# Getting Started
+
+> A comprehensive guide to use sqlgen.
 
 1.  Install sqlgen.
 
@@ -64,5 +66,3 @@
     ```
 
     The code generator will help you generate the necessary boilerplate codes for you to utilise with `github.com/si3nloong/sqlgen/sql` package later on.
-
-So what are these

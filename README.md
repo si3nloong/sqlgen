@@ -42,14 +42,9 @@
     sqlgen generate <source_file>
     ```
 
-4.  Initialise sqlgen config and generate models
-
-    ```console
-    sqlgen init
-    ```
-
 More help to get started:
 
+- [Getting started tutorial](/docs/README.md) - a comprehensive guide to help you get started
 - [Reference docs](/docs/API.md) for the APIs
 
 ## Reporting Issues
