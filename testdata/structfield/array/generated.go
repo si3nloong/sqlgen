@@ -19,11 +19,11 @@ func (Address) Columns() []string {
 }
 
 func (v Address) Values() []any {
-	return []any{string(v.Line1), (driver.Valuer)(v.Line2), string(v.City), int64(v.PostCode), string(v.StateCode), string(v.CountryCode)}
+	return []any{v.Line1, (driver.Valuer)(v.Line2), v.City, int64(v.PostCode), string(v.StateCode), string(v.CountryCode)}
 }
 
 func (v *Address) Addrs() []any {
-	return []any{types.String(&v.Line1), (sql.Scanner)(&v.Line2), types.String(&v.City), types.Integer(&v.PostCode), types.String(&v.StateCode), types.String(&v.CountryCode)}
+	return []any{&v.Line1, (sql.Scanner)(&v.Line2), &v.City, types.Integer(&v.PostCode), types.String(&v.StateCode), types.String(&v.CountryCode)}
 }
 
 // Implements `sql.Valuer` interface.
@@ -36,9 +36,9 @@ func (Customer) Columns() []string {
 }
 
 func (v Customer) Values() []any {
-	return []any{int64(v.ID), int64(v.Age), (driver.Valuer)(v.Name), (driver.Valuer)(v.Address), v.Nicknames, string(v.Status), v.JoinAt}
+	return []any{v.ID, int64(v.Age), (driver.Valuer)(v.Name), (driver.Valuer)(v.Address), v.Nicknames, v.Status, v.JoinAt}
 }
 
 func (v *Customer) Addrs() []any {
-	return []any{types.Integer(&v.ID), types.Integer(&v.Age), (sql.Scanner)(&v.Name), &v.Address, &v.Nicknames, types.String(&v.Status), &v.JoinAt}
+	return []any{&v.ID, types.Integer(&v.Age), (sql.Scanner)(&v.Name), &v.Address, &v.Nicknames, &v.Status, &v.JoinAt}
 }

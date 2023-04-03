@@ -5,9 +5,6 @@ go 1.20
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.6
 	github.com/fsnotify/fsnotify v1.6.0
-	github.com/go-sql-driver/mysql v1.7.0
-	github.com/lib/pq v1.10.7
-	github.com/mattn/go-sqlite3 v1.14.16
 	github.com/spf13/cobra v1.6.1
 	github.com/stretchr/testify v1.8.2
 	github.com/valyala/bytebufferpool v1.0.0

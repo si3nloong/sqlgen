@@ -25,7 +25,7 @@ func TestFindCfgInDir(t *testing.T) {
 	})
 
 	t.Run("found", func(t *testing.T) {
-		f, found := findCfgInDir("../../")
+		f, found := findCfgInDir("./testdata/")
 		require.True(t, found)
 		require.NotEmpty(t, f)
 	})

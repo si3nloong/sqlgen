@@ -79,11 +79,20 @@ func Generate(cfg *config.Config) error {
 		gen.rename = strfmt.ToSnakeCase
 	case "camelcase":
 		gen.rename = strfmt.ToCamelCase
+	case "-":
+		gen.rename = func(s string) string { return s }
 	}
 
-	cfg.SrcDir = filepath.Dir(cfg.SrcDir)
-	fset := token.NewFileSet()
+	info, err := os.Stat(cfg.SrcDir)
+	if err != nil {
+		return err
+	}
 
+	if !info.IsDir() {
+		cfg.SrcDir = filepath.Dir(cfg.SrcDir)
+	}
+
+	fset := token.NewFileSet()
 	pkgs, err := parser.ParseDir(fset, cfg.SrcDir, func(fi fs.FileInfo) bool {
 		filename := fi.Name()
 		if strings.HasSuffix(filename, "_test.go") || strings.HasSuffix(filename, "_gen.go") || filename == "generated.go" {
@@ -122,6 +131,7 @@ func parsePackage(fset *token.FileSet, pkg *ast.Package, cfg *config.Config) err
 			if !ok {
 				return true
 			}
+
 			// TODO: If it's an alias struct, we should skip right?
 			structType, ok := typeSpec.Type.(*ast.StructType)
 			if ok {
@@ -173,8 +183,8 @@ func parsePackage(fset *token.FileSet, pkg *ast.Package, cfg *config.Config) err
 				}
 
 				switch vi := gosyntax.ElemOf(f.Type).(type) {
+				// Check and process the embedded struct
 				case *ast.Ident:
-					// Check and process embedded struct
 					if f.Names == nil && vi.Obj != nil {
 						typeSpec, ok := vi.Obj.Decl.(*ast.TypeSpec)
 						if !ok {

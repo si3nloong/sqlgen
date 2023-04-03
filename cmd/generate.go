@@ -16,21 +16,23 @@ var (
 	genCmd = &cobra.Command{
 		Use:   "generate [source]",
 		Short: "Generate struct functions for target models.",
-		// Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var (
 				cfg = config.DefaultConfig()
 				err error
 			)
+
+			// If user passing config file, then we load from it.
 			if genOpts.config != "" {
 				cfg, err = config.LoadConfigFrom(genOpts.config)
 				if err != nil {
 					return err
 				}
-			}
-			if len(args) > 0 {
+			} else if len(args) > 0 {
+				// If user pass the source, then we refer to it.
 				cfg.SrcDir = args[0]
 			}
+
 			return codegen.Generate(cfg)
 		},
 	}

@@ -10,19 +10,39 @@
 ## What is sqlgen?
 
 - **sqlgen is based on a Schema first approach** — You get to Define your Model using the go struct.
-- **sqlgen prioritizes Type safety**
 - **sqlgen enables Codegen** — We generate the boring bits, so you can focus on building your app quickly.
-- **sqlgen prioritizes performance** — We use generics to avoid runtime reflection costs.
+- **sqlgen prioritizes performance** — We use generics to eliminate runtime reflection costs.
+- **sqlgen prioritizes Type safety**
+- **sqlgen eliminates Side Effects** - You will get expected results instead of side effects when mutate your models.
 
 ## Quick start
 
-1.  Install sqlgen
+1.  Install sqlgen.
 
     ```console
     go install github.com/si3nloong/sqlgen
     ```
 
-2.  Initialise sqlgen config and generate models
+2.  Define your struct.
+
+    ```go
+    import "time"
+
+    type User struct {
+        ID      int64
+        Name    string
+        Age     uint8
+        Created time.Time
+    }
+    ```
+
+3.  Generate the output files.
+
+    ```console
+    sqlgen generate <source_file>
+    ```
+
+4.  Initialise sqlgen config and generate models
 
     ```console
     sqlgen init

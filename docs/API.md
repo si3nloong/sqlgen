@@ -49,6 +49,7 @@ import (
 )
 
 // ...
+
 models, err := sql.SelectFrom[Model](context.TODO(), db)
 if err != nil {
     panic(err)
@@ -65,7 +66,7 @@ import (
 
 // ...
 
-models := []*Model{{}, {}}
+models := []*Model{&{}, &{}}
 result, err := sql.InsertInto(context.TODO(), db, models)
 if err != nil {
     panic(err)
@@ -84,7 +85,7 @@ import (
 
 // ...
 
-model : new(Model)
+model := Model{}
 model.Name = "new name"
 
 result, err := sql.UpdateOne(context.TODO(), db, model)
@@ -105,7 +106,7 @@ import (
 
 // ...
 
-model : new(Model)
+model := Model{}
 
 result, err := sql.DeleteOne(context.TODO(), db, model)
 if err != nil {

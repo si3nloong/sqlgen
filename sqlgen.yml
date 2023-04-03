@@ -1,5 +1,0 @@
-srcDir: ""
-namingConvention: camelCase
-tag: sql
-driver: postgres
-generateHeader: false
