@@ -79,7 +79,7 @@ func Generate(cfg *config.Config) error {
 		gen.rename = strfmt.ToSnakeCase
 	case "camelcase":
 		gen.rename = strfmt.ToCamelCase
-	case "-":
+	case "no":
 		gen.rename = func(s string) string { return s }
 	}
 
@@ -90,6 +90,9 @@ func Generate(cfg *config.Config) error {
 
 	if !info.IsDir() {
 		cfg.SrcDir = filepath.Dir(cfg.SrcDir)
+	}
+	if cfg.SrcDir == "." {
+		cfg.SrcDir = fileutil.Getpwd()
 	}
 
 	fset := token.NewFileSet()
@@ -109,7 +112,8 @@ func Generate(cfg *config.Config) error {
 	}
 
 	for k, pkg := range pkgs {
-		if err := parsePackage(fset, pkg, cfg); err != nil {
+		// packages.Load(&packages.Config{})
+		if err := gen.parsePackage(fset, pkg, cfg); err != nil {
 			return err
 		}
 		delete(pkgs, k)
@@ -118,7 +122,7 @@ func Generate(cfg *config.Config) error {
 	return nil
 }
 
-func parsePackage(fset *token.FileSet, pkg *ast.Package, cfg *config.Config) error {
+func (g *Generator) parsePackage(fset *token.FileSet, pkg *ast.Package, cfg *config.Config) error {
 	fileSrc := cfg.SrcDir
 	files := make([]*ast.File, 0)
 	structTypes := make(map[string]*ast.StructType)
@@ -143,10 +147,9 @@ func parsePackage(fset *token.FileSet, pkg *ast.Package, cfg *config.Config) err
 
 	conf := &types.Config{Importer: importer.Default()}
 	info := &types.Info{
-		Types:  make(map[ast.Expr]types.TypeAndValue),
-		Defs:   make(map[*ast.Ident]types.Object),
-		Uses:   make(map[*ast.Ident]types.Object),
-		Scopes: make(map[ast.Node]*types.Scope),
+		Types: make(map[ast.Expr]types.TypeAndValue),
+		Defs:  make(map[*ast.Ident]types.Object),
+		Uses:  make(map[*ast.Ident]types.Object),
 	}
 
 	typePkg, err := conf.Check(fileSrc, fset, files, info)
@@ -171,7 +174,7 @@ func parsePackage(fset *token.FileSet, pkg *ast.Package, cfg *config.Config) err
 			}
 
 			model.GoName = k
-			model.Name = strfmt.ToSnakeCase(k)
+			model.Name = g.rename(k)
 
 			for _, f := range s.Fields.List {
 				var tag reflect.StructTag
@@ -229,7 +232,7 @@ func parsePackage(fset *token.FileSet, pkg *ast.Package, cfg *config.Config) err
 					field.GoName = types.ExprString(n)
 					field.Type = t
 					if name == "" {
-						field.Name = strfmt.ToSnakeCase(field.GoName)
+						field.Name = g.rename(field.GoName)
 					} else {
 						field.Name = name
 					}

@@ -6,12 +6,12 @@ import (
 	"strings"
 )
 
-// SelectOneFrom is to find single record using primary key.
-func SelectOneFrom[T KeyValuer[T], Ptr KeyValueScanner[T]](ctx context.Context, db DB) (*T, error) {
-	var t T
+// FindOne is to find single record using primary key.
+func FindOne[T KeyValuer[T], Ptr KeyValueScanner[T]](ctx context.Context, db DB, v *T) error {
+	var t = (*v)
 	pk, err := t.PK()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	stmt := AcquireStmt()
@@ -21,21 +21,17 @@ func SelectOneFrom[T KeyValuer[T], Ptr KeyValueScanner[T]](ctx context.Context, 
 
 	rows, err := db.QueryContext(ctx, stmt.Query(), stmt.Args()...)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer rows.Close()
 
 	if !rows.Next() {
-		return nil, sql.ErrNoRows
+		return sql.ErrNoRows
 	}
 
 	var result = Ptr(&t).Addrs()
 	if err = rows.Scan(result...); err != nil {
-		return nil, err
+		return err
 	}
-	return &t, nil
-}
-
-func SelectFrom[T Scanner[T]](ctx context.Context, db DB) error {
 	return nil
 }
