@@ -17,29 +17,26 @@ func UpdateOne[T KeyValuer[T]](ctx context.Context, db DB, v T) (sql.Result, err
 		return db.ExecContext(ctx, query, args...)
 	}
 
-	pk, err := v.PK()
-	if err != nil {
-		return nil, err
-	}
+	return nil, nil
+	// idx, pk := v.PK()
+	// stmt := acquireString()
+	// defer releaseString(stmt)
+	// columns, values := v.Columns(), v.Values()
+	// stmt.WriteString("UPDATE " + dialect.Wrap(v.Table()) + " SET ")
+	// noOfCols := len(columns)
+	// for i := 0; i < noOfCols; i++ {
+	// 	if i > 0 {
+	// 		stmt.WriteByte(',')
+	// 	}
+	// 	stmt.WriteString(dialect.Wrap(columns[i]) + " = " + dialect.Var(i+1))
+	// }
 
-	stmt := acquireString()
-	defer releaseString(stmt)
-	columns, values := v.Columns(), v.Values()
-	stmt.WriteString("UPDATE " + dialect.Wrap(v.Table()) + " SET ")
-	noOfCols := len(columns)
-	for i := 0; i < noOfCols; i++ {
-		if i > 0 {
-			stmt.WriteByte(',')
-		}
-		stmt.WriteString(dialect.Wrap(columns[i]) + " = " + dialect.Var(i+1))
-	}
-
-	// TODO: support `UUID()` etc
-	switch vi := any(v).(type) {
-	case Keyer:
-		stmt.WriteString(" WHERE " + dialect.Wrap(vi.PKName()) + " = " + dialect.Var(noOfCols+1) + ";")
-		return db.ExecContext(ctx, stmt.String(), pk)
-	default:
-		return db.ExecContext(ctx, stmt.String(), values...)
-	}
+	// // TODO: support `UUID()` etc
+	// switch vi := any(v).(type) {
+	// case Keyer:
+	// 	stmt.WriteString(" WHERE " + dialect.Wrap(vi.PKName()) + " = " + dialect.Var(noOfCols+1) + ";")
+	// 	return db.ExecContext(ctx, stmt.String(), pk)
+	// default:
+	// 	return db.ExecContext(ctx, stmt.String(), values...)
+	// }
 }

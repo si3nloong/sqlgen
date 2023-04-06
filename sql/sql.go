@@ -3,7 +3,6 @@ package sql
 import (
 	"context"
 	"database/sql"
-	"database/sql/driver"
 )
 
 type Scanner[T any] interface {
@@ -22,9 +21,8 @@ type KeyValueScanner[T any] interface {
 }
 
 type Keyer interface {
-	// Primary key
-	PKName() string
-	PK() (driver.Value, error)
+	IsAutoIncr() bool
+	PK() (int, any)
 }
 
 type Valuer[T any] interface {

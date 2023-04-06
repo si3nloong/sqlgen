@@ -1,4 +1,22 @@
-package main_test
+package examples_test
+
+import (
+	"context"
+	"database/sql"
+	"errors"
+	"log"
+	"os"
+	"testing"
+
+	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/lib/pq"
+	_ "github.com/mattn/go-sqlite3"
+
+	"github.com/jaswdr/faker"
+	"github.com/si3nloong/sqlgen/examples/testdata/structfield/autopk"
+	sqlutil "github.com/si3nloong/sqlgen/sql"
+	"github.com/stretchr/testify/require"
+)
 
 // import (
 // 	"context"
@@ -12,80 +30,75 @@ package main_test
 // 	"github.com/stretchr/testify/require"
 // )
 
-// func openSqlConn(driver string) (*sql.DB, error) {
-// 	switch driver {
-// 	case "mysql":
-// 		return sql.Open("mysql", "user:password@/dbname")
-// 	// case "postgres":
-// 	case "sqlite":
-// 		os.Remove("./sqlite.db")
-// 		return sql.Open("sqlite3", "./sqlite.db")
-// 	default:
-// 		return nil, errors.New("unsupported sql driver")
-// 	}
-// }
+const createTableModel = `
+CREATE TABLE IF NOT EXISTS ` + "`model`" + ` (
+	name VARCHAR(100), 
+	f TINYINT, 
+	id INT PRIMARY KEY AUTO_INCREMENT,
+	n INT
+)
+`
 
-// func mustNot[T any](v T, err error) T {
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	return v
-// }
+func openSqlConn(driver string) (*sql.DB, error) {
+	switch driver {
+	case "mysql":
+		return sql.Open("mysql", "root:abcd1234@/sqlbench")
+	case "sqlite":
+		os.Remove("./sqlite.db")
+		return sql.Open("sqlite3", "./sqlite.db")
+	default:
+		return nil, errors.New("unsupported sql driver")
+	}
+}
 
-// func TestMain(m *testing.M) {
-// 	// openSqlConn("mysql")
-// 	conn := mustNot(openSqlConn("sqlite"))
-// 	defer conn.Close()
+func mustNot[T any](v T, err error) T {
+	if err != nil {
+		panic(err)
+	}
+	return v
+}
 
-// 	m.Run()
+var (
+	sqliteDB *sql.DB
+)
 
-// 	testing.Benchmark(func(b *testing.B) {
-// 		for i := 0; i < b.N; i++ {
+func TestMain(m *testing.M) {
+	// openSqlConn("mysql")
+	sqliteDB = mustNot(openSqlConn("mysql"))
+	defer sqliteDB.Close()
 
-// 		}
-// 	})
-// }
+	// mustNot(sqliteDB.Exec("DROP TABLE `model`;"))
+	mustNot(sqliteDB.Exec(createTableModel))
 
-// func TestDatabases(t *testing.T) {
-// 	conn := mustNot(openSqlConn("sqlite"))
-// 	defer conn.Close()
-// 	testSqlite(t, conn)
-// }
+	m.Run()
+}
 
-// func testSqlite(t *testing.T, conn *sql.DB) {
-// 	ctx := context.TODO()
-// 	inputs := []primitive.Primitive{}
-// 	result, err := sqlutil.InsertInto(ctx, conn, inputs)
-// 	require.NoError(t, err)
-// 	require.Equal(t, int64(0), mustNot(result.LastInsertId()))
-// 	require.Equal(t, int64(0), mustNot(result.RowsAffected()))
-// }
+func newPKModel() autopk.Model {
+	fake := faker.New()
+	return autopk.Model{
+		F:    true,
+		Name: autopk.LongText(fake.Person().Name()),
+		N:    fake.Int64Between(0, 100),
+	}
+}
 
-// func TestDeleteOne(t *testing.T) {
-// 	//type args[T sqlutil.KeyValuer[T]] struct {
-// 	//	ctx context.Context
-// 	//	db  sqlutil.DB
-// 	//	v   T
-// 	//}
-// 	//type testCase[T sqlutil.KeyValuer[T]] struct {
-// 	//	name    string
-// 	//	args    args[T]
-// 	//	want    sql.Result
-// 	//	wantErr bool
-// 	//}
-// 	//tests := []testCase[ /* TODO: Insert concrete types here */ ]{
-// 	//	// TODO: Add test cases.
-// 	//}
-// 	//for _, tt := range tests {
-// 	//	t.Run(tt.name, func(t *testing.T) {
-// 	//		got, err := sqlutil.DeleteOne(tt.args.ctx, tt.args.db, tt.args.v)
-// 	//		if (err != nil) != tt.wantErr {
-// 	//			t.Errorf("DeleteOne() error = %v, wantErr %v", err, tt.wantErr)
-// 	//			return
-// 	//		}
-// 	//		if !reflect.DeepEqual(got, tt.want) {
-// 	//			t.Errorf("DeleteOne() got = %v, want %v", got, tt.want)
-// 	//		}
-// 	//	})
-// 	//}
-// }
+func TestInsertInto(t *testing.T) {
+	ctx := context.TODO()
+	inputs := []autopk.Model{newPKModel(), newPKModel(), newPKModel()}
+	result, err := sqlutil.InsertInto(ctx, sqliteDB, inputs)
+	require.NoError(t, err)
+	// require.Equal(t, int64(0), mustNot(result.LastInsertId()))
+	require.Equal(t, int64(3), mustNot(result.RowsAffected()))
+}
+
+func TestDeleteOne(t *testing.T) {
+	ctx := context.TODO()
+	model := newPKModel()
+	_, err := sqlutil.InsertOne(ctx, sqliteDB, &model)
+	require.NoError(t, err)
+
+	models, err := sqlutil.SelectFrom[autopk.Model](ctx, sqliteDB)
+	require.NoError(t, err)
+
+	log.Println(models)
+}

@@ -6,7 +6,6 @@ import (
 	"go/importer"
 	"go/token"
 	"go/types"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -123,7 +122,6 @@ func Generate(cfg *config.Config) error {
 	}
 
 	for _, gopkg := range gopkgs {
-		log.Println(gopkg.ID)
 		if err := gen.parsePackage(gopkg.Fset, gopkg.Syntax, cfg); err != nil {
 			return err
 		}
@@ -178,6 +176,7 @@ func (g *Generator) parsePackage(fset *token.FileSet, files []*ast.File, cfg *co
 
 		for len(queue) > 0 {
 			s := queue[0]
+			index := uint(0)
 			if len(s.Fields.List) == 0 {
 				goto next
 			}
@@ -216,11 +215,10 @@ func (g *Generator) parsePackage(fset *token.FileSet, files []*ast.File, cfg *co
 				t := info.TypeOf(f.Type)
 				typ := t.String()
 				paths := strings.Split(tag.Get(cfg.Tag), ",")
-				tagOpts := make(map[string]string)
+				tagOpts := make([]string, 0, len(paths))
 				name := strings.TrimSpace(paths[0])
 				for _, v := range paths[1:] {
-					v = strings.ToLower(v)
-					tagOpts[v] = v
+					tagOpts = append(tagOpts, strings.ToLower(v))
 				}
 
 				if name == "-" {
@@ -240,16 +238,21 @@ func (g *Generator) parsePackage(fset *token.FileSet, files []*ast.File, cfg *co
 					field := new(templates.Field)
 					field.GoName = types.ExprString(n)
 					field.Type = t
+					field.Tag = tagOpts
+					field.Index = index
 					if name == "" {
 						field.Name = g.rename(field.GoName)
 					} else {
 						field.Name = name
 					}
 
-					if _, ok := tagOpts["pk"]; ok {
-						model.PK = field
+					index++
+					if slices.Index(tagOpts, "pk") < 0 {
+						model.Fields = append(model.Fields, field)
+						continue
 					}
 
+					model.PK = field
 					model.Fields = append(model.Fields, field)
 				}
 			}
@@ -271,6 +274,9 @@ func (g *Generator) parsePackage(fset *token.FileSet, files []*ast.File, cfg *co
 
 	tmpl := template.New("template.go").Funcs(template.FuncMap{
 		"quote": strconv.Quote,
+		"wrap": func(str string) string {
+			return "`" + str + "`"
+		},
 		"reserveImport": func(pkgPath string, aliases ...string) string {
 			name := filepath.Base(pkgPath)
 			if len(aliases) > 0 {
@@ -281,6 +287,14 @@ func (g *Generator) parsePackage(fset *token.FileSet, files []*ast.File, cfg *co
 		},
 		"isValuer": func(f *templates.Field) bool {
 			return IsImplemented(f.Type, sqlValuer)
+		},
+		"hasTag": func(f *templates.Field, tags ...string) bool {
+			for _, t := range tags {
+				if slices.Index(f.Tag, t) > -1 {
+					return true
+				}
+			}
+			return false
 		},
 		"cast": func(n string, f *templates.Field) string {
 			v := n + "." + f.GoName

@@ -1,4 +1,4 @@
-package tests_test
+package examples_test
 
 import (
 	"io/fs"

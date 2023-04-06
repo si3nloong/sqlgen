@@ -1,6 +1,8 @@
 package templates
 
-import "go/types"
+import (
+	"go/types"
+)
 
 type ModelTmplParams struct {
 	GoPkg string
@@ -26,4 +28,8 @@ type Field struct {
 	Name string
 
 	Type types.Type
+
+	Tag []string
+
+	Index uint
 }
