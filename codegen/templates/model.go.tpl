@@ -1,7 +1,6 @@
 {{- reserveImport "database/sql/driver" }}
 
 {{ range .Models -}}
-// Implements `sql.Valuer` interface.
 func ({{ .GoName }}) Table() string {
 	return {{ quote .Name }}
 }
