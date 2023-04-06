@@ -1,4 +1,4 @@
-module github.com/si3nloong/sqlgen/_examples
+module github.com/si3nloong/sqlgen/examples
 
 go 1.20
 

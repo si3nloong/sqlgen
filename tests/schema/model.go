@@ -3,10 +3,12 @@ package schema
 import (
 	"database/sql"
 	t "time"
+
+	s "github.com/si3nloong/sqlgen/sql/schema"
 )
 
 type A struct {
-	// schema.Name `sql:"Apple"`
+	s.Name    `sql:"Apple"`
 	ID        string
 	CreatedAt t.Time
 }

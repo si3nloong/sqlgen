@@ -2,6 +2,8 @@ package imported
 
 import (
 	"database/sql"
+
+	"github.com/google/uuid"
 )
 
 type Model struct {
@@ -12,4 +14,8 @@ type Model struct {
 	Int32 sql.NullInt32
 	Int64 sql.NullInt64
 	Time  sql.NullTime
+}
+
+type Some struct {
+	ID uuid.UUID
 }

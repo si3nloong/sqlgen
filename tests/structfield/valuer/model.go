@@ -1,8 +1,10 @@
 package valuer
 
+import "database/sql/driver"
+
 type anyType struct{}
 
-func (anyType) Value() (any, error) {
+func (anyType) Value() (driver.Value, error) {
 	return nil, nil
 }
 
