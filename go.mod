@@ -6,7 +6,7 @@ require (
 	github.com/AlecAivazis/survey/v2 v2.3.6
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/spf13/cobra v1.7.0
-	github.com/stretchr/testify v1.8.2
+	github.com/stretchr/testify v1.8.3
 	github.com/valyala/bytebufferpool v1.0.0
 	golang.org/x/exp v0.0.0-20230321023759-10a507213a29
 	golang.org/x/tools v0.9.0
