@@ -20,6 +20,8 @@ type Model struct {
 	PK *Field
 
 	Fields []*Field
+
+	Func []*Func
 }
 
 type Field struct {
@@ -32,4 +34,11 @@ type Field struct {
 	Tag []string
 
 	Index uint
+}
+
+type Func struct {
+	// Function name
+	Name    string
+	Recv    []string
+	Returns []string
 }

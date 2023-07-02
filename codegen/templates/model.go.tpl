@@ -1,14 +1,6 @@
 {{- reserveImport "database/sql/driver" }}
 
 {{ range .Models -}}
-const CreateTable{{ .GoName }} = `
--- Migration script for table {{ quote .Name }}
-CREATE TABLE `+ {{ quote (wrap .Name) }} +`IF NOT EXISTS (
-	{{ range $i, $f := .Fields }}
-	{{- $f.Name }} VARCHAR(20){{- if $i }}{{ ", " }}{{- end }}
-	{{- end }}
-)
-`
 
 func ({{ .GoName }}) Table() string {
 	return {{ quote .Name }}
