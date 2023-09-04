@@ -2,36 +2,23 @@ package sql
 
 import (
 	"context"
-	"database/sql"
-	"strings"
 )
 
 // FindOne is to find single record using primary key.
-func FindOne[T KeyValuer[T], Ptr KeyValueScanner[T]](ctx context.Context, db DB, v *T) error {
-	var t = (*v)
-	pk, err := t.PK()
-	if err != nil {
-		return err
-	}
+func FindOne[T KeyValuer[T], Ptr KeyValueScanner[T]](ctx context.Context, db DB, v Ptr) error {
+	pkName, _, pk := v.PK()
+	columns := v.Columns()
+	stmt := acquireString()
+	defer releaseString(stmt)
 
-	stmt := AcquireStmt()
-	defer ReleaseStmt(stmt)
-	stmt.WriteQuery("SELECT `" + strings.Join(t.Columns(), dialect.Wrap(",")) + "` FROM " + dialect.Wrap(t.Table()) + " ")
-	stmt.WriteQuery("WHERE "+dialect.Wrap(t.PKName())+" = "+dialect.Var(1)+" LIMIT 1;", pk)
-
-	rows, err := db.QueryContext(ctx, stmt.Query(), stmt.Args()...)
-	if err != nil {
-		return err
+	stmt.WriteString("SELECT ")
+	for i, col := range columns {
+		if i > 0 {
+			stmt.WriteByte(',')
+		}
+		stmt.WriteString(dialect.Wrap(col))
 	}
-	defer rows.Close()
+	stmt.WriteString(" FROM " + dialect.Wrap(v.Table()) + " WHERE " + dialect.Wrap(pkName) + " = " + dialect.Var(1) + " LIMIT 1;")
 
-	if !rows.Next() {
-		return sql.ErrNoRows
-	}
-
-	var result = Ptr(&t).Addrs()
-	if err = rows.Scan(result...); err != nil {
-		return err
-	}
-	return nil
+	return db.QueryRowContext(ctx, stmt.String(), pk).Scan(v.Addrs()...)
 }

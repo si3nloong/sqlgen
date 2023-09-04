@@ -7,14 +7,11 @@ import (
 
 // DeleteOne is to update single record using primary key.
 func DeleteOne[T KeyValuer[T]](ctx context.Context, db DB, v T) (sql.Result, error) {
-	pk, err := v.PK()
-	if err != nil {
-		return nil, err
-	}
+	pkName, _, pk := v.PK()
 
-	stmt := AcquireStmt()
-	defer ReleaseStmt(stmt)
-	stmt.WriteQuery("DELETE FROM "+dialect.Wrap(v.Table())+" WHERE "+dialect.Wrap(v.PKName())+" = "+dialect.Var(1)+";", pk)
+	stmt := acquireString()
+	defer releaseString(stmt)
+	stmt.WriteString("DELETE FROM " + dialect.Wrap(v.Table()) + " WHERE " + dialect.Wrap(pkName) + " = " + dialect.Var(1) + ";")
 
-	return db.ExecContext(ctx, stmt.Query(), stmt.Args()...)
+	return db.ExecContext(ctx, stmt.String(), pk)
 }

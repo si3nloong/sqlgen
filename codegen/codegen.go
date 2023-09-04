@@ -4,11 +4,10 @@ import (
 	"bytes"
 	"go/ast"
 	"go/importer"
-	"go/parser"
 	"go/token"
 	"go/types"
-	"io/fs"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"reflect"
 	"sort"
@@ -17,13 +16,13 @@ import (
 	"text/template"
 
 	"github.com/si3nloong/sqlgen/codegen/config"
-
 	"github.com/si3nloong/sqlgen/codegen/templates"
 	"github.com/si3nloong/sqlgen/internal/fileutil"
 	"github.com/si3nloong/sqlgen/internal/gosyntax"
 	"github.com/si3nloong/sqlgen/internal/strfmt"
 	"github.com/si3nloong/sqlgen/sql/schema"
 	"golang.org/x/exp/slices"
+	"golang.org/x/tools/go/packages"
 	"golang.org/x/tools/imports"
 )
 
@@ -88,48 +87,55 @@ func Generate(cfg *config.Config) error {
 		return err
 	}
 
+	dir := cfg.SrcDir
 	if !info.IsDir() {
-		cfg.SrcDir = filepath.Dir(cfg.SrcDir)
+		dir = filepath.Join(fileutil.Getpwd(), filepath.Dir(cfg.SrcDir))
 	}
 	if cfg.SrcDir == "." {
-		cfg.SrcDir = fileutil.Getpwd()
+		dir = fileutil.Getpwd()
 	}
 
 	fset := token.NewFileSet()
-	pkgs, err := parser.ParseDir(fset, cfg.SrcDir, func(fi fs.FileInfo) bool {
-		filename := fi.Name()
-		if strings.HasSuffix(filename, "_test.go") || strings.HasSuffix(filename, "_gen.go") || filename == "generated.go" {
-			return false
-		}
-		return true
-	}, parser.AllErrors)
+	// parser.ParseFile()
+	// pkgs, err := parser.ParseDir(fset, dir, func(fi fs.FileInfo) bool {
+	// 	filename := fi.Name()
+	// 	if strings.HasSuffix(filename, "_test.go") || strings.HasSuffix(filename, "_gen.go") || filename == "generated.go" {
+	// 		return false
+	// 	}
+	// 	return true
+	// }, parser.AllErrors)
+
+	gopkgs, err := packages.Load(&packages.Config{
+		Mode: packages.NeedName |
+			packages.NeedFiles |
+			packages.NeedImports |
+			packages.NeedTypes |
+			packages.NeedSyntax |
+			packages.NeedTypesInfo |
+			packages.NeedModule |
+			packages.NeedDeps,
+		// Dir:  ".",
+		Fset: fset,
+	}, dir)
 	if err != nil {
 		return err
 	}
 
-	if pkgs == nil {
-		return nil
-	}
-
-	for k, pkg := range pkgs {
-		// packages.Load(&packages.Config{})
-		if err := gen.parsePackage(fset, pkg, cfg); err != nil {
+	for _, gopkg := range gopkgs {
+		if err := gen.parsePackage(gopkg.Fset, gopkg.Syntax, cfg); err != nil {
 			return err
 		}
-		delete(pkgs, k)
 	}
 
 	return nil
 }
 
-func (g *Generator) parsePackage(fset *token.FileSet, pkg *ast.Package, cfg *config.Config) error {
-	fileSrc := cfg.SrcDir
-	files := make([]*ast.File, 0)
+func (g *Generator) parsePackage(fset *token.FileSet, files []*ast.File, cfg *config.Config) error {
+	fileSrc := filepath.Dir(cfg.SrcDir)
+	// files := make([]*ast.File, 0)
 	structTypes := make(map[string]*ast.StructType)
 
-	for _, f := range pkg.Files {
-		files = append(files, f)
-
+	for _, f := range files {
 		ast.Inspect(f, func(node ast.Node) bool {
 			typeSpec, ok := node.(*ast.TypeSpec)
 			if !ok {
@@ -145,14 +151,15 @@ func (g *Generator) parsePackage(fset *token.FileSet, pkg *ast.Package, cfg *con
 		})
 	}
 
-	conf := &types.Config{Importer: importer.Default()}
+	conf := &types.Config{Importer: importer.ForCompiler(fset, "source", nil)}
 	info := &types.Info{
-		Types: make(map[ast.Expr]types.TypeAndValue),
-		Defs:  make(map[*ast.Ident]types.Object),
-		Uses:  make(map[*ast.Ident]types.Object),
+		Scopes: make(map[ast.Node]*types.Scope),
+		Types:  make(map[ast.Expr]types.TypeAndValue),
+		Defs:   make(map[*ast.Ident]types.Object),
+		Uses:   make(map[*ast.Ident]types.Object),
 	}
 
-	typePkg, err := conf.Check(fileSrc, fset, files, info)
+	typePkg, err := conf.Check("", fset, files, info)
 	if err != nil {
 		return err
 	}
@@ -169,6 +176,7 @@ func (g *Generator) parsePackage(fset *token.FileSet, pkg *ast.Package, cfg *con
 
 		for len(queue) > 0 {
 			s := queue[0]
+			index := uint(0)
 			if len(s.Fields.List) == 0 {
 				goto next
 			}
@@ -207,11 +215,10 @@ func (g *Generator) parsePackage(fset *token.FileSet, pkg *ast.Package, cfg *con
 				t := info.TypeOf(f.Type)
 				typ := t.String()
 				paths := strings.Split(tag.Get(cfg.Tag), ",")
-				tagOpts := make(map[string]string)
+				tagOpts := make([]string, 0, len(paths))
 				name := strings.TrimSpace(paths[0])
 				for _, v := range paths[1:] {
-					v = strings.ToLower(v)
-					tagOpts[v] = v
+					tagOpts = append(tagOpts, strings.ToLower(v))
 				}
 
 				if name == "-" {
@@ -231,16 +238,21 @@ func (g *Generator) parsePackage(fset *token.FileSet, pkg *ast.Package, cfg *con
 					field := new(templates.Field)
 					field.GoName = types.ExprString(n)
 					field.Type = t
+					field.Tag = tagOpts
+					field.Index = index
 					if name == "" {
 						field.Name = g.rename(field.GoName)
 					} else {
 						field.Name = name
 					}
 
-					if _, ok := tagOpts["pk"]; ok {
-						model.PK = field
+					index++
+					if slices.Index(tagOpts, "pk") < 0 {
+						model.Fields = append(model.Fields, field)
+						continue
 					}
 
+					model.PK = field
 					model.Fields = append(model.Fields, field)
 				}
 			}
@@ -262,6 +274,9 @@ func (g *Generator) parsePackage(fset *token.FileSet, pkg *ast.Package, cfg *con
 
 	tmpl := template.New("template.go").Funcs(template.FuncMap{
 		"quote": strconv.Quote,
+		"wrap": func(str string) string {
+			return "`" + str + "`"
+		},
 		"reserveImport": func(pkgPath string, aliases ...string) string {
 			name := filepath.Base(pkgPath)
 			if len(aliases) > 0 {
@@ -272,6 +287,14 @@ func (g *Generator) parsePackage(fset *token.FileSet, pkg *ast.Package, cfg *con
 		},
 		"isValuer": func(f *templates.Field) bool {
 			return IsImplemented(f.Type, sqlValuer)
+		},
+		"hasTag": func(f *templates.Field, tags ...string) bool {
+			for _, t := range tags {
+				if slices.Index(f.Tag, t) > -1 {
+					return true
+				}
+			}
+			return false
 		},
 		"cast": func(n string, f *templates.Field) string {
 			v := n + "." + f.GoName
@@ -350,7 +373,15 @@ func (g *Generator) parsePackage(fset *token.FileSet, pkg *ast.Package, cfg *con
 	if err := os.WriteFile(fileDest, formatted, 0o644); err != nil {
 		return err
 	}
-	return nil
+
+	return g.goModTidy()
+}
+
+func (g *Generator) goModTidy() error {
+	tidyCmd := exec.Command("go", "mod", "tidy")
+	tidyCmd.Stdout = os.Stdout
+	tidyCmd.Stderr = os.Stdout
+	return tidyCmd.Run()
 }
 
 func IsImplemented(t types.Type, iv *types.Interface) bool {

@@ -7,7 +7,6 @@ import (
 	"database/sql/driver"
 )
 
-// Implements `sql.Valuer` interface.
 func (Model) Table() string {
 	return "model"
 }
@@ -22,4 +21,20 @@ func (v Model) Values() []any {
 
 func (v *Model) Addrs() []any {
 	return []any{(sql.Scanner)(&v.Str), (sql.Scanner)(&v.Bool), &v.Bytes, (sql.Scanner)(&v.Int16), (sql.Scanner)(&v.Int32), (sql.Scanner)(&v.Int64), (sql.Scanner)(&v.Time)}
+}
+
+func (Some) Table() string {
+	return "some"
+}
+
+func (Some) Columns() []string {
+	return []string{"id"}
+}
+
+func (v Some) Values() []any {
+	return []any{(driver.Valuer)(v.ID)}
+}
+
+func (v *Some) Addrs() []any {
+	return []any{(sql.Scanner)(&v.ID)}
 }

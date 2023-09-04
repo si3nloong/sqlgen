@@ -3,7 +3,6 @@ package sql
 import (
 	"context"
 	"database/sql"
-	"database/sql/driver"
 )
 
 type Scanner[T any] interface {
@@ -22,9 +21,8 @@ type KeyValueScanner[T any] interface {
 }
 
 type Keyer interface {
-	// Primary key
-	PKName() string
-	PK() (driver.Value, error)
+	IsAutoIncr() bool
+	PK() (string, int, any)
 }
 
 type Valuer[T any] interface {
@@ -36,4 +34,5 @@ type Valuer[T any] interface {
 type DB interface {
 	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
 	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
+	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
 }

@@ -5,33 +5,38 @@ import (
 	"database/sql"
 )
 
+type SingleUpdater interface {
+	UpdateQuery() (string, []any)
+}
+
 // UpdateOne is to update single record using primary key.
 func UpdateOne[T KeyValuer[T]](ctx context.Context, db DB, v T) (sql.Result, error) {
-	pk, err := v.PK()
-	if err != nil {
-		return nil, err
-	}
-
-	stmt := AcquireStmt()
-	defer ReleaseStmt(stmt)
-	columns := v.Columns()
-	values := v.Values()
-	stmt.WriteQuery("UPDATE " + dialect.Wrap(v.Table()) + " SET ")
-	noOfCols := len(columns)
-	for i := 0; i < noOfCols; i++ {
-		if i > 0 {
-			stmt.WriteQuery(",")
-		}
-		stmt.WriteQuery(dialect.Wrap(columns[i])+" = "+dialect.Var(i+1), values[i])
-	}
-
-	// TODO: support `UUID()` etc
 	switch vi := any(v).(type) {
-	case Keyer:
-		stmt.WriteQuery(" WHERE "+dialect.Wrap(vi.PKName())+" = "+dialect.Var(noOfCols+2)+";", pk)
-	default:
-
+	case SingleUpdater:
+		query, args := vi.UpdateQuery()
+		return db.ExecContext(ctx, query, args...)
 	}
 
-	return db.ExecContext(ctx, stmt.Query(), stmt.Args()...)
+	return nil, nil
+	// idx, pk := v.PK()
+	// stmt := acquireString()
+	// defer releaseString(stmt)
+	// columns, values := v.Columns(), v.Values()
+	// stmt.WriteString("UPDATE " + dialect.Wrap(v.Table()) + " SET ")
+	// noOfCols := len(columns)
+	// for i := 0; i < noOfCols; i++ {
+	// 	if i > 0 {
+	// 		stmt.WriteByte(',')
+	// 	}
+	// 	stmt.WriteString(dialect.Wrap(columns[i]) + " = " + dialect.Var(i+1))
+	// }
+
+	// // TODO: support `UUID()` etc
+	// switch vi := any(v).(type) {
+	// case Keyer:
+	// 	stmt.WriteString(" WHERE " + dialect.Wrap(vi.PKName()) + " = " + dialect.Var(noOfCols+1) + ";")
+	// 	return db.ExecContext(ctx, stmt.String(), pk)
+	// default:
+	// 	return db.ExecContext(ctx, stmt.String(), values...)
+	// }
 }

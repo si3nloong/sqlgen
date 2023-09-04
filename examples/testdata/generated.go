@@ -7,9 +7,8 @@ import (
 	"database/sql/driver"
 )
 
-// Implements `sql.Valuer` interface.
 func (A) Table() string {
-	return "a"
+	return "Apple"
 }
 
 func (A) Columns() []string {
@@ -24,7 +23,6 @@ func (v *A) Addrs() []any {
 	return []any{&v.ID, &v.CreatedAt}
 }
 
-// Implements `sql.Valuer` interface.
 func (B) Table() string {
 	return "b"
 }
@@ -41,7 +39,6 @@ func (v *B) Addrs() []any {
 	return []any{&v.ID, &v.CreatedAt}
 }
 
-// Implements `sql.Valuer` interface.
 func (C) Table() string {
 	return "c"
 }
@@ -50,12 +47,12 @@ func (C) Columns() []string {
 	return []string{"id"}
 }
 
-func (C) PKName() string {
-	return "id"
+func (C) IsAutoIncr() bool {
+	return false
 }
 
-func (v C) PK() (driver.Value, error) {
-	return v.ID, nil
+func (v C) PK() (int, any) {
+	return 0, v.ID
 }
 
 func (v C) Values() []any {
@@ -66,7 +63,6 @@ func (v *C) Addrs() []any {
 	return []any{&v.ID}
 }
 
-// Implements `sql.Valuer` interface.
 func (D) Table() string {
 	return "d"
 }
@@ -75,12 +71,12 @@ func (D) Columns() []string {
 	return []string{"id"}
 }
 
-func (D) PKName() string {
-	return "id"
+func (D) IsAutoIncr() bool {
+	return false
 }
 
-func (v D) PK() (driver.Value, error) {
-	return ((driver.Valuer)(v.ID)).Value()
+func (v D) PK() (int, any) {
+	return 0, ((driver.Valuer)(v.ID))
 }
 
 func (v D) Values() []any {
