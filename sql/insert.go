@@ -18,7 +18,7 @@ func InsertOne[T Valuer[T], Ptr interface {
 	switch vi := any(v).(type) {
 	case Keyer:
 		if vi.IsAutoIncr() {
-			idx, _ := vi.PK()
+			_, idx, _ := vi.PK()
 			columns = append(columns[:idx], columns[idx+1:]...)
 			args = append(args[:idx], args[idx+1:]...)
 		}
@@ -69,7 +69,7 @@ func InsertInto[T Valuer[T]](ctx context.Context, db DB, values []T) (sql.Result
 	switch vi := any(model).(type) {
 	case Keyer:
 		if vi.IsAutoIncr() {
-			idx, _ = vi.PK()
+			_, idx, _ = vi.PK()
 			columns = append(columns[:idx], columns[idx+1:]...)
 		}
 	}

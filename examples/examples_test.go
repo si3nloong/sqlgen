@@ -67,6 +67,9 @@ func TestMain(m *testing.M) {
 	sqliteDB = mustNot(openSqlConn("mysql"))
 	defer sqliteDB.Close()
 
+	m1 := autopk.Model{}
+	sqlutil.FindOne(nil, nil, &m1)
+
 	// mustNot(sqliteDB.Exec("DROP TABLE `model`;"))
 	mustNot(sqliteDB.Exec(createTableModel))
 

@@ -22,7 +22,7 @@ type KeyValueScanner[T any] interface {
 
 type Keyer interface {
 	IsAutoIncr() bool
-	PK() (int, any)
+	PK() (string, int, any)
 }
 
 type Valuer[T any] interface {
