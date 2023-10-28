@@ -1,19 +1,31 @@
 package alias
 
 import (
+	"database/sql"
 	s "database/sql"
-	t "time"
 )
 
-type customStr string
-
-type aliasStr = customStr
-
-type DT = t.Time
-
 type AliasStruct struct {
+	// sql.NullString
+	a, B, c float64
+	Empty
+	pk
+	// PtrHeader *aliasStr
 	Header  aliasStr
+	Raw     sql.RawBytes
 	Text    customStr
-	Created DT
 	NullStr s.NullString
+	model
+	private string
+}
+
+type Empty struct{}
+
+type pk struct {
+	ID int64 `sql:"Id,primary_key"`
+}
+
+type model struct {
+	Created DT
+	Updated DT
 }

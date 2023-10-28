@@ -8,15 +8,24 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+type sqlDriver string
+
+const (
+	MySQL    sqlDriver = "mysql"
+	Postgres sqlDriver = "postgres"
+	Sqlite   sqlDriver = "sqlite"
+)
+
 var cfgFilenames = []string{".sqlgen.yml", ".sqlgen.yaml", "sqlgen.yml", "sqlgen.yaml"}
 
 type Config struct {
-	SrcDir           string `yaml:"srcDir"`
-	Driver           string `yaml:"driver" survey:"driver"`
-	NamingConvention string `yaml:"namingConvention,omitempty" survey:"namingConvention"`
-	Tag              string `yaml:"tag,omitempty" survey:"tag"`
-	Strict           bool   `yaml:"strict" survey:"strict,omitempty"`
-	IncludeHeader    bool   `yaml:"includeHeader"`
+	Source           []string  `yaml:"src"`
+	SrcDir           string    `yaml:"srcDir"`
+	Driver           sqlDriver `yaml:"driver" survey:"driver"`
+	NamingConvention string    `yaml:"namingConvention,omitempty" survey:"namingConvention"`
+	Tag              string    `yaml:"tag,omitempty" survey:"tag"`
+	Strict           bool      `yaml:"strict" survey:"strict,omitempty"`
+	IncludeHeader    bool      `yaml:"includeHeader"`
 }
 
 func (c *Config) init() {
@@ -30,6 +39,7 @@ func (c *Config) init() {
 
 func LoadConfigFrom(src string) (*Config, error) {
 	cfg := new(Config)
+	cfg.init()
 	if err := decodeToFile(src, cfg); err != nil {
 		return nil, err
 	}

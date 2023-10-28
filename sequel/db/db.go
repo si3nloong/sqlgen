@@ -1,11 +1,15 @@
-package sql
+package db
 
-import "context"
+import (
+	"context"
+
+	"github.com/si3nloong/sqlgen/sequel"
+)
 
 // Query
 func Query[T any, Ptr interface{ *T }](
 	ctx context.Context,
-	db DB,
+	db sequel.DB,
 	query string,
 	args []any,
 	getAddrs func(Ptr) []any,
@@ -27,9 +31,9 @@ func Query[T any, Ptr interface{ *T }](
 	return results, nil
 }
 
-func QueryScan[T any, Ptr Scanner[T]](
+func QueryScan[T any, Ptr sequel.Scanner[T]](
 	ctx context.Context,
-	db DB,
+	db sequel.DB,
 	query string,
 	args ...any,
 ) ([]T, error) {
