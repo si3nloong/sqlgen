@@ -10,6 +10,8 @@ type ModelTmplParams struct {
 }
 
 type PK struct {
+	IsAutoIncr bool
+
 	Field *Field
 }
 
@@ -39,6 +41,7 @@ type Field struct {
 
 	Type types.Type
 
-	Tag   []string
-	Index int
+	IsBinary bool
+	Size     int
+	Index    int
 }

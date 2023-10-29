@@ -22,6 +22,8 @@ func SetDialect(driver string) {
 
 type mysql struct{}
 
+var _ Dialect = (*mysql)(nil)
+
 func (*mysql) Var(n int) string {
 	return "?"
 }
@@ -31,6 +33,8 @@ func (*mysql) Wrap(v string) string {
 }
 
 type postgres struct{}
+
+var _ Dialect = (*postgres)(nil)
 
 func (*postgres) Var(n int) string {
 	return "$" + strconv.Itoa(n)

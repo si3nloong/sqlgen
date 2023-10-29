@@ -2,10 +2,10 @@
 {{- reserveImport "github.com/si3nloong/sqlgen/sequel" }}
 {{ range .Models }}
 func ({{ .GoName }}) CreateTableStmt() string {
-	return ""
+	return {{ quote (createTable .) }}
 }
 func ({{ .GoName }}) AlterTableStmt() string {
-	return ""
+	return {{ quote (alterTable .) }}
 }
 {{ if .HasTableName -}}
 func ({{ .GoName }}) TableName() string {
@@ -19,7 +19,7 @@ func ({{ .GoName }}) Columns() []string {
 {{- end }}
 {{ if ne .PK nil -}}
 func (v {{ .GoName }}) IsAutoIncr() bool {
-	return false
+	return {{ .PK.IsAutoIncr }}
 }
 func (v {{ .GoName }}) PK() (columnName string, pos int, value driver.Value) {
 	return {{ quote .PK.Field.ColumnName }}, {{ .PK.Field.Index }}, {{ castAs "v" .PK.Field }}

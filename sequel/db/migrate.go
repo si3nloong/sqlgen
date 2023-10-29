@@ -2,28 +2,31 @@ package db
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/si3nloong/sqlgen/sequel"
 )
 
-func Migrate[T sequel.Migrator](ctx context.Context, db sequel.DB) (sql.Result, error) {
-	var v T
-	stmt := acquireString()
+func Migrate[T sequel.Migrator](ctx context.Context, db sequel.DB) error {
+	var (
+		stmt        = acquireString()
+		v           T
+		table       string
+		tableExists bool
+	)
 	defer releaseString(stmt)
-	// TODO: support alter table as well
-	// SELECT *
-	// FROM information_schema.tables
-	// WHERE table_schema = 'yourdb'
-	// 	AND table_name = 'testtable'
-	// LIMIT 1;
-	// log.Println(stmt.String())
-	result, err := db.ExecContext(ctx, v.CreateTableStmt())
-	if err != nil {
-		return nil, err
+	if err := db.QueryRowContext(ctx, `SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_NAME = ? LIMIT 1;`, v.TableName()).Scan(&table); err != nil {
+		tableExists = false
+	} else {
+		tableExists = true
 	}
-	if affected, _ := result.RowsAffected(); affected > 0 {
-		return result, nil
+	if tableExists {
+		if _, err := db.ExecContext(ctx, v.AlterTableStmt()); err != nil {
+			return err
+		}
+		return nil
 	}
-	return db.ExecContext(ctx, v.AlterTableStmt())
+	if _, err := db.ExecContext(ctx, v.CreateTableStmt()); err != nil {
+		return err
+	}
+	return nil
 }

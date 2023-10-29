@@ -21,6 +21,5 @@ func FindOne[T sequel.KeyValuer[T], Ptr sequel.KeyValueScanner[T]](ctx context.C
 		stmt.WriteString(columns[i])
 	}
 	stmt.WriteString(" FROM " + v.TableName() + " WHERE " + pkName + " = ? LIMIT 1;")
-
 	return db.QueryRowContext(ctx, stmt.String(), pk).Scan(v.Addrs()...)
 }

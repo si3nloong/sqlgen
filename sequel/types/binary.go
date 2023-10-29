@@ -3,6 +3,7 @@ package types
 import (
 	"database/sql/driver"
 	"encoding"
+	"fmt"
 )
 
 type binaryMarshaler[T interface {
@@ -33,4 +34,13 @@ func BinaryUnmarshaler[T any, Ptr interface {
 	encoding.BinaryUnmarshaler
 }](addr Ptr) binaryUnmarshaler[T, Ptr] {
 	return binaryUnmarshaler[T, Ptr]{v: addr}
+}
+
+func (b binaryUnmarshaler[T, Ptr]) Scan(v any) error {
+	switch vi := v.(type) {
+	case []byte:
+		return b.v.UnmarshalBinary(vi)
+	default:
+		return fmt.Errorf(`sqlgen: binary must be []byte`)
+	}
 }

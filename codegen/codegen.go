@@ -18,6 +18,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/samber/lo"
 	"github.com/si3nloong/sqlgen/codegen/config"
 	"github.com/si3nloong/sqlgen/codegen/templates"
 	"github.com/si3nloong/sqlgen/internal/fileutil"
@@ -28,8 +29,18 @@ import (
 	"golang.org/x/exp/slices"
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/tools/imports"
+)
 
-	"github.com/samber/lo"
+type tagOption string
+
+const (
+	TagOptionAutoIncrement tagOption = "auto_increment"
+	TagOptionBinary        tagOption = "binary"
+	TagOptionPKAlias       tagOption = "pk"
+	TagOptionPK            tagOption = "primary_key"
+	TagOptionSize          tagOption = "size"
+	TagOptionDataType      tagOption = "datatype"
+	TagOptionUnique        tagOption = "unique"
 )
 
 var (
@@ -49,11 +60,6 @@ type Generator struct {
 	rename RenameFunc
 }
 
-type structNode struct {
-	name   string
-	fields []*structField
-}
-
 type structField struct {
 	id       string
 	name     string
@@ -61,6 +67,18 @@ type structField struct {
 	t        ast.Expr
 	exported bool
 	tag      reflect.StructTag
+}
+
+type tagOpts map[string]string
+
+func (t tagOpts) Lookup(key tagOption, keys ...tagOption) (v string, ok bool) {
+	keys = append(keys, key)
+	for k, v := range t {
+		if lo.IndexOf(keys, tagOption(k)) >= 0 {
+			return v, true
+		}
+	}
+	return
 }
 
 func Generate(cfg *config.Config) error {
@@ -100,8 +118,6 @@ func Generate(cfg *config.Config) error {
 		return nil
 	})
 
-	dir = "./examples/testdata/structfield/alias"
-	dir = "../sql-pk-benchmark"
 	filename := path.Join(dir, "generated.go")
 	os.Remove(filename) // remove "generated.go"
 
@@ -117,22 +133,11 @@ func Generate(cfg *config.Config) error {
 		return nil
 	}
 
-	pkg := pkgs[0]
-	impPkgs := new(Package)
-
-	// pkgs, err := parser.ParseDir(fset, dir, func(fi fs.FileInfo) bool {
-	// 	ext := filepath.Ext(fi.Name())
-	// 	if ext != ".go" || strings.Contains(fi.Name(), "_test.go") {
-	// 		return false
-	// 	}
-	// 	log.Println("File ->", fi.Name())
-	// 	return true
-	// }, parser.AllErrors)
-	// if err != nil {
-	// 	return err
-	// }
-
-	structTypes := make(map[*ast.TypeSpec]*ast.StructType)
+	var (
+		pkg         = pkgs[0]
+		impPkgs     = new(Package)
+		structTypes = make(map[*ast.TypeSpec]*ast.StructType)
+	)
 
 	for _, f := range pkg.Syntax {
 		// ast.Print(pkg.Fset, f)
@@ -157,9 +162,9 @@ func Generate(cfg *config.Config) error {
 		})
 	}
 
-	log.Println("debug =====================>")
-
-	structs := make(map[*ast.Ident][]*structField, 0)
+	var (
+		structs = make(map[*ast.Ident][]*structField, 0)
+	)
 
 	// Loop every struct and map the fields
 	for k, s := range structTypes {
@@ -205,6 +210,7 @@ func Generate(cfg *config.Config) error {
 
 					// Imported struct
 					case *ast.SelectorExpr:
+						log.Println(vi)
 					}
 				}
 
@@ -270,38 +276,51 @@ func Generate(cfg *config.Config) error {
 
 			tf := &templates.Field{}
 			tf.ColumnName = rename(f.name)
-
-			// log.Println("debug ->", pkg.TypesInfo.Types[f.t])
-			// ast.Print(pkg.Fset, pkg.TypesInfo.Types[f.t])
 			tf.Type = pkg.TypesInfo.TypeOf(f.t)
-			log.Println("Codec =========================>")
-			log.Println(UnderlyingType(tf.Type))
-			// log.Println("Underlying ->", tf.Type.Underlying())
-			// log.Println("Underlying2 ->", UnderlyingType(tf.Type))
+			tag := make(tagOpts)
 
 			if tv != "" {
-				paths := strings.Split(tv, ",")
-				name := strings.TrimSpace(paths[0])
+				tags := strings.Split(tv, ",")
+				name := strings.TrimSpace(tags[0])
 				if name == "-" {
 					continue
 				} else if name != "" {
 					tf.ColumnName = name
 				}
-				tf.Tag = paths[1:]
+				for _, v := range tags[1:] {
+					kv := strings.SplitN(v, ":", 2)
+					k := strings.TrimSpace(strings.ToLower(kv[0]))
+					if len(kv) > 1 {
+						tag[k] = kv[1]
+					} else {
+						tag[k] = ""
+					}
+				}
 			}
 
 			tf.GoName = f.name
 			tf.GoPath = f.path
 			tf.Index = index
+			_, tf.IsBinary = tag.Lookup(TagOptionBinary)
+			if v, ok := tag.Lookup(TagOptionSize); ok {
+				tf.Size, _ = strconv.Atoi(v)
+			}
 			index++
 
-			if lo.IndexOf(tf.Tag, "pk") >= 0 {
-				model.PK = &templates.PK{Field: tf}
+			if _, ok := tag.Lookup(TagOptionPK, TagOptionPKAlias, TagOptionAutoIncrement); ok {
+				if model.PK != nil {
+					return fmt.Errorf(`sqlgen: a model can only allow one primary key, else it will get overriden`)
+				}
+
+				// Check auto increment
+				pk := templates.PK{Field: tf}
+				_, pk.IsAutoIncr = tag.Lookup(TagOptionAutoIncrement)
+				model.PK = &pk
 			}
 
 			// Check uniqueness of the column
 			if _, ok := nameMap[tf.ColumnName]; ok {
-				return fmt.Errorf("duplicate key %s in struct", tf.ColumnName)
+				return fmt.Errorf("sqlgen: duplicate key %s in struct", tf.ColumnName)
 			}
 			nameMap[tf.ColumnName] = struct{}{}
 
@@ -310,67 +329,16 @@ func Generate(cfg *config.Config) error {
 		}
 
 		clear(nameMap)
-
 		params.Models = append(params.Models, &model)
 	}
 
-	tmpl := template.New("generateInterface").Funcs(template.FuncMap{
-		"quote": strconv.Quote,
-		"columnDefinition": func(f *templates.Field) string {
-			rawSql := f.ColumnName
-			log.Println("T ->", f.Type.String())
-			switch f.Type.String() {
-			case "string":
-				rawSql += " VARCHAR(255)"
-			case "int64":
-				rawSql += " BIGINT"
-			case "time.Time":
-				rawSql += " DATETIME"
-			default:
-				if lo.IndexOf(f.Tag, "uuid") >= 0 {
-					rawSql += " BINARY(16)"
-				} else {
-					rawSql += " VARCHAR(36)"
-				}
-			}
-
-			switch f.Type.(type) {
-			case *types.Pointer:
-			default:
-				rawSql += " NOT NULL"
-			}
-			return Expr(`github.com/si3nloong/sqlgen/sequel.ColumnSchema(%q, %q)`).Format(impPkgs, f.ColumnName, rawSql)
-		},
-		"reserveImport": func(pkgPath string, aliases ...string) string {
-			name := filepath.Base(pkgPath)
-			if len(aliases) > 0 {
-				name = aliases[0]
-			}
-			impPkgs.Import(types.NewPackage(pkgPath, name))
-			return ""
-		},
-		"castAs": func(n string, f *templates.Field) string {
-			v := n + "." + f.GoPath
-			if lo.IndexOf(f.Tag, "binary") >= 0 {
-				return Expr(`github.com/si3nloong/sqlgen/sequel/types.BinaryMarshaler(%s)`).Format(impPkgs, v)
-			} else if _, wrong := types.MissingMethod(f.Type, sqlValuer, true); wrong {
-				return Expr(`(database/sql/driver.Valuer)(%s)`).Format(impPkgs, v)
-			} else if typ, ok := UnderlyingType(f.Type); ok {
-				return typ.Encoder.Format(impPkgs, v)
-			}
-			return v
-		},
-		"addrOf": func(n string, f *templates.Field) string {
-			v := "&" + n + "." + f.GoPath
-			if lo.IndexOf(f.Tag, "binary") >= 0 {
-				return Expr(`github.com/si3nloong/sqlgen/sequel/types.BinaryUnmarshaler(%s)`).Format(impPkgs, v)
-			} else if types.Implements(types.NewPointer(f.Type), sqlScanner) {
-				return Expr(`(database/sql.Scanner)(%s)`).Format(impPkgs, v)
-			} else if typ, ok := UnderlyingType(f.Type); ok {
-				return typ.Decoder.Format(impPkgs, v)
-			}
-			return v
-		},
+	tmpl := template.New(dir).Funcs(template.FuncMap{
+		"quote":         strconv.Quote,
+		"createTable":   createTableStmt,
+		"alterTable":    alterTableStmt,
+		"reserveImport": reserveImport(impPkgs),
+		"castAs":        castAs(impPkgs),
+		"addrOf":        addrOf(impPkgs),
 	})
 
 	tmpFile := filepath.Join(fileutil.CurDir(), "templates/model.gtpl")
@@ -526,7 +494,7 @@ func (g *Generator) parsePackage(fset *token.FileSet, files []*ast.File, cfg *co
 					field := new(templates.Field)
 					field.GoName = types.ExprString(n)
 					field.Type = t
-					field.Tag = tagOpts
+					// field.Tag = tagOpts
 					if name == "" {
 						field.GoName = g.rename(field.GoName)
 					} else {
@@ -574,14 +542,6 @@ func (g *Generator) parsePackage(fset *token.FileSet, files []*ast.File, cfg *co
 		},
 		"isValuer": func(f *templates.Field) bool {
 			return IsImplemented(f.Type, sqlValuer)
-		},
-		"hasTag": func(f *templates.Field, tags ...string) bool {
-			for _, t := range tags {
-				if slices.Index(f.Tag, t) > -1 {
-					return true
-				}
-			}
-			return false
 		},
 		"cast": func(n string, f *templates.Field) string {
 			v := n + "." + f.GoName

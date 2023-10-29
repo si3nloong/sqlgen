@@ -1,4 +1,4 @@
-package sql
+package db
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 )
 
 func TestEmpty(t *testing.T) {
-	result := new(emptyResult)
+	result := new(EmptyResult)
 
 	n, err := result.LastInsertId()
 	require.NoError(t, err)

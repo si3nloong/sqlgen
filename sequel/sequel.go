@@ -54,6 +54,7 @@ type Dialect interface {
 }
 
 type Migrator interface {
+	Tabler
 	CreateTableStmt() string
 	AlterTableStmt() string
 }
