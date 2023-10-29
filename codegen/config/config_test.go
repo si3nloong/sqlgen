@@ -9,7 +9,7 @@ import (
 func TestConfig(t *testing.T) {
 	cfg := DefaultConfig()
 	require.Equal(t, ".", cfg.SrcDir)
-	require.Equal(t, "mysql", cfg.Driver)
+	require.Equal(t, MySQL, cfg.Driver)
 	require.Equal(t, "sql", cfg.Tag)
 	require.Equal(t, "snake_case", cfg.NamingConvention)
 
