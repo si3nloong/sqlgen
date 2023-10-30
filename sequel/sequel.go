@@ -27,7 +27,7 @@ type KeyValueScanner[T any] interface {
 
 type Keyer interface {
 	IsAutoIncr() bool
-	PK() (string, int, driver.Value)
+	PK() (columnName string, pos int, value driver.Value)
 }
 
 type Tabler interface {
