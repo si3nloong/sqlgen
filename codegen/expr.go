@@ -22,12 +22,10 @@ type Expr string
 
 func (e Expr) Format(pkg *Package, args ...any) string {
 	str := string(e)
-	matches := pkgRegexp.FindAllStringSubmatch(str, -1)
+	matches := pkgRegexp.FindStringSubmatch(str)
 	if len(matches) > 0 {
-		for _, m := range matches {
-			p, _ := pkg.Import(types.NewPackage(m[1], filepath.Base(m[1])))
-			str = strings.Replace(str, m[1], p.Name(), -1)
-		}
+		p, _ := pkg.Import(types.NewPackage(matches[1], filepath.Base(matches[1])))
+		str = strings.Replace(str, matches[1], p.Name(), -1)
 	}
 	return fmt.Sprintf(str, args...)
 }

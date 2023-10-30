@@ -24,7 +24,7 @@ func (v {{ .GoName }}) IsAutoIncr() bool {
 func (v {{ .GoName }}) PK() (columnName string, pos int, value driver.Value) {
 	return {{ quote .PK.Field.ColumnName }}, {{ .PK.Field.Index }}, {{ castAs "v" .PK.Field }}
 }
-{{- end }}
+{{ end -}}
 func (v {{ .GoName }}) Values() []any {
 	return {{ `[]any{` }}{{ range $i, $f := .Fields }}{{- if $i }}{{ ", " }}{{ end }}{{ castAs "v" $f }}{{ end }}{{- `}` }}
 }

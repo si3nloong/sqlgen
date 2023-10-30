@@ -30,7 +30,7 @@ var (
 				}
 			} else if len(args) > 0 {
 				// If user pass the source, then we refer to it.
-				cfg.SrcDir = args[0]
+				cfg.Source = append(cfg.Source, args[0])
 			}
 
 			return codegen.Generate(cfg)

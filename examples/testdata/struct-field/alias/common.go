@@ -19,8 +19,6 @@ type AliasStruct struct {
 	private string
 }
 
-type Empty struct{}
-
 type pk struct {
 	ID int64 `sql:"Id,primary_key"`
 }

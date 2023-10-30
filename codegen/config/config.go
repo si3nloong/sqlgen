@@ -20,7 +20,6 @@ var cfgFilenames = []string{".sqlgen.yml", ".sqlgen.yaml", "sqlgen.yml", "sqlgen
 
 type Config struct {
 	Source           []string  `yaml:"src"`
-	SrcDir           string    `yaml:"srcDir"`
 	Driver           sqlDriver `yaml:"driver" survey:"driver"`
 	NamingConvention string    `yaml:"namingConvention,omitempty" survey:"namingConvention"`
 	Tag              string    `yaml:"tag,omitempty" survey:"tag"`
@@ -29,10 +28,10 @@ type Config struct {
 }
 
 func (c *Config) init() {
-	c.SrcDir = "."
+	c.Source = []string{"."}
 	c.NamingConvention = "snake_case"
 	c.Tag = "sql"
-	c.Driver = "mysql"
+	c.Driver = MySQL
 	c.Strict = true
 	c.IncludeHeader = true
 }
