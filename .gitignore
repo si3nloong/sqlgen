@@ -18,3 +18,4 @@ vendor/
 *.db
 coverage.txt
 tmp
+sqlgen.yml

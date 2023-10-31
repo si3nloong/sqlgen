@@ -14,7 +14,7 @@ var (
 
 	rootCmd = &cobra.Command{
 		Use:   "sqlgen",
-		Short: "`sqlgen` is a SQL model generator.",
+		Short: "`sqlgen` is a Go SQL code generator.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if rootOpts.verbose {
 				log.SetFlags(0)
@@ -30,7 +30,5 @@ func Execute() {
 	rootCmd.AddCommand(initCmd)
 	rootCmd.AddCommand(genCmd)
 	rootCmd.PersistentFlags().BoolVarP(&rootOpts.verbose, "verbose", "v", false, "Shows the log details.")
-	if err := rootCmd.Execute(); err != nil {
-		log.Fatal(err)
-	}
+	cobra.CheckErr(rootCmd.Execute())
 }

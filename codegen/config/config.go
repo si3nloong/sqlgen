@@ -16,20 +16,29 @@ const (
 	Sqlite   sqlDriver = "sqlite"
 )
 
+type naming string
+
+const (
+	SnakeCase  naming = "snake_case"
+	CamelCase  naming = "camelCase"
+	PascalCase naming = "PascalCase"
+)
+
 var cfgFilenames = []string{".sqlgen.yml", ".sqlgen.yaml", "sqlgen.yml", "sqlgen.yaml"}
 
 type Config struct {
 	Source           []string  `yaml:"src"`
-	Driver           sqlDriver `yaml:"driver" survey:"driver"`
-	NamingConvention string    `yaml:"namingConvention,omitempty" survey:"namingConvention"`
-	Tag              string    `yaml:"tag,omitempty" survey:"tag"`
-	Strict           bool      `yaml:"strict" survey:"strict,omitempty"`
+	Driver           sqlDriver `yaml:"driver"`
+	NamingConvention naming    `yaml:"namingConvention,omitempty"`
+	Tag              string    `yaml:"tag,omitempty"`
+	Strict           bool      `yaml:"strict"`
 	IncludeHeader    bool      `yaml:"includeHeader"`
+	SourceMap        bool      `yaml:"sourceMap"`
 }
 
 func (c *Config) init() {
-	c.Source = []string{"."}
-	c.NamingConvention = "snake_case"
+	c.Source = []string{"./**/*"}
+	c.NamingConvention = SnakeCase
 	c.Tag = "sql"
 	c.Driver = MySQL
 	c.Strict = true

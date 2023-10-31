@@ -8,13 +8,14 @@ import (
 
 func TestConfig(t *testing.T) {
 	cfg := DefaultConfig()
-	require.ElementsMatch(t, []string{"."}, cfg.Source)
+	require.ElementsMatch(t, []string{"./**/*"}, cfg.Source)
 	require.Equal(t, MySQL, cfg.Driver)
 	require.Equal(t, "sql", cfg.Tag)
-	require.Equal(t, "snake_case", cfg.NamingConvention)
+	require.Equal(t, SnakeCase, cfg.NamingConvention)
 
 	require.True(t, cfg.IncludeHeader)
 	require.True(t, cfg.Strict)
+	require.False(t, cfg.SourceMap)
 }
 
 func TestFindCfgInDir(t *testing.T) {

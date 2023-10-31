@@ -2,6 +2,7 @@ package codegen
 
 import (
 	"bytes"
+	"embed"
 	"fmt"
 	"go/ast"
 	"go/types"
@@ -28,6 +29,9 @@ import (
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/tools/imports"
 )
+
+//go:embed templates/*.gtpl
+var codegenTemplates embed.FS
 
 type tagOption string
 
@@ -92,6 +96,7 @@ var path2regex = strings.NewReplacer(
 )
 
 func Generate(cfg *config.Config) error {
+	log.Println(codegenTemplates)
 	// rename := strfmt.ToSnakeCase
 
 	// switch strings.ToLower(cfg.NamingConvention) {
