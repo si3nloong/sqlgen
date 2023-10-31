@@ -18,5 +18,5 @@ func TestExpr(t *testing.T) {
 	require.ElementsMatch(t, []*types.Package{
 		types.NewPackage("time", "time"),
 		types.NewPackage("database/sql/driver", "driver"),
-	}, pkg.importPkgs)
+	}, pkg.imports)
 }

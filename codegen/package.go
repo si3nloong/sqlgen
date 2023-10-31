@@ -18,15 +18,15 @@ const mode = packages.NeedName |
 	packages.NeedDeps
 
 type Package struct {
-	cache      map[string]*types.Package
-	importPkgs []*types.Package
+	cache   map[string]*types.Package
+	imports []*types.Package
 }
 
 func (p *Package) Import(pkg *types.Package) (*types.Package, bool) {
-	if i := slices.IndexFunc(p.importPkgs, func(item *types.Package) bool {
+	if i := slices.IndexFunc(p.imports, func(item *types.Package) bool {
 		return pkg.Path() == item.Path()
 	}); i > -1 {
-		return p.importPkgs[i], false
+		return p.imports[i], false
 	}
 	if p.cache == nil {
 		p.cache = make(map[string]*types.Package)
@@ -34,7 +34,7 @@ func (p *Package) Import(pkg *types.Package) (*types.Package, bool) {
 	alias := p.newAliasIfExists(pkg)
 	pkg.SetName(alias)
 	p.cache[alias] = pkg
-	p.importPkgs = append(p.importPkgs, pkg)
+	p.imports = append(p.imports, pkg)
 	return pkg, true
 }
 

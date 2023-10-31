@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"go/ast"
 	"go/types"
+	"io/fs"
 	"log"
 	"os"
 	"os/exec"
@@ -57,6 +58,11 @@ type Generator struct {
 	rename RenameFunc
 }
 
+type structType struct {
+	name   *ast.Ident
+	fields []structField
+}
+
 type structField struct {
 	id       string
 	name     string
@@ -78,70 +84,126 @@ func (t tagOpts) Lookup(key tagOption, keys ...tagOption) (v string, ok bool) {
 	return
 }
 
+var path2regex = strings.NewReplacer(
+	`.`, `\.`,
+	`*`, `.*`,
+	`\`, `[\\/]`,
+	`/`, `[\\/]`,
+)
+
 func Generate(cfg *config.Config) error {
-	// gen := new(Generator)
-	rename := strfmt.ToSnakeCase
+	// rename := strfmt.ToSnakeCase
 
-	switch strings.ToLower(cfg.NamingConvention) {
-	case "snakecase":
-		rename = strfmt.ToSnakeCase
-	case "camelcase":
-		rename = strfmt.ToCamelCase
-	case "no":
-		rename = func(s string) string { return s }
-	}
+	// switch strings.ToLower(cfg.NamingConvention) {
+	// case "snakecase":
+	// 	rename = strfmt.ToSnakeCase
+	// case "camelcase":
+	// 	rename = strfmt.ToCamelCase
+	// default:
+	// 	rename = func(s string) string { return s }
+	// }
 
-	for len(cfg.Source) > 0 {
-		dir := strings.TrimSpace(cfg.Source[0])
-		if dir == "" {
+	var (
+		srcDir  string
+		sources = make([]string, len(cfg.Source))
+	)
+
+	copy(sources, cfg.Source)
+
+	for len(sources) > 0 {
+		srcDir = strings.TrimSpace(sources[0])
+		if srcDir == "" {
 			return fmt.Errorf(`sqlgen: src is empty path`)
 		}
+
 		// If the prefix is ".", mean it's refer to current directory
-		if dir[0] == '.' {
-			dir = fileutil.Getpwd() + dir[1:]
+		if srcDir[0] == '.' {
+			srcDir = fileutil.Getpwd() + srcDir[1:]
 		}
 
 		// File: examples/testdata/test.go
-		// File Regex: [examples/testdata/*model.go, examples/testdata/*_model.go]
 		// Folder: examples/testdata
+		// Wildcard: [examples/**, examples/testdata/**/*.go,  examples/testdata/**/*]
+		// File wildcard: [examples/testdata/*model.go, examples/testdata/*_model.go]
 		var (
-			r          = regexp.MustCompile(`(?i)((?:\/)([a-z][a-z0-9-_.]+\/)*)\w*\*\w*(?:\.go)`)
-			subMatches = r.FindStringSubmatch(dir)
-			match      Matcher
+			rootDir    string
+			r                  = regexp.MustCompile(`(?i)((?:\/)([a-z][a-z0-9-_.]+\/)*)\w*\*\w*(?:\.go)`)
+			subMatches         = r.FindStringSubmatch(srcDir)
+			matcher    Matcher = new(EmptyMatcher)
+			dirs               = make([]string, 0)
 		)
-		if len(subMatches) > 0 {
-			// log.Println(len(subMatches), subMatches)
-			dir = strings.Replace(dir, ".", `\.`, -1)
-			dir = strings.Replace(dir, "*", ".*", -1)
-			match = &RegexpMatcher{regexp.MustCompile(dir)}
-			dir = strings.TrimSuffix(subMatches[1], "/")
+
+		if strings.Contains(srcDir, "**") {
+			paths := strings.SplitN(srcDir, "**", 2)
+			rootDir = strings.TrimSuffix(strings.TrimSpace(paths[0]), "/")
+			suffix := `(?:[\\/]\w+\.\w+)`
+			if paths[1] != "" {
+				suffix = path2regex.Replace(paths[1])
+			}
+			if err := filepath.WalkDir(rootDir, func(path string, d fs.DirEntry, err error) error {
+				// If the directory is not exists, the "d" will be nil
+				if d == nil || !d.IsDir() {
+					// If it's not a folder, we skip!
+					return nil
+				}
+				dirs = append(dirs, strings.TrimPrefix(path, rootDir))
+				return nil
+			}); err != nil {
+				return fmt.Errorf(`sqlgen: failed to walk schema %s: %w`, paths[0], err)
+			}
+			matcher = &RegexMatcher{regexp.MustCompile(path2regex.Replace(rootDir) + `([\\/][a-z0-9_-]+)*` + suffix)}
+		} else if len(subMatches) > 0 {
+			matcher = &RegexMatcher{regexp.MustCompile(path2regex.Replace(srcDir))}
+			rootDir = strings.TrimSuffix(subMatches[1], "/")
+			dirs = append(dirs, "")
 		} else {
-			fi, err := os.Stat(dir)
-			if err != nil {
+			fi, err := os.Stat(srcDir)
+			// If the file or folder not exists, we skip!
+			if os.IsNotExist(err) {
+				goto nextSrc
+			} else if err != nil {
 				return err
 			}
 
+			// If it's just a file
 			if !fi.IsDir() {
-				dir = filepath.Join(fileutil.Getpwd(), filepath.Dir(dir))
-				match = FileMatcher{filepath.Join(dir, fi.Name()): struct{}{}}
-			} else {
-				match = new(EmptyMatcher)
+				srcDir = filepath.Dir(srcDir)
+				matcher = FileMatcher{filepath.Join(srcDir, fi.Name()): struct{}{}}
 			}
+
+			rootDir = srcDir
+			dirs = append(dirs, "")
 		}
 
-		// For example:
-		// docs/*.md
-		// docs/**/*
-		//
-		// Get all the folders, filter files
-		//
-		// filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
-		// 	return nil
-		// })
+		if err := parseGoPackage(cfg, rootDir, dirs, matcher); err != nil {
+			return err
+		}
 
-		filename := path.Join(dir, "generated.go")
+	nextSrc:
+		sources = sources[1:]
+	}
+
+	return goModTidy()
+}
+
+func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher Matcher) error {
+	rename := strfmt.ToSnakeCase
+
+	var (
+		dir      string
+		filename string
+	)
+
+	for len(dirs) > 0 {
+		dir = path.Join(rootDir, dirs[0])
+		if fileutil.IsDirEmptyFiles(dir, "generated.go") {
+			dirs = dirs[1:]
+			continue
+		}
+		filename = path.Join(dir, "generated.go")
 		// Remove "generated.go", ignore the error
 		os.Remove(filename)
+
 		pkgs, err := packages.Load(&packages.Config{
 			Dir:  dir,
 			Mode: mode,
@@ -161,13 +223,12 @@ func Generate(cfg *config.Config) error {
 		}
 
 		var (
-			impPkgs     = new(Package)
-			structTypes = make(map[*ast.TypeSpec]*ast.StructType)
+			impPkg      = new(Package)
+			structTypes = make([]*ast.TypeSpec, 0)
 		)
 
 		for _, f := range pkg.Syntax {
 			// ast.Print(pkg.Fset, f)
-			var filename string
 			ast.Inspect(f, func(node ast.Node) bool {
 				typeSpec, ok := node.(*ast.TypeSpec)
 				if !ok {
@@ -175,7 +236,7 @@ func Generate(cfg *config.Config) error {
 				}
 
 				filename = pkg.Fset.Position(typeSpec.Name.NamePos).Filename
-				if !match.Match(filename) {
+				if !matcher.Match(filename) {
 					return true
 				}
 
@@ -186,9 +247,8 @@ func Generate(cfg *config.Config) error {
 				}
 
 				// TODO: If it's an alias struct, we should skip right?
-				structType, ok := typeSpec.Type.(*ast.StructType)
-				if ok {
-					structTypes[typeSpec] = structType
+				if _, ok := typeSpec.Type.(*ast.StructType); ok {
+					structTypes = append(structTypes, typeSpec)
 				}
 				return true
 			})
@@ -197,17 +257,17 @@ func Generate(cfg *config.Config) error {
 		// If we want to preserve the ordering,
 		// we must use array instead of map
 		var (
-			structs = make(map[*ast.Ident][]*structField, 0)
+			structs = make([]structType, 0)
 		)
 
 		// Loop every struct and map the fields
-		for k, s := range structTypes {
+		for _, s := range structTypes {
 			var (
 				// queue to store struct, this is useful
 				// when handling embedded struct
-				q      = []typeQueue{{t: s}}
+				q      = []typeQueue{{t: s.Type.(*ast.StructType)}}
 				f      typeQueue
-				fields = make([]*structField, 0)
+				fields = make([]structField, 0)
 			)
 
 			for len(q) > 0 {
@@ -258,46 +318,45 @@ func Generate(cfg *config.Config) error {
 							path = f.path + "." + path
 						}
 
-						fields = append(fields, &structField{id: toID(append(f.idx, i+j)), exported: n.IsExported(), name: types.ExprString(n), tag: tag, path: path, t: fi.Type})
+						fields = append(fields, structField{id: toID(append(f.idx, i+j)), exported: n.IsExported(), name: types.ExprString(n), tag: tag, path: path, t: fi.Type})
 					}
 				}
 
 			next:
 				q = q[1:]
 			}
-
 			if len(fields) > 0 {
 				sort.Slice(fields, func(i, j int) bool {
 					return fields[j].id > fields[i].id
 				})
 
-				structs[k.Name] = fields
+				structs = append(structs, structType{name: s.Name, fields: fields})
 			}
 		}
 
 		// Generate interface code
 		var (
-			nameMap map[string]struct{}
 			t       types.Type
+			nameMap map[string]struct{}
 			params  = &templates.ModelTmplParams{}
 		)
 
 		// Convert struct to models and generate code
-		for n, s := range structs {
-			t = pkg.TypesInfo.TypeOf(n)
+		for i := range structs {
+			t = pkg.TypesInfo.TypeOf(structs[i].name)
 			nameMap = make(map[string]struct{})
 
 			var (
 				index int
 				model = templates.Model{}
 			)
-			model.GoName = types.ExprString(n)
+			model.GoName = types.ExprString(structs[i].name)
 			model.TableName = rename(model.GoName)
 			model.HasTableName = !IsImplemented(t, sqlTabler)
 			model.HasColumn = !IsImplemented(t, sqlColumner)
 			// model.HasRow = !IsImplemented(t, sqlRower)
 
-			for _, f := range s {
+			for _, f := range structs[i].fields {
 				tv := f.tag.Get("sql")
 
 				switch pkg.TypesInfo.TypeOf(f.t).String() {
@@ -358,7 +417,7 @@ func Generate(cfg *config.Config) error {
 
 				// Check uniqueness of the column
 				if _, ok := nameMap[tf.ColumnName]; ok {
-					return fmt.Errorf("sqlgen: duplicate key %s in struct", tf.ColumnName)
+					return fmt.Errorf("sqlgen: struct %q has duplicate key %q in %s", structs[i].name, tf.ColumnName, dir)
 				}
 				nameMap[tf.ColumnName] = struct{}{}
 
@@ -374,9 +433,9 @@ func Generate(cfg *config.Config) error {
 			"quote":         strconv.Quote,
 			"createTable":   createTableStmt,
 			"alterTable":    alterTableStmt,
-			"reserveImport": reserveImport(impPkgs),
-			"castAs":        castAs(impPkgs),
-			"addrOf":        addrOf(impPkgs),
+			"reserveImport": reserveImport(impPkg),
+			"castAs":        castAs(impPkg),
+			"addrOf":        addrOf(impPkg),
 		})
 
 		tmpFile := filepath.Join(fileutil.CurDir(), "templates/model.gtpl")
@@ -402,9 +461,9 @@ func Generate(cfg *config.Config) error {
 
 		w.WriteString("package " + pkg.Name + "\n\n")
 
-		if len(impPkgs.importPkgs) > 0 {
+		if len(impPkg.imports) > 0 {
 			w.WriteString("import (\n")
-			for _, pkg := range impPkgs.importPkgs {
+			for _, pkg := range impPkg.imports {
 				if filepath.Base(pkg.Path()) == pkg.Name() {
 					w.WriteString("\t" + strconv.Quote(pkg.Path()) + "\n")
 				} else {
@@ -415,7 +474,6 @@ func Generate(cfg *config.Config) error {
 		}
 
 		w.WriteString(blr.String())
-		// log.Println(w.String())
 
 		fileDest := filepath.Join(dir, "generated.go")
 		formatted, err := imports.Process(fileDest, w.Bytes(), &imports.Options{Comments: true})
@@ -427,7 +485,7 @@ func Generate(cfg *config.Config) error {
 			return err
 		}
 
-		cfg.Source = cfg.Source[1:]
+		dirs = dirs[1:]
 	}
 
 	return goModTidy()

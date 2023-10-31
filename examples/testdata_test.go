@@ -6,10 +6,18 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/si3nloong/sqlgen/codegen"
+	"github.com/si3nloong/sqlgen/codegen/config"
 	"github.com/stretchr/testify/require"
 )
 
 func TestAll(t *testing.T) {
+	if err := codegen.Generate(&config.Config{
+		Source: []string{"./testcase/**/*.go"},
+	}); err != nil {
+		panic(err)
+	}
+
 	// Re-generate all files
 	if err := filepath.Walk(".", func(path string, info fs.FileInfo, e error) error {
 		if e != nil {
@@ -25,7 +33,8 @@ func TestAll(t *testing.T) {
 			return err
 		}
 
-		expected, err := os.ReadFile(path + ".txt")
+		// Read result file
+		expected, err := os.ReadFile(path + ".gtpl")
 		if err != nil {
 			return err
 		}
