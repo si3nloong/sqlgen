@@ -1,18 +1,17 @@
 package cmd
 
 import (
-	"bytes"
 	"log"
 	"os"
 	"path/filepath"
 
+	"github.com/si3nloong/sqlgen/codegen"
 	"github.com/si3nloong/sqlgen/codegen/config"
 	"github.com/si3nloong/sqlgen/internal/fileutil"
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/AlecAivazis/survey/v2/terminal"
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v3"
 )
 
 var (
@@ -77,7 +76,7 @@ func runInitCommand(cmd *cobra.Command, args []string) error {
 	}
 
 	if fi, _ := os.Stat(fileDest); fi != nil {
-		log.Println(`configuration already exists`)
+		log.Println(`Configuration file already exists`)
 		return nil
 	}
 
@@ -105,16 +104,7 @@ func runInitCommand(cmd *cobra.Command, args []string) error {
 	cfg.Tag = answer.Tag
 	cfg.Strict = answer.Strict
 
-	w := bytes.NewBufferString("")
-	enc := yaml.NewEncoder(w)
-	enc.SetIndent(2)
-	defer enc.Close()
-	if err := enc.Encode(cfg); err != nil {
-		return err
-	}
-
 	cmd.Println("\nAbout to write to " + fileDest + ":\n")
-	cmd.Println(w.String())
 
 	var ok bool
 	if err := survey.AskOne(&survey.Confirm{
@@ -130,11 +120,7 @@ func runInitCommand(cmd *cobra.Command, args []string) error {
 	}
 
 	log.Println(`Creating ` + filename)
-	if err := os.WriteFile(fileDest, w.Bytes(), 0o644); err != nil {
-		return err
-	}
-
-	return nil
+	return codegen.Init(cfg)
 }
 
 // noInterruptError returns error when it's not `terminal.InterruptErr`

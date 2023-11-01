@@ -12,9 +12,11 @@ func TestConfig(t *testing.T) {
 	require.Equal(t, MySQL, cfg.Driver)
 	require.Equal(t, "sql", cfg.Tag)
 	require.Equal(t, SnakeCase, cfg.NamingConvention)
+	require.Equal(t, "generated.go", cfg.Exec.Filename)
 
-	require.True(t, cfg.IncludeHeader)
 	require.True(t, cfg.Strict)
+	require.False(t, cfg.SkipHeader)
+	require.False(t, cfg.SkipModTidy)
 	require.False(t, cfg.SourceMap)
 }
 
@@ -44,5 +46,6 @@ func TestLoadConfigFrom(t *testing.T) {
 	cfg, err = LoadConfigFrom("./testdata/config.yaml")
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
+	require.Equal(t, Sqlite, cfg.Driver)
 	require.True(t, cfg.Strict)
 }

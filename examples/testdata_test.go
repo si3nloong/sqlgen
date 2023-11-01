@@ -34,7 +34,7 @@ func TestAll(t *testing.T) {
 		}
 
 		// Read result file
-		expected, err := os.ReadFile(path + ".gtpl")
+		expected, err := os.ReadFile(path + ".gotpl")
 		if err != nil {
 			return err
 		}

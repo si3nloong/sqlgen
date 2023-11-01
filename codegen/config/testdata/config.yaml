@@ -1,1 +1,3 @@
+driver: "sqlite"
+
 strict: true
