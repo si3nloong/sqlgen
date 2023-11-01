@@ -415,20 +415,21 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 			params.Models = append(params.Models, &model)
 		}
 
-		tmpl, err := template.ParseFS(codegenTemplates, "templates/model.gotpl")
-		if err != nil {
-			return err
-		}
-
 		blr := bytes.NewBufferString("")
-		if err := tmpl.Funcs(template.FuncMap{
+		tmplName := "model.gotpl"
+		tmpl, err := template.New(tmplName).Funcs(template.FuncMap{
 			"quote":         strconv.Quote,
 			"createTable":   createTableStmt,
 			"alterTable":    alterTableStmt,
 			"reserveImport": reserveImport(impPkg),
 			"castAs":        castAs(impPkg),
 			"addrOf":        addrOf(impPkg),
-		}).Execute(blr, params); err != nil {
+		}).ParseFS(codegenTemplates, "templates/"+tmplName)
+		if err != nil {
+			return err
+		}
+
+		if err := tmpl.Execute(blr, params); err != nil {
 			return err
 		}
 
