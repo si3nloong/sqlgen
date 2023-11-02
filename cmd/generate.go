@@ -15,7 +15,7 @@ var (
 
 	genCmd = &cobra.Command{
 		Use:   "generate [source]",
-		Short: "Generate struct functions for target models.",
+		Short: "Generate boilerplate code based on go struct",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var (
 				cfg = config.DefaultConfig()
@@ -39,7 +39,7 @@ var (
 )
 
 func init() {
-	genCmd.Flags().StringVarP(&genOpts.config, "file", "f", "", "Config file path.")
-	genCmd.Flags().BoolVarP(&genOpts.watch, "watch", "w", false, "Watch the file changes and re-generate.")
-	genCmd.Flags().BoolVarP(&genOpts.force, "force", "", false, "Force to re-generate.")
+	genCmd.Flags().StringVarP(&genOpts.config, "config", "c", "", "config file")
+	genCmd.Flags().BoolVarP(&genOpts.watch, "watch", "w", false, "watch the file changes and re-generate.")
+	genCmd.Flags().BoolVarP(&genOpts.force, "force", "", false, "force to execute")
 }

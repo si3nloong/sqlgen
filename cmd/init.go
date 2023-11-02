@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strconv"
 
 	"github.com/si3nloong/sqlgen/codegen"
 	"github.com/si3nloong/sqlgen/codegen/config"
@@ -17,7 +18,7 @@ import (
 var (
 	initCmd = &cobra.Command{
 		Use:   "init",
-		Short: "Set up a new or existing `sqlgen.yml` file.",
+		Short: "Set up a new " + strconv.Quote(config.DefaultConfigFile) + " file",
 		// 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		// 			cmd.Println(`This utility will walk you through creating a sqlgen.yaml file.
 		// It only covers the most common items, and tries to guess sensible defaults.
