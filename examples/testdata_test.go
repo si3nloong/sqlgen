@@ -1,6 +1,7 @@
 package examples_test
 
 import (
+	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/si3nloong/sqlgen/codegen"
 	"github.com/si3nloong/sqlgen/codegen/config"
+	"github.com/si3nloong/sqlgen/internal/fileutil"
 	"github.com/stretchr/testify/require"
 )
 
@@ -19,27 +21,30 @@ func TestAll(t *testing.T) {
 	}
 
 	// Re-generate all files
-	if err := filepath.Walk(".", func(path string, info fs.FileInfo, e error) error {
+	if err := filepath.Walk("./testcase", func(path string, info fs.FileInfo, e error) error {
 		if e != nil {
 			return e
 		}
-
-		if info.IsDir() || filepath.Base(path) != "generated.go" {
+		if !info.IsDir() {
 			return nil
 		}
 
-		actual, err := os.ReadFile(path)
+		if fileutil.IsDirEmptyFiles(path) {
+			return nil
+		}
+
+		actual, err := os.ReadFile(filepath.Join(path, config.DefaultGeneratedFile))
 		if err != nil {
 			return err
 		}
 
 		// Read result file
-		expected, err := os.ReadFile(path + ".gotpl")
+		expected, err := os.ReadFile(filepath.Join(path, config.DefaultGeneratedFile+".tpl"))
 		if err != nil {
-			return err
+			return fmt.Errorf("%w, happened in directory %q", err, path)
 		}
 
-		t.Run(path, func(t *testing.T) {
+		t.Run("Compare the []byte in directory "+path, func(t *testing.T) {
 			require.Equal(t, expected, actual)
 		})
 
