@@ -10,9 +10,9 @@ func TestConfig(t *testing.T) {
 	cfg := DefaultConfig()
 	require.ElementsMatch(t, []string{"./**/*"}, cfg.Source)
 	require.Equal(t, MySQL, cfg.Driver)
-	require.Equal(t, "sql", cfg.Tag)
 	require.Equal(t, SnakeCase, cfg.NamingConvention)
-	require.Equal(t, "generated.go", cfg.Exec.Filename)
+	require.Equal(t, DefaultStructTag, cfg.Tag)
+	require.Equal(t, DefaultGeneratedFile, cfg.Exec.Filename)
 
 	require.True(t, cfg.Strict)
 	require.False(t, cfg.SkipHeader)

@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"log"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -16,18 +15,13 @@ import (
 )
 
 var (
+	initOpts struct {
+		force bool
+	}
 	initCmd = &cobra.Command{
 		Use:   "init",
 		Short: "Set up a new " + strconv.Quote(config.DefaultConfigFile) + " file",
-		// 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		// 			cmd.Println(`This utility will walk you through creating a sqlgen.yaml file.
-		// It only covers the most common items, and tries to guess sensible defaults.
-
-		// See ` + "`sqlgen init`" + ` for definitive documentation on these fields
-		// and exactly what they do.`)
-		// 			return nil
-		// 		},
-		RunE: runInitCommand,
+		RunE:  runInitCommand,
 	}
 )
 
@@ -45,7 +39,7 @@ func runInitCommand(cmd *cobra.Command, args []string) error {
 				},
 			},
 			{
-				Name: "namingConvention",
+				Name: "naming_convention",
 				Prompt: &survey.Select{
 					Message: "What is your naming convention:",
 					Options: []string{string(config.SnakeCase), string(config.CamelCase), string(config.PascalCase)},
@@ -71,13 +65,14 @@ func runInitCommand(cmd *cobra.Command, args []string) error {
 
 	var answer struct {
 		Driver           string `survey:"driver"`
-		NamingConvention string `survey:"namingConvention"`
+		NamingConvention string `survey:"naming_convention"`
 		Tag              string `survey:"tag"`
 		Strict           bool   `survey:"strict,omitempty"`
 	}
 
-	if fi, _ := os.Stat(fileDest); fi != nil {
-		log.Println(`Configuration file already exists`)
+	_, err := os.Stat(fileDest)
+	if !initOpts.force && !os.IsNotExist(err) {
+		cmd.Println(`Configuration file already exists`)
 		return nil
 	}
 
@@ -120,8 +115,12 @@ func runInitCommand(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	log.Println(`Creating ` + filename)
+	cmd.Println(`Creating ` + filename)
 	return codegen.Init(cfg)
+}
+
+func init() {
+	initCmd.Flags().BoolVarP(&initOpts.force, "force", "f", false, "force to execute")
 }
 
 // noInterruptError returns error when it's not `terminal.InterruptErr`

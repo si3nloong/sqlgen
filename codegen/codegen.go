@@ -344,7 +344,7 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 			// model.HasRow = !IsImplemented(t, sqlRower)
 
 			for _, f := range structs[i].fields {
-				tv := f.tag.Get("sql")
+				tv := f.tag.Get(cfg.Tag)
 
 				switch pkg.TypesInfo.TypeOf(f.t).String() {
 				// If the type is table name

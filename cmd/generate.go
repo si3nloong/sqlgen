@@ -41,5 +41,5 @@ var (
 func init() {
 	genCmd.Flags().StringVarP(&genOpts.config, "config", "c", "", "config file")
 	genCmd.Flags().BoolVarP(&genOpts.watch, "watch", "w", false, "watch the file changes and re-generate.")
-	genCmd.Flags().BoolVarP(&genOpts.force, "force", "", false, "force to execute")
+	genCmd.Flags().BoolVarP(&genOpts.force, "force", "f", false, "force to execute")
 }

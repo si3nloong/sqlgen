@@ -28,6 +28,7 @@ const (
 const (
 	DefaultConfigFile    = "sqlgen.yml"
 	DefaultGeneratedFile = "generated.go"
+	DefaultStructTag     = "sql"
 )
 
 var cfgFilenames = []string{DefaultConfigFile, ".sqlgen.yml", ".sqlgen.yaml", "sqlgen.yaml"}
@@ -36,7 +37,7 @@ type Config struct {
 	Source           []string  `yaml:"src"`
 	Driver           sqlDriver `yaml:"driver"`
 	NamingConvention naming    `yaml:"naming_convention,omitempty"`
-	Tag              string    `yaml:"tag,omitempty"`
+	Tag              string    `yaml:"struct_tag,omitempty"`
 	Strict           bool      `yaml:"strict"`
 	Exec             struct {
 		Filename string `yaml:"filename"`
@@ -54,7 +55,7 @@ type Config struct {
 func (c *Config) init() {
 	c.Source = []string{"./**/*"}
 	c.NamingConvention = SnakeCase
-	c.Tag = "sql"
+	c.Tag = DefaultStructTag
 	c.Driver = MySQL
 	c.Strict = true
 	c.Exec.Filename = DefaultGeneratedFile

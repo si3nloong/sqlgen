@@ -11,7 +11,7 @@ driver: {{ .Driver }}
 naming_convention: {{ .NamingConvention }}
 
 # Optional: 
-tag: {{ .Tag }}
+struct_tag: {{ .Tag }}
 
 # Optional: Where should any generated code go?
 exec:
