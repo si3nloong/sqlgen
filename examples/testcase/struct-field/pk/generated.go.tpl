@@ -10,22 +10,22 @@ import (
 )
 
 func (Car) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS car (id BIGINT NOT NULL,no VARCHAR(255) NOT NULL,color INTEGER NOT NULL,manuc_date DATETIME NOT NULL,PRIMARY KEY (id));"
+	return "CREATE TABLE IF NOT EXISTS `car` (`id` BIGINT NOT NULL,`no` VARCHAR(255) NOT NULL,`color` INTEGER NOT NULL,`manuc_date` DATETIME NOT NULL,PRIMARY KEY (`id`));"
 }
 func (Car) AlterTableStmt() string {
-	return "ALTER TABLE car MODIFY id BIGINT NOT NULL,MODIFY no VARCHAR(255) NOT NULL AFTER id,MODIFY color INTEGER NOT NULL AFTER no,MODIFY manuc_date DATETIME NOT NULL AFTER color;"
+	return "ALTER TABLE `car` MODIFY `id` BIGINT NOT NULL,MODIFY `no` VARCHAR(255) NOT NULL AFTER `id`,MODIFY `color` INTEGER NOT NULL AFTER `no`,MODIFY `manuc_date` DATETIME NOT NULL AFTER `color`;"
 }
 func (Car) TableName() string {
-	return "car"
+	return "`car`"
 }
 func (Car) Columns() []string {
-	return []string{"id", "no", "color", "manuc_date"}
+	return []string{"`id`", "`no`", "`color`", "`manuc_date`"}
 }
 func (v Car) IsAutoIncr() bool {
 	return false
 }
 func (v Car) PK() (columnName string, pos int, value driver.Value) {
-	return "id", 0, (driver.Valuer)(v.ID)
+	return "`id`", 0, (driver.Valuer)(v.ID)
 }
 func (v Car) Values() []any {
 	return []any{(driver.Valuer)(v.ID), string(v.No), int64(v.Color), time.Time(v.ManucDate)}
@@ -35,22 +35,22 @@ func (v *Car) Addrs() []any {
 }
 
 func (User) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS user (id BIGINT NOT NULL,name VARCHAR(255) NOT NULL,age TINYINT UNSIGNED NOT NULL,email VARCHAR(255) NOT NULL,PRIMARY KEY (id));"
+	return "CREATE TABLE IF NOT EXISTS `user` (`id` BIGINT NOT NULL,`name` VARCHAR(255) NOT NULL,`age` TINYINT UNSIGNED NOT NULL,`email` VARCHAR(255) NOT NULL,PRIMARY KEY (`id`));"
 }
 func (User) AlterTableStmt() string {
-	return "ALTER TABLE user MODIFY id BIGINT NOT NULL,MODIFY name VARCHAR(255) NOT NULL AFTER id,MODIFY age TINYINT UNSIGNED NOT NULL AFTER name,MODIFY email VARCHAR(255) NOT NULL AFTER age;"
+	return "ALTER TABLE `user` MODIFY `id` BIGINT NOT NULL,MODIFY `name` VARCHAR(255) NOT NULL AFTER `id`,MODIFY `age` TINYINT UNSIGNED NOT NULL AFTER `name`,MODIFY `email` VARCHAR(255) NOT NULL AFTER `age`;"
 }
 func (User) TableName() string {
-	return "user"
+	return "`user`"
 }
 func (User) Columns() []string {
-	return []string{"id", "name", "age", "email"}
+	return []string{"`id`", "`name`", "`age`", "`email`"}
 }
 func (v User) IsAutoIncr() bool {
 	return false
 }
 func (v User) PK() (columnName string, pos int, value driver.Value) {
-	return "id", 0, int64(v.ID)
+	return "`id`", 0, int64(v.ID)
 }
 func (v User) Values() []any {
 	return []any{int64(v.ID), string(v.Name), int64(v.Age), string(v.Email)}
@@ -60,22 +60,22 @@ func (v *User) Addrs() []any {
 }
 
 func (House) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS house (id INTEGER UNSIGNED NOT NULL,no VARCHAR(255) NOT NULL,PRIMARY KEY (id));"
+	return "CREATE TABLE IF NOT EXISTS `house` (`id` INTEGER UNSIGNED NOT NULL,`no` VARCHAR(255) NOT NULL,PRIMARY KEY (`id`));"
 }
 func (House) AlterTableStmt() string {
-	return "ALTER TABLE house MODIFY id INTEGER UNSIGNED NOT NULL,MODIFY no VARCHAR(255) NOT NULL AFTER id;"
+	return "ALTER TABLE `house` MODIFY `id` INTEGER UNSIGNED NOT NULL,MODIFY `no` VARCHAR(255) NOT NULL AFTER `id`;"
 }
 func (House) TableName() string {
-	return "house"
+	return "`house`"
 }
 func (House) Columns() []string {
-	return []string{"id", "no"}
+	return []string{"`id`", "`no`"}
 }
 func (v House) IsAutoIncr() bool {
 	return false
 }
 func (v House) PK() (columnName string, pos int, value driver.Value) {
-	return "id", 0, int64(v.ID)
+	return "`id`", 0, int64(v.ID)
 }
 func (v House) Values() []any {
 	return []any{int64(v.ID), string(v.No)}

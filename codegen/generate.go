@@ -13,7 +13,7 @@ func Init(cfg *config.Config) error {
 		return err
 	}
 
-	w, err := os.OpenFile(config.DefaultConfigFile, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o644)
+	w, err := os.OpenFile(config.DefaultConfigFile, os.O_RDWR|os.O_CREATE|os.O_TRUNC, fileMode)
 	if err != nil {
 		return err
 	}

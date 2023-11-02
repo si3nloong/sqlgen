@@ -7,8 +7,12 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/si3nloong/sqlgen/codegen"
 	"github.com/si3nloong/sqlgen/codegen/config"
+	_ "github.com/si3nloong/sqlgen/sequel/dialect/mysql"
+	_ "github.com/si3nloong/sqlgen/sequel/dialect/postgres"
+	_ "github.com/si3nloong/sqlgen/sequel/dialect/sqlite"
+
+	"github.com/si3nloong/sqlgen/codegen"
 	"github.com/si3nloong/sqlgen/internal/fileutil"
 	"github.com/stretchr/testify/require"
 )

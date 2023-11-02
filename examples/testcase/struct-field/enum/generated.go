@@ -7,16 +7,16 @@ import (
 )
 
 func (Custom) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS custom (text VARCHAR(255) NOT NULL,e INTEGER NOT NULL,num SMALLINT UNSIGNED NOT NULL);"
+	return "CREATE TABLE IF NOT EXISTS `custom` (`text` VARCHAR(255) NOT NULL,`e` INTEGER NOT NULL,`num` SMALLINT UNSIGNED NOT NULL);"
 }
 func (Custom) AlterTableStmt() string {
-	return "ALTER TABLE custom MODIFY text VARCHAR(255) NOT NULL,MODIFY e INTEGER NOT NULL AFTER text,MODIFY num SMALLINT UNSIGNED NOT NULL AFTER e;"
+	return "ALTER TABLE `custom` MODIFY `text` VARCHAR(255) NOT NULL,MODIFY `e` INTEGER NOT NULL AFTER `text`,MODIFY `num` SMALLINT UNSIGNED NOT NULL AFTER `e`;"
 }
 func (Custom) TableName() string {
-	return "custom"
+	return "`custom`"
 }
 func (Custom) Columns() []string {
-	return []string{"text", "e", "num"}
+	return []string{"`text`", "`e`", "`num`"}
 }
 func (v Custom) Values() []any {
 	return []any{string(v.Str), int64(v.Enum), int64(v.Num)}

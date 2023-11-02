@@ -13,6 +13,9 @@ naming_convention: {{ .NamingConvention }}
 # Optional: 
 struct_tag: {{ .Tag }}
 
+# Optional: 
+skip_escape: {{ .SkipEscape }}
+
 # Optional: Where should any generated code go?
 exec:
   filename: {{ .Exec.Filename }}

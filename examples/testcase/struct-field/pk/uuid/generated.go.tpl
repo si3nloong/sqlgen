@@ -10,16 +10,16 @@ import (
 )
 
 func (User) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS user (id VARCHAR(36) NOT NULL,name VARCHAR(255) NOT NULL);"
+	return "CREATE TABLE IF NOT EXISTS `user` (`id` VARCHAR(36) NOT NULL,`name` VARCHAR(255) NOT NULL);"
 }
 func (User) AlterTableStmt() string {
-	return "ALTER TABLE user MODIFY id VARCHAR(36) NOT NULL,MODIFY name VARCHAR(255) NOT NULL AFTER id;"
+	return "ALTER TABLE `user` MODIFY `id` VARCHAR(36) NOT NULL,MODIFY `name` VARCHAR(255) NOT NULL AFTER `id`;"
 }
 func (User) TableName() string {
-	return "user"
+	return "`user`"
 }
 func (User) Columns() []string {
-	return []string{"id", "name"}
+	return []string{"`id`", "`name`"}
 }
 func (v User) Values() []any {
 	return []any{(driver.Valuer)(v.ID), string(v.Name)}

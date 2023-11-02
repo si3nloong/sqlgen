@@ -9,12 +9,12 @@ func ({{ .GoName }}) AlterTableStmt() string {
 }
 {{ if .HasTableName -}}
 func ({{ .GoName }}) TableName() string {
-	return {{ quote .TableName }}
+	return {{ quote (wrap .TableName) }}
 }
 {{- end }}
 {{ if .HasColumn -}}
 func ({{ .GoName }}) Columns() []string {
-	return {{ "[]string{" }}{{- range $i, $f := .Fields }}{{- if $i }}{{ ", " }}{{ end }}{{ quote $f.ColumnName }}{{ end }}{{- "}" }}
+	return {{ "[]string{" }}{{- range $i, $f := .Fields }}{{- if $i }}{{ ", " }}{{ end }}{{ quote (wrap $f.ColumnName) }}{{ end }}{{- "}" }}
 }
 {{- end }}
 {{ if ne .PK nil -}}
@@ -22,7 +22,7 @@ func (v {{ .GoName }}) IsAutoIncr() bool {
 	return {{ .PK.IsAutoIncr }}
 }
 func (v {{ .GoName }}) PK() (columnName string, pos int, value driver.Value) {
-	return {{ quote .PK.Field.ColumnName }}, {{ .PK.Field.Index }}, {{ castAs "v" .PK.Field }}
+	return {{ quote (wrap .PK.Field.ColumnName) }}, {{ .PK.Field.Index }}, {{ castAs "v" .PK.Field }}
 }
 {{ end -}}
 func (v {{ .GoName }}) Values() []any {

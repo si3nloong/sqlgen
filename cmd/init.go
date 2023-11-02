@@ -1,9 +1,9 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
-	"strconv"
 
 	"github.com/si3nloong/sqlgen/codegen"
 	"github.com/si3nloong/sqlgen/codegen/config"
@@ -20,7 +20,7 @@ var (
 	}
 	initCmd = &cobra.Command{
 		Use:   "init",
-		Short: "Set up a new " + strconv.Quote(config.DefaultConfigFile) + " file",
+		Short: fmt.Sprintf("Set up a new %q file", config.DefaultConfigFile),
 		RunE:  runInitCommand,
 	}
 )
@@ -50,7 +50,7 @@ func runInitCommand(cmd *cobra.Command, args []string) error {
 				Name: "tag",
 				Prompt: &survey.Input{
 					Message: "What is your tag for parsing:",
-					Default: "sql",
+					Default: config.DefaultStructTag,
 				},
 			},
 			{
@@ -81,14 +81,6 @@ func runInitCommand(cmd *cobra.Command, args []string) error {
 	}
 
 	cfg := config.DefaultConfig()
-	switch answer.Driver {
-	case string(config.MySQL):
-		cfg.Driver = config.MySQL
-	case string(config.Postgres):
-		cfg.Driver = config.Postgres
-	case string(config.Sqlite):
-		cfg.Driver = config.Sqlite
-	}
 	switch answer.NamingConvention {
 	case string(config.SnakeCase):
 		cfg.NamingConvention = config.SnakeCase

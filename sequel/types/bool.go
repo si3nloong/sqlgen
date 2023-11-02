@@ -52,6 +52,8 @@ func (b boolLike[T]) Scan(v any) error {
 		val = T(f)
 	case bool:
 		val = T(vi)
+	case int64:
+		val = T(vi != 0)
 	default:
 		if !b.strictType {
 			switch vi := v.(type) {
@@ -61,8 +63,6 @@ func (b boolLike[T]) Scan(v any) error {
 					return err
 				}
 				val = T(f)
-			case int64:
-				val = T(vi != 0)
 			}
 		}
 	}

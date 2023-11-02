@@ -45,6 +45,9 @@ func (p ptrOfBoolLike[T]) Scan(v any) error {
 	case bool:
 		val := T(vi)
 		*p.addr = &val
+	case int64:
+		val := T(vi != 0)
+		*p.addr = &val
 	}
 	return nil
 }

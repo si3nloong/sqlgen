@@ -9,16 +9,16 @@ import (
 )
 
 func (B) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS b (id BIGINT NOT NULL,value VARCHAR(255) NOT NULL,n VARCHAR(255) NOT NULL);"
+	return "CREATE TABLE IF NOT EXISTS `b` (`id` BIGINT NOT NULL,`value` VARCHAR(255) NOT NULL,`n` VARCHAR(255) NOT NULL);"
 }
 func (B) AlterTableStmt() string {
-	return "ALTER TABLE b MODIFY id BIGINT NOT NULL,MODIFY value VARCHAR(255) NOT NULL AFTER id,MODIFY n VARCHAR(255) NOT NULL AFTER value;"
+	return "ALTER TABLE `b` MODIFY `id` BIGINT NOT NULL,MODIFY `value` VARCHAR(255) NOT NULL AFTER `id`,MODIFY `n` VARCHAR(255) NOT NULL AFTER `value`;"
 }
 func (B) TableName() string {
-	return "b"
+	return "`b`"
 }
 func (B) Columns() []string {
-	return []string{"id", "value", "n"}
+	return []string{"`id`", "`value`", "`n`"}
 }
 func (v B) Values() []any {
 	return []any{int64(v.ID), (driver.Valuer)(v.Value), string(v.N)}

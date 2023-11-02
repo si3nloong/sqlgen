@@ -6,7 +6,12 @@ import (
 
 	"github.com/si3nloong/sqlgen/internal/fileutil"
 	"github.com/si3nloong/sqlgen/internal/strfmt"
+	"github.com/si3nloong/sqlgen/sequel"
 	"gopkg.in/yaml.v3"
+
+	_ "github.com/si3nloong/sqlgen/sequel/dialect/mysql"
+	_ "github.com/si3nloong/sqlgen/sequel/dialect/postgres"
+	_ "github.com/si3nloong/sqlgen/sequel/dialect/sqlite"
 )
 
 type sqlDriver string
@@ -34,22 +39,27 @@ const (
 var cfgFilenames = []string{DefaultConfigFile, ".sqlgen.yml", ".sqlgen.yaml", "sqlgen.yaml"}
 
 type Config struct {
-	Source           []string  `yaml:"src"`
-	Driver           sqlDriver `yaml:"driver"`
-	NamingConvention naming    `yaml:"naming_convention,omitempty"`
-	Tag              string    `yaml:"struct_tag,omitempty"`
-	Strict           bool      `yaml:"strict"`
-	Exec             struct {
-		Filename string `yaml:"filename"`
-	} `yaml:"exec"`
-	Database struct {
-		Package  string `yaml:"package"`
-		Dir      string `yaml:"dir"`
-		Filename string `yaml:"filename"`
-	} `yaml:"database"`
-	SkipHeader  bool `yaml:"skip_header"`
-	SourceMap   bool `yaml:"source_map"`
-	SkipModTidy bool `yaml:"skip_mod_tidy"`
+	Source           []string       `yaml:"src"`
+	Driver           sqlDriver      `yaml:"driver"`
+	NamingConvention naming         `yaml:"naming_convention,omitempty"`
+	Tag              string         `yaml:"struct_tag,omitempty"`
+	Strict           bool           `yaml:"strict"`
+	SkipEscape       bool           `yaml:"skip_escape"`
+	Exec             ExecConfig     `yaml:"exec"`
+	Database         DatabaseConfig `yaml:"database"`
+	SkipHeader       bool           `yaml:"skip_header"`
+	SourceMap        bool           `yaml:"source_map"`
+	SkipModTidy      bool           `yaml:"skip_mod_tidy"`
+}
+
+type ExecConfig struct {
+	Filename string `yaml:"filename"`
+}
+
+type DatabaseConfig struct {
+	Package  string `yaml:"package"`
+	Dir      string `yaml:"dir"`
+	Filename string `yaml:"filename"`
 }
 
 func (c *Config) init() {
@@ -67,8 +77,10 @@ func (c *Config) init() {
 func (c Config) Clone() *Config {
 	newConfig := &Config{}
 	newConfig.init()
-	newConfig.Source = make([]string, len(c.Source))
-	copy(newConfig.Source, c.Source)
+	if len(c.Source) > 0 {
+		newConfig.Source = make([]string, len(c.Source))
+		copy(newConfig.Source, c.Source)
+	}
 	if c.Driver != "" {
 		newConfig.Driver = c.Driver
 	}
@@ -103,6 +115,14 @@ func (c Config) Clone() *Config {
 		newConfig.SkipModTidy = c.SkipModTidy
 	}
 	return newConfig
+}
+
+func (c Config) Dialect() sequel.Dialect {
+	d, ok := sequel.GetDialect(string(c.Driver))
+	if !ok {
+		panic("sqlgen: missing dialect, please register your dialect first")
+	}
+	return d
 }
 
 func (c Config) RenameFunc() func(string) string {

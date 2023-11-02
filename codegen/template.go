@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/si3nloong/sqlgen/codegen/templates"
+	"github.com/si3nloong/sqlgen/sequel"
 	"github.com/valyala/bytebufferpool"
 )
 
@@ -48,58 +49,62 @@ func addrOf(impPkgs *Package) func(n string, f *templates.Field) string {
 	}
 }
 
-func createTableStmt(model *templates.Model) string {
-	buf := bytebufferpool.Get()
-	defer bytebufferpool.Put(buf)
+func createTableStmt(dialect sequel.Dialect) func(model *templates.Model) string {
+	return func(model *templates.Model) string {
+		buf := bytebufferpool.Get()
+		defer bytebufferpool.Put(buf)
 
-	buf.WriteString("CREATE TABLE IF NOT EXISTS " + model.TableName + " (")
-	for i, f := range model.Fields {
-		if i > 0 {
-			buf.WriteByte(',')
+		buf.WriteString("CREATE TABLE IF NOT EXISTS " + dialect.Wrap(model.TableName) + " (")
+		for i, f := range model.Fields {
+			if i > 0 {
+				buf.WriteByte(',')
+			}
+			dataType, isNull := inspectDataType(f)
+			buf.WriteString(dialect.Wrap(f.ColumnName) + " " + dataType)
+			if !isNull {
+				buf.WriteString(" NOT NULL")
+			}
+			if model.PK != nil && model.PK.Field == f && model.PK.IsAutoIncr {
+				buf.WriteString(" AUTO_INCREMENT")
+			}
 		}
-		dataType, isNull := inspectDataType(f)
-		buf.WriteString(f.ColumnName + " " + dataType)
-		if !isNull {
-			buf.WriteString(" NOT NULL")
+		if model.PK != nil {
+			buf.WriteString(",PRIMARY KEY (" + dialect.Wrap(model.PK.Field.ColumnName) + ")")
 		}
-		if model.PK != nil && model.PK.Field == f && model.PK.IsAutoIncr {
-			buf.WriteString(" AUTO_INCREMENT")
-		}
+		buf.WriteString(");")
+		return buf.String()
 	}
-	if model.PK != nil {
-		buf.WriteString(",PRIMARY KEY (" + model.PK.Field.ColumnName + ")")
-	}
-	buf.WriteString(");")
-	return buf.String()
 }
 
-func alterTableStmt(model *templates.Model) string {
-	buf := bytebufferpool.Get()
-	defer bytebufferpool.Put(buf)
-	buf.WriteString("ALTER TABLE " + model.TableName + " ")
-	for i, f := range model.Fields {
-		if i > 0 {
-			buf.WriteByte(',')
+func alterTableStmt(dialect sequel.Dialect) func(model *templates.Model) string {
+	return func(model *templates.Model) string {
+		buf := bytebufferpool.Get()
+		defer bytebufferpool.Put(buf)
+		buf.WriteString("ALTER TABLE " + dialect.Wrap(model.TableName) + " ")
+		for i, f := range model.Fields {
+			if i > 0 {
+				buf.WriteByte(',')
+			}
+			buf.WriteString("MODIFY ")
+			dataType, isNull := inspectDataType(f)
+			buf.WriteString(dialect.Wrap(f.ColumnName) + " " + dataType)
+			if !isNull {
+				buf.WriteString(" NOT NULL")
+			}
+			if model.PK != nil && model.PK.Field == f && model.PK.IsAutoIncr {
+				buf.WriteString(" AUTO_INCREMENT")
+			}
+			if i > 0 {
+				// buf.WriteString(" FIRST")
+				buf.WriteString(" AFTER " + dialect.Wrap(model.Fields[i-1].ColumnName))
+			}
 		}
-		buf.WriteString("MODIFY ")
-		dataType, isNull := inspectDataType(f)
-		buf.WriteString(f.ColumnName + " " + dataType)
-		if !isNull {
-			buf.WriteString(" NOT NULL")
-		}
-		if model.PK != nil && model.PK.Field == f && model.PK.IsAutoIncr {
-			buf.WriteString(" AUTO_INCREMENT")
-		}
-		if i > 0 {
-			// buf.WriteString(" FIRST")
-			buf.WriteString(" AFTER " + model.Fields[i-1].ColumnName)
-		}
+		// if model.PK != nil {
+		// 	buf.WriteString(",MODIFY PRIMARY KEY (" + model.PK.Field.ColumnName + ")")
+		// }
+		buf.WriteByte(';')
+		return buf.String()
 	}
-	// if model.PK != nil {
-	// 	buf.WriteString(",MODIFY PRIMARY KEY (" + model.PK.Field.ColumnName + ")")
-	// }
-	buf.WriteByte(';')
-	return buf.String()
 }
 
 func inspectDataType(f *templates.Field) (dataType string, null bool) {

@@ -3,6 +3,7 @@ package pointer
 import "time"
 
 type Ptr struct {
+	ID     int64 `sql:",pk,auto_increment"`
 	Str    *string
 	Bytes  *[]byte
 	Bool   *bool
@@ -18,5 +19,5 @@ type Ptr struct {
 	Uint64 *uint64
 	F32    *float32
 	F64    *float64
-	Time   *time.Time
+	Time   *time.Time `sql:",size:6"`
 }
