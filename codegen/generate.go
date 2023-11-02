@@ -8,12 +8,12 @@ import (
 )
 
 func Init(cfg *config.Config) error {
-	tmpl, err := template.ParseFS(codegenTemplates, "templates/init.yml.gotpl")
+	tmpl, err := template.ParseFS(codegenTemplates, "templates/init.yml.go.tpl")
 	if err != nil {
 		return err
 	}
 
-	w, err := os.OpenFile(config.ConfigFile, os.O_RDWR|os.O_CREATE, 0o644)
+	w, err := os.OpenFile(config.DefaultConfigFile, os.O_RDWR|os.O_CREATE, 0o644)
 	if err != nil {
 		return err
 	}

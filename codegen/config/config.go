@@ -25,9 +25,12 @@ const (
 	PascalCase naming = "PascalCase"
 )
 
-const ConfigFile = "sqlgen.yml"
+const (
+	DefaultConfigFile    = "sqlgen.yml"
+	DefaultGeneratedFile = "generated.go"
+)
 
-var cfgFilenames = []string{ConfigFile, ".sqlgen.yml", ".sqlgen.yaml", "sqlgen.yaml"}
+var cfgFilenames = []string{DefaultConfigFile, ".sqlgen.yml", ".sqlgen.yaml", "sqlgen.yaml"}
 
 type Config struct {
 	Source           []string  `yaml:"src"`
@@ -54,10 +57,51 @@ func (c *Config) init() {
 	c.Tag = "sql"
 	c.Driver = MySQL
 	c.Strict = true
-	c.Exec.Filename = "generated.go"
+	c.Exec.Filename = DefaultGeneratedFile
 	c.Database.Package = "db"
 	c.Database.Dir = "db"
 	c.Database.Filename = "db.go"
+}
+
+func (c Config) Clone() *Config {
+	newConfig := &Config{}
+	newConfig.init()
+	newConfig.Source = make([]string, len(c.Source))
+	copy(newConfig.Source, c.Source)
+	if c.Driver != "" {
+		newConfig.Driver = c.Driver
+	}
+	if c.NamingConvention != "" {
+		newConfig.NamingConvention = c.NamingConvention
+	}
+	if c.Tag != "" {
+		newConfig.Tag = c.Tag
+	}
+	if c.Exec.Filename != "" {
+		newConfig.Exec.Filename = c.Exec.Filename
+	}
+	if c.Database.Dir != "" {
+		newConfig.Database.Dir = c.Database.Dir
+	}
+	if c.Database.Package != "" {
+		newConfig.Database.Package = c.Database.Package
+	}
+	if c.Database.Filename != "" {
+		newConfig.Database.Filename = c.Database.Filename
+	}
+	if c.Strict != newConfig.Strict {
+		newConfig.Strict = c.Strict
+	}
+	if c.SkipHeader != newConfig.SkipHeader {
+		newConfig.SkipHeader = c.SkipHeader
+	}
+	if c.SourceMap != newConfig.SourceMap {
+		newConfig.SourceMap = c.SourceMap
+	}
+	if c.SkipModTidy != newConfig.SkipModTidy {
+		newConfig.SkipModTidy = c.SkipModTidy
+	}
+	return newConfig
 }
 
 func (c Config) RenameFunc() func(string) string {

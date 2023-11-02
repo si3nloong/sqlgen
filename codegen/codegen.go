@@ -29,7 +29,7 @@ import (
 	"golang.org/x/tools/imports"
 )
 
-//go:embed templates/*.gotpl
+//go:embed templates/*.go.tpl
 var codegenTemplates embed.FS
 
 type tagOption string
@@ -88,9 +88,10 @@ var path2regex = strings.NewReplacer(
 	`/`, `[\\/]`,
 )
 
-func Generate(cfg *config.Config) error {
+func Generate(c *config.Config) error {
 	var (
 		srcDir  string
+		cfg     = c.Clone()
 		sources = make([]string, len(cfg.Source))
 	)
 
@@ -416,7 +417,7 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 		}
 
 		blr := bytes.NewBufferString("")
-		tmplName := "model.gotpl"
+		tmplName := "model.go.tpl"
 		tmpl, err := template.New(tmplName).Funcs(template.FuncMap{
 			"quote":         strconv.Quote,
 			"createTable":   createTableStmt,
