@@ -95,14 +95,19 @@ func (c Config) Clone() *Config {
 	if c.Exec.Filename != "" {
 		newConfig.Exec.Filename = c.Exec.Filename
 	}
-	if c.Database.Dir != "" {
-		newConfig.Database.Dir = c.Database.Dir
-	}
-	if c.Database.Package != "" {
-		newConfig.Database.Package = c.Database.Package
-	}
-	if c.Database.Filename != "" {
-		newConfig.Database.Filename = c.Database.Filename
+	if c.Database != nil {
+		if newConfig.Database == nil {
+			newConfig.Database = new(DatabaseConfig)
+		}
+		if c.Database.Dir != "" {
+			newConfig.Database.Dir = c.Database.Dir
+		}
+		if c.Database.Package != "" {
+			newConfig.Database.Package = c.Database.Package
+		}
+		if c.Database.Filename != "" {
+			newConfig.Database.Filename = c.Database.Filename
+		}
 	}
 	if c.Strict != newConfig.Strict {
 		newConfig.Strict = c.Strict
