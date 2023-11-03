@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/si3nloong/sqlgen/sequel"
+	"github.com/si3nloong/sqlgen/sequel/strpool"
 )
 
 func Migrate[T sequel.Migrator](ctx context.Context, db sequel.DB) error {
@@ -12,9 +13,9 @@ func Migrate[T sequel.Migrator](ctx context.Context, db sequel.DB) error {
 		v           T
 		table       string
 		tableExists bool
-		stmt        = acquireString()
+		stmt        = strpool.AcquireString()
 	)
-	defer releaseString(stmt)
+	defer strpool.ReleaseString(stmt)
 	if err := db.QueryRowContext(ctx, "SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_NAME = "+dialect.Var(1)+" LIMIT 1;", v.TableName()).Scan(&table); err != nil {
 		tableExists = false
 	} else {

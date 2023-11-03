@@ -5,6 +5,7 @@ import (
 	"database/sql"
 
 	"github.com/si3nloong/sqlgen/sequel"
+	"github.com/si3nloong/sqlgen/sequel/strpool"
 )
 
 func InsertOne[T sequel.KeyValuer[T], Ptr interface {
@@ -23,10 +24,10 @@ func InsertOne[T sequel.KeyValuer[T], Ptr interface {
 
 	var (
 		noOfCols = len(columns)
-		stmt     = acquireString()
+		stmt     = strpool.AcquireString()
 		dialect  = sequel.DefaultDialect()
 	)
-	defer releaseString(stmt)
+	defer strpool.ReleaseString(stmt)
 	stmt.WriteString("INSERT INTO " + dialect.Wrap(v.TableName()) + " (")
 	for i := 0; i < noOfCols; i++ {
 		if i > 0 {
@@ -83,9 +84,9 @@ func InsertInto[T interface {
 	var (
 		noOfCols = len(columns)
 		args     = make([]any, 0)
-		stmt     = acquireString()
+		stmt     = strpool.AcquireString()
 	)
-	defer releaseString(stmt)
+	defer strpool.ReleaseString(stmt)
 	stmt.WriteString("INSERT INTO " + dialect.Wrap(model.TableName()) + " (")
 	for i := 0; i < noOfCols; i++ {
 		if i > 0 {

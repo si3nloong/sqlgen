@@ -7,7 +7,7 @@ import (
 
 	"github.com/si3nloong/sqlgen/codegen/templates"
 	"github.com/si3nloong/sqlgen/sequel"
-	"github.com/valyala/bytebufferpool"
+	"github.com/si3nloong/sqlgen/sequel/strpool"
 )
 
 func reserveImport(impPkgs *Package) func(pkgPath string, aliases ...string) string {
@@ -51,8 +51,8 @@ func addrOf(impPkgs *Package) func(n string, f *templates.Field) string {
 
 func createTableStmt(dialect sequel.Dialect) func(model *templates.Model) string {
 	return func(model *templates.Model) string {
-		buf := bytebufferpool.Get()
-		defer bytebufferpool.Put(buf)
+		buf := strpool.AcquireString()
+		defer strpool.ReleaseString(buf)
 
 		buf.WriteString("CREATE TABLE IF NOT EXISTS " + dialect.Wrap(model.TableName) + " (")
 		for i, f := range model.Fields {
@@ -78,8 +78,8 @@ func createTableStmt(dialect sequel.Dialect) func(model *templates.Model) string
 
 func alterTableStmt(dialect sequel.Dialect) func(model *templates.Model) string {
 	return func(model *templates.Model) string {
-		buf := bytebufferpool.Get()
-		defer bytebufferpool.Put(buf)
+		buf := strpool.AcquireString()
+		defer strpool.ReleaseString(buf)
 		buf.WriteString("ALTER TABLE " + dialect.Wrap(model.TableName) + " ")
 		for i, f := range model.Fields {
 			if i > 0 {

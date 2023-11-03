@@ -1,4 +1,4 @@
-package db
+package strpool
 
 import (
 	"strings"
@@ -11,17 +11,16 @@ var (
 			// The Pool's New function should generally only return pointer
 			// types, since a pointer can be put into the return interface
 			// value without an allocation:
-			stmt := new(strings.Builder)
-			return stmt
+			return new(strings.Builder)
 		},
 	}
 )
 
-func acquireString() *strings.Builder {
+func AcquireString() *strings.Builder {
 	return pool.Get().(*strings.Builder)
 }
 
-func releaseString(blr *strings.Builder) {
+func ReleaseString(blr *strings.Builder) {
 	blr.Reset()
 	pool.Put(blr)
 }

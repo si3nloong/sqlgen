@@ -3,6 +3,7 @@
 {{- reserveImport "strings" }}
 {{- reserveImport "sync" }}
 {{- reserveImport "github.com/si3nloong/sqlgen/sequel" }}
+{{- reserveImport "github.com/si3nloong/sqlgen/sequel/strpool" }}
 func InsertOne[T sequel.KeyValuer[T], Ptr interface {
 	sequel.KeyValuer[T]
 	sequel.Scanner[T]
@@ -20,9 +21,9 @@ func InsertOne[T sequel.KeyValuer[T], Ptr interface {
 	}
 	var (
 		noOfCols = len(columns)
-		stmt     = acquireString()
+		stmt     = strpool.AcquireString()
 	)
-	defer releaseString(stmt)
+	defer strpool.ReleaseString(stmt)
 	stmt.WriteString("INSERT INTO " + v.TableName() + " (")
 	for i := 0; i < noOfCols; i++ {
 		if i > 0 {
@@ -47,10 +48,9 @@ func FindByID[T sequel.KeyValuer[T], Ptr sequel.KeyValueScanner[T]](ctx context.
 	var (
 		pkName, _, pk = v.PK()
 		columns       = v.Columns()
-		stmt          = acquireString()
+		stmt          = strpool.AcquireString()
 	)
-	defer releaseString(stmt)
-
+	defer strpool.ReleaseString(stmt)
 	stmt.WriteString("SELECT ")
 	for i := range columns {
 		if i > 0 {
@@ -65,14 +65,14 @@ func FindByID[T sequel.KeyValuer[T], Ptr sequel.KeyValueScanner[T]](ctx context.
 // UpdateByID is to update single record using primary key.
 func UpdateByID[T sequel.KeyValuer[T]](ctx context.Context, db sequel.DB, v T) (sql.Result, error) {
 	var (
-		pkName, idx, pk   = v.PK()
+		pkName, idx, pk = v.PK()
 		columns, values = v.Columns(), v.Values()
-		stmt            = acquireString()
+		stmt            = strpool.AcquireString()
 	)
     columns = append(columns[:idx], columns[idx+1:]...)
     values = append(values[:idx], values[idx+1:]...)
     var noOfCols = len(columns)
-	defer releaseString(stmt)
+	defer strpool.ReleaseString(stmt)
 	stmt.WriteString("UPDATE " + v.TableName() + " SET ")
 	for i := 0; i < noOfCols; i++ {
 		if i > 1 {
@@ -88,31 +88,10 @@ func UpdateByID[T sequel.KeyValuer[T]](ctx context.Context, db sequel.DB, v T) (
 func DeleteByID[T sequel.KeyValuer[T]](ctx context.Context, db sequel.DB, v T) (sql.Result, error) {
 	var (
 		pkName, _, pk = v.PK()
-		stmt          = acquireString()
+		stmt          = strpool.AcquireString()
 	)
-	defer releaseString(stmt)
+	defer strpool.ReleaseString(stmt)
 	stmt.WriteString("DELETE FROM " + v.TableName() + " WHERE " + pkName + " = {{ var 1 }};")
 
 	return db.ExecContext(ctx, stmt.String(), pk)
-}
-
-var (
-	pool = sync.Pool{
-		New: func() any {
-			// The Pool's New function should generally only return pointer
-			// types, since a pointer can be put into the return interface
-			// value without an allocation:
-			stmt := new(strings.Builder)
-			return stmt
-		},
-	}
-)
-
-func acquireString() *strings.Builder {
-	return pool.Get().(*strings.Builder)
-}
-
-func releaseString(blr *strings.Builder) {
-	blr.Reset()
-	pool.Put(blr)
 }

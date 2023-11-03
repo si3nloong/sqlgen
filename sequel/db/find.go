@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/si3nloong/sqlgen/sequel"
+	"github.com/si3nloong/sqlgen/sequel/strpool"
 )
 
 // FindOne is to find single record using primary key.
@@ -12,9 +13,9 @@ func FindOne[T sequel.KeyValuer[T], Ptr sequel.KeyValueScanner[T]](ctx context.C
 		pkName, _, pk = v.PK()
 		dialect       = sequel.DefaultDialect()
 		columns       = v.Columns()
-		stmt          = acquireString()
+		stmt          = strpool.AcquireString()
 	)
-	defer releaseString(stmt)
+	defer strpool.ReleaseString(stmt)
 
 	stmt.WriteString("SELECT ")
 	for i := range columns {

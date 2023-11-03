@@ -5,6 +5,7 @@ import (
 	"database/sql"
 
 	"github.com/si3nloong/sqlgen/sequel"
+	"github.com/si3nloong/sqlgen/sequel/strpool"
 )
 
 // DeleteOne is to update single record using primary key.
@@ -12,9 +13,9 @@ func DeleteOne[T sequel.KeyValuer[T]](ctx context.Context, db sequel.DB, v T) (s
 	var (
 		pkName, _, pk = v.PK()
 		dialect       = sequel.DefaultDialect()
-		stmt          = acquireString()
+		stmt          = strpool.AcquireString()
 	)
-	defer releaseString(stmt)
+	defer strpool.ReleaseString(stmt)
 	stmt.WriteString("DELETE FROM " + dialect.Wrap(v.TableName()) + " WHERE " + dialect.Wrap(pkName) + " = " + dialect.Var(1) + ";")
 
 	return db.ExecContext(ctx, stmt.String(), pk)

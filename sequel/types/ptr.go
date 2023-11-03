@@ -1,8 +1,8 @@
 package types
 
-func Ptr[T any, Ptr interface{ *T }](v Ptr) Ptr {
+func Ptr[T any, DoublePtr interface{ **T }, Ptr interface{ *T }](v DoublePtr) Ptr {
 	if v == nil {
 		return nil
 	}
-	return v
+	return *v
 }

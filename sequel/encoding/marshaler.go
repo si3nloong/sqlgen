@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/valyala/bytebufferpool"
+	"github.com/si3nloong/sqlgen/sequel/strpool"
 	"golang.org/x/exp/constraints"
 )
 
@@ -17,8 +17,8 @@ type BaseType interface {
 }
 
 func MarshalStringList[V ~[]byte | ~string](list []V) string {
-	blr := bytebufferpool.Get()
-	defer bytebufferpool.Put(blr)
+	blr := strpool.AcquireString()
+	defer strpool.ReleaseString(blr)
 	blr.WriteByte('[')
 	for i, el := range list {
 		if i > 0 {
@@ -31,8 +31,8 @@ func MarshalStringList[V ~[]byte | ~string](list []V) string {
 }
 
 func MarshalIntList[V constraints.Integer](list []V) string {
-	blr := bytebufferpool.Get()
-	defer bytebufferpool.Put(blr)
+	blr := strpool.AcquireString()
+	defer strpool.ReleaseString(blr)
 	blr.WriteByte('[')
 	for i, el := range list {
 		if i > 0 {
@@ -45,8 +45,8 @@ func MarshalIntList[V constraints.Integer](list []V) string {
 }
 
 func MarshalBoolList[V ~bool](list []V) string {
-	blr := bytebufferpool.Get()
-	defer bytebufferpool.Put(blr)
+	blr := strpool.AcquireString()
+	defer strpool.ReleaseString(blr)
 	blr.WriteByte('[')
 	for i, el := range list {
 		if i > 0 {
@@ -59,8 +59,8 @@ func MarshalBoolList[V ~bool](list []V) string {
 }
 
 func MarshalFloatList[V constraints.Float](list []V, precision ...int) string {
-	blr := bytebufferpool.Get()
-	defer bytebufferpool.Put(blr)
+	blr := strpool.AcquireString()
+	defer strpool.ReleaseString(blr)
 	var prec = -1
 	if len(precision) > 0 {
 		prec = precision[0]
@@ -77,8 +77,8 @@ func MarshalFloatList[V constraints.Float](list []V, precision ...int) string {
 }
 
 func MarshalTimeList[V time.Time](list []V) string {
-	blr := bytebufferpool.Get()
-	defer bytebufferpool.Put(blr)
+	blr := strpool.AcquireString()
+	defer strpool.ReleaseString(blr)
 	blr.WriteByte('[')
 	for i, el := range list {
 		if i > 0 {
