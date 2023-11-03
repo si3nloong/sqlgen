@@ -53,7 +53,8 @@ type Config struct {
 }
 
 type ExecConfig struct {
-	Filename string `yaml:"filename"`
+	SkipEmpty bool   `yaml:"skip_empty"`
+	Filename  string `yaml:"filename"`
 }
 
 type DatabaseConfig struct {

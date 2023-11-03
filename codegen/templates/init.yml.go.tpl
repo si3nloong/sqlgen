@@ -18,6 +18,7 @@ skip_escape: {{ .SkipEscape }}
 
 # Optional: Where should any generated code go?
 exec:
+  skip_empty: {{ .Exec.SkipEmpty }}
   filename: {{ .Exec.Filename }}
 
 # Optional: 

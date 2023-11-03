@@ -421,6 +421,10 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 			}
 		}
 
+		if cfg.Exec.SkipEmpty && len(params.Models) == 0 {
+			goto nextDir
+		}
+
 		if err := renderTemplate(
 			"model.go.tpl",
 			cfg.SkipHeader,
@@ -433,6 +437,7 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 			return err
 		}
 
+	nextDir:
 		dirs = dirs[1:]
 	}
 
