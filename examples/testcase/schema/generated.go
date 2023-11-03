@@ -10,25 +10,6 @@ import (
 	"github.com/si3nloong/sqlgen/sequel/types"
 )
 
-func (Model) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS `model` ();"
-}
-func (Model) AlterTableStmt() string {
-	return "ALTER TABLE `model` ;"
-}
-func (Model) TableName() string {
-	return "`model`"
-}
-func (Model) Columns() []string {
-	return []string{}
-}
-func (v Model) Values() []any {
-	return []any{}
-}
-func (v *Model) Addrs() []any {
-	return []any{}
-}
-
 func (A) CreateTableStmt() string {
 	return "CREATE TABLE IF NOT EXISTS `a` (`id` VARCHAR(255) NOT NULL,`created_at` DATETIME NOT NULL);"
 }

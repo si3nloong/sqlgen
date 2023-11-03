@@ -414,7 +414,11 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 			}
 
 			clear(nameMap)
-			params.Models = append(params.Models, &model)
+			// If model doesn't consist any field,
+			// we don't really want to generate the boilerplate code
+			if len(model.Fields) > 0 {
+				params.Models = append(params.Models, &model)
+			}
 		}
 
 		if err := renderTemplate(
@@ -432,16 +436,19 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 		dirs = dirs[1:]
 	}
 
-	if err := renderTemplate(
-		"db.go.tpl",
-		cfg.SkipHeader,
-		dialect,
-		cfg.Database.Package,
-		cfg.Database.Dir,
-		cfg.Database.Filename,
-		struct{}{},
-	); err != nil {
-		return err
+	if cfg.Database != nil {
+		// Generate db code
+		if err := renderTemplate(
+			"db.go.tpl",
+			cfg.SkipHeader,
+			dialect,
+			cfg.Database.Package,
+			cfg.Database.Dir,
+			cfg.Database.Filename,
+			struct{}{},
+		); err != nil {
+			return err
+		}
 	}
 
 	return goModTidy()

@@ -20,25 +20,39 @@ func MarshalStringList[V ~[]byte | ~string](list []V) string {
 	blr := strpool.AcquireString()
 	defer strpool.ReleaseString(blr)
 	blr.WriteByte('[')
-	for i, el := range list {
+	for i := range list {
 		if i > 0 {
 			blr.WriteByte(',')
 		}
-		blr.WriteString(strconv.Quote(string(el)))
+		blr.WriteString(strconv.Quote(string(list[i])))
 	}
 	blr.WriteByte(']')
 	return blr.String()
 }
 
-func MarshalIntList[V constraints.Integer](list []V) string {
+func MarshalSignedIntList[V constraints.Signed](list []V) string {
 	blr := strpool.AcquireString()
 	defer strpool.ReleaseString(blr)
 	blr.WriteByte('[')
-	for i, el := range list {
+	for i := range list {
 		if i > 0 {
 			blr.WriteByte(',')
 		}
-		blr.WriteString(strconv.FormatInt(int64(el), 10))
+		blr.WriteString(strconv.FormatInt(int64(list[i]), 10))
+	}
+	blr.WriteByte(']')
+	return blr.String()
+}
+
+func MarshalUnsignedIntList[V constraints.Unsigned](list []V) string {
+	blr := strpool.AcquireString()
+	defer strpool.ReleaseString(blr)
+	blr.WriteByte('[')
+	for i := range list {
+		if i > 0 {
+			blr.WriteByte(',')
+		}
+		blr.WriteString(strconv.FormatUint(uint64(list[i]), 10))
 	}
 	blr.WriteByte(']')
 	return blr.String()
@@ -66,11 +80,11 @@ func MarshalFloatList[V constraints.Float](list []V, precision ...int) string {
 		prec = precision[0]
 	}
 	blr.WriteByte('[')
-	for i, el := range list {
+	for i := range list {
 		if i > 0 {
 			blr.WriteByte(',')
 		}
-		blr.WriteString(strconv.FormatFloat(float64(el), 'f', prec, 64))
+		blr.WriteString(strconv.FormatFloat(float64(list[i]), 'f', prec, 64))
 	}
 	blr.WriteByte(']')
 	return blr.String()
@@ -80,11 +94,11 @@ func MarshalTimeList[V time.Time](list []V) string {
 	blr := strpool.AcquireString()
 	defer strpool.ReleaseString(blr)
 	blr.WriteByte('[')
-	for i, el := range list {
+	for i := range list {
 		if i > 0 {
 			blr.WriteByte(',')
 		}
-		blr.WriteString(time.Time(el).Format(strconv.Quote(time.RFC3339)))
+		blr.WriteString(time.Time(list[i]).Format(strconv.Quote(time.RFC3339)))
 	}
 	blr.WriteByte(']')
 	return blr.String()

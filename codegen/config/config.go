@@ -39,17 +39,17 @@ const (
 var cfgFilenames = []string{DefaultConfigFile, ".sqlgen.yml", ".sqlgen.yaml", "sqlgen.yaml"}
 
 type Config struct {
-	Source           []string       `yaml:"src"`
-	Driver           sqlDriver      `yaml:"driver"`
-	NamingConvention naming         `yaml:"naming_convention,omitempty"`
-	Tag              string         `yaml:"struct_tag,omitempty"`
-	Strict           bool           `yaml:"strict"`
-	SkipEscape       bool           `yaml:"skip_escape"`
-	Exec             ExecConfig     `yaml:"exec"`
-	Database         DatabaseConfig `yaml:"database"`
-	SkipHeader       bool           `yaml:"skip_header"`
-	SourceMap        bool           `yaml:"source_map"`
-	SkipModTidy      bool           `yaml:"skip_mod_tidy"`
+	Source           []string        `yaml:"src"`
+	Driver           sqlDriver       `yaml:"driver"`
+	NamingConvention naming          `yaml:"naming_convention,omitempty"`
+	Tag              string          `yaml:"struct_tag,omitempty"`
+	Strict           bool            `yaml:"strict"`
+	SkipEscape       bool            `yaml:"skip_escape"`
+	Exec             ExecConfig      `yaml:"exec"`
+	Database         *DatabaseConfig `yaml:"database"`
+	SkipHeader       bool            `yaml:"skip_header"`
+	SourceMap        bool            `yaml:"source_map"`
+	SkipModTidy      bool            `yaml:"skip_mod_tidy"`
 }
 
 type ExecConfig struct {
@@ -69,6 +69,7 @@ func (c *Config) init() {
 	c.Driver = MySQL
 	c.Strict = true
 	c.Exec.Filename = DefaultGeneratedFile
+	c.Database = new(DatabaseConfig)
 	c.Database.Package = "db"
 	c.Database.Dir = "db"
 	c.Database.Filename = "db.go"

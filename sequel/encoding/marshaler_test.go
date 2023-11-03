@@ -23,11 +23,11 @@ func TestMarshalStringList(t *testing.T) {
 
 func TestMarshalIntList(t *testing.T) {
 	t.Run("MarshalIntList using int", func(t *testing.T) {
-		require.Equal(t, `[-1,-6,11,88,100]`, MarshalIntList([]int{-1, -6, 11, 88, 100}))
+		require.Equal(t, `[-1,-6,11,88,100]`, MarshalSignedIntList([]int{-1, -6, 11, 88, 100}))
 	})
 
 	t.Run("MarshalIntList using uint", func(t *testing.T) {
-		require.Equal(t, `[1,5,10]`, MarshalIntList([]uint{1, 5, 10}))
+		require.Equal(t, `[1,5,10]`, MarshalUnsignedIntList([]uint{1, 5, 10}))
 	})
 
 	t.Run("MarshalIntList using iota", func(t *testing.T) {
@@ -38,7 +38,7 @@ func TestMarshalIntList(t *testing.T) {
 			failed
 			pending
 		)
-		require.Equal(t, `[1,2,3]`, MarshalIntList([]enum{success, failed, pending}))
+		require.Equal(t, `[1,2,3]`, MarshalSignedIntList([]enum{success, failed, pending}))
 	})
 }
 
