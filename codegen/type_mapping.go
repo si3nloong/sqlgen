@@ -34,6 +34,20 @@ var (
 		"*float32":   {"github.com/si3nloong/sqlgen/sequel/types.Float(%v)", "github.com/si3nloong/sqlgen/sequel/types.PtrOfFloat(%v)"},
 		"*float64":   {"github.com/si3nloong/sqlgen/sequel/types.Float(%v)", "github.com/si3nloong/sqlgen/sequel/types.PtrOfFloat(%v)"},
 		"*time.Time": {"github.com/si3nloong/sqlgen/sequel/types.Time(%v)", "github.com/si3nloong/sqlgen/sequel/types.PtrOfTime(%v)"},
+		"[]string":   {"github.com/si3nloong/sqlgen/sequel/encoding.MarshalStringList(%v)", "github.com/si3nloong/sqlgen/sequel/types.StringList(%v)"},
+		"[]bool":     {"github.com/si3nloong/sqlgen/sequel/encoding.MarshalBoolList(%v)", "github.com/si3nloong/sqlgen/sequel/types.BoolList(%v)"},
+		"[]int":      {"github.com/si3nloong/sqlgen/sequel/encoding.MarshalSignedIntList(%v)", "github.com/si3nloong/sqlgen/sequel/types.IntList(%v)"},
+		"[]int8":     {"github.com/si3nloong/sqlgen/sequel/encoding.MarshalSignedIntList(%v)", "github.com/si3nloong/sqlgen/sequel/types.IntList(%v)"},
+		"[]int16":    {"github.com/si3nloong/sqlgen/sequel/encoding.MarshalSignedIntList(%v)", "github.com/si3nloong/sqlgen/sequel/types.IntList(%v)"},
+		"[]int32":    {"github.com/si3nloong/sqlgen/sequel/encoding.MarshalSignedIntList(%v)", "github.com/si3nloong/sqlgen/sequel/types.IntList(%v)"},
+		"[]int64":    {"github.com/si3nloong/sqlgen/sequel/encoding.MarshalSignedIntList(%v)", "github.com/si3nloong/sqlgen/sequel/types.IntList(%v)"},
+		"[]uint":     {"github.com/si3nloong/sqlgen/sequel/encoding.MarshalUnsignedIntList(%v)", "github.com/si3nloong/sqlgen/sequel/types.UintList(%v)"},
+		"[]uint8":    {"github.com/si3nloong/sqlgen/sequel/encoding.MarshalUnsignedIntList(%v)", "github.com/si3nloong/sqlgen/sequel/types.UintList(%v)"},
+		"[]uint16":   {"github.com/si3nloong/sqlgen/sequel/encoding.MarshalUnsignedIntList(%v)", "github.com/si3nloong/sqlgen/sequel/types.UintList(%v)"},
+		"[]uint32":   {"github.com/si3nloong/sqlgen/sequel/encoding.MarshalUnsignedIntList(%v)", "github.com/si3nloong/sqlgen/sequel/types.UintList(%v)"},
+		"[]uint64":   {"github.com/si3nloong/sqlgen/sequel/encoding.MarshalUnsignedIntList(%v)", "github.com/si3nloong/sqlgen/sequel/types.UintList(%v)"},
+		"[]float32":  {"github.com/si3nloong/sqlgen/sequel/encoding.MarshalFloatList(%v)", "github.com/si3nloong/sqlgen/sequel/types.FloatList(%v)"},
+		"[]float64":  {"github.com/si3nloong/sqlgen/sequel/encoding.MarshalFloatList(%v)", "github.com/si3nloong/sqlgen/sequel/types.FloatList(%v)"},
 	}
 )
 

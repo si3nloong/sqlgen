@@ -1,4 +1,4 @@
-package array
+package custom
 
 type StateCode string
 

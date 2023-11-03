@@ -62,11 +62,15 @@ func MarshalBoolList[V ~bool](list []V) string {
 	blr := strpool.AcquireString()
 	defer strpool.ReleaseString(blr)
 	blr.WriteByte('[')
-	for i, el := range list {
+	for i := range list {
 		if i > 0 {
 			blr.WriteByte(',')
 		}
-		blr.WriteString(strconv.FormatBool(bool(el)))
+		if list[i] {
+			blr.WriteByte('1')
+		} else {
+			blr.WriteByte('0')
+		}
 	}
 	blr.WriteByte(']')
 	return blr.String()

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"log"
 	"os"
 	"testing"
 	"time"
@@ -17,6 +18,7 @@ import (
 	_ "github.com/si3nloong/sqlgen/sequel/dialect/postgres"
 
 	"github.com/jaswdr/faker"
+	"github.com/si3nloong/sqlgen/examples/testcase/struct-field/array"
 	autopk "github.com/si3nloong/sqlgen/examples/testcase/struct-field/pk/auto-incr"
 	"github.com/si3nloong/sqlgen/examples/testcase/struct-field/pointer"
 	"github.com/si3nloong/sqlgen/sequel/db"
@@ -62,6 +64,11 @@ func TestMain(m *testing.M) {
 	if err := db.Migrate[pointer.Ptr](context.TODO(), sqliteDB); err != nil {
 		panic(err)
 	}
+
+	if err := db.Migrate[array.Array](context.TODO(), sqliteDB); err != nil {
+		panic(err)
+	}
+
 	// mustNot(sqliteDB.Exec("DROP TABLE `model`;"))
 	// mustNot(sqliteDB.Exec(createTableModel))
 
@@ -80,11 +87,32 @@ func newPKModel() autopk.Model {
 func TestInsertInto(t *testing.T) {
 	ctx := context.TODO()
 
+	r1 := array.Array{}
+	r1.StrList = []string{"a", "b", "c"}
+	r1.CustomStrList = append(r1.CustomStrList, "x", "y", "z")
+	r1.BoolList = append(r1.BoolList, true, false, true, false, true)
+	r1.Int8List = append(r1.Int8List, -88, -13, -1, 6)
+	r1.Int32List = append(r1.Int32List, -88, 188, -1)
+	r1.Uint8List = append(r1.Uint8List, 10, 5, 1)
+	r1.F32List = append(r1.F32List, -88.114, 188.123, -1.0538)
+	r1.F64List = append(r1.F64List, -88.114, 188.123, -1.0538)
+
+	inputs := []array.Array{r1}
+	result, err := db.InsertInto(context.TODO(), sqliteDB, inputs)
+	require.NoError(t, err)
+	lastID := mustValue(result.LastInsertId())
+	require.NotEmpty(t, lastID)
+
+	ptr := array.Array{}
+	ptr.ID = uint64(lastID)
+	mustNoError(db.FindOne(ctx, sqliteDB, &ptr))
+	log.Println(ptr)
+
 	t.Run("with all nil values", func(t *testing.T) {
 		inputs := []pointer.Ptr{{}, {}}
 		result, err := db.InsertInto(ctx, sqliteDB, inputs)
-		lastID := mustValue(result.LastInsertId())
 		require.NoError(t, err)
+		lastID := mustValue(result.LastInsertId())
 		require.NotEmpty(t, lastID)
 		require.Equal(t, int64(2), mustValue(result.RowsAffected()))
 	})

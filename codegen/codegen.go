@@ -491,13 +491,16 @@ func UnderlyingType(t types.Type) (*Mapping, bool) {
 	for t != nil {
 		switch v := t.(type) {
 		case *types.Basic:
-			typeStr = v.String()
+			typeStr += v.String()
 			prev = t.Underlying()
 		case *types.Named:
-			typeStr = v.String()
+			typeStr += v.Underlying().String()
 			prev = t.Underlying()
 		case *types.Pointer:
-			typeStr = v.Underlying().String()
+			typeStr += v.Underlying().String()
+			prev = v.Elem()
+		case *types.Slice:
+			typeStr += "[]"
 			prev = v.Elem()
 		default:
 			break

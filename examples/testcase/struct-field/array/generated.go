@@ -3,47 +3,33 @@
 package array
 
 import (
-	"database/sql"
 	"database/sql/driver"
-	"time"
 
+	"github.com/si3nloong/sqlgen/sequel/encoding"
 	"github.com/si3nloong/sqlgen/sequel/types"
 )
 
-func (Address) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS `address` (`line_1` VARCHAR(255) NOT NULL,`line_2` VARCHAR(255) NOT NULL,`city` VARCHAR(255) NOT NULL,`post_code` INTEGER UNSIGNED NOT NULL,`state_code` VARCHAR(255) NOT NULL,`country_code` VARCHAR(255) NOT NULL);"
+func (Array) CreateTableStmt() string {
+	return "CREATE TABLE IF NOT EXISTS `array` (`id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,`bool_list` VARCHAR(255) NOT NULL,`uint_8_list` VARCHAR(255) NOT NULL,`uint_16_list` VARCHAR(255) NOT NULL,`uint_32_list` VARCHAR(255) NOT NULL,`uint_64_list` VARCHAR(255) NOT NULL,`f_32_list` VARCHAR(255) NOT NULL,`f_64_list` VARCHAR(255) NOT NULL,`str_list` VARCHAR(255) NOT NULL,`custom_str_list` VARCHAR(255) NOT NULL,`int_list` VARCHAR(255) NOT NULL,`int_8_list` VARCHAR(255) NOT NULL,`int_16_list` VARCHAR(255) NOT NULL,`int_32_list` VARCHAR(255) NOT NULL,`int_64_list` VARCHAR(255) NOT NULL,`uint_list` VARCHAR(255) NOT NULL,PRIMARY KEY (`id`));"
 }
-func (Address) AlterTableStmt() string {
-	return "ALTER TABLE `address` MODIFY `line_1` VARCHAR(255) NOT NULL,MODIFY `line_2` VARCHAR(255) NOT NULL AFTER `line_1`,MODIFY `city` VARCHAR(255) NOT NULL AFTER `line_2`,MODIFY `post_code` INTEGER UNSIGNED NOT NULL AFTER `city`,MODIFY `state_code` VARCHAR(255) NOT NULL AFTER `post_code`,MODIFY `country_code` VARCHAR(255) NOT NULL AFTER `state_code`;"
+func (Array) AlterTableStmt() string {
+	return "ALTER TABLE `array` MODIFY `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,MODIFY `bool_list` VARCHAR(255) NOT NULL AFTER `id`,MODIFY `uint_8_list` VARCHAR(255) NOT NULL AFTER `bool_list`,MODIFY `uint_16_list` VARCHAR(255) NOT NULL AFTER `uint_8_list`,MODIFY `uint_32_list` VARCHAR(255) NOT NULL AFTER `uint_16_list`,MODIFY `uint_64_list` VARCHAR(255) NOT NULL AFTER `uint_32_list`,MODIFY `f_32_list` VARCHAR(255) NOT NULL AFTER `uint_64_list`,MODIFY `f_64_list` VARCHAR(255) NOT NULL AFTER `f_32_list`,MODIFY `str_list` VARCHAR(255) NOT NULL AFTER `f_64_list`,MODIFY `custom_str_list` VARCHAR(255) NOT NULL AFTER `str_list`,MODIFY `int_list` VARCHAR(255) NOT NULL AFTER `custom_str_list`,MODIFY `int_8_list` VARCHAR(255) NOT NULL AFTER `int_list`,MODIFY `int_16_list` VARCHAR(255) NOT NULL AFTER `int_8_list`,MODIFY `int_32_list` VARCHAR(255) NOT NULL AFTER `int_16_list`,MODIFY `int_64_list` VARCHAR(255) NOT NULL AFTER `int_32_list`,MODIFY `uint_list` VARCHAR(255) NOT NULL AFTER `int_64_list`;"
 }
-func (Address) TableName() string {
-	return "`address`"
+func (Array) TableName() string {
+	return "`array`"
 }
-func (Address) Columns() []string {
-	return []string{"`line_1`", "`line_2`", "`city`", "`post_code`", "`state_code`", "`country_code`"}
+func (Array) Columns() []string {
+	return []string{"`id`", "`bool_list`", "`uint_8_list`", "`uint_16_list`", "`uint_32_list`", "`uint_64_list`", "`f_32_list`", "`f_64_list`", "`str_list`", "`custom_str_list`", "`int_list`", "`int_8_list`", "`int_16_list`", "`int_32_list`", "`int_64_list`", "`uint_list`"}
 }
-func (v Address) Values() []any {
-	return []any{string(v.Line1), (driver.Valuer)(v.Line2), string(v.City), int64(v.PostCode), string(v.StateCode), string(v.CountryCode)}
+func (v Array) IsAutoIncr() bool {
+	return true
 }
-func (v *Address) Addrs() []any {
-	return []any{types.String(&v.Line1), (sql.Scanner)(&v.Line2), types.String(&v.City), types.Integer(&v.PostCode), types.String(&v.StateCode), types.String(&v.CountryCode)}
+func (v Array) PK() (columnName string, pos int, value driver.Value) {
+	return "`id`", 0, int64(v.ID)
 }
-
-func (Customer) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS `customer` (`id` BIGINT NOT NULL,`howOld` TINYINT UNSIGNED NOT NULL,`name` VARCHAR(255) NOT NULL,`address` VARCHAR(255) NOT NULL,`nicknames` VARCHAR(255) NOT NULL,`status` VARCHAR(255) NOT NULL,`join_at` DATETIME NOT NULL);"
+func (v Array) Values() []any {
+	return []any{int64(v.ID), encoding.MarshalBoolList(v.BoolList), encoding.MarshalUnsignedIntList(v.Uint8List), encoding.MarshalUnsignedIntList(v.Uint16List), encoding.MarshalUnsignedIntList(v.Uint32List), encoding.MarshalUnsignedIntList(v.Uint64List), encoding.MarshalFloatList(v.F32List), encoding.MarshalFloatList(v.F64List), encoding.MarshalStringList(v.StrList), encoding.MarshalStringList(v.CustomStrList), encoding.MarshalSignedIntList(v.IntList), encoding.MarshalSignedIntList(v.Int8List), encoding.MarshalSignedIntList(v.Int16List), encoding.MarshalSignedIntList(v.Int32List), encoding.MarshalSignedIntList(v.Int64List), encoding.MarshalUnsignedIntList(v.UintList)}
 }
-func (Customer) AlterTableStmt() string {
-	return "ALTER TABLE `customer` MODIFY `id` BIGINT NOT NULL,MODIFY `howOld` TINYINT UNSIGNED NOT NULL AFTER `id`,MODIFY `name` VARCHAR(255) NOT NULL AFTER `howOld`,MODIFY `address` VARCHAR(255) NOT NULL AFTER `name`,MODIFY `nicknames` VARCHAR(255) NOT NULL AFTER `address`,MODIFY `status` VARCHAR(255) NOT NULL AFTER `nicknames`,MODIFY `join_at` DATETIME NOT NULL AFTER `status`;"
-}
-func (Customer) TableName() string {
-	return "`customer`"
-}
-func (Customer) Columns() []string {
-	return []string{"`id`", "`howOld`", "`name`", "`address`", "`nicknames`", "`status`", "`join_at`"}
-}
-func (v Customer) Values() []any {
-	return []any{int64(v.ID), int64(v.Age), (driver.Valuer)(v.Name), (driver.Valuer)(v.Address), v.Nicknames, string(v.Status), time.Time(v.JoinAt)}
-}
-func (v *Customer) Addrs() []any {
-	return []any{types.Integer(&v.ID), types.Integer(&v.Age), (sql.Scanner)(&v.Name), &v.Address, &v.Nicknames, types.String(&v.Status), (*time.Time)(&v.JoinAt)}
+func (v *Array) Addrs() []any {
+	return []any{types.Integer(&v.ID), types.BoolList(&v.BoolList), types.UintList(&v.Uint8List), types.UintList(&v.Uint16List), types.UintList(&v.Uint32List), types.UintList(&v.Uint64List), types.FloatList(&v.F32List), types.FloatList(&v.F64List), types.StringList(&v.StrList), types.StringList(&v.CustomStrList), types.IntList(&v.IntList), types.IntList(&v.Int8List), types.IntList(&v.Int16List), types.IntList(&v.Int32List), types.IntList(&v.Int64List), types.UintList(&v.UintList)}
 }

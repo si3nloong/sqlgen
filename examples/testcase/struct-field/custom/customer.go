@@ -1,4 +1,4 @@
-package array
+package custom
 
 import (
 	"database/sql/driver"
