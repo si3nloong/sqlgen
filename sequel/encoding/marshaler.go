@@ -8,14 +8,6 @@ import (
 	"golang.org/x/exp/constraints"
 )
 
-type ValueType interface {
-	[]byte | bool | float64 | uint64 | int64 | string | time.Time
-}
-
-type BaseType interface {
-	~[]byte | ~bool | ~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~int | ~int8 | ~int16 | ~int32 | ~int64 | ~float32 | ~float64 | ~string | time.Time
-}
-
 func MarshalStringList[V ~[]byte | ~string](list []V) string {
 	blr := strpool.AcquireString()
 	defer strpool.ReleaseString(blr)

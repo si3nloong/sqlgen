@@ -504,7 +504,6 @@ loop:
 			typeStr += v.String()
 			break loop
 		case *types.Named:
-			// log.Println("Named ==>", v.String(), reflect.TypeOf(v), reflect.TypeOf(v.Underlying()))
 			if _, ok := v.Underlying().(*types.Struct); ok {
 				typeStr += v.String()
 				break loop
@@ -513,7 +512,6 @@ loop:
 			prev = t.Underlying()
 		case *types.Pointer:
 			typeStr += "*"
-			// log.Println("Ptr ->", v.String(), v.Underlying().String())
 			prev = v.Elem()
 		case *types.Slice:
 			typeStr += "[]"
