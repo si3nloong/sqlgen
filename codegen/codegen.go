@@ -343,33 +343,24 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 			// model.HasRow = !IsImplemented(t, sqlRower)
 
 			for _, f := range structs[i].fields {
-				tv := f.tag.Get(cfg.Tag)
+				var (
+					tv  = f.tag.Get(cfg.Tag)
+					tf  = &templates.Field{}
+					tag = make(tagOpts)
+					n   string
+				)
 
-				switch pkg.TypesInfo.TypeOf(f.t).String() {
-				// If the type is table name
-				case tableNameSchema:
-					model.TableName = ""
-					continue
-				}
-
-				// If it's a unexported field, skip!
-				if !f.exported {
-					continue
-				}
-
-				tf := &templates.Field{}
 				tf.ColumnName = rename(f.name)
-				tf.Type = pkg.TypesInfo.TypeOf(f.t)
-				tag := make(tagOpts)
 
 				if tv != "" {
 					tags := strings.Split(tv, ",")
-					name := strings.TrimSpace(tags[0])
-					if name == "-" {
+					n = strings.TrimSpace(tags[0])
+					if n == "-" {
 						continue
-					} else if name != "" {
-						tf.ColumnName = name
+					} else if n != "" {
+						tf.ColumnName = n
 					}
+
 					for _, v := range tags[1:] {
 						kv := strings.SplitN(v, ":", 2)
 						k := strings.TrimSpace(strings.ToLower(kv[0]))
@@ -381,6 +372,22 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 					}
 				}
 
+				switch pkg.TypesInfo.TypeOf(f.t).String() {
+				// If the type is table name, then we replace table name
+				// and continue on next property
+				case tableNameSchema:
+					if n != "" {
+						model.TableName = n
+					}
+					continue
+				}
+
+				// If it's a unexported field, skip!
+				if !f.exported {
+					continue
+				}
+
+				tf.Type = pkg.TypesInfo.TypeOf(f.t)
 				tf.GoName = f.name
 				tf.GoPath = f.path
 				tf.Index = index
