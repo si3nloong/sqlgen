@@ -1,0 +1,79 @@
+# sqlgen
+
+[![构建](https://github.com/si3nloong/sqlgen/workflows/test/badge.svg?branch=main)](https://github.com/si3nloong/sqlgen/actions?query=workflow%3Atest)
+[![Go 报告](https://goreportcard.com/badge/github.com/si3nloong/sqlgen)](https://goreportcard.com/report/github.com/si3nloong/sqlgen)
+[![Go 覆盖率](https://codecov.io/gh/si3nloong/sqlgen/branch/main/graph/badge.svg)](https://codecov.io/gh/si3nloong/sqlgen)
+[![许可证](https://img.shields.io/github/license/si3nloong/sqlgen)](https://github.com/si3nloong/sqlgen/blob/main/LICENSE)
+
+> sqlgen 不是 ORM，而是代码生成器。它会解析 Go 结构并为您生成所需的结构方法。
+
+## 什么是 sqlgen？
+
+- **sqlgen 基于代码优先方法** — 您不需要首先编写 SQL，而是使用 Go 代码。
+- **sqlgen 支持代码生成** — 我们生成烦人的部分，让您可以快速构建您的应用程序。
+- **sqlgen 优先性能** — 大多数事情将在编译时而不是运行时定义。
+- **sqlgen 支持泛型** — 我们使用泛型来消除运行时反射成本并减少内存分配。
+- **sqlgen 消除副作用** - 当修改模型时，您将获得预期的结果而不是副作用。
+
+## 快速入门
+
+1. 安装 sqlgen。
+
+   ```console
+   go install github.com/si3nloong/sqlgen
+   ```
+
+2. 定义您的结构。
+
+   `models/user.go`
+
+   ```go
+   import "time"
+
+   type LongText string
+
+   type User struct {
+       ID      int64 `sql:",auto_increment"`
+       Name    string
+       Age     uint8
+       Address LongText
+       Created time.Time
+   }
+   ```
+
+3. 生成输出文件。
+
+   ```bash
+   # sqlgen generate <source_file>
+   sqlgen generate models/user.go
+   ```
+
+更多帮助以开始使用：
+
+- [入门教程](/docs/GET_STARTED-zh.md) - 一份全面的指南，以帮助您入门
+- [CLI 指南](/docs/CLI-zh.md) 用于 CLI 命令的指南。
+
+## 报告问题
+
+如果您认为发现了错误，或某些事情的行为不如您所期望，请在 GitHub 上提出[问题](https://github.com/si3nloong/sqlgen/issues)。
+
+## 贡献
+
+我们欢迎贡献，阅读我们的[贡献指南](https://github.com/si3nloong/sqlgen/blob/main/CONTRIBUTING.md)以了解更多关于对**sqlgen**进行贡献的信息。
+
+## 特别感谢
+
+感谢这些公司支持开源开发者 ❤
+
+[![GitHub](https://jstools.dev/img/badges/github.svg)](https://github.com/open-source)
+
+## 灵感来自
+
+- [在 Go 中不需要 ORM](https://medium.com/@enverbisevac/you-dont-need-orm-in-go-9216fb74cdfd)
+- [gqlgen](https://github.com/99designs/gqlgen)
+
+## 许可证
+
+[MIT](https://github.com/si3nloong/sqlgen/blob/main/LICENSE)
+
+版权所有 (c) 2023-present，SianLoong Lee
