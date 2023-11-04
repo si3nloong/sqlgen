@@ -11,10 +11,10 @@ import (
 )
 
 func (AliasStruct) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS `alias_struct` (`b` VARCHAR(255) NOT NULL,`Id` BIGINT NOT NULL,`header` VARCHAR(255) NOT NULL,`raw` BLOB,`text` VARCHAR(255) NOT NULL,`null_str` VARCHAR(255) NOT NULL,`created` DATETIME NOT NULL,`updated` DATETIME NOT NULL,PRIMARY KEY (`Id`));"
+	return "CREATE TABLE IF NOT EXISTS `alias_struct` (`b` FLOAT NOT NULL,`Id` BIGINT NOT NULL,`header` VARCHAR(255) NOT NULL,`raw` BLOB,`text` VARCHAR(255) NOT NULL,`null_str` VARCHAR(255) NOT NULL,`created` DATETIME NOT NULL,`updated` DATETIME NOT NULL,PRIMARY KEY (`Id`));"
 }
 func (AliasStruct) AlterTableStmt() string {
-	return "ALTER TABLE `alias_struct` MODIFY `b` VARCHAR(255) NOT NULL,MODIFY `Id` BIGINT NOT NULL AFTER `b`,MODIFY `header` VARCHAR(255) NOT NULL AFTER `Id`,MODIFY `raw` BLOB AFTER `header`,MODIFY `text` VARCHAR(255) NOT NULL AFTER `raw`,MODIFY `null_str` VARCHAR(255) NOT NULL AFTER `text`,MODIFY `created` DATETIME NOT NULL AFTER `null_str`,MODIFY `updated` DATETIME NOT NULL AFTER `created`;"
+	return "ALTER TABLE `alias_struct` MODIFY `b` FLOAT NOT NULL,MODIFY `Id` BIGINT NOT NULL AFTER `b`,MODIFY `header` VARCHAR(255) NOT NULL AFTER `Id`,MODIFY `raw` BLOB AFTER `header`,MODIFY `text` VARCHAR(255) NOT NULL AFTER `raw`,MODIFY `null_str` VARCHAR(255) NOT NULL AFTER `text`,MODIFY `created` DATETIME NOT NULL AFTER `null_str`,MODIFY `updated` DATETIME NOT NULL AFTER `created`;"
 }
 func (AliasStruct) TableName() string {
 	return "`alias_struct`"

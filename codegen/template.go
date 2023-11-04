@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go/types"
 	"path/filepath"
+	"strings"
 
 	"github.com/si3nloong/sqlgen/codegen/templates"
 	"github.com/si3nloong/sqlgen/sequel"
@@ -125,6 +126,7 @@ func inspectDataType(f *templates.Field) (dataType string, null bool) {
 		default:
 			break
 		}
+
 		switch t.String() {
 		case "rune":
 			return "CHAR(1)", len(ptrs) > 0
@@ -150,6 +152,10 @@ func inspectDataType(f *templates.Field) (dataType string, null bool) {
 			return "BIGINT UNSIGNED", len(ptrs) > 0
 		case "uint":
 			return "INTEGER UNSIGNED", len(ptrs) > 0
+		case "float32":
+			return "FLOAT", len(ptrs) > 0
+		case "float64":
+			return "FLOAT", len(ptrs) > 0
 		case "time.Time":
 			var size int
 			if f.Size > 0 && f.Size < 7 {
@@ -172,6 +178,10 @@ func inspectDataType(f *templates.Field) (dataType string, null bool) {
 				return "BINARY(16)", len(ptrs) > 0
 			}
 			return "VARCHAR(36)", len(ptrs) > 0
+		default:
+			if strings.HasPrefix(t.String(), "[]") {
+				return "JSON", len(ptrs) > 0
+			}
 		}
 		if prev == t {
 			break

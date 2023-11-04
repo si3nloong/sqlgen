@@ -31,10 +31,10 @@ func (v *Address) Addrs() []any {
 }
 
 func (Customer) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS `customer` (`id` BIGINT NOT NULL,`howOld` TINYINT UNSIGNED NOT NULL,`name` VARCHAR(255) NOT NULL,`address` VARCHAR(255) NOT NULL,`nicknames` VARCHAR(255) NOT NULL,`status` VARCHAR(255) NOT NULL,`join_at` DATETIME NOT NULL);"
+	return "CREATE TABLE IF NOT EXISTS `customer` (`id` BIGINT NOT NULL,`howOld` TINYINT UNSIGNED NOT NULL,`name` VARCHAR(255) NOT NULL,`address` JSON NOT NULL,`nicknames` JSON NOT NULL,`status` VARCHAR(255) NOT NULL,`join_at` DATETIME NOT NULL);"
 }
 func (Customer) AlterTableStmt() string {
-	return "ALTER TABLE `customer` MODIFY `id` BIGINT NOT NULL,MODIFY `howOld` TINYINT UNSIGNED NOT NULL AFTER `id`,MODIFY `name` VARCHAR(255) NOT NULL AFTER `howOld`,MODIFY `address` VARCHAR(255) NOT NULL AFTER `name`,MODIFY `nicknames` VARCHAR(255) NOT NULL AFTER `address`,MODIFY `status` VARCHAR(255) NOT NULL AFTER `nicknames`,MODIFY `join_at` DATETIME NOT NULL AFTER `status`;"
+	return "ALTER TABLE `customer` MODIFY `id` BIGINT NOT NULL,MODIFY `howOld` TINYINT UNSIGNED NOT NULL AFTER `id`,MODIFY `name` VARCHAR(255) NOT NULL AFTER `howOld`,MODIFY `address` JSON NOT NULL AFTER `name`,MODIFY `nicknames` JSON NOT NULL AFTER `address`,MODIFY `status` VARCHAR(255) NOT NULL AFTER `nicknames`,MODIFY `join_at` DATETIME NOT NULL AFTER `status`;"
 }
 func (Customer) TableName() string {
 	return "`customer`"

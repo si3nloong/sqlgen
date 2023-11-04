@@ -38,7 +38,7 @@ const (
 	TagOptionPKAlias       tagOption = "pk"
 	TagOptionPK            tagOption = "primary_key"
 	TagOptionSize          tagOption = "size"
-	TagOptionDataType      tagOption = "datatype"
+	TagOptionDataType      tagOption = "data_type"
 	TagOptionUnique        tagOption = "unique"
 )
 
