@@ -17,3 +17,6 @@ vendor/
 .idea
 *.db
 coverage.txt
+tmp
+sqlgen.yml
+sqlgen

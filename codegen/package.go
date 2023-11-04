@@ -1,10 +1,10 @@
 package codegen
 
 import (
-	"fmt"
-	"os"
-	"os/exec"
+	"go/types"
+	"strconv"
 
+	"golang.org/x/exp/slices"
 	"golang.org/x/tools/go/packages"
 )
 
@@ -17,66 +17,35 @@ const mode = packages.NeedName |
 	packages.NeedModule |
 	packages.NeedDeps
 
-type Packages struct {
-	pkgs     map[string]*packages.Package
-	noOfLoad uint
-	errs     []error
+type Package struct {
+	cache   map[string]*types.Package
+	imports []*types.Package
 }
 
-func (p *Packages) ReloadAll(importPaths ...string) []*packages.Package {
-	p.pkgs = nil
-	return p.LoadAll(importPaths...)
-}
-
-func (p *Packages) LoadAll(importPaths ...string) []*packages.Package {
-	if p.pkgs == nil {
-		p.pkgs = map[string]*packages.Package{}
+func (p *Package) Import(pkg *types.Package) (*types.Package, bool) {
+	if i := slices.IndexFunc(p.imports, func(item *types.Package) bool {
+		return pkg.Path() == item.Path()
+	}); i > -1 {
+		return p.imports[i], false
 	}
+	if p.cache == nil {
+		p.cache = make(map[string]*types.Package)
+	}
+	alias := p.newAliasIfExists(pkg)
+	pkg.SetName(alias)
+	p.cache[alias] = pkg
+	p.imports = append(p.imports, pkg)
+	return pkg, true
+}
 
-	missing := make([]string, 0, len(importPaths))
-	for _, path := range importPaths {
-		if _, ok := p.pkgs[path]; ok {
+func (p *Package) newAliasIfExists(pkg *types.Package) string {
+	pkgName, newPkgName := pkg.Name(), pkg.Name()
+	for i := 1; ; i++ {
+		if _, ok := p.cache[newPkgName]; ok {
+			newPkgName = pkgName + strconv.Itoa(i)
 			continue
 		}
-		missing = append(missing, path)
+		break
 	}
-
-	if len(missing) > 0 {
-		p.noOfLoad++
-		pkgs, err := packages.Load(&packages.Config{Mode: mode}, missing...)
-		if err != nil {
-			p.errs = append(p.errs, err)
-		}
-
-		for _, pkg := range pkgs {
-			p.addToCache(pkg)
-		}
-	}
-
-	res := make([]*packages.Package, 0, len(importPaths))
-	for _, path := range importPaths {
-		res = append(res, p.pkgs[path])
-	}
-	return res
-}
-
-func (p *Packages) GoModTidy() error {
-	p.pkgs = nil
-	tidyCmd := exec.Command("go", "mod", "tidy")
-	tidyCmd.Stdout = os.Stdout
-	tidyCmd.Stderr = os.Stdout
-	if err := tidyCmd.Run(); err != nil {
-		return fmt.Errorf("go mod tidy failed: %w", err)
-	}
-	return nil
-}
-
-func (p *Packages) addToCache(pkg *packages.Package) {
-	imp := pkg.PkgPath
-	p.pkgs[imp] = pkg
-	for _, imp := range pkg.Imports {
-		if _, found := p.pkgs[imp.PkgPath]; !found {
-			p.addToCache(imp)
-		}
-	}
+	return newPkgName
 }
