@@ -1,59 +1,56 @@
 package cmd
 
 import (
-	"bytes"
+	"fmt"
 	"os"
 	"path/filepath"
 
+	"github.com/si3nloong/sqlgen/codegen"
 	"github.com/si3nloong/sqlgen/codegen/config"
 	"github.com/si3nloong/sqlgen/internal/fileutil"
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/AlecAivazis/survey/v2/terminal"
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v3"
 )
 
 var (
+	initOpts struct {
+		force bool
+	}
 	initCmd = &cobra.Command{
 		Use:   "init",
-		Short: "Set up a new or existing `sqlgen.yaml` file.",
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			cmd.Println(`This utility will walk you through creating a sqlgen.yaml file.
-It only covers the most common items, and tries to guess sensible defaults.
-
-See ` + "`sqlgen init`" + ` for definitive documentation on these fields
-and exactly what they do.`)
-			return nil
-		},
-		RunE: runInitCommand,
+		Short: fmt.Sprintf("Set up a new %q file", config.DefaultConfigFile),
+		RunE:  runInitCommand,
 	}
 )
 
 func runInitCommand(cmd *cobra.Command, args []string) error {
 	var (
+		filename  = "sqlgen.yml"
+		fileDest  = filepath.Join(fileutil.Getpwd(), filename)
 		questions = []*survey.Question{
 			{
 				Name: "driver",
 				Prompt: &survey.Select{
 					Message: "What is your sql driver:",
-					Options: []string{"mysql", "postgres", "sqlite", "sql"},
-					Default: "mysql",
+					Options: []string{string(config.MySQL), string(config.Postgres), string(config.Sqlite)},
+					Default: string(config.MySQL),
 				},
 			},
 			{
-				Name: "namingConvention",
+				Name: "naming_convention",
 				Prompt: &survey.Select{
 					Message: "What is your naming convention:",
-					Options: []string{"snake_case", "camelCase", "PascalCase"},
-					Default: "snake_case",
+					Options: []string{string(config.SnakeCase), string(config.CamelCase), string(config.PascalCase)},
+					Default: string(config.SnakeCase),
 				},
 			},
 			{
 				Name: "tag",
 				Prompt: &survey.Input{
 					Message: "What is your tag for parsing:",
-					Default: "sql",
+					Default: config.DefaultStructTag,
 				},
 			},
 			{
@@ -64,24 +61,38 @@ func runInitCommand(cmd *cobra.Command, args []string) error {
 				},
 			},
 		}
-		answers = config.DefaultConfig()
 	)
 
-	if err := survey.Ask(questions, answers); err != nil {
+	var answer struct {
+		Driver           string `survey:"driver"`
+		NamingConvention string `survey:"naming_convention"`
+		Tag              string `survey:"tag"`
+		Strict           bool   `survey:"strict,omitempty"`
+	}
+
+	_, err := os.Stat(fileDest)
+	if !initOpts.force && !os.IsNotExist(err) {
+		cmd.Println(`Configuration file already exists`)
+		return nil
+	}
+
+	if err := survey.Ask(questions, &answer); err != nil {
 		return noInterruptError(err)
 	}
 
-	w := bytes.NewBufferString("")
-	enc := yaml.NewEncoder(w)
-	enc.SetIndent(2)
-	defer enc.Close()
-	if err := enc.Encode(answers); err != nil {
-		return err
+	cfg := config.DefaultConfig()
+	switch answer.NamingConvention {
+	case string(config.SnakeCase):
+		cfg.NamingConvention = config.SnakeCase
+	case string(config.PascalCase):
+		cfg.NamingConvention = config.PascalCase
+	case string(config.CamelCase):
+		cfg.NamingConvention = config.CamelCase
 	}
+	cfg.Tag = answer.Tag
+	cfg.Strict = answer.Strict
 
-	fileDest := filepath.Join(fileutil.Getpwd(), "sqlgen.yml")
 	cmd.Println("\nAbout to write to " + fileDest + ":\n")
-	cmd.Println(w.String())
 
 	var ok bool
 	if err := survey.AskOne(&survey.Confirm{
@@ -96,11 +107,12 @@ func runInitCommand(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	if err := os.WriteFile(fileDest, w.Bytes(), 0o644); err != nil {
-		return err
-	}
+	cmd.Println(`Creating ` + filename)
+	return codegen.Init(cfg)
+}
 
-	return nil
+func init() {
+	initCmd.Flags().BoolVarP(&initOpts.force, "force", "f", false, "force to execute")
 }
 
 // noInterruptError returns error when it's not `terminal.InterruptErr`

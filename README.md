@@ -5,14 +5,14 @@
 [![Go Coverage](https://codecov.io/gh/si3nloong/sqlgen/branch/main/graph/badge.svg)](https://codecov.io/gh/si3nloong/sqlgen)
 [![LICENSE](https://img.shields.io/github/license/si3nloong/sqlgen)](https://github.com/si3nloong/sqlgen/blob/main/LICENSE)
 
-> sqlgen is not an ORM, it's a compiler. It make mapping to go struct without any extra costs (reflection) incur.
+> sqlgen is not an ORM, it's a code generator instead. It parse the go struct and generate the necessary methods on struct for you.
 
 ## What is sqlgen?
 
-- **sqlgen is based on a Schema first approach** — You get to Define your Model using the go struct.
+- **sqlgen is based on a Code first approach** — You don't require to write SQL first, but Go code instead.
 - **sqlgen enables Codegen** — We generate the boring bits, so you can focus on building your app quickly.
-- **sqlgen prioritizes performance** — We use generics to eliminate runtime reflection costs.
-- **sqlgen prioritizes Type safety**
+- **sqlgen prioritizes performance** — Most of the things will define in compile time instead of runtime.
+- **sqlgen embrace generics** — We use generics to eliminate runtime reflection costs and reduce memory allocation.
 - **sqlgen eliminates Side Effects** - You will get expected results instead of side effects when mutate your models.
 
 ## Quick start
@@ -25,26 +25,32 @@
 
 2.  Define your struct.
 
+    `models/user.go`
+
     ```go
     import "time"
 
+    type LongText string
+
     type User struct {
-        ID      int64
+        ID      int64 `sql:",auto_increment"`
         Name    string
         Age     uint8
+        Address LongText
         Created time.Time
     }
     ```
 
 3.  Generate the output files.
 
-    ```console
-    sqlgen generate <source_file>
+    ```bash
+    # sqlgen generate <source_file>
+    sqlgen generate models/user.go
     ```
 
 More help to get started:
 
-- [Getting started tutorial](/docs/README.md) - a comprehensive guide to help you get started
+- [Getting started tutorial](/docs/GET_STARTED.md) - a comprehensive guide to help you get started
 - [Reference docs](/docs/API.md) for the APIs
 
 ## Reporting Issues
@@ -60,6 +66,11 @@ We welcome contributions, Read our [Contribution Guidelines](https://github.com/
 Thanks to these awesome companies for their support of Open Source developers ❤
 
 [![GitHub](https://jstools.dev/img/badges/github.svg)](https://github.com/open-source)
+
+## Inspired By
+
+- [You don't need orm in Go](https://medium.com/@enverbisevac/you-dont-need-orm-in-go-9216fb74cdfd)
+- [gqlgen](https://github.com/99designs/gqlgen)
 
 ## License
 

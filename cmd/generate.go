@@ -8,30 +8,21 @@ import (
 
 var (
 	genOpts struct {
-		config string
-		watch  bool
-		force  bool
+		watch bool
+		force bool
 	}
 
 	genCmd = &cobra.Command{
 		Use:   "generate [source]",
-		Short: "Generate struct functions for target models.",
+		Short: "Generate boilerplate code based on go struct",
+		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var (
 				cfg = config.DefaultConfig()
-				err error
 			)
 
-			// If user passing config file, then we load from it.
-			if genOpts.config != "" {
-				cfg, err = config.LoadConfigFrom(genOpts.config)
-				if err != nil {
-					return err
-				}
-			} else if len(args) > 0 {
-				// If user pass the source, then we refer to it.
-				cfg.SrcDir = args[0]
-			}
+			// If user pass the source, then we refer to it.
+			cfg.Source = []string{args[0]}
 
 			return codegen.Generate(cfg)
 		},
@@ -39,7 +30,6 @@ var (
 )
 
 func init() {
-	genCmd.Flags().StringVarP(&genOpts.config, "file", "f", "", "Config file path.")
-	genCmd.Flags().BoolVarP(&genOpts.watch, "watch", "w", false, "Watch the file changes and re-generate.")
-	genCmd.Flags().BoolVarP(&genOpts.force, "force", "", false, "Force to re-generate.")
+	// genCmd.Flags().BoolVarP(&genOpts.watch, "watch", "w", false, "watch the file changes and re-generate.")
+	genCmd.Flags().BoolVarP(&genOpts.force, "force", "f", false, "force to execute")
 }

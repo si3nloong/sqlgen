@@ -8,13 +8,16 @@ import (
 
 func TestConfig(t *testing.T) {
 	cfg := DefaultConfig()
-	require.Equal(t, ".", cfg.SrcDir)
-	require.Equal(t, "mysql", cfg.Driver)
-	require.Equal(t, "sql", cfg.Tag)
-	require.Equal(t, "snake_case", cfg.NamingConvention)
+	require.ElementsMatch(t, []string{"./**/*"}, cfg.Source)
+	require.Equal(t, MySQL, cfg.Driver)
+	require.Equal(t, SnakeCase, cfg.NamingConvention)
+	require.Equal(t, DefaultStructTag, cfg.Tag)
+	require.Equal(t, DefaultGeneratedFile, cfg.Exec.Filename)
 
-	require.True(t, cfg.IncludeHeader)
 	require.True(t, cfg.Strict)
+	require.False(t, cfg.SkipHeader)
+	require.False(t, cfg.SkipModTidy)
+	require.False(t, cfg.SourceMap)
 }
 
 func TestFindCfgInDir(t *testing.T) {
@@ -43,5 +46,6 @@ func TestLoadConfigFrom(t *testing.T) {
 	cfg, err = LoadConfigFrom("./testdata/config.yaml")
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
+	require.Equal(t, Sqlite, cfg.Driver)
 	require.True(t, cfg.Strict)
 }

@@ -1,34 +1,34 @@
 {{- reserveImport "database/sql/driver" }}
-
-{{ range .Models -}}
-
-func ({{ .GoName }}) Table() string {
-	return {{ quote .Name }}
+{{- reserveImport "github.com/si3nloong/sqlgen/sequel" }}
+{{ range .Models }}
+func ({{ .GoName }}) CreateTableStmt() string {
+	return {{ quote (createTable .) }}
 }
+func ({{ .GoName }}) AlterTableStmt() string {
+	return {{ quote (alterTable .) }}
+}
+{{ if .HasTableName -}}
+func ({{ .GoName }}) TableName() string {
+	return {{ quote (wrap .TableName) }}
+}
+{{- end }}
+{{ if .HasColumn -}}
 func ({{ .GoName }}) Columns() []string {
-	return {{ "[]string{" }}{{- range $i, $f := .Fields }}{{- if $i }}{{ ", " }}{{ end }}{{ quote $f.Name }}{{ end }}{{- "}" }}
+	return {{ "[]string{" }}{{- range $i, $f := .Fields }}{{- if $i }}{{ ", " }}{{ end }}{{ quote (wrap $f.ColumnName) }}{{ end }}{{- "}" }}
 }
+{{- end }}
 {{ if ne .PK nil -}}
-func ({{ .GoName }}) IsAutoIncr() bool {
-	{{- if hasTag .PK "auto" "auto_increment" }}
-	return true
-	{{- else }}
-	return false
-	{{- end }}
+func (v {{ .GoName }}) IsAutoIncr() bool {
+	return {{ .PK.IsAutoIncr }}
 }
-func (v {{ .GoName }}) PK() (string, int, any) {
-	{{- if isValuer .PK }}
-    return {{ quote .PK.Name }}, {{ .PK.Index }}, ((driver.Valuer)(v.{{ .PK.GoName }}))
-	{{- else }}
-	return {{ quote .PK.Name }}, {{ .PK.Index }}, {{ cast "v" .PK }}
-	{{- end }}
+func (v {{ .GoName }}) PK() (columnName string, pos int, value driver.Value) {
+	return {{ quote (wrap .PK.Field.ColumnName) }}, {{ .PK.Field.Index }}, {{ castAs "v" .PK.Field }}
 }
-{{ end }}
+{{ end -}}
 func (v {{ .GoName }}) Values() []any {
-	return {{ `[]any{` }}{{ range $i, $f := .Fields }}{{- if $i }}{{ ", " }}{{ end }}{{ cast "v" $f }}{{ end }}{{- `}` }}
+	return {{ `[]any{` }}{{ range $i, $f := .Fields }}{{- if $i }}{{ ", " }}{{ end }}{{ castAs "v" $f }}{{ end }}{{- `}` }}
 }
 func (v *{{ .GoName }}) Addrs() []any {
-	return {{ `[]any{` }}{{ range $i, $f := .Fields }}{{- if $i }}{{ `, ` }}{{ end }}{{ addr "v" $f }}{{ end }}{{- `}` }}
+	return {{ `[]any{` }}{{ range $i, $f := .Fields }}{{- if $i }}{{ `, ` }}{{ end }}{{ addrOf "v" $f }}{{ end }}{{- `}` }}
 }
-
 {{ end }}

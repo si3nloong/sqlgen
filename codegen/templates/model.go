@@ -5,40 +5,43 @@ import (
 )
 
 type ModelTmplParams struct {
-	GoPkg string
-
 	// Models
 	Models []*Model
 }
 
+type PK struct {
+	IsAutoIncr bool
+
+	Field *Field
+}
+
 type Model struct {
+	// Go struct name
 	GoName string
-
-	Name string
-
+	// Sql table name
+	TableName string
 	// Primary key
-	PK *Field
-
+	PK *PK
+	// Sql columns
 	Fields []*Field
-
-	Func []*Func
+	// Is model implement `Tabler` interface
+	HasTableName bool
+	// Is model implement `Columner` interface
+	HasColumn bool
+	// // Is model implement `Rower` interface
+	// HasRow bool
 }
 
 type Field struct {
+	// Struct property name
 	GoName string
-
-	Name string
+	// Struct property path
+	GoPath     string
+	ColumnName string
 
 	Type types.Type
 
-	Tag []string
-
-	Index uint
-}
-
-type Func struct {
-	// Function name
-	Name    string
-	Recv    []string
-	Returns []string
+	IsBinary bool
+	Size     int
+	Index    int
 }
