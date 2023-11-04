@@ -51,7 +51,7 @@
 More help to get started:
 
 - [Getting started tutorial](/docs/GET_STARTED.md) - a comprehensive guide to help you get started
-- [Reference docs](/docs/API.md) for the APIs
+- [CLI guide](/docs/CLI.md) for the CLI command.
 
 ## Reporting Issues
 

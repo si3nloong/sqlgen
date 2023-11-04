@@ -75,7 +75,7 @@ func UpdateByID[T sequel.KeyValuer[T]](ctx context.Context, db sequel.DB, v T) (
 	defer strpool.ReleaseString(stmt)
 	stmt.WriteString("UPDATE " + v.TableName() + " SET ")
 	for i := 0; i < noOfCols; i++ {
-		if i > 1 {
+		if i > 0 {
 			stmt.WriteByte(',')
 		}
 		stmt.WriteString(columns[i] + " = {{ var 1 }}")
@@ -94,4 +94,29 @@ func DeleteByID[T sequel.KeyValuer[T]](ctx context.Context, db sequel.DB, v T) (
 	stmt.WriteString("DELETE FROM " + v.TableName() + " WHERE " + pkName + " = {{ var 1 }};")
 
 	return db.ExecContext(ctx, stmt.String(), pk)
+}
+
+func Migrate[T sequel.Migrator](ctx context.Context, db sequel.DB) error {
+	var (
+		v           T
+		table       string
+		tableExists bool
+		stmt        = strpool.AcquireString()
+	)
+	defer strpool.ReleaseString(stmt)
+	if err := db.QueryRowContext(ctx, "SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_NAME = {{ var 1 }} LIMIT 1;", v.TableName()).Scan(&table); err != nil {
+		tableExists = false
+	} else {
+		tableExists = true
+	}
+	if tableExists {
+		if _, err := db.ExecContext(ctx, v.AlterTableStmt()); err != nil {
+			return err
+		}
+		return nil
+	}
+	if _, err := db.ExecContext(ctx, v.CreateTableStmt()); err != nil {
+		return err
+	}
+	return nil
 }
