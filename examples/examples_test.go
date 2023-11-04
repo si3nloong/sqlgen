@@ -22,7 +22,7 @@ import (
 
 func TestMain(m *testing.M) {
 	// openSqlConn("mysql")
-	sqliteDB = mustValue(openSqlConn("sqlite"))
+	sqliteDB = mustValue(openSqlConn("mysql"))
 	defer sqliteDB.Close()
 
 	// m1 := autopk.Model{}

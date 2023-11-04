@@ -25,6 +25,7 @@ jobs:
 
       - name: Test
         run: |
+          go test ./examples/testdata_test.go
           go test -race -coverprofile=coverage.txt -covermode=atomic ./...
 
       # - name: Codecov
