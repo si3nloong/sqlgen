@@ -11,6 +11,7 @@ import (
 
 var (
 	rootOpts struct {
+		config  string
 		verbose bool
 	}
 
@@ -28,8 +29,16 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var (
 				cfg = config.DefaultConfig()
+				err error
 			)
 
+			// If user passing config file, then we load from it.
+			if rootOpts.config != "" {
+				cfg, err = config.LoadConfigFrom(rootOpts.config)
+				if err != nil {
+					return err
+				}
+			}
 			return codegen.Generate(cfg)
 		},
 	}
@@ -40,6 +49,7 @@ func Execute() {
 	rootCmd.AddCommand(genCmd)
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
+	rootCmd.Flags().StringVarP(&rootOpts.config, "config", "c", "", "config file")
 	rootCmd.PersistentFlags().BoolVarP(&rootOpts.verbose, "verbose", "v", false, "shows the logs")
 	cobra.CheckErr(rootCmd.Execute())
 }

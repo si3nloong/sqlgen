@@ -7,9 +7,12 @@ import (
 	s "github.com/si3nloong/sqlgen/sequel"
 )
 
+type LongText string
+
 type A struct {
 	s.Name    `sql:"Apple"`
 	ID        string
+	Text      LongText
 	CreatedAt t.Time
 }
 

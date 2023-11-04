@@ -11,22 +11,22 @@ import (
 )
 
 func (A) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS `a` (`id` VARCHAR(255) NOT NULL,`created_at` DATETIME NOT NULL);"
+	return "CREATE TABLE IF NOT EXISTS `a` (`id` VARCHAR(255) NOT NULL,`text` VARCHAR(255) NOT NULL,`created_at` DATETIME NOT NULL);"
 }
 func (A) AlterTableStmt() string {
-	return "ALTER TABLE `a` MODIFY `id` VARCHAR(255) NOT NULL,MODIFY `created_at` DATETIME NOT NULL AFTER `id`;"
+	return "ALTER TABLE `a` MODIFY `id` VARCHAR(255) NOT NULL,MODIFY `text` VARCHAR(255) NOT NULL AFTER `id`,MODIFY `created_at` DATETIME NOT NULL AFTER `text`;"
 }
 func (A) TableName() string {
 	return "`a`"
 }
 func (A) Columns() []string {
-	return []string{"`id`", "`created_at`"}
+	return []string{"`id`", "`text`", "`created_at`"}
 }
 func (v A) Values() []any {
-	return []any{string(v.ID), time.Time(v.CreatedAt)}
+	return []any{string(v.ID), string(v.Text), time.Time(v.CreatedAt)}
 }
 func (v *A) Addrs() []any {
-	return []any{types.String(&v.ID), (*time.Time)(&v.CreatedAt)}
+	return []any{types.String(&v.ID), types.String(&v.Text), (*time.Time)(&v.CreatedAt)}
 }
 
 func (B) CreateTableStmt() string {

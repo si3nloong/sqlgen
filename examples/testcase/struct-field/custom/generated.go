@@ -7,6 +7,7 @@ import (
 	"database/sql/driver"
 	"time"
 
+	"github.com/si3nloong/sqlgen/sequel/encoding"
 	"github.com/si3nloong/sqlgen/sequel/types"
 )
 
@@ -42,8 +43,8 @@ func (Customer) Columns() []string {
 	return []string{"`id`", "`howOld`", "`name`", "`address`", "`nicknames`", "`status`", "`join_at`"}
 }
 func (v Customer) Values() []any {
-	return []any{int64(v.ID), int64(v.Age), (driver.Valuer)(v.Name), (driver.Valuer)(v.Address), v.Nicknames, string(v.Status), time.Time(v.JoinAt)}
+	return []any{int64(v.ID), int64(v.Age), (driver.Valuer)(v.Name), (driver.Valuer)(v.Address), encoding.MarshalStringList(v.Nicknames), string(v.Status), time.Time(v.JoinAt)}
 }
 func (v *Customer) Addrs() []any {
-	return []any{types.Integer(&v.ID), types.Integer(&v.Age), (sql.Scanner)(&v.Name), &v.Address, &v.Nicknames, types.String(&v.Status), (*time.Time)(&v.JoinAt)}
+	return []any{types.Integer(&v.ID), types.Integer(&v.Age), (sql.Scanner)(&v.Name), &v.Address, types.StringList(&v.Nicknames), types.String(&v.Status), (*time.Time)(&v.JoinAt)}
 }

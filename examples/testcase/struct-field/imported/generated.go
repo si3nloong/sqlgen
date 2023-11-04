@@ -5,6 +5,8 @@ package imported
 import (
 	"database/sql"
 	"database/sql/driver"
+
+	"github.com/si3nloong/sqlgen/sequel/types"
 )
 
 func (Model) CreateTableStmt() string {
@@ -20,10 +22,10 @@ func (Model) Columns() []string {
 	return []string{"`str`", "`bool`", "`bytes`", "`int_16`", "`int_32`", "`int_64`", "`time`"}
 }
 func (v Model) Values() []any {
-	return []any{(driver.Valuer)(v.Str), (driver.Valuer)(v.Bool), v.Bytes, (driver.Valuer)(v.Int16), (driver.Valuer)(v.Int32), (driver.Valuer)(v.Int64), (driver.Valuer)(v.Time)}
+	return []any{(driver.Valuer)(v.Str), (driver.Valuer)(v.Bool), string(v.Bytes), (driver.Valuer)(v.Int16), (driver.Valuer)(v.Int32), (driver.Valuer)(v.Int64), (driver.Valuer)(v.Time)}
 }
 func (v *Model) Addrs() []any {
-	return []any{(sql.Scanner)(&v.Str), (sql.Scanner)(&v.Bool), &v.Bytes, (sql.Scanner)(&v.Int16), (sql.Scanner)(&v.Int32), (sql.Scanner)(&v.Int64), (sql.Scanner)(&v.Time)}
+	return []any{(sql.Scanner)(&v.Str), (sql.Scanner)(&v.Bool), types.String(&v.Bytes), (sql.Scanner)(&v.Int16), (sql.Scanner)(&v.Int32), (sql.Scanner)(&v.Int64), (sql.Scanner)(&v.Time)}
 }
 
 func (Some) CreateTableStmt() string {

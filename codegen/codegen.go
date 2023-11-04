@@ -6,7 +6,6 @@ import (
 	"go/ast"
 	"go/types"
 	"io/fs"
-	"log"
 	"os"
 	"os/exec"
 	"path"
@@ -99,7 +98,6 @@ func Generate(c *config.Config) error {
 	// Resolve every source provided
 	for len(sources) > 0 {
 		srcDir = strings.TrimSpace(sources[0])
-		log.Println(srcDir)
 		if srcDir == "" {
 			return fmt.Errorf(`sqlgen: src is empty path`)
 		}
@@ -456,6 +454,9 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 		}
 	}
 
+	if cfg.SkipModTidy {
+		return nil
+	}
 	return goModTidy()
 }
 
@@ -488,30 +489,41 @@ func UnderlyingType(t types.Type) (*Mapping, bool) {
 		typeStr string
 		prev    = t
 	)
+
+loop:
 	for t != nil {
 		switch v := t.(type) {
 		case *types.Basic:
 			typeStr += v.String()
-			prev = t.Underlying()
+			break loop
 		case *types.Named:
+			// log.Println("Named ==>", v.String(), reflect.TypeOf(v), reflect.TypeOf(v.Underlying()))
+			if _, ok := v.Underlying().(*types.Struct); ok {
+				typeStr += v.String()
+				break loop
+			}
 			typeStr += v.Underlying().String()
 			prev = t.Underlying()
 		case *types.Pointer:
-			typeStr += v.Underlying().String()
+			typeStr += "*"
+			// log.Println("Ptr ->", v.String(), v.Underlying().String())
 			prev = v.Elem()
 		case *types.Slice:
 			typeStr += "[]"
 			prev = v.Elem()
 		default:
-			break
+			break loop
 		}
 		if v, ok := typeMap[typeStr]; ok {
 			return v, ok
 		}
 		if prev == t {
-			break
+			break loop
 		}
 		t = prev
+	}
+	if v, ok := typeMap[typeStr]; ok {
+		return v, ok
 	}
 	return nil, false
 }

@@ -1,3 +1,3 @@
-package sqlgen
+package sequel
 
 const Version = "v1.0.0-beta"

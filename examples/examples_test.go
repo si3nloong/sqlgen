@@ -1,11 +1,7 @@
-package examples_test
+package examples
 
 import (
 	"context"
-	"database/sql"
-	"errors"
-	"log"
-	"os"
 	"testing"
 	"time"
 
@@ -23,35 +19,6 @@ import (
 	"github.com/si3nloong/sqlgen/examples/testcase/struct-field/pointer"
 	"github.com/si3nloong/sqlgen/sequel/db"
 )
-
-var (
-	sqliteDB *sql.DB
-)
-
-func openSqlConn(driver string) (*sql.DB, error) {
-	switch driver {
-	case "mysql":
-		return sql.Open("mysql", "root:abcd1234@/sqlbench")
-	case "sqlite":
-		os.Remove("./sqlite.db")
-		return sql.Open("sqlite3", "./sqlite.db")
-	default:
-		return nil, errors.New("unsupported sql driver")
-	}
-}
-
-func mustValue[T any](v T, err error) T {
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-func mustNoError(err error) {
-	if err != nil {
-		panic(err)
-	}
-}
 
 func TestMain(m *testing.M) {
 	// openSqlConn("mysql")
@@ -87,28 +54,44 @@ func newPKModel() autopk.Model {
 func TestInsertInto(t *testing.T) {
 	ctx := context.TODO()
 
-	r1 := array.Array{}
-	r1.StrList = []string{"a", "b", "c"}
-	r1.CustomStrList = append(r1.CustomStrList, "x", "y", "z")
-	r1.BoolList = append(r1.BoolList, true, false, true, false, true)
-	r1.Int8List = append(r1.Int8List, -88, -13, -1, 6)
-	r1.Int32List = append(r1.Int32List, -88, 188, -1)
-	r1.Uint8List = append(r1.Uint8List, 10, 5, 1)
-	r1.F32List = append(r1.F32List, -88.114, 188.123, -1.0538)
-	r1.F64List = append(r1.F64List, -88.114, 188.123, -1.0538)
+	// t.Run("InsertInto with double ptr", func(t *testing.T) {
+	// 	u8 := uint(188)
+	// 	str := "Hello, james!"
+	// 	cStr := doubleptr.LongStr(`Hi, bye`)
+	// 	data := doubleptr.DoublePtr{}
+	// 	data.L3PtrUint = ptrOf(ptrOf(ptrOf(u8)))
+	// 	data.L3PtrCustomStr = ptrOf(ptrOf(ptrOf(cStr)))
+	// 	data.L7PtrStr = ptrOf(ptrOf(ptrOf(ptrOf(ptrOf(ptrOf(ptrOf(str)))))))
+	// 	inputs := []doubleptr.DoublePtr{data}
+	// 	result, err := db.InsertInto(context.TODO(), sqliteDB, inputs)
+	// 	require.NoError(t, err)
+	// 	lastID := mustValue(result.LastInsertId())
+	// 	require.NotEmpty(t, lastID)
+	// })
 
-	inputs := []array.Array{r1}
-	result, err := db.InsertInto(context.TODO(), sqliteDB, inputs)
-	require.NoError(t, err)
-	lastID := mustValue(result.LastInsertId())
-	require.NotEmpty(t, lastID)
+	t.Run("InsertInto with array", func(t *testing.T) {
+		r1 := array.Array{}
+		r1.StrList = []string{"a", "b", "c"}
+		r1.CustomStrList = append(r1.CustomStrList, "x", "y", "z")
+		r1.BoolList = append(r1.BoolList, true, false, true, false, true)
+		r1.Int8List = append(r1.Int8List, -88, -13, -1, 6)
+		r1.Int32List = append(r1.Int32List, -88, 188, -1)
+		r1.Uint8List = append(r1.Uint8List, 10, 5, 1)
+		r1.F32List = append(r1.F32List, -88.114, 188.123, -1.0538)
+		r1.F64List = append(r1.F64List, -88.114, 188.123, -1.0538)
 
-	ptr := array.Array{}
-	ptr.ID = uint64(lastID)
-	mustNoError(db.FindOne(ctx, sqliteDB, &ptr))
-	log.Println(ptr)
+		inputs := []array.Array{r1}
+		result, err := db.InsertInto(context.TODO(), sqliteDB, inputs)
+		require.NoError(t, err)
+		lastID := mustValue(result.LastInsertId())
+		require.NotEmpty(t, lastID)
 
-	t.Run("with all nil values", func(t *testing.T) {
+		ptr := array.Array{}
+		ptr.ID = uint64(lastID)
+		mustNoError(db.FindOne(ctx, sqliteDB, &ptr))
+	})
+
+	t.Run("InsertInto with all nil values", func(t *testing.T) {
 		inputs := []pointer.Ptr{{}, {}}
 		result, err := db.InsertInto(ctx, sqliteDB, inputs)
 		require.NoError(t, err)
@@ -117,7 +100,7 @@ func TestInsertInto(t *testing.T) {
 		require.Equal(t, int64(2), mustValue(result.RowsAffected()))
 	})
 
-	t.Run("with pointer values", func(t *testing.T) {
+	t.Run("InsertInto with pointer values", func(t *testing.T) {
 		str := "hello world"
 		flag := true
 		dt := time.Now().UTC()

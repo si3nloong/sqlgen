@@ -29,10 +29,10 @@ func (v AliasStruct) PK() (columnName string, pos int, value driver.Value) {
 	return "`Id`", 1, int64(v.pk.ID)
 }
 func (v AliasStruct) Values() []any {
-	return []any{float64(v.B), int64(v.pk.ID), string(v.Header), v.Raw, string(v.Text), (driver.Valuer)(v.NullStr), time.Time(v.model.Created), time.Time(v.model.Updated)}
+	return []any{float64(v.B), int64(v.pk.ID), string(v.Header), string(v.Raw), string(v.Text), (driver.Valuer)(v.NullStr), time.Time(v.model.Created), time.Time(v.model.Updated)}
 }
 func (v *AliasStruct) Addrs() []any {
-	return []any{types.Float(&v.B), types.Integer(&v.pk.ID), types.String(&v.Header), &v.Raw, types.String(&v.Text), (sql.Scanner)(&v.NullStr), (*time.Time)(&v.model.Created), (*time.Time)(&v.model.Updated)}
+	return []any{types.Float(&v.B), types.Integer(&v.pk.ID), types.String(&v.Header), types.String(&v.Raw), types.String(&v.Text), (sql.Scanner)(&v.NullStr), (*time.Time)(&v.model.Created), (*time.Time)(&v.model.Updated)}
 }
 
 func (B) CreateTableStmt() string {
