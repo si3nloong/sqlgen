@@ -12,6 +12,10 @@ func init() {
 	sequel.RegisterDialect("sqlite", &sqliteDriver{})
 }
 
+func (*sqliteDriver) Driver() string {
+	return "sqlite"
+}
+
 func (*sqliteDriver) Var(n int) string {
 	return "?"
 }

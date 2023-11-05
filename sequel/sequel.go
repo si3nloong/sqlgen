@@ -51,6 +51,7 @@ type DB interface {
 type Dialect interface {
 	Var(n int) string
 	Wrap(v string) string
+	Driver() string
 }
 
 type Migrator interface {

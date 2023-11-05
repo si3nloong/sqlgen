@@ -12,6 +12,10 @@ func init() {
 	sequel.RegisterDialect("postgres", &postgresDriver{})
 }
 
+func (*postgresDriver) Driver() string {
+	return "postgres"
+}
+
 func (*postgresDriver) Var(n int) string {
 	return "$" + strconv.Itoa(n)
 }

@@ -1,4 +1,4 @@
-package db
+package sequel
 
 type EmptyResult struct{}
 

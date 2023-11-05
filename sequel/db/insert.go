@@ -65,7 +65,7 @@ func InsertInto[T interface {
 }](ctx context.Context, db sequel.DB, data []T) (sql.Result, error) {
 	n := len(data)
 	if n == 0 {
-		return new(EmptyResult), nil
+		return new(sequel.EmptyResult), nil
 	}
 
 	var (

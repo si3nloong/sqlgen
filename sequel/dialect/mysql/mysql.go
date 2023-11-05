@@ -8,6 +8,10 @@ func init() {
 	sequel.RegisterDialect("mysql", &mysqlDriver{})
 }
 
+func (*mysqlDriver) Driver() string {
+	return "mysql"
+}
+
 func (*mysqlDriver) Var(n int) string {
 	return "?"
 }

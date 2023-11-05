@@ -9,6 +9,7 @@ import (
 	"text/template"
 
 	"github.com/si3nloong/sqlgen/codegen/config"
+	"github.com/si3nloong/sqlgen/codegen/templates"
 	"github.com/si3nloong/sqlgen/sequel"
 	"github.com/si3nloong/sqlgen/sequel/strpool"
 	"golang.org/x/tools/imports"
@@ -32,7 +33,7 @@ func Init(cfg *config.Config) error {
 	return nil
 }
 
-func renderTemplate[T any](
+func renderTemplate[T templates.ModelTmplParams | templates.DBTmplParams](
 	tmplName string,
 	skipHeader bool,
 	dialect sequel.Dialect,
