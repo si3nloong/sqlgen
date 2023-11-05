@@ -10,22 +10,22 @@ import (
 )
 
 func (Model) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS `model` (`str` VARCHAR(255) NOT NULL,`bool` VARCHAR(255) NOT NULL,`bytes` BLOB,`int_16` VARCHAR(255) NOT NULL,`int_32` VARCHAR(255) NOT NULL,`int_64` VARCHAR(255) NOT NULL,`time` VARCHAR(255) NOT NULL);"
+	return "CREATE TABLE IF NOT EXISTS `model` (`str` VARCHAR(255) NOT NULL,`bool` VARCHAR(255) NOT NULL,`raw_bytes` BLOB,`int_16` VARCHAR(255) NOT NULL,`int_32` VARCHAR(255) NOT NULL,`int_64` VARCHAR(255) NOT NULL,`time` VARCHAR(255) NOT NULL);"
 }
 func (Model) AlterTableStmt() string {
-	return "ALTER TABLE `model` MODIFY `str` VARCHAR(255) NOT NULL,MODIFY `bool` VARCHAR(255) NOT NULL AFTER `str`,MODIFY `bytes` BLOB AFTER `bool`,MODIFY `int_16` VARCHAR(255) NOT NULL AFTER `bytes`,MODIFY `int_32` VARCHAR(255) NOT NULL AFTER `int_16`,MODIFY `int_64` VARCHAR(255) NOT NULL AFTER `int_32`,MODIFY `time` VARCHAR(255) NOT NULL AFTER `int_64`;"
+	return "ALTER TABLE `model` MODIFY `str` VARCHAR(255) NOT NULL,MODIFY `bool` VARCHAR(255) NOT NULL AFTER `str`,MODIFY `raw_bytes` BLOB AFTER `bool`,MODIFY `int_16` VARCHAR(255) NOT NULL AFTER `raw_bytes`,MODIFY `int_32` VARCHAR(255) NOT NULL AFTER `int_16`,MODIFY `int_64` VARCHAR(255) NOT NULL AFTER `int_32`,MODIFY `time` VARCHAR(255) NOT NULL AFTER `int_64`;"
 }
 func (Model) TableName() string {
 	return "`model`"
 }
 func (Model) Columns() []string {
-	return []string{"`str`", "`bool`", "`bytes`", "`int_16`", "`int_32`", "`int_64`", "`time`"}
+	return []string{"`str`", "`bool`", "`raw_bytes`", "`int_16`", "`int_32`", "`int_64`", "`time`"}
 }
 func (v Model) Values() []any {
-	return []any{(driver.Valuer)(v.Str), (driver.Valuer)(v.Bool), string(v.Bytes), (driver.Valuer)(v.Int16), (driver.Valuer)(v.Int32), (driver.Valuer)(v.Int64), (driver.Valuer)(v.Time)}
+	return []any{(driver.Valuer)(v.Str), (driver.Valuer)(v.Bool), string(v.RawBytes), (driver.Valuer)(v.Int16), (driver.Valuer)(v.Int32), (driver.Valuer)(v.Int64), (driver.Valuer)(v.Time)}
 }
 func (v *Model) Addrs() []any {
-	return []any{(sql.Scanner)(&v.Str), (sql.Scanner)(&v.Bool), types.String(&v.Bytes), (sql.Scanner)(&v.Int16), (sql.Scanner)(&v.Int32), (sql.Scanner)(&v.Int64), (sql.Scanner)(&v.Time)}
+	return []any{(sql.Scanner)(&v.Str), (sql.Scanner)(&v.Bool), types.String(&v.RawBytes), (sql.Scanner)(&v.Int16), (sql.Scanner)(&v.Int32), (sql.Scanner)(&v.Int64), (sql.Scanner)(&v.Time)}
 }
 
 func (Some) CreateTableStmt() string {

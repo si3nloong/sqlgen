@@ -37,6 +37,7 @@ const (
 	TagOptionBinary        tagOption = "binary"
 	TagOptionPKAlias       tagOption = "pk"
 	TagOptionPK            tagOption = "primary_key"
+	TagOptionUnsigned      tagOption = "unsigned"
 	TagOptionSize          tagOption = "size"
 	TagOptionDataType      tagOption = "data_type"
 	TagOptionUnique        tagOption = "unique"
@@ -180,6 +181,11 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 		filename string
 	)
 
+	// If `skip_escape` is false, we escape the table and column value
+	if !cfg.SkipEscape {
+		dialect = cfg.Dialect()
+	}
+
 	for len(dirs) > 0 {
 		dir = path.Join(rootDir, dirs[0])
 		if fileutil.IsDirEmptyFiles(dir, cfg.Exec.Filename) {
@@ -188,7 +194,7 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 		}
 
 		filename = path.Join(dir, cfg.Exec.Filename)
-		// Remove generated file, ignore the error
+		// Remove the generated file, ignore the error
 		os.Remove(filename)
 
 		pkgs, err := packages.Load(&packages.Config{
@@ -294,6 +300,7 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 
 						// Imported struct
 						case *ast.SelectorExpr:
+							// TODO: support imported struct
 							// log.Println(vi)
 						}
 					}

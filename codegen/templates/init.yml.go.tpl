@@ -5,9 +5,11 @@ src:
 {{- end }}
 
 # Optional: 
+# Possibly values : `mysql`, `postgres` or `sqlite`
 driver: {{ .Driver }}
 
 # Optional: 
+# Possibly values : `snake_case`, `camelCase` or `PascalCase`
 naming_convention: {{ .NamingConvention }}
 
 # Optional: 
@@ -16,12 +18,12 @@ struct_tag: {{ .Tag }}
 # Optional: 
 skip_escape: {{ .SkipEscape }}
 
-# Optional: Where should any generated code go?
+# Optional: Where should the generated model code go?
 exec:
   skip_empty: {{ .Exec.SkipEmpty }}
   filename: {{ .Exec.Filename }}
 
-# Optional: 
+# Optional: Where should the generated database code go?
 database:
   dir: {{ .Database.Dir }}
   package: {{ .Database.Package }}
@@ -30,7 +32,7 @@ database:
 # Optional: 
 strict: {{ .Strict }}
 
-# Optional: 
+# Optional: turn on to not generate any file header in generated files
 skip_header: {{ .SkipHeader }}
 
 # Optional: 

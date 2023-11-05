@@ -5,7 +5,7 @@
 [![Go Coverage](https://codecov.io/gh/si3nloong/sqlgen/branch/main/graph/badge.svg)](https://codecov.io/gh/si3nloong/sqlgen)
 [![LICENSE](https://img.shields.io/github/license/si3nloong/sqlgen)](https://github.com/si3nloong/sqlgen/blob/main/LICENSE)
 
-> sqlgen is not an ORM, it's a code generator instead. It parse the go struct and generate the necessary methods on struct for you.
+> sqlgen is not an ORM, it's a code generator instead. It parse the go struct and generate the necessary struct methods for you.
 
 ## What is sqlgen?
 
@@ -95,7 +95,9 @@
 More help to get started:
 
 - [Getting started tutorial](/docs/GET_STARTED.md) - a comprehensive guide to help you get started
-- [CLI guide](/docs/CLI.md) for the CLI command.
+- [CLI guide](/docs/CLI.md) - the CLI commands.
+- [FAQ](/docs/FAQ.md) - frequent ask questions.
+- [Configuration file](/docs/CONFIGURATION.md) - configure code generation.
 
 ## Reporting Issues
 

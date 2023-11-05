@@ -27,6 +27,8 @@
     }
     ```
 
+    But I prefer `UUID` primary key, how can I do that? To do that, you may refer to [here](./UUID.md).
+
 3.  Generate the output files.
 
     ```console
@@ -223,6 +225,16 @@
         // insert single record
         result, err := db.InsertOne(ctx, dbConn, &user)
         if err != nil {
+            panic(err)
+        }
+
+        inputs := []model.User{
+            {Name: "John", Created: time.Now()},
+            {Name: "Michael", Created: time.Now()},
+            {Name: "Jerry", Created: time.Now()},
+        }
+        // insert multiple record
+        if _, err := db.InsertInto(ctx, dbConn, inputs); err != nil {
             panic(err)
         }
 
