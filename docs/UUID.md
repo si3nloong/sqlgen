@@ -9,6 +9,10 @@ There are 2 common type of UUID:
 
 ### UUID in string format
 
+> Store UUID value in human readable format using VARCHAR(36) data type.
+
+<img src="./images/varchar_uuid.jpg">
+
 <h5 a><strong><code>model/user.go</code></strong></h5>
 
 ```go
@@ -66,6 +70,10 @@ func (v *User) Addrs() []any {
 ```
 
 ### UUID in binary format
+
+> Store UUID value in non-human readable format using BINARY(16) data type.
+
+<img src="./images/binary_uuid.jpg">
 
 <h5 a><strong><code>model/user.go</code></strong></h5>
 
