@@ -324,7 +324,7 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 		var (
 			t       types.Type
 			nameMap map[string]struct{}
-			params  = &templates.ModelTmplParams{}
+			params  = templates.ModelTmplParams{}
 		)
 
 		// Convert struct to models and generate code
@@ -455,7 +455,7 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 			cfg.Database.Package,
 			cfg.Database.Dir,
 			cfg.Database.Filename,
-			struct{}{},
+			templates.DBTmplParams{},
 		); err != nil {
 			return err
 		}
