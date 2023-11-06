@@ -260,3 +260,52 @@
     }
 
     ```
+
+    But these seem too easy to handle my use case, I need to handle more complex statements. Don't worry, we do provide some utilise to support other use case although it's not developer friendly atm.
+
+    For example :
+
+    ```go
+    package main
+
+    import (
+        "context"
+        "database/sql"
+        "log"
+        "strings"
+
+        "model"
+
+        "github.com/si3nloong/sqlgen/sequel/db"
+
+        _ "github.com/go-sql-driver/mysql"
+        "github.com/si3nloong/sqlgen/sequel"
+        // load mysql dialect
+        _ "github.com/si3nloong/sqlgen/sequel/dialect/mysql"
+    )
+
+    func main() {
+        ctx, cancel := context.WithCancel(context.Background())
+        defer cancel()
+        dbConn, err := sql.Open("mysql", "root:abcd1234@/sqlbench?parseTime=true")
+        if err != nil {
+            panic(err)
+        }
+        defer dbConn.Close()
+
+        var (
+            v model.User
+            d = sequel.DefaultDialect()
+        )
+
+        query := `SELECT ` + strings.Join(v.Columns(), ",") + ` FROM ` + v.TableName()
+        query += ` WHERE age < ` + d.Var(1) + `;`
+
+        users, err := db.QueryScan[model.User](ctx, dbConn, query, 18)
+        if err != nil {
+            panic(err)
+        }
+
+        log.Println(users)
+    }
+    ```
