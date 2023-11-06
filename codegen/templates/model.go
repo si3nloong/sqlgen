@@ -41,7 +41,9 @@ type Field struct {
 
 	Type types.Type
 
-	IsBinary bool
-	Size     int
-	Index    int
+	IsBinary          bool
+	IsTextMarshaler   bool
+	IsTextUnmarshaler bool
+	Size              int
+	Index             int
 }

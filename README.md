@@ -23,7 +23,7 @@
     go install github.com/si3nloong/sqlgen
     ```
 
-2.  Define your struct.
+2.  Define your [model](./docs/MODELS.md) struct.
 
     `models/user.go`
 

@@ -398,14 +398,22 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 				tf.GoName = f.name
 				tf.GoPath = f.path
 				tf.Index = index
-				_, tf.IsBinary = tag.Lookup(TagOptionBinary)
+				if _, ok := tag.Lookup(TagOptionBinary); ok {
+					if IsImplemented(tf.Type, binaryMarshaler) && IsImplemented(newPointer(tf.Type), binaryUnmarshaler) {
+						tf.IsBinary = true
+					} else if cfg.Strict {
+						return fmt.Errorf(`sqlgen: field %q of struct %q specific for "binary" must comply to encoding.BinaryMarshaler and encoding.BinaryUnmarshaler`, tf.GoName, model.GoName)
+					}
+				}
 				if v, ok := tag.Lookup(TagOptionSize); ok {
 					tf.Size, _ = strconv.Atoi(v)
 				}
+				tf.IsTextMarshaler = IsImplemented(tf.Type, textMarshaler)
+				tf.IsTextUnmarshaler = IsImplemented(newPointer(tf.Type), textUnmarshaler)
 				index++
 
 				if _, ok := tag.Lookup(TagOptionPK, TagOptionPKAlias, TagOptionAutoIncrement); ok {
-					if model.PK != nil {
+					if cfg.Strict && model.PK != nil {
 						return fmt.Errorf(`sqlgen: a model can only allow one primary key, else it will get overriden`)
 					}
 
@@ -415,9 +423,11 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 					model.PK = &pk
 				}
 
-				// Check uniqueness of the column
-				if _, ok := nameMap[tf.ColumnName]; ok {
-					return fmt.Errorf("sqlgen: struct %q has duplicate key %q in %s", structs[i].name, tf.ColumnName, dir)
+				if cfg.Strict {
+					// Check uniqueness of the column
+					if _, ok := nameMap[tf.ColumnName]; ok {
+						return fmt.Errorf("sqlgen: struct %q has duplicate key %q in %s", structs[i].name, tf.ColumnName, dir)
+					}
 				}
 				nameMap[tf.ColumnName] = struct{}{}
 
@@ -426,7 +436,8 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 			}
 
 			clear(nameMap)
-			// If model doesn't consist any field,
+
+			// If the model doesn't consist any field,
 			// we don't really want to generate the boilerplate code
 			if len(model.Fields) > 0 {
 				params.Models = append(params.Models, &model)

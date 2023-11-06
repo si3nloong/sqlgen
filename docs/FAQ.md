@@ -1,5 +1,9 @@
 # Frequent Ask Questions (FAQs)
 
+### How can I declare my model?
+
+You may refer to [this guide](./MODELS.md).
+
 ### I don't want primary key on my table, can I do that?
 
 Absolutely, yes. If you didn't specific the `pk`, `primary_key` or `auto_increment` value in struct tag, the primary key methods will not be generated.

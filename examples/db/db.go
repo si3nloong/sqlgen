@@ -167,6 +167,7 @@ func DeleteByID[T sequel.KeyValuer[T]](ctx context.Context, db sequel.DB, v T) (
 	return db.ExecContext(ctx, stmt.String(), pk)
 }
 
+// Migrate is to create or alter the table based on the defined schemas.
 func Migrate[T sequel.Migrator](ctx context.Context, db sequel.DB) error {
 	var (
 		v           T

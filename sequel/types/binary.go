@@ -6,8 +6,6 @@ import (
 	"fmt"
 )
 
-var nullBytes = []byte(`null`)
-
 type binaryMarshaler[T interface {
 	encoding.BinaryMarshaler
 }] struct {

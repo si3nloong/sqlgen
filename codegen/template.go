@@ -31,6 +31,8 @@ func castAs(impPkgs *Package) func(n string, f *templates.Field) string {
 			return Expr("(database/sql/driver.Valuer)(%s)").Format(impPkgs, v)
 		} else if typ, ok := UnderlyingType(f.Type); ok {
 			return typ.Encoder.Format(impPkgs, v)
+		} else if f.IsTextMarshaler {
+			return Expr("github.com/si3nloong/sqlgen/sequel/types.TextMarshaler(%s)").Format(impPkgs, v)
 		}
 		return v
 	}
@@ -41,10 +43,12 @@ func addrOf(impPkgs *Package) func(n string, f *templates.Field) string {
 		v := "&" + n + "." + f.GoPath
 		if f.IsBinary {
 			return Expr("github.com/si3nloong/sqlgen/sequel/types.BinaryUnmarshaler(%s)").Format(impPkgs, v)
-		} else if types.Implements(types.NewPointer(f.Type), sqlScanner) {
+		} else if types.Implements(newPointer(f.Type), sqlScanner) {
 			return Expr("(database/sql.Scanner)(%s)").Format(impPkgs, v)
 		} else if typ, ok := UnderlyingType(f.Type); ok {
 			return typ.Decoder.Format(impPkgs, v)
+		} else if f.IsTextUnmarshaler {
+			return Expr("github.com/si3nloong/sqlgen/sequel/types.TextUnmarshaler(%s)").Format(impPkgs, v)
 		}
 		return v
 	}
@@ -156,6 +160,8 @@ func inspectDataType(f *templates.Field) (dataType string, null bool) {
 			return "FLOAT", len(ptrs) > 0
 		case "float64":
 			return "FLOAT", len(ptrs) > 0
+		case "cloud.google.com/go/civil.Date":
+			return "DATE", len(ptrs) > 0
 		case "time.Time":
 			var size int
 			if f.Size > 0 && f.Size < 7 {
@@ -189,4 +195,12 @@ func inspectDataType(f *templates.Field) (dataType string, null bool) {
 		t = prev
 	}
 	return "VARCHAR(255)", len(ptrs) > 0
+}
+
+func newPointer(t types.Type) *types.Pointer {
+	v, ok := t.(*types.Pointer)
+	if ok {
+		return v
+	}
+	return types.NewPointer(t)
 }
