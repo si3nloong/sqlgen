@@ -25,7 +25,7 @@
 
 2.  Define your [model](./docs/MODELS.md) struct.
 
-    `models/user.go`
+    <h5 a><strong><code>models/user.go</code></strong></h5>
 
     ```go
     package models
