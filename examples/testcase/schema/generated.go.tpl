@@ -10,14 +10,17 @@ import (
 	"github.com/si3nloong/sqlgen/sequel/types"
 )
 
-func (A) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS `a` (`id` VARCHAR(255) NOT NULL,`text` VARCHAR(255) NOT NULL,`created_at` DATETIME NOT NULL);"
+func (v A) CreateTableStmt() string {
+	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`id` VARCHAR(255) NOT NULL,`text` VARCHAR(255) NOT NULL,`created_at` DATETIME NOT NULL);"
 }
 func (A) AlterTableStmt() string {
 	return "ALTER TABLE `a` MODIFY `id` VARCHAR(255) NOT NULL,MODIFY `text` VARCHAR(255) NOT NULL AFTER `id`,MODIFY `created_at` DATETIME NOT NULL AFTER `text`;"
 }
 func (A) TableName() string {
 	return "`a`"
+}
+func (A) InsertVarStmt() string {
+	return "(?,?,?)"
 }
 func (A) Columns() []string {
 	return []string{"`id`", "`text`", "`created_at`"}
@@ -29,14 +32,17 @@ func (v *A) Addrs() []any {
 	return []any{types.String(&v.ID), types.String(&v.Text), (*time.Time)(&v.CreatedAt)}
 }
 
-func (B) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS `b` (`id` VARCHAR(255) NOT NULL,`created_at` DATETIME NOT NULL);"
+func (v B) CreateTableStmt() string {
+	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`id` VARCHAR(255) NOT NULL,`created_at` DATETIME NOT NULL);"
 }
 func (B) AlterTableStmt() string {
 	return "ALTER TABLE `b` MODIFY `id` VARCHAR(255) NOT NULL,MODIFY `created_at` DATETIME NOT NULL AFTER `id`;"
 }
 func (B) TableName() string {
 	return "`b`"
+}
+func (B) InsertVarStmt() string {
+	return "(?,?)"
 }
 func (B) Columns() []string {
 	return []string{"`id`", "`created_at`"}
@@ -48,14 +54,17 @@ func (v *B) Addrs() []any {
 	return []any{types.String(&v.ID), (*time.Time)(&v.CreatedAt)}
 }
 
-func (C) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS `c` (`id` BIGINT NOT NULL,PRIMARY KEY (`id`));"
+func (v C) CreateTableStmt() string {
+	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`id` BIGINT NOT NULL,PRIMARY KEY (`id`));"
 }
 func (C) AlterTableStmt() string {
 	return "ALTER TABLE `c` MODIFY `id` BIGINT NOT NULL;"
 }
 func (C) TableName() string {
 	return "`c`"
+}
+func (C) InsertVarStmt() string {
+	return "(?)"
 }
 func (C) Columns() []string {
 	return []string{"`id`"}
@@ -73,14 +82,17 @@ func (v *C) Addrs() []any {
 	return []any{types.Integer(&v.ID)}
 }
 
-func (D) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS `d` (`id` VARCHAR(255) NOT NULL,PRIMARY KEY (`id`));"
+func (v D) CreateTableStmt() string {
+	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`id` VARCHAR(255) NOT NULL,PRIMARY KEY (`id`));"
 }
 func (D) AlterTableStmt() string {
 	return "ALTER TABLE `d` MODIFY `id` VARCHAR(255) NOT NULL;"
 }
 func (D) TableName() string {
 	return "`d`"
+}
+func (D) InsertVarStmt() string {
+	return "(?)"
 }
 func (D) Columns() []string {
 	return []string{"`id`"}

@@ -6,14 +6,17 @@ import (
 	"github.com/si3nloong/sqlgen/sequel/types"
 )
 
-func (B) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS `b` (`id` BIGINT NOT NULL,`name` VARCHAR(255) NOT NULL,`z` TINYINT NOT NULL);"
+func (v B) CreateTableStmt() string {
+	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`id` BIGINT NOT NULL,`name` VARCHAR(255) NOT NULL,`z` TINYINT NOT NULL);"
 }
 func (B) AlterTableStmt() string {
 	return "ALTER TABLE `b` MODIFY `id` BIGINT NOT NULL,MODIFY `name` VARCHAR(255) NOT NULL AFTER `id`,MODIFY `z` TINYINT NOT NULL AFTER `name`;"
 }
 func (B) TableName() string {
 	return "`b`"
+}
+func (B) InsertVarStmt() string {
+	return "(?,?,?)"
 }
 func (B) Columns() []string {
 	return []string{"`id`", "`name`", "`z`"}

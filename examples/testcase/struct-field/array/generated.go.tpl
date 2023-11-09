@@ -9,14 +9,17 @@ import (
 	"github.com/si3nloong/sqlgen/sequel/types"
 )
 
-func (Array) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS `array` (`id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,`bool_list` JSON NOT NULL,`uint_8_list` JSON NOT NULL,`uint_16_list` JSON NOT NULL,`uint_32_list` JSON NOT NULL,`uint_64_list` JSON NOT NULL,`f_32_list` JSON NOT NULL,`f_64_list` JSON NOT NULL,`str_list` JSON NOT NULL,`custom_str_list` JSON NOT NULL,`int_list` JSON NOT NULL,`int_8_list` JSON NOT NULL,`int_16_list` JSON NOT NULL,`int_32_list` JSON NOT NULL,`int_64_list` JSON NOT NULL,`uint_list` JSON NOT NULL,PRIMARY KEY (`id`));"
+func (v Array) CreateTableStmt() string {
+	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,`bool_list` JSON NOT NULL,`uint_8_list` JSON NOT NULL,`uint_16_list` JSON NOT NULL,`uint_32_list` JSON NOT NULL,`uint_64_list` JSON NOT NULL,`f_32_list` JSON NOT NULL,`f_64_list` JSON NOT NULL,`str_list` JSON NOT NULL,`custom_str_list` JSON NOT NULL,`int_list` JSON NOT NULL,`int_8_list` JSON NOT NULL,`int_16_list` JSON NOT NULL,`int_32_list` JSON NOT NULL,`int_64_list` JSON NOT NULL,`uint_list` JSON NOT NULL,PRIMARY KEY (`id`));"
 }
 func (Array) AlterTableStmt() string {
 	return "ALTER TABLE `array` MODIFY `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,MODIFY `bool_list` JSON NOT NULL AFTER `id`,MODIFY `uint_8_list` JSON NOT NULL AFTER `bool_list`,MODIFY `uint_16_list` JSON NOT NULL AFTER `uint_8_list`,MODIFY `uint_32_list` JSON NOT NULL AFTER `uint_16_list`,MODIFY `uint_64_list` JSON NOT NULL AFTER `uint_32_list`,MODIFY `f_32_list` JSON NOT NULL AFTER `uint_64_list`,MODIFY `f_64_list` JSON NOT NULL AFTER `f_32_list`,MODIFY `str_list` JSON NOT NULL AFTER `f_64_list`,MODIFY `custom_str_list` JSON NOT NULL AFTER `str_list`,MODIFY `int_list` JSON NOT NULL AFTER `custom_str_list`,MODIFY `int_8_list` JSON NOT NULL AFTER `int_list`,MODIFY `int_16_list` JSON NOT NULL AFTER `int_8_list`,MODIFY `int_32_list` JSON NOT NULL AFTER `int_16_list`,MODIFY `int_64_list` JSON NOT NULL AFTER `int_32_list`,MODIFY `uint_list` JSON NOT NULL AFTER `int_64_list`;"
 }
 func (Array) TableName() string {
 	return "`array`"
+}
+func (Array) InsertVarStmt() string {
+	return "(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
 }
 func (Array) Columns() []string {
 	return []string{"`id`", "`bool_list`", "`uint_8_list`", "`uint_16_list`", "`uint_32_list`", "`uint_64_list`", "`f_32_list`", "`f_64_list`", "`str_list`", "`custom_str_list`", "`int_list`", "`int_8_list`", "`int_16_list`", "`int_32_list`", "`int_64_list`", "`uint_list`"}

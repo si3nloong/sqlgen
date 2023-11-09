@@ -1,8 +1,8 @@
 {{- reserveImport "database/sql/driver" }}
 {{- reserveImport "github.com/si3nloong/sqlgen/sequel" }}
 {{ range .Models }}
-func ({{ .GoName }}) CreateTableStmt() string {
-	return {{ quote (createTable .) }}
+func (v {{ .GoName }}) CreateTableStmt() string {
+	return {{ createTable "v" . }}
 }
 func ({{ .GoName }}) AlterTableStmt() string {
 	return {{ quote (alterTable .) }}
@@ -12,6 +12,9 @@ func ({{ .GoName }}) TableName() string {
 	return {{ quote (wrap .TableName) }}
 }
 {{- end }}
+func ({{ .GoName }}) InsertVarStmt() string {
+	return {{ quote (varStmt .Fields) }}
+}
 {{ if .HasColumn -}}
 func ({{ .GoName }}) Columns() []string {
 	return {{ "[]string{" }}{{- range $i, $f := .Fields }}{{- if $i }}{{ ", " }}{{ end }}{{ quote (wrap $f.ColumnName) }}{{ end }}{{- "}" }}

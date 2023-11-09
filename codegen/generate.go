@@ -57,6 +57,7 @@ func renderTemplate[T templates.ModelTmplParams | templates.DBTmplParams](
 		"castAs":        castAs(impPkg),
 		"addrOf":        addrOf(impPkg),
 		"wrap":          dialect.Wrap,
+		"varStmt":       varStmt(dialect),
 		"var":           dialect.Var,
 	}).ParseFS(codegenTemplates, "templates/"+tmplName)
 	if err != nil {

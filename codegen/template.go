@@ -54,12 +54,13 @@ func addrOf(impPkgs *Package) func(n string, f *templates.Field) string {
 	}
 }
 
-func createTableStmt(dialect sequel.Dialect) func(model *templates.Model) string {
-	return func(model *templates.Model) string {
+func createTableStmt(dialect sequel.Dialect) func(string, *templates.Model) string {
+	return func(n string, model *templates.Model) string {
 		buf := strpool.AcquireString()
 		defer strpool.ReleaseString(buf)
 
-		buf.WriteString("CREATE TABLE IF NOT EXISTS " + dialect.Wrap(model.TableName) + " (")
+		buf.WriteString(`"CREATE TABLE IF NOT EXISTS "+ `)
+		buf.WriteString(n + `.TableName() +" (`)
 		for i, f := range model.Fields {
 			if i > 0 {
 				buf.WriteByte(',')
@@ -76,7 +77,7 @@ func createTableStmt(dialect sequel.Dialect) func(model *templates.Model) string
 		if model.PK != nil {
 			buf.WriteString(",PRIMARY KEY (" + dialect.Wrap(model.PK.Field.ColumnName) + ")")
 		}
-		buf.WriteString(");")
+		buf.WriteString(`);"`)
 		return buf.String()
 	}
 }
@@ -109,6 +110,22 @@ func alterTableStmt(dialect sequel.Dialect) func(model *templates.Model) string 
 		// }
 		buf.WriteByte(';')
 		return buf.String()
+	}
+}
+
+func varStmt(dialect sequel.Dialect) func(fields []*templates.Field) string {
+	return func(fields []*templates.Field) string {
+		blr := strpool.AcquireString()
+		defer strpool.ReleaseString(blr)
+		blr.WriteByte('(')
+		for i := 0; i < len(fields); i++ {
+			if i > 0 {
+				blr.WriteByte(',')
+			}
+			blr.WriteString(dialect.Var(i))
+		}
+		blr.WriteByte(')')
+		return blr.String()
 	}
 }
 

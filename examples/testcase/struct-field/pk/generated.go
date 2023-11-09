@@ -9,14 +9,17 @@ import (
 	"github.com/si3nloong/sqlgen/sequel/types"
 )
 
-func (Car) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS `car` (`id` BIGINT NOT NULL,`no` VARCHAR(255) NOT NULL,`color` INTEGER NOT NULL,`manuc_date` DATETIME NOT NULL,PRIMARY KEY (`id`));"
+func (v Car) CreateTableStmt() string {
+	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`id` BIGINT NOT NULL,`no` VARCHAR(255) NOT NULL,`color` INTEGER NOT NULL,`manuc_date` DATETIME NOT NULL,PRIMARY KEY (`id`));"
 }
 func (Car) AlterTableStmt() string {
 	return "ALTER TABLE `car` MODIFY `id` BIGINT NOT NULL,MODIFY `no` VARCHAR(255) NOT NULL AFTER `id`,MODIFY `color` INTEGER NOT NULL AFTER `no`,MODIFY `manuc_date` DATETIME NOT NULL AFTER `color`;"
 }
 func (Car) TableName() string {
 	return "`car`"
+}
+func (Car) InsertVarStmt() string {
+	return "(?,?,?,?)"
 }
 func (Car) Columns() []string {
 	return []string{"`id`", "`no`", "`color`", "`manuc_date`"}
@@ -34,14 +37,17 @@ func (v *Car) Addrs() []any {
 	return []any{types.Integer(&v.ID), types.String(&v.No), types.Integer(&v.Color), (*time.Time)(&v.ManucDate)}
 }
 
-func (User) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS `user` (`id` BIGINT NOT NULL,`name` VARCHAR(255) NOT NULL,`age` TINYINT UNSIGNED NOT NULL,`email` VARCHAR(255) NOT NULL,PRIMARY KEY (`id`));"
+func (v User) CreateTableStmt() string {
+	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`id` BIGINT NOT NULL,`name` VARCHAR(255) NOT NULL,`age` TINYINT UNSIGNED NOT NULL,`email` VARCHAR(255) NOT NULL,PRIMARY KEY (`id`));"
 }
 func (User) AlterTableStmt() string {
 	return "ALTER TABLE `user` MODIFY `id` BIGINT NOT NULL,MODIFY `name` VARCHAR(255) NOT NULL AFTER `id`,MODIFY `age` TINYINT UNSIGNED NOT NULL AFTER `name`,MODIFY `email` VARCHAR(255) NOT NULL AFTER `age`;"
 }
 func (User) TableName() string {
 	return "`user`"
+}
+func (User) InsertVarStmt() string {
+	return "(?,?,?,?)"
 }
 func (User) Columns() []string {
 	return []string{"`id`", "`name`", "`age`", "`email`"}
@@ -59,14 +65,17 @@ func (v *User) Addrs() []any {
 	return []any{types.Integer(&v.ID), types.String(&v.Name), types.Integer(&v.Age), types.String(&v.Email)}
 }
 
-func (House) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS `house` (`id` INTEGER UNSIGNED NOT NULL,`no` VARCHAR(255) NOT NULL,PRIMARY KEY (`id`));"
+func (v House) CreateTableStmt() string {
+	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`id` INTEGER UNSIGNED NOT NULL,`no` VARCHAR(255) NOT NULL,PRIMARY KEY (`id`));"
 }
 func (House) AlterTableStmt() string {
 	return "ALTER TABLE `house` MODIFY `id` INTEGER UNSIGNED NOT NULL,MODIFY `no` VARCHAR(255) NOT NULL AFTER `id`;"
 }
 func (House) TableName() string {
 	return "`house`"
+}
+func (House) InsertVarStmt() string {
+	return "(?,?)"
 }
 func (House) Columns() []string {
 	return []string{"`id`", "`no`"}

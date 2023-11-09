@@ -32,10 +32,14 @@ func (s boolList[T]) Scan(v any) error {
 		if len(vi) == 0 {
 			return nil
 		}
-		b := bytes.Split(vi, []byte{','})
-		values := make([]T, len(b))
-		for i := range b {
-			flag, err := strconv.ParseBool(strfmt.B2s(b[i]))
+		var (
+			paths  = bytes.Split(vi, []byte{','})
+			values = make([]T, len(paths))
+			b      []byte
+		)
+		for i := range paths {
+			b = bytes.TrimSpace(paths[i])
+			flag, err := strconv.ParseBool(strfmt.B2s(b))
 			if err != nil {
 				return err
 			}

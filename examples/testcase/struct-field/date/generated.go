@@ -9,14 +9,17 @@ import (
 	"github.com/si3nloong/sqlgen/sequel/types"
 )
 
-func (User) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS `user` (`id` VARCHAR(36) NOT NULL,`birth_date` DATE NOT NULL,PRIMARY KEY (`id`));"
+func (v User) CreateTableStmt() string {
+	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`id` VARCHAR(36) NOT NULL,`birth_date` DATE NOT NULL,PRIMARY KEY (`id`));"
 }
 func (User) AlterTableStmt() string {
 	return "ALTER TABLE `user` MODIFY `id` VARCHAR(36) NOT NULL,MODIFY `birth_date` DATE NOT NULL AFTER `id`;"
 }
 func (User) TableName() string {
 	return "`user`"
+}
+func (User) InsertVarStmt() string {
+	return "(?,?)"
 }
 func (User) Columns() []string {
 	return []string{"`id`", "`birth_date`"}

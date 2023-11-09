@@ -59,3 +59,12 @@ type Migrator interface {
 	CreateTableStmt() string
 	AlterTableStmt() string
 }
+
+type SingleInserter interface {
+	InsertOneStmt() string
+}
+
+type Inserter interface {
+	Columner
+	InsertVarStmt() string
+}

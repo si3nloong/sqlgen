@@ -32,10 +32,14 @@ func (s floatList[T]) Scan(v any) error {
 		if len(vi) == 0 {
 			return nil
 		}
-		b := bytes.Split(vi, []byte{','})
-		values := make([]T, len(b))
-		for i := range b {
-			f64, err := strconv.ParseFloat(strfmt.B2s(b[i]), 64)
+		var (
+			paths  = bytes.Split(vi, []byte{','})
+			values = make([]T, len(paths))
+			b      []byte
+		)
+		for i := range paths {
+			b = bytes.TrimSpace(paths[i])
+			f64, err := strconv.ParseFloat(strfmt.B2s(b), 64)
 			if err != nil {
 				return err
 			}

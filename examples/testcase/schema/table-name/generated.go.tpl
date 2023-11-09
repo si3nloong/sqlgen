@@ -6,14 +6,17 @@ import (
 	"github.com/si3nloong/sqlgen/sequel/types"
 )
 
-func (CustomTableName1) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS `custom_table_name_1` (`text` VARCHAR(255) NOT NULL);"
+func (v CustomTableName1) CreateTableStmt() string {
+	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`text` VARCHAR(255) NOT NULL);"
 }
 func (CustomTableName1) AlterTableStmt() string {
 	return "ALTER TABLE `custom_table_name_1` MODIFY `text` VARCHAR(255) NOT NULL;"
 }
 func (CustomTableName1) TableName() string {
 	return "`custom_table_name_1`"
+}
+func (CustomTableName1) InsertVarStmt() string {
+	return "(?)"
 }
 func (CustomTableName1) Columns() []string {
 	return []string{"`text`"}
@@ -25,14 +28,17 @@ func (v *CustomTableName1) Addrs() []any {
 	return []any{types.String(&v.Text)}
 }
 
-func (CustomTableName2) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS `custom_table_2` (`text` VARCHAR(255) NOT NULL);"
+func (v CustomTableName2) CreateTableStmt() string {
+	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`text` VARCHAR(255) NOT NULL);"
 }
 func (CustomTableName2) AlterTableStmt() string {
 	return "ALTER TABLE `custom_table_2` MODIFY `text` VARCHAR(255) NOT NULL;"
 }
 func (CustomTableName2) TableName() string {
 	return "`custom_table_2`"
+}
+func (CustomTableName2) InsertVarStmt() string {
+	return "(?)"
 }
 func (CustomTableName2) Columns() []string {
 	return []string{"`text`"}
@@ -44,14 +50,17 @@ func (v *CustomTableName2) Addrs() []any {
 	return []any{types.String(&v.Text)}
 }
 
-func (CustomTableName3) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS `custom_table3` (`text` VARCHAR(255) NOT NULL);"
+func (v CustomTableName3) CreateTableStmt() string {
+	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`text` VARCHAR(255) NOT NULL);"
 }
 func (CustomTableName3) AlterTableStmt() string {
 	return "ALTER TABLE `custom_table3` MODIFY `text` VARCHAR(255) NOT NULL;"
 }
 func (CustomTableName3) TableName() string {
 	return "`custom_table3`"
+}
+func (CustomTableName3) InsertVarStmt() string {
+	return "(?)"
 }
 func (CustomTableName3) Columns() []string {
 	return []string{"`text`"}

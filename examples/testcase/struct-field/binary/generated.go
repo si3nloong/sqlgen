@@ -9,14 +9,17 @@ import (
 	"github.com/si3nloong/sqlgen/sequel/types"
 )
 
-func (Binary) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS `binary` (`id` BINARY(16) NOT NULL,`str` VARCHAR(255) NOT NULL,`time` DATETIME NOT NULL,PRIMARY KEY (`id`));"
+func (v Binary) CreateTableStmt() string {
+	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`id` BINARY(16) NOT NULL,`str` VARCHAR(255) NOT NULL,`time` DATETIME NOT NULL,PRIMARY KEY (`id`));"
 }
 func (Binary) AlterTableStmt() string {
 	return "ALTER TABLE `binary` MODIFY `id` BINARY(16) NOT NULL,MODIFY `str` VARCHAR(255) NOT NULL AFTER `id`,MODIFY `time` DATETIME NOT NULL AFTER `str`;"
 }
 func (Binary) TableName() string {
 	return "`binary`"
+}
+func (Binary) InsertVarStmt() string {
+	return "(?,?,?)"
 }
 func (Binary) Columns() []string {
 	return []string{"`id`", "`str`", "`time`"}

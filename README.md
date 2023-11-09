@@ -11,8 +11,8 @@
 
 - **sqlgen is based on a Code first approach** — You don't require to write SQL first, but Go code instead.
 - **sqlgen enables Codegen** — We generate the boring bits, so you can focus on building your app quickly.
-- **sqlgen prioritizes performance** — Most of the things will define in compile time instead of runtime.
-- **sqlgen embrace generics** — We use generics to eliminate runtime reflection costs and reduce memory allocation.
+- **sqlgen prioritizes Performance** — Most of the things will define in compile time instead of runtime.
+- **sqlgen embrace Generics** — We use generics to eliminate runtime reflection costs and reduce memory allocation.
 - **sqlgen eliminates Side Effects** - You will get expected results instead of side effects when mutate your models.
 
 ## Quick start
