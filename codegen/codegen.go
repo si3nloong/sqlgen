@@ -383,9 +383,20 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 			)
 			model.GoName = types.ExprString(s.name)
 			model.TableName = rename(model.GoName)
-			model.HasTableName = !IsImplemented(s.t, sqlTabler)
-			model.HasColumn = !IsImplemented(s.t, sqlColumner)
-			// model.HasRow = !IsImplemented(t, sqlRower)
+
+			// Check struct implements `sequel.Tabler`
+			if m, w := types.MissingMethod(s.t, sqlTabler, true); cfg.Strict && w {
+				return fmt.Errorf(`sqlgen: struct %q has implements "sequel.Tabler" but wrong footprint`, s.name)
+			} else if m == nil && !w {
+				model.HasTableName = true
+			}
+
+			// Check struct implements `sequel.Columner`
+			if m, w := types.MissingMethod(s.t, sqlColumner, true); cfg.Strict && w {
+				return fmt.Errorf(`sqlgen: struct %q has implements "sequel.Columner" but wrong footprint`, s.name)
+			} else if m == nil && !w {
+				model.HasColumn = true
+			}
 
 			for _, f := range s.fields {
 				var (

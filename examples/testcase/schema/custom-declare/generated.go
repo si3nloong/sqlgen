@@ -15,9 +15,6 @@ func (A) AlterTableStmt() string {
 func (A) InsertVarStmt() string {
 	return "(?)"
 }
-func (A) Columns() []string {
-	return []string{"`name`"}
-}
 func (v A) Values() []any {
 	return []any{string(v.Name)}
 }
