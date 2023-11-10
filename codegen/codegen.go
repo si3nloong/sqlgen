@@ -6,6 +6,7 @@ import (
 	"go/ast"
 	"go/types"
 	"io/fs"
+	"log"
 	"os"
 	"os/exec"
 	"path"
@@ -55,6 +56,8 @@ type typeQueue struct {
 }
 
 type structType struct {
+	pkg    *packages.Package
+	t      types.Type
 	name   *ast.Ident
 	fields []structField
 }
@@ -63,7 +66,7 @@ type structField struct {
 	id       string
 	name     string
 	path     string
-	t        ast.Expr
+	t        types.Type
 	exported bool
 	tag      reflect.StructTag
 }
@@ -174,6 +177,12 @@ func Generate(c *config.Config) error {
 }
 
 func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher Matcher) error {
+	type structCache struct {
+		name *ast.Ident
+		t    *ast.StructType
+		pkg  *packages.Package
+	}
+
 	var (
 		rename   = cfg.RenameFunc()
 		dialect  = cfg.Dialect()
@@ -216,14 +225,20 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 		}
 
 		var (
-			structTypes = make([]*ast.TypeSpec, 0)
+			structTypes = make([]structCache, 0)
 		)
 
 		for _, f := range pkg.Syntax {
 			// ast.Print(pkg.Fset, f)
 			ast.Inspect(f, func(node ast.Node) bool {
-				typeSpec, ok := node.(*ast.TypeSpec)
-				if !ok {
+				typeSpec := assertAsPtr[ast.TypeSpec](node)
+				if typeSpec == nil {
+					return true
+				}
+
+				// We only interested on Type Definition
+				// e.g: `type Model = sql.NullString`
+				if typeSpec.Assign > 0 {
 					return true
 				}
 
@@ -232,15 +247,41 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 					return true
 				}
 
-				obj := pkg.TypesInfo.ObjectOf(typeSpec.Name)
+				objType := pkg.TypesInfo.ObjectOf(typeSpec.Name)
 				// We're not interested in the unexported type
-				if !obj.Exported() {
+				if !objType.Exported() {
 					return true
 				}
 
-				// TODO: If it's an alias struct, we should skip right?
-				if _, ok := typeSpec.Type.(*ast.StructType); ok {
-					structTypes = append(structTypes, typeSpec)
+				// There are 2 types we're interested in
+				// 1. struct (*ast.StructType)
+				// 2. Type Definition from external package (*ast.SelectorExpr)
+				switch t := typeSpec.Type.(type) {
+				case *ast.StructType:
+					structTypes = append(structTypes, structCache{name: typeSpec.Name, t: t, pkg: pkg})
+
+				case *ast.SelectorExpr:
+					var (
+						pkgPath   = pkg.TypesInfo.ObjectOf(t.Sel).Pkg()
+						importPkg = pkg.Imports[pkgPath.Path()]
+						obj       *ast.Object
+					)
+
+					for i := range importPkg.Syntax {
+						obj = importPkg.Syntax[i].Scope.Lookup(t.Sel.Name)
+						if obj != nil {
+							break
+						}
+					}
+
+					decl := assertAsPtr[ast.TypeSpec](obj.Decl)
+					if decl == nil {
+						return true
+					}
+
+					if v := assertAsPtr[ast.StructType](decl.Type); v != nil {
+						structTypes = append(structTypes, structCache{name: typeSpec.Name, t: v, pkg: importPkg})
+					}
 				}
 				return true
 			})
@@ -257,7 +298,7 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 			var (
 				// queue to store struct, this is useful
 				// when handling embedded struct
-				q      = []typeQueue{{t: s.Type.(*ast.StructType)}}
+				q      = []typeQueue{{t: s.t}}
 				f      typeQueue
 				fields = make([]structField, 0)
 			)
@@ -301,7 +342,7 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 						// Imported struct
 						case *ast.SelectorExpr:
 							// TODO: support imported struct
-							// log.Println(vi)
+							log.Println("debug =>", vi)
 						}
 					}
 
@@ -311,7 +352,7 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 							path = f.path + "." + path
 						}
 
-						fields = append(fields, structField{id: toID(append(f.idx, i+j)), exported: n.IsExported(), name: types.ExprString(n), tag: tag, path: path, t: fi.Type})
+						fields = append(fields, structField{id: toID(append(f.idx, i+j)), exported: n.IsExported(), name: types.ExprString(n), tag: tag, path: path, t: s.pkg.TypesInfo.TypeOf(fi.Type)})
 					}
 				}
 
@@ -323,33 +364,32 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 					return fields[j].id > fields[i].id
 				})
 
-				structs = append(structs, structType{name: s.Name, fields: fields})
+				structs = append(structs, structType{name: s.name, fields: fields, pkg: s.pkg, t: pkg.TypesInfo.TypeOf(s.name)})
 			}
 		}
 
 		// Generate interface code
 		var (
-			t       types.Type
+			// t       types.Type
 			nameMap map[string]struct{}
 			params  = templates.ModelTmplParams{}
 		)
 
 		// Convert struct to models and generate code
-		for i := range structs {
-			t = pkg.TypesInfo.TypeOf(structs[i].name)
+		for _, s := range structs {
 			nameMap = make(map[string]struct{})
 
 			var (
 				index int
 				model = templates.Model{}
 			)
-			model.GoName = types.ExprString(structs[i].name)
+			model.GoName = types.ExprString(s.name)
 			model.TableName = rename(model.GoName)
-			model.HasTableName = !IsImplemented(t, sqlTabler)
-			model.HasColumn = !IsImplemented(t, sqlColumner)
+			model.HasTableName = !IsImplemented(s.t, sqlTabler)
+			model.HasColumn = !IsImplemented(s.t, sqlColumner)
 			// model.HasRow = !IsImplemented(t, sqlRower)
 
-			for _, f := range structs[i].fields {
+			for _, f := range s.fields {
 				var (
 					tv  = f.tag.Get(cfg.Tag)
 					tf  = &templates.Field{}
@@ -379,7 +419,7 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 					}
 				}
 
-				switch pkg.TypesInfo.TypeOf(f.t).String() {
+				switch f.t.String() {
 				// If the type is table name, then we replace table name
 				// and continue on next property
 				case tableNameSchema:
@@ -394,7 +434,7 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 					continue
 				}
 
-				tf.Type = pkg.TypesInfo.TypeOf(f.t)
+				tf.Type = f.t
 				tf.GoName = f.name
 				tf.GoPath = f.path
 				tf.Index = index
@@ -426,7 +466,7 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 				if cfg.Strict {
 					// Check uniqueness of the column
 					if _, ok := nameMap[tf.ColumnName]; ok {
-						return fmt.Errorf("sqlgen: struct %q has duplicate key %q in %s", structs[i].name, tf.ColumnName, dir)
+						return fmt.Errorf("sqlgen: struct %q has duplicate key %q in %s", s.name, tf.ColumnName, dir)
 					}
 				}
 				nameMap[tf.ColumnName] = struct{}{}
@@ -507,6 +547,14 @@ func toID(val []int) string {
 		buf.WriteString(strconv.Itoa(v))
 	}
 	return buf.String()
+}
+
+func assertAsPtr[T any](v any) *T {
+	t, ok := v.(*T)
+	if ok {
+		return t
+	}
+	return nil
 }
 
 func UnderlyingType(t types.Type) (*Mapping, bool) {
