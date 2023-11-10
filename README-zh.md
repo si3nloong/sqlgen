@@ -20,7 +20,7 @@
 1. 安装 sqlgen。
 
    ```console
-   go install github.com/si3nloong/sqlgen
+   go install github.com/si3nloong/sqlgen@main
    ```
 
 2. 定义您的结构。
