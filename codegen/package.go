@@ -9,7 +9,7 @@ import (
 )
 
 const mode = packages.NeedName |
-	packages.NeedFiles |
+	// packages.NeedFiles |
 	packages.NeedImports |
 	packages.NeedTypes |
 	packages.NeedSyntax |

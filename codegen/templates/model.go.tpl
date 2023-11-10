@@ -7,19 +7,19 @@ func (v {{ .GoName }}) CreateTableStmt() string {
 func ({{ .GoName }}) AlterTableStmt() string {
 	return {{ quote (alterTable .) }}
 }
-{{ if .HasTableName -}}
+{{ if eq .HasTableName false -}}
 func ({{ .GoName }}) TableName() string {
 	return {{ quote (wrap .TableName) }}
 }
-{{- end }}
+{{ end -}}
 func ({{ .GoName }}) InsertVarStmt() string {
 	return {{ quote (varStmt .Fields) }}
 }
-{{ if .HasColumn -}}
+{{ if eq .HasColumn false -}}
 func ({{ .GoName }}) Columns() []string {
 	return {{ "[]string{" }}{{- range $i, $f := .Fields }}{{- if $i }}{{ ", " }}{{ end }}{{ quote (wrap $f.ColumnName) }}{{ end }}{{- "}" }}
 }
-{{- end }}
+{{ end -}}
 {{ if ne .PK nil -}}
 func (v {{ .GoName }}) IsAutoIncr() bool {
 	return {{ .PK.IsAutoIncr }}
