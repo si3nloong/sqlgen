@@ -11,7 +11,7 @@ func ({{ .GoName }}) AlterTableStmt() string {
 func ({{ .GoName }}) TableName() string {
 	return {{ quote (wrap .TableName) }}
 }
-{{- end }}
+{{ end -}}
 func ({{ .GoName }}) InsertVarStmt() string {
 	return {{ quote (varStmt .Fields) }}
 }
@@ -19,7 +19,7 @@ func ({{ .GoName }}) InsertVarStmt() string {
 func ({{ .GoName }}) Columns() []string {
 	return {{ "[]string{" }}{{- range $i, $f := .Fields }}{{- if $i }}{{ ", " }}{{ end }}{{ quote (wrap $f.ColumnName) }}{{ end }}{{- "}" }}
 }
-{{- end }}
+{{ end -}}
 {{ if ne .PK nil -}}
 func (v {{ .GoName }}) IsAutoIncr() bool {
 	return {{ .PK.IsAutoIncr }}

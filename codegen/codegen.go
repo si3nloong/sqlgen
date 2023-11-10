@@ -236,8 +236,8 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 					return true
 				}
 
-				// We only interested on Type Definition
-				// e.g: `type Model = sql.NullString`
+				// We only interested on Type Definition, or else we will skip
+				// e.g: `type Model sql.NullString`
 				if typeSpec.Assign > 0 {
 					return true
 				}
@@ -296,8 +296,7 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 		// Loop every struct and map the fields
 		for _, s := range structTypes {
 			var (
-				// queue to store struct, this is useful
-				// when handling embedded struct
+				// Struct queue, this is useful when handling embedded struct
 				q      = []typeQueue{{t: s.t}}
 				f      typeQueue
 				fields = make([]structField, 0)
@@ -370,7 +369,6 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 
 		// Generate interface code
 		var (
-			// t       types.Type
 			nameMap map[string]struct{}
 			params  = templates.ModelTmplParams{}
 		)

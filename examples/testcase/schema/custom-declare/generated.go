@@ -12,7 +12,6 @@ func (v A) CreateTableStmt() string {
 func (A) AlterTableStmt() string {
 	return "ALTER TABLE `a` MODIFY `name` VARCHAR(255) NOT NULL;"
 }
-
 func (A) InsertVarStmt() string {
 	return "(?)"
 }
