@@ -43,6 +43,6 @@ func (b textUnmarshaler[T, Ptr]) Scan(v any) error {
 	case []byte:
 		return b.v.UnmarshalText(vi)
 	default:
-		return fmt.Errorf(`sqlgen: text must be []byte to unmrshal`)
+		return fmt.Errorf(`sqlgen: text must be []byte to unmarshal`)
 	}
 }
