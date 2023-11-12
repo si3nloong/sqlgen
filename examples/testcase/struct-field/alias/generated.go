@@ -20,6 +20,9 @@ func (AliasStruct) AlterTableStmt() string {
 func (AliasStruct) TableName() string {
 	return "`alias_struct`"
 }
+func (v AliasStruct) InsertOneStmt() string {
+	return "INSERT INTO " + v.TableName() + " (`b`,`Id`,`header`,`raw`,`text`,`null_str`,`created`,`updated`) VALUES (?,?,?,?,?,?,?,?);"
+}
 func (AliasStruct) InsertVarQuery() string {
 	return "(?,?,?,?,?,?,?,?)"
 }
@@ -71,6 +74,9 @@ func (B) AlterTableStmt() string {
 func (B) TableName() string {
 	return "`b`"
 }
+func (v B) InsertOneStmt() string {
+	return "INSERT INTO " + v.TableName() + " (`name`) VALUES (?);"
+}
 func (B) InsertVarQuery() string {
 	return "(?)"
 }
@@ -94,6 +100,9 @@ func (C) AlterTableStmt() string {
 }
 func (C) TableName() string {
 	return "`c`"
+}
+func (v C) InsertOneStmt() string {
+	return "INSERT INTO " + v.TableName() + " (`id`) VALUES (?);"
 }
 func (C) InsertVarQuery() string {
 	return "(?)"

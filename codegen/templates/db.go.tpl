@@ -4,11 +4,25 @@
 {{- reserveImport "strconv" }}
 {{- reserveImport "github.com/si3nloong/sqlgen/sequel" }}
 {{- reserveImport "github.com/si3nloong/sqlgen/sequel/strpool" }}
-func InsertOne[T sequel.KeyValuer[T], Ptr interface {
-	sequel.KeyValuer[T]
+func InsertOne[T sequel.TableColumnValuer[T], Ptr interface {
+	sequel.TableColumnValuer[T]
 	sequel.Scanner[T]
 }](ctx context.Context, db sequel.DB, v Ptr) (sql.Result, error) {
-	columns, args := v.Columns(), v.Values()
+	args := v.Values()
+	switch vi := any(v).(type) {
+	case sequel.SingleInserter:
+		k, ok := vi.(sequel.Keyer)
+		if !ok {
+			return db.ExecContext(ctx, vi.InsertOneStmt(), args...)
+		}
+		if k.IsAutoIncr() {
+			_, idx, _ := k.PK()
+			args = append(args[:idx], args[idx+1:]...)
+		}
+		return db.ExecContext(ctx, vi.InsertOneStmt(), args...)
+	}
+
+	columns := v.Columns()
 	switch vi := any(v).(type) {
 	case sequel.Keyer:
 		if vi.IsAutoIncr() {
@@ -22,28 +36,19 @@ func InsertOne[T sequel.KeyValuer[T], Ptr interface {
 	stmt := strpool.AcquireString()
 	defer strpool.ReleaseString(stmt)
 	stmt.WriteString("INSERT INTO " + v.TableName() + " (" + strings.Join(columns, ",") + ") VALUES ")
-	switch vi := any(v).(type) {
-	case sequel.Inserter:
-		stmt.WriteString(vi.InsertVarQuery() + ";")
-	default:
-		stmt.WriteByte('(')
-		for i := range args {
-			if i > 0 {
-				stmt.WriteByte(',')
-			}
-			stmt.WriteString({{ quote (var 1) }})
+	stmt.WriteByte('(')
+	for i := range args {
+		if i > 0 {
+			stmt.WriteByte(',')
 		}
-		stmt.WriteString(");")
+		stmt.WriteString("?")
 	}
+	stmt.WriteString(");")
 	return db.ExecContext(ctx, stmt.String(), args...)
 }
 
 // InsertInto is a helper function to insert your records.
-func InsertInto[T interface {
-	sequel.Tabler
-	sequel.Columner
-	sequel.Valuer
-}](ctx context.Context, db sequel.DB, data []T) (sql.Result, error) {
+func InsertInto[T sequel.TableColumnValuer[T]](ctx context.Context, db sequel.DB, data []T) (sql.Result, error) {
 	n := len(data)
 	if n == 0 {
 		return new(sequel.EmptyResult), nil
@@ -90,7 +95,7 @@ func InsertInto[T interface {
 			if j > 0 {
 				stmt.WriteByte(',')
 			}
-			stmt.WriteString({{ quote (var 1) }})
+			stmt.WriteString("?")
 		}
 		if idx > -1 {
 			values := data[i].Values()

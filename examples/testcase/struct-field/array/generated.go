@@ -19,6 +19,9 @@ func (Array) AlterTableStmt() string {
 func (Array) TableName() string {
 	return "`array`"
 }
+func (v Array) InsertOneStmt() string {
+	return "INSERT INTO " + v.TableName() + " (`bool_list`,`uint_8_list`,`uint_16_list`,`uint_32_list`,`uint_64_list`,`f_32_list`,`f_64_list`,`str_list`,`custom_str_list`,`int_list`,`int_8_list`,`int_16_list`,`int_32_list`,`int_64_list`,`uint_list`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);"
+}
 func (Array) InsertVarQuery() string {
 	return "(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
 }

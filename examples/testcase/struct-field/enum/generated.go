@@ -18,6 +18,9 @@ func (Custom) AlterTableStmt() string {
 func (Custom) TableName() string {
 	return "`custom`"
 }
+func (v Custom) InsertOneStmt() string {
+	return "INSERT INTO " + v.TableName() + " (`text`,`e`,`num`) VALUES (?,?,?);"
+}
 func (Custom) InsertVarQuery() string {
 	return "(?,?,?)"
 }

@@ -21,6 +21,9 @@ func (User) AlterTableStmt() string {
 func (User) TableName() string {
 	return "`user`"
 }
+func (v User) InsertOneStmt() string {
+	return "INSERT INTO " + v.TableName() + " (`id`,`birth_date`) VALUES (?,?);"
+}
 func (User) InsertVarQuery() string {
 	return "(?,?)"
 }

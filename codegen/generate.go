@@ -55,6 +55,7 @@ func renderTemplate[T templates.ModelTmplParams | struct{}](
 		"quote":             strconv.Quote,
 		"createTable":       createTableStmt(dialect),
 		"alterTable":        alterTableStmt(dialect),
+		"insertOneStmt":     insertOneStmt(dialect),
 		"reserveImport":     reserveImport(impPkg),
 		"castAs":            castAs(impPkg),
 		"addrOf":            addrOf(impPkg),

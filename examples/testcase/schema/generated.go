@@ -20,6 +20,9 @@ func (A) AlterTableStmt() string {
 func (A) TableName() string {
 	return "`a`"
 }
+func (v A) InsertOneStmt() string {
+	return "INSERT INTO " + v.TableName() + " (`id`,`text`,`created_at`) VALUES (?,?,?);"
+}
 func (A) InsertVarQuery() string {
 	return "(?,?,?)"
 }
@@ -50,6 +53,9 @@ func (B) AlterTableStmt() string {
 func (B) TableName() string {
 	return "`b`"
 }
+func (v B) InsertOneStmt() string {
+	return "INSERT INTO " + v.TableName() + " (`id`,`created_at`) VALUES (?,?);"
+}
 func (B) InsertVarQuery() string {
 	return "(?,?)"
 }
@@ -76,6 +82,9 @@ func (C) AlterTableStmt() string {
 }
 func (C) TableName() string {
 	return "`c`"
+}
+func (v C) InsertOneStmt() string {
+	return "INSERT INTO " + v.TableName() + " (`id`) VALUES (?);"
 }
 func (C) InsertVarQuery() string {
 	return "(?)"
@@ -106,6 +115,9 @@ func (D) AlterTableStmt() string {
 }
 func (D) TableName() string {
 	return "`d`"
+}
+func (v D) InsertOneStmt() string {
+	return "INSERT INTO " + v.TableName() + " (`id`) VALUES (?);"
 }
 func (D) InsertVarQuery() string {
 	return "(?)"

@@ -43,7 +43,7 @@ func castAs(impPkgs *Package) func(*templates.Field, ...string) string {
 	}
 }
 
-func addrOf(impPkgs *Package) func(n string, f *templates.Field) string {
+func addrOf(impPkgs *Package) func(string, *templates.Field) string {
 	return func(n string, f *templates.Field) string {
 		v := "&" + n + "." + f.GoPath
 		if f.IsBinary {
@@ -87,7 +87,7 @@ func createTableStmt(dialect sequel.Dialect) func(string, *templates.Model) stri
 	}
 }
 
-func alterTableStmt(dialect sequel.Dialect) func(model *templates.Model) string {
+func alterTableStmt(dialect sequel.Dialect) func(*templates.Model) string {
 	return func(model *templates.Model) string {
 		buf := strpool.AcquireString()
 		defer strpool.ReleaseString(buf)
@@ -114,6 +114,40 @@ func alterTableStmt(dialect sequel.Dialect) func(model *templates.Model) string 
 		// 	buf.WriteString(",MODIFY PRIMARY KEY (" + model.PK.Field.ColumnName + ")")
 		// }
 		buf.WriteByte(';')
+		return buf.String()
+	}
+}
+
+func insertOneStmt(dialect sequel.Dialect) func(*templates.Model) string {
+	return func(model *templates.Model) string {
+		buf := strpool.AcquireString()
+		defer strpool.ReleaseString(buf)
+		buf.WriteString(`"INSERT INTO "+ `)
+		buf.WriteString(`v.TableName() +" (`)
+		var fields []*templates.Field
+		if model.PK != nil && model.PK.IsAutoIncr {
+			for _, f := range model.Fields {
+				if f != model.PK.Field {
+					fields = append(fields, f)
+				}
+			}
+		} else {
+			fields = append(fields, model.Fields...)
+		}
+		for i, f := range fields {
+			if i > 0 {
+				buf.WriteByte(',')
+			}
+			buf.WriteString(dialect.Wrap(f.ColumnName))
+		}
+		buf.WriteString(") VALUES (")
+		for i := range fields {
+			if i > 0 {
+				buf.WriteByte(',')
+			}
+			buf.WriteString(dialect.Var(i))
+		}
+		buf.WriteString(`);"`)
 		return buf.String()
 	}
 }

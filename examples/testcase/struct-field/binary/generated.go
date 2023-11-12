@@ -20,6 +20,9 @@ func (Binary) AlterTableStmt() string {
 func (Binary) TableName() string {
 	return "`binary`"
 }
+func (v Binary) InsertOneStmt() string {
+	return "INSERT INTO " + v.TableName() + " (`id`,`str`,`time`) VALUES (?,?,?);"
+}
 func (Binary) InsertVarQuery() string {
 	return "(?,?,?)"
 }

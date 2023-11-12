@@ -13,6 +13,9 @@ func ({{ $structName }}) TableName() string {
 	return {{ quote (wrap .TableName) }}
 }
 {{ end -}}
+func (v {{ $structName }}) InsertOneStmt() string {
+	return {{ insertOneStmt . }}
+}
 func ({{ $structName }}) InsertVarQuery() string {
 	return {{ quote (varStmt .) }}
 }

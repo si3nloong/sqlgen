@@ -18,6 +18,9 @@ func (Model) AlterTableStmt() string {
 func (Model) TableName() string {
 	return "`model`"
 }
+func (v Model) InsertOneStmt() string {
+	return "INSERT INTO " + v.TableName() + " (`name`,`f`,`n`) VALUES (?,?,?);"
+}
 func (Model) InsertVarQuery() string {
 	return "(?,?,?)"
 }

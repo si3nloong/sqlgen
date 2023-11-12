@@ -19,6 +19,9 @@ func (Ptr) AlterTableStmt() string {
 func (Ptr) TableName() string {
 	return "`ptr`"
 }
+func (v Ptr) InsertOneStmt() string {
+	return "INSERT INTO " + v.TableName() + " (`str`,`uint_8`,`uint_16`,`uint_32`,`uint_64`,`f_32`,`f_64`,`time`,`bytes`,`bool`,`int`,`int_8`,`int_16`,`int_32`,`int_64`,`uint`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);"
+}
 func (Ptr) InsertVarQuery() string {
 	return "(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
 }

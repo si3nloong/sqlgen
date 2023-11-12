@@ -15,6 +15,12 @@ type Scanner[T any] interface {
 	Addrs() []any
 }
 
+type TableColumnValuer[T any] interface {
+	Tabler
+	Columner
+	Valuer
+}
+
 type KeyValuer[T any] interface {
 	Keyer
 	Tabler
