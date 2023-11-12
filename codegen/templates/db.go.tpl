@@ -63,6 +63,7 @@ func InsertInto[T interface {
 	case sequel.Keyer:
 		if vi.IsAutoIncr() {
 			_, idx, _ = vi.PK()
+			noOfCols--
 			columns = append(columns[:idx], columns[idx+1:]...)
 		}
 
