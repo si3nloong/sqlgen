@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	sqliteDB *sql.DB
+	dbConn *sql.DB
 )
 
 func openSqlConn(driver string) (*sql.DB, error) {

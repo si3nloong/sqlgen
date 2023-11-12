@@ -173,6 +173,41 @@ func Generate(c *config.Config) error {
 		sources = sources[1:]
 	}
 
+	if cfg.Database != nil {
+		// Generate db code
+		os.Remove(filepath.Join(cfg.Database.Dir, cfg.Database.Filename))
+		if err := renderTemplate(
+			"db.go.tpl",
+			cfg.SkipHeader,
+			cfg.Dialect(),
+			"",
+			cfg.Database.Package,
+			cfg.Getter.Prefix,
+			cfg.Database.Dir,
+			cfg.Database.Filename,
+			struct{}{},
+		); err != nil {
+			return err
+		}
+	}
+
+	if cfg.Database.Operator != nil {
+		os.Remove(filepath.Join(cfg.Database.Dir, cfg.Database.Operator.Filename))
+		if err := renderTemplate(
+			"operator.go.tpl",
+			cfg.SkipHeader,
+			cfg.Dialect(),
+			"",
+			cfg.Database.Operator.Package,
+			cfg.Getter.Prefix,
+			cfg.Database.Operator.Dir,
+			cfg.Database.Operator.Filename,
+			struct{}{},
+		); err != nil {
+			return err
+		}
+	}
+
 	return goModTidy()
 }
 
@@ -501,7 +536,9 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 			"model.go.tpl",
 			cfg.SkipHeader,
 			dialect,
+			pkg.PkgPath,
 			pkg.Name,
+			cfg.Getter.Prefix,
 			dir,
 			cfg.Exec.Filename,
 			params,
@@ -511,21 +548,6 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 
 	nextDir:
 		dirs = dirs[1:]
-	}
-
-	if cfg.Database != nil {
-		// Generate db code
-		if err := renderTemplate(
-			"db.go.tpl",
-			cfg.SkipHeader,
-			dialect,
-			cfg.Database.Package,
-			cfg.Database.Dir,
-			cfg.Database.Filename,
-			templates.DBTmplParams{},
-		); err != nil {
-			return err
-		}
 	}
 
 	if cfg.SkipModTidy {

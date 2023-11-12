@@ -22,19 +22,24 @@ func reserveImport(impPkgs *Package) func(pkgPath string, aliases ...string) str
 	}
 }
 
-func castAs(impPkgs *Package) func(n string, f *templates.Field) string {
-	return func(n string, f *templates.Field) string {
-		v := n + "." + f.GoPath
-		if f.IsBinary {
-			return Expr("github.com/si3nloong/sqlgen/sequel/types.BinaryMarshaler(%s)").Format(impPkgs, v)
-		} else if _, wrong := types.MissingMethod(f.Type, sqlValuer, true); wrong {
-			return Expr("(database/sql/driver.Valuer)(%s)").Format(impPkgs, v)
-		} else if typ, ok := UnderlyingType(f.Type); ok {
-			return typ.Encoder.Format(impPkgs, v)
-		} else if f.IsTextMarshaler {
-			return Expr("github.com/si3nloong/sqlgen/sequel/types.TextMarshaler(%s)").Format(impPkgs, v)
+func castAs(impPkgs *Package) func(*templates.Field, ...string) string {
+	return func(f *templates.Field, n ...string) string {
+		var name string
+		if len(n) > 0 {
+			name = n[0]
+		} else {
+			name = "v." + f.GoPath
 		}
-		return v
+		if f.IsBinary {
+			return Expr("github.com/si3nloong/sqlgen/sequel/types.BinaryMarshaler(%s)").Format(impPkgs, name)
+		} else if _, wrong := types.MissingMethod(f.Type, sqlValuer, true); wrong {
+			return Expr("(database/sql/driver.Valuer)(%s)").Format(impPkgs, name)
+		} else if typ, ok := UnderlyingType(f.Type); ok {
+			return typ.Encoder.Format(impPkgs, name)
+		} else if f.IsTextMarshaler {
+			return Expr("github.com/si3nloong/sqlgen/sequel/types.TextMarshaler(%s)").Format(impPkgs, name)
+		}
+		return name
 	}
 }
 
@@ -126,6 +131,28 @@ func varStmt(dialect sequel.Dialect) func(fields []*templates.Field) string {
 		}
 		blr.WriteByte(')')
 		return blr.String()
+	}
+}
+
+type FieldTypeValue struct {
+	FuncName string
+	Type     string
+	Valuer   string
+	Value    string
+}
+
+func getFieldTypeValue(impPkgs *Package, prefix string) func(*templates.Field) FieldTypeValue {
+	return func(f *templates.Field) FieldTypeValue {
+		typeStr := f.Type.String()
+		if idx := strings.Index(typeStr, "."); idx > 0 {
+			typeStr = Expr(typeStr).Format(impPkgs)
+		}
+		return FieldTypeValue{
+			FuncName: prefix + f.GoName,
+			Type:     typeStr,
+			Valuer:   castAs(impPkgs)(f),
+			Value:    "v." + f.GoName,
+		}
 	}
 }
 

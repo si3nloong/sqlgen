@@ -33,11 +33,13 @@ func Init(cfg *config.Config) error {
 	return nil
 }
 
-func renderTemplate[T templates.ModelTmplParams | templates.DBTmplParams](
+func renderTemplate[T templates.ModelTmplParams | struct{}](
 	tmplName string,
 	skipHeader bool,
 	dialect sequel.Dialect,
+	pkgPath string,
 	pkgName string,
+	getter string,
 	dstDir string,
 	dstFilename string,
 	params T,
@@ -48,17 +50,18 @@ func renderTemplate[T templates.ModelTmplParams | templates.DBTmplParams](
 		strpool.ReleaseString(blr)
 	}()
 
-	impPkg := new(Package)
+	impPkg := NewPackage(pkgPath, pkgName)
 	tmpl, err := template.New(tmplName).Funcs(template.FuncMap{
-		"quote":         strconv.Quote,
-		"createTable":   createTableStmt(dialect),
-		"alterTable":    alterTableStmt(dialect),
-		"reserveImport": reserveImport(impPkg),
-		"castAs":        castAs(impPkg),
-		"addrOf":        addrOf(impPkg),
-		"wrap":          dialect.Wrap,
-		"varStmt":       varStmt(dialect),
-		"var":           dialect.Var,
+		"quote":             strconv.Quote,
+		"createTable":       createTableStmt(dialect),
+		"alterTable":        alterTableStmt(dialect),
+		"reserveImport":     reserveImport(impPkg),
+		"castAs":            castAs(impPkg),
+		"addrOf":            addrOf(impPkg),
+		"wrap":              dialect.Wrap,
+		"getFieldTypeValue": getFieldTypeValue(impPkg, getter),
+		"varStmt":           varStmt(dialect),
+		"var":               dialect.Var,
 	}).ParseFS(codegenTemplates, "templates/"+tmplName)
 	if err != nil {
 		return err

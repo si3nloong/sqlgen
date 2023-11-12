@@ -64,7 +64,7 @@ func runInitCommand(cmd *cobra.Command, args []string) error {
 	)
 
 	var answer struct {
-		Driver           string `survey:"driver"`
+		SqlDriver        string `survey:"driver"`
 		NamingConvention string `survey:"naming_convention"`
 		Tag              string `survey:"tag"`
 		Strict           bool   `survey:"strict,omitempty"`
@@ -81,6 +81,16 @@ func runInitCommand(cmd *cobra.Command, args []string) error {
 	}
 
 	cfg := config.DefaultConfig()
+	switch answer.SqlDriver {
+	case string(config.MySQL):
+		cfg.Driver = config.MySQL
+	case string(config.Postgres):
+		cfg.Driver = config.Postgres
+	case string(config.Sqlite):
+		cfg.Driver = config.Sqlite
+	default:
+		cfg.Driver = config.SqlDriver(answer.SqlDriver)
+	}
 	switch answer.NamingConvention {
 	case string(config.SnakeCase):
 		cfg.NamingConvention = config.SnakeCase

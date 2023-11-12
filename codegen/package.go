@@ -18,8 +18,22 @@ const mode = packages.NeedName |
 	packages.NeedDeps
 
 type Package struct {
+	pkgPath string
+	name    string
 	cache   map[string]*types.Package
 	imports []*types.Package
+}
+
+func NewPackage(path, name string) *Package {
+	return &Package{pkgPath: path, name: name, cache: make(map[string]*types.Package)}
+}
+
+func (p Package) PkgPath() string {
+	return p.pkgPath
+}
+
+func (p Package) Name() string {
+	return p.name
 }
 
 func (p *Package) Import(pkg *types.Package) (*types.Package, bool) {
@@ -28,8 +42,9 @@ func (p *Package) Import(pkg *types.Package) (*types.Package, bool) {
 	}); i > -1 {
 		return p.imports[i], false
 	}
-	if p.cache == nil {
-		p.cache = make(map[string]*types.Package)
+	// If the import path is this package, skip to import
+	if pkg.Path() == p.PkgPath() {
+		return nil, false
 	}
 	alias := p.newAliasIfExists(pkg)
 	pkg.SetName(alias)

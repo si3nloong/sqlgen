@@ -28,7 +28,7 @@ func IsDirEmptyFiles(dir string, excluded ...string) bool {
 	var found bool
 	// var found = errors.New("file is found")
 	if err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
-		if d.IsDir() ||
+		if d == nil || d.IsDir() ||
 			dir != filepath.Dir(path) ||
 			lo.Contains(excluded, filepath.Base(path)) ||
 			filepath.Ext(path) != ".go" {

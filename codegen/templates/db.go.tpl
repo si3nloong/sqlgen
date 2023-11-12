@@ -1,7 +1,7 @@
 {{- reserveImport "context" }}
 {{- reserveImport "database/sql" }}
 {{- reserveImport "strings" }}
-{{- reserveImport "sync" }}
+{{- reserveImport "strconv" }}
 {{- reserveImport "github.com/si3nloong/sqlgen/sequel" }}
 {{- reserveImport "github.com/si3nloong/sqlgen/sequel/strpool" }}
 func InsertOne[T sequel.KeyValuer[T], Ptr interface {
@@ -185,4 +185,165 @@ func Migrate[T sequel.Migrator](ctx context.Context, db sequel.DB) error {
 		return err
 	}
 	return nil
+}
+
+type SelectStmt struct {
+	Select    []string
+	FromTable string
+	Where     sequel.WhereClause
+	OrderBy   []sequel.OrderByClause
+	Limit     uint16
+}
+
+func QueryStmtContext[T any, Ptr interface {
+	*T
+	sequel.Scanner[T]
+}, Stmt interface{ SelectStmt }](ctx context.Context, dbConn sequel.DB, stmt Stmt) ([]T, error) {
+	blr := NewStmt()
+	defer blr.Reset()
+
+	switch vi := any(stmt).(type) {
+	case SelectStmt:
+		blr.WriteString("SELECT ")
+		for i := range vi.Select {
+			if i > 0 {
+				blr.WriteByte(',')
+			}
+			blr.WriteString(vi.Select[i])
+		}
+		blr.WriteString(" FROM " + vi.FromTable)
+		if vi.Where != nil {
+			blr.WriteString(" WHERE ")
+			vi.Where(blr)
+		}
+		if len(vi.OrderBy) > 0 {
+			blr.WriteString(" ORDER BY ")
+			for i := range vi.OrderBy {
+				if i > 0 {
+					blr.WriteByte(',')
+				}
+				vi.OrderBy[i](blr)
+			}
+		}
+		if vi.Limit > 0 {
+			blr.WriteString(" LIMIT " + strconv.FormatUint(uint64(vi.Limit), 10))
+		}
+		blr.WriteByte(';')
+	}
+
+	rows, err := dbConn.QueryContext(ctx, blr.String(), blr.Args()...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var result []T
+	for rows.Next() {
+		var v T
+		if err := rows.Scan(Ptr(&v).Addrs()...); err != nil {
+			return nil, err
+		}
+		result = append(result, v)
+	}
+	return result, nil
+}
+
+type UpdateStmt struct {
+	FromTable string
+	Set       []string
+	Where     sequel.WhereClause
+	OrderBy   []sequel.OrderByClause
+	Limit     uint16
+}
+
+type DeleteStmt struct {
+	FromTable string
+	Where     sequel.WhereClause
+	OrderBy   []sequel.OrderByClause
+	Limit     uint16
+}
+
+func ExecStmtContext[T any, Stmt interface {
+	UpdateStmt | DeleteStmt
+}](ctx context.Context, dbConn sequel.DB, stmt Stmt) error {
+	blr := NewStmt()
+	defer blr.Reset()
+
+	switch vi := any(stmt).(type) {
+	case UpdateStmt:
+		blr.WriteString("UPDATE " + vi.FromTable)
+		if vi.Where != nil {
+			blr.WriteString(" WHERE ")
+			vi.Where(blr)
+		}
+		if len(vi.Set) > 0 {
+			blr.WriteString(" SET ")
+		}
+		if len(vi.OrderBy) > 0 {
+			blr.WriteString(" ORDER BY ")
+			for i := range vi.OrderBy {
+				if i > 0 {
+					blr.WriteByte(',')
+				}
+				vi.OrderBy[i](blr)
+			}
+		}
+		if vi.Limit > 0 {
+			blr.WriteString(" LIMIT " + strconv.FormatUint(uint64(vi.Limit), 10))
+		}
+		blr.WriteByte(';')
+
+	case DeleteStmt:
+		blr.WriteString("DELETE FROM " + vi.FromTable)
+		if vi.Where != nil {
+			blr.WriteString(" WHERE ")
+			vi.Where(blr)
+		}
+		if len(vi.OrderBy) > 0 {
+			blr.WriteString(" ORDER BY ")
+			for i := range vi.OrderBy {
+				if i > 0 {
+					blr.WriteByte(',')
+				}
+				vi.OrderBy[i](blr)
+			}
+		}
+		if vi.Limit > 0 {
+			blr.WriteString(" LIMIT " + strconv.FormatUint(uint64(vi.Limit), 10))
+		}
+		blr.WriteByte(';')
+	}
+	return nil
+}
+
+func NewStmt() sequel.Stmt {
+	return &sqlStmt{}
+}
+
+type sqlStmt struct {
+	strings.Builder
+	pos  uint
+	args []any
+}
+
+func (s *sqlStmt) Var(query string, values ...any) {
+	s.WriteString(query)
+	noOfLen := len(values)
+	if noOfLen == 1 {
+		s.WriteByte('?')
+	} else if noOfLen > 1 {
+		s.WriteString("(" + strings.Repeat("?,", noOfLen)[:(noOfLen*2)-1] + ")")
+	}
+	s.args = append(s.args, values...)
+	s.pos++
+}
+
+func (s sqlStmt) Args() []any {
+	return s.args
+}
+
+func (s *sqlStmt) Reset() {
+	s.args = nil
+	s.pos = 0
+	s.Builder.Reset()
 }

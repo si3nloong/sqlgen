@@ -14,12 +14,12 @@ import (
 	_ "github.com/si3nloong/sqlgen/sequel/dialect/sqlite"
 )
 
-type sqlDriver string
+type SqlDriver string
 
 const (
-	MySQL    sqlDriver = "mysql"
-	Postgres sqlDriver = "postgres"
-	Sqlite   sqlDriver = "sqlite"
+	MySQL    SqlDriver = "mysql"
+	Postgres SqlDriver = "postgres"
+	Sqlite   SqlDriver = "sqlite"
 )
 
 type naming string
@@ -40,12 +40,13 @@ var cfgFilenames = []string{DefaultConfigFile, ".sqlgen.yml", ".sqlgen.yaml", "s
 
 type Config struct {
 	Source           []string        `yaml:"src"`
-	Driver           sqlDriver       `yaml:"driver"`
+	Driver           SqlDriver       `yaml:"driver"`
 	NamingConvention naming          `yaml:"naming_convention,omitempty"`
 	Tag              string          `yaml:"struct_tag,omitempty"`
 	Strict           bool            `yaml:"strict"`
 	SkipEscape       bool            `yaml:"skip_escape"`
 	Exec             ExecConfig      `yaml:"exec"`
+	Getter           GetterConfig    `yaml:"getter"`
 	Database         *DatabaseConfig `yaml:"database"`
 	SkipHeader       bool            `yaml:"skip_header"`
 	SourceMap        bool            `yaml:"source_map"`
@@ -57,7 +58,18 @@ type ExecConfig struct {
 	Filename  string `yaml:"filename"`
 }
 
+type GetterConfig struct {
+	Prefix string `yaml:"prefix"`
+}
+
 type DatabaseConfig struct {
+	Package  string                   `yaml:"package"`
+	Dir      string                   `yaml:"dir"`
+	Filename string                   `yaml:"filename"`
+	Operator *DatabaseOperationConfig `yaml:"operator"`
+}
+
+type DatabaseOperationConfig struct {
 	Package  string `yaml:"package"`
 	Dir      string `yaml:"dir"`
 	Filename string `yaml:"filename"`
@@ -70,10 +82,15 @@ func (c *Config) init() {
 	c.Driver = MySQL
 	c.Strict = true
 	c.Exec.Filename = DefaultGeneratedFile
+	c.Getter.Prefix = "Get_"
 	c.Database = new(DatabaseConfig)
 	c.Database.Package = "db"
 	c.Database.Dir = "db"
 	c.Database.Filename = "db.go"
+	c.Database.Operator = new(DatabaseOperationConfig)
+	// c.Database.Operator.Package = c.Database.Package
+	// c.Database.Operator.Dir = c.Database.Dir
+	c.Database.Operator.Filename = "operator.go"
 }
 
 func (c Config) Clone() *Config {
@@ -107,6 +124,21 @@ func (c Config) Clone() *Config {
 		}
 		if c.Database.Filename != "" {
 			newConfig.Database.Filename = c.Database.Filename
+		}
+		if c.Database.Operator != nil {
+			newConfig.Database.Operator = new(DatabaseOperationConfig)
+			newConfig.Database.Operator.Dir = newConfig.Database.Dir
+			newConfig.Database.Operator.Package = newConfig.Database.Package
+
+			if c.Database.Operator.Dir != "" {
+				newConfig.Database.Operator.Dir = c.Database.Operator.Dir
+			}
+			if c.Database.Operator.Package != "" {
+				newConfig.Database.Operator.Package = c.Database.Operator.Package
+			}
+			if c.Database.Operator.Filename != "" {
+				newConfig.Database.Operator.Filename = c.Database.Operator.Filename
+			}
 		}
 	}
 	if c.Strict != newConfig.Strict {

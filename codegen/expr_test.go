@@ -8,7 +8,7 @@ import (
 )
 
 func TestExpr(t *testing.T) {
-	pkg := new(Package)
+	pkg := NewPackage("", "")
 
 	require.Equal(t, "string(v)", Expr(`string(%s)`).Format(pkg, "v"))
 	require.Equal(t, `time.Time(v)`, Expr(`time.Time(%s)`).Format(pkg, "v"))
