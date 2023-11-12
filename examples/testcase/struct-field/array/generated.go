@@ -20,7 +20,7 @@ func (Array) TableName() string {
 	return "`array`"
 }
 func (Array) InsertVarQuery() string {
-	return "(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+	return "(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
 }
 func (Array) Columns() []string {
 	return []string{"`id`", "`bool_list`", "`uint_8_list`", "`uint_16_list`", "`uint_32_list`", "`uint_64_list`", "`f_32_list`", "`f_64_list`", "`str_list`", "`custom_str_list`", "`int_list`", "`int_8_list`", "`int_16_list`", "`int_32_list`", "`int_64_list`", "`uint_list`"}

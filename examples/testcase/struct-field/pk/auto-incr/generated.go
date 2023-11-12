@@ -19,7 +19,7 @@ func (Model) TableName() string {
 	return "`model`"
 }
 func (Model) InsertVarQuery() string {
-	return "(?,?,?,?)"
+	return "(?,?,?)"
 }
 func (Model) Columns() []string {
 	return []string{"`name`", "`f`", "`id`", "`n`"}

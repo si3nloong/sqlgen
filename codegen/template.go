@@ -118,12 +118,16 @@ func alterTableStmt(dialect sequel.Dialect) func(model *templates.Model) string 
 	}
 }
 
-func varStmt(dialect sequel.Dialect) func(fields []*templates.Field) string {
-	return func(fields []*templates.Field) string {
+func varStmt(dialect sequel.Dialect) func(*templates.Model) string {
+	return func(model *templates.Model) string {
 		blr := strpool.AcquireString()
 		defer strpool.ReleaseString(blr)
+		noOfCols := len(model.Fields)
+		if model.PK != nil && model.PK.IsAutoIncr {
+			noOfCols--
+		}
 		blr.WriteByte('(')
-		for i := 0; i < len(fields); i++ {
+		for i := 0; i < noOfCols; i++ {
 			if i > 0 {
 				blr.WriteByte(',')
 			}

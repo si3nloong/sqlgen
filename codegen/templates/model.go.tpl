@@ -14,7 +14,7 @@ func ({{ $structName }}) TableName() string {
 }
 {{ end -}}
 func ({{ $structName }}) InsertVarQuery() string {
-	return {{ quote (varStmt .Fields) }}
+	return {{ quote (varStmt .) }}
 }
 {{ if eq .HasColumn false -}}
 func ({{ $structName }}) Columns() []string {
