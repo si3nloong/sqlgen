@@ -195,7 +195,7 @@ type SelectStmt struct {
 	Limit     uint16
 }
 
-func QueryStmtContext[T any, Ptr interface {
+func QueryStmt[T any, Ptr interface {
 	*T
 	sequel.Scanner[T]
 }, Stmt interface{ SelectStmt }](ctx context.Context, dbConn sequel.DB, stmt Stmt) ([]T, error) {
@@ -263,7 +263,7 @@ type DeleteStmt struct {
 	Limit     uint16
 }
 
-func ExecStmtContext[T any, Stmt interface {
+func ExecStmt[T any, Stmt interface {
 	UpdateStmt | DeleteStmt
 }](ctx context.Context, dbConn sequel.DB, stmt Stmt) error {
 	blr := NewStmt()

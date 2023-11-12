@@ -1,4 +1,17 @@
 {{- reserveImport "github.com/si3nloong/sqlgen/sequel" }}
+func And(stmts ...sequel.WhereClause) sequel.WhereClause {
+	return func(stmt sequel.StmtBuilder) {
+		stmt.WriteByte('(')
+		for i := range stmts {
+			if i > 0 {
+				stmt.WriteString(" AND ")
+			}
+			stmts[i](stmt)
+		}
+		stmt.WriteByte(')')
+	}
+}
+
 func Or(stmts ...sequel.WhereClause) sequel.WhereClause {
 	return func(stmt sequel.StmtBuilder) {
 		stmt.WriteByte('(')
