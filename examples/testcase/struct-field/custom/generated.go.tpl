@@ -21,7 +21,7 @@ func (Address) AlterTableStmt() string {
 func (Address) TableName() string {
 	return "`address`"
 }
-func (Address) InsertVarStmt() string {
+func (Address) InsertVarQuery() string {
 	return "(?,?,?,?,?,?)"
 }
 func (Address) Columns() []string {
@@ -60,7 +60,7 @@ func (Customer) AlterTableStmt() string {
 func (Customer) TableName() string {
 	return "`customer`"
 }
-func (Customer) InsertVarStmt() string {
+func (Customer) InsertVarQuery() string {
 	return "(?,?,?,?,?,?,?)"
 }
 func (Customer) Columns() []string {

@@ -19,7 +19,7 @@ func (Car) AlterTableStmt() string {
 func (Car) TableName() string {
 	return "`car`"
 }
-func (Car) InsertVarStmt() string {
+func (Car) InsertVarQuery() string {
 	return "(?,?,?,?)"
 }
 func (Car) Columns() []string {
@@ -58,7 +58,7 @@ func (User) AlterTableStmt() string {
 func (User) TableName() string {
 	return "`user`"
 }
-func (User) InsertVarStmt() string {
+func (User) InsertVarQuery() string {
 	return "(?,?,?,?)"
 }
 func (User) Columns() []string {
@@ -97,7 +97,7 @@ func (House) AlterTableStmt() string {
 func (House) TableName() string {
 	return "`house`"
 }
-func (House) InsertVarStmt() string {
+func (House) InsertVarQuery() string {
 	return "(?,?)"
 }
 func (House) Columns() []string {

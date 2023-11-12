@@ -19,7 +19,7 @@ func (Array) AlterTableStmt() string {
 func (Array) TableName() string {
 	return "`array`"
 }
-func (Array) InsertVarStmt() string {
+func (Array) InsertVarQuery() string {
 	return "(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
 }
 func (Array) Columns() []string {

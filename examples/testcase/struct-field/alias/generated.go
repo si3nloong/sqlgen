@@ -20,7 +20,7 @@ func (AliasStruct) AlterTableStmt() string {
 func (AliasStruct) TableName() string {
 	return "`alias_struct`"
 }
-func (AliasStruct) InsertVarStmt() string {
+func (AliasStruct) InsertVarQuery() string {
 	return "(?,?,?,?,?,?,?,?)"
 }
 func (AliasStruct) Columns() []string {
@@ -71,7 +71,7 @@ func (B) AlterTableStmt() string {
 func (B) TableName() string {
 	return "`b`"
 }
-func (B) InsertVarStmt() string {
+func (B) InsertVarQuery() string {
 	return "(?)"
 }
 func (B) Columns() []string {
@@ -95,7 +95,7 @@ func (C) AlterTableStmt() string {
 func (C) TableName() string {
 	return "`c`"
 }
-func (C) InsertVarStmt() string {
+func (C) InsertVarQuery() string {
 	return "(?)"
 }
 func (C) Columns() []string {

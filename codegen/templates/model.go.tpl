@@ -13,7 +13,7 @@ func ({{ $structName }}) TableName() string {
 	return {{ quote (wrap .TableName) }}
 }
 {{ end -}}
-func ({{ $structName }}) InsertVarStmt() string {
+func ({{ $structName }}) InsertVarQuery() string {
 	return {{ quote (varStmt .Fields) }}
 }
 {{ if eq .HasColumn false -}}

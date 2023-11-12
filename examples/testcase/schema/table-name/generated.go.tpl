@@ -18,7 +18,7 @@ func (CustomTableName1) AlterTableStmt() string {
 func (CustomTableName1) TableName() string {
 	return "`custom_table_name_1`"
 }
-func (CustomTableName1) InsertVarStmt() string {
+func (CustomTableName1) InsertVarQuery() string {
 	return "(?)"
 }
 func (CustomTableName1) Columns() []string {
@@ -42,7 +42,7 @@ func (CustomTableName2) AlterTableStmt() string {
 func (CustomTableName2) TableName() string {
 	return "`custom_table_2`"
 }
-func (CustomTableName2) InsertVarStmt() string {
+func (CustomTableName2) InsertVarQuery() string {
 	return "(?)"
 }
 func (CustomTableName2) Columns() []string {
@@ -66,7 +66,7 @@ func (CustomTableName3) AlterTableStmt() string {
 func (CustomTableName3) TableName() string {
 	return "`custom_table3`"
 }
-func (CustomTableName3) InsertVarStmt() string {
+func (CustomTableName3) InsertVarQuery() string {
 	return "(?)"
 }
 func (CustomTableName3) Columns() []string {

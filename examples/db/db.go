@@ -27,27 +27,22 @@ func InsertOne[T sequel.KeyValuer[T], Ptr interface {
 			args = append(args[:idx], args[idx+1:]...)
 		}
 	}
-	var (
-		noOfCols = len(columns)
-		stmt     = strpool.AcquireString()
-	)
+	stmt := strpool.AcquireString()
 	defer strpool.ReleaseString(stmt)
-	stmt.WriteString("INSERT INTO " + v.TableName() + " (")
-	for i := 0; i < noOfCols; i++ {
-		if i > 0 {
-			stmt.WriteString("," + columns[i])
-		} else {
-			stmt.WriteString(columns[i])
+	stmt.WriteString("INSERT INTO " + v.TableName() + " (" + strings.Join(columns, ",") + ") VALUES ")
+	switch vi := any(v).(type) {
+	case sequel.Inserter:
+		stmt.WriteString(vi.InsertVarQuery() + ";")
+	default:
+		stmt.WriteByte('(')
+		for i := range args {
+			if i > 0 {
+				stmt.WriteByte(',')
+			}
+			stmt.WriteString("?")
 		}
+		stmt.WriteString(");")
 	}
-	stmt.WriteString(") VALUES (")
-	for i := range args {
-		if i > 0 {
-			stmt.WriteByte(',')
-		}
-		stmt.WriteByte('?')
-	}
-	stmt.WriteString(");")
 	return db.ExecContext(ctx, stmt.String(), args...)
 }
 
@@ -63,33 +58,35 @@ func InsertInto[T interface {
 	}
 
 	var (
-		model   T
-		columns = model.Columns()
-		idx     = -1
+		model    T
+		columns  = model.Columns()
+		idx      = -1
+		noOfCols = len(columns)
+		args     = make([]any, 0, noOfCols*len(data))
+		stmt     = strpool.AcquireString()
 	)
+	defer strpool.ReleaseString(stmt)
+
 	switch vi := any(model).(type) {
 	case sequel.Keyer:
 		if vi.IsAutoIncr() {
 			_, idx, _ = vi.PK()
 			columns = append(columns[:idx], columns[idx+1:]...)
 		}
-	}
-	var (
-		noOfCols = len(columns)
-		args     = make([]any, 0, noOfCols*len(data))
-		stmt     = strpool.AcquireString()
-		pos      int
-	)
-	defer strpool.ReleaseString(stmt)
-	stmt.WriteString("INSERT INTO " + model.TableName() + " (")
-	for i := 0; i < noOfCols; i++ {
-		if i > 0 {
-			stmt.WriteString("," + columns[i])
-		} else {
-			stmt.WriteString(columns[i])
+
+	case sequel.Inserter:
+		stmt.WriteString("INSERT INTO " + model.TableName() + " (" + strings.Join(columns, ",") + ") VALUES ")
+		for i := range data {
+			if i > 0 {
+				stmt.WriteByte(',')
+			}
+			stmt.WriteString(vi.InsertVarQuery())
 		}
+		stmt.WriteByte(';')
+		return db.ExecContext(ctx, stmt.String(), args...)
 	}
-	stmt.WriteString(") VALUES ")
+
+	stmt.WriteString("INSERT INTO " + model.TableName() + " (" + strings.Join(columns, ",") + ") VALUES ")
 	for i := range data {
 		if i > 0 {
 			stmt.WriteString(",(")
@@ -101,7 +98,6 @@ func InsertInto[T interface {
 				stmt.WriteByte(',')
 			}
 			stmt.WriteString("?")
-			pos++
 		}
 		if idx > -1 {
 			values := data[i].Values()

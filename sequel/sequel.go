@@ -68,7 +68,7 @@ type SingleInserter interface {
 
 type Inserter interface {
 	Columner
-	InsertVarStmt() string
+	InsertVarQuery() string
 }
 
 type StmtWriter interface {

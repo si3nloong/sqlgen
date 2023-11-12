@@ -20,7 +20,7 @@ func (Binary) AlterTableStmt() string {
 func (Binary) TableName() string {
 	return "`binary`"
 }
-func (Binary) InsertVarStmt() string {
+func (Binary) InsertVarQuery() string {
 	return "(?,?,?)"
 }
 func (Binary) Columns() []string {

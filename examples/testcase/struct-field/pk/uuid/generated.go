@@ -20,7 +20,7 @@ func (User) AlterTableStmt() string {
 func (User) TableName() string {
 	return "`user`"
 }
-func (User) InsertVarStmt() string {
+func (User) InsertVarQuery() string {
 	return "(?,?)"
 }
 func (User) Columns() []string {

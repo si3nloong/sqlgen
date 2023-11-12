@@ -18,7 +18,7 @@ func (Custom) AlterTableStmt() string {
 func (Custom) TableName() string {
 	return "`custom`"
 }
-func (Custom) InsertVarStmt() string {
+func (Custom) InsertVarQuery() string {
 	return "(?,?,?)"
 }
 func (Custom) Columns() []string {

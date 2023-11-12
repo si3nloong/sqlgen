@@ -19,7 +19,7 @@ func (Primitive) AlterTableStmt() string {
 func (Primitive) TableName() string {
 	return "`primitive`"
 }
-func (Primitive) InsertVarStmt() string {
+func (Primitive) InsertVarQuery() string {
 	return "(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
 }
 func (Primitive) Columns() []string {

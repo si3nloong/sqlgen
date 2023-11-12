@@ -15,7 +15,7 @@ func (v Model) CreateTableStmt() string {
 func (Model) AlterTableStmt() string {
 	return "ALTER TABLE `model` MODIFY `name` VARCHAR(255) NOT NULL;"
 }
-func (Model) InsertVarStmt() string {
+func (Model) InsertVarQuery() string {
 	return "(?)"
 }
 func (Model) Columns() []string {

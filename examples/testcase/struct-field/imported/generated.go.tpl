@@ -20,7 +20,7 @@ func (Model) AlterTableStmt() string {
 func (Model) TableName() string {
 	return "`model`"
 }
-func (Model) InsertVarStmt() string {
+func (Model) InsertVarQuery() string {
 	return "(?,?,?,?,?,?,?)"
 }
 func (Model) Columns() []string {
@@ -62,7 +62,7 @@ func (Some) AlterTableStmt() string {
 func (Some) TableName() string {
 	return "`some`"
 }
-func (Some) InsertVarStmt() string {
+func (Some) InsertVarQuery() string {
 	return "(?)"
 }
 func (Some) Columns() []string {
