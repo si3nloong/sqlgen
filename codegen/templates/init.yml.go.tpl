@@ -28,6 +28,8 @@ database:
   dir: {{ .Database.Dir }}
   package: {{ .Database.Package }}
   filename: {{ .Database.Filename }}
+  operator:
+    filename: {{ .Database.Operator.Filename }}
 
 # Optional: 
 strict: {{ .Strict }}

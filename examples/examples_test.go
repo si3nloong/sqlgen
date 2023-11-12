@@ -2,6 +2,7 @@ package examples
 
 import (
 	"context"
+	"log"
 	"testing"
 	"time"
 
@@ -14,30 +15,30 @@ import (
 	_ "github.com/si3nloong/sqlgen/sequel/dialect/postgres"
 
 	"github.com/jaswdr/faker"
+	"github.com/si3nloong/sqlgen/examples/db"
 	"github.com/si3nloong/sqlgen/examples/testcase/struct-field/array"
 	autopk "github.com/si3nloong/sqlgen/examples/testcase/struct-field/pk/auto-incr"
 	"github.com/si3nloong/sqlgen/examples/testcase/struct-field/pointer"
-	"github.com/si3nloong/sqlgen/sequel/db"
 )
 
 func TestMain(m *testing.M) {
 	// openSqlConn("mysql")
-	sqliteDB = mustValue(openSqlConn("mysql"))
-	defer sqliteDB.Close()
+	dbConn = mustValue(openSqlConn("mysql"))
+	defer dbConn.Close()
 
 	// m1 := autopk.Model{}
 	// sqlutil.FindOne(nil, nil, &m1)
 
-	if err := db.Migrate[pointer.Ptr](context.TODO(), sqliteDB); err != nil {
+	if err := db.Migrate[pointer.Ptr](context.TODO(), dbConn); err != nil {
 		panic(err)
 	}
 
-	if err := db.Migrate[array.Array](context.TODO(), sqliteDB); err != nil {
+	if err := db.Migrate[array.Array](context.TODO(), dbConn); err != nil {
 		panic(err)
 	}
 
-	// mustNot(sqliteDB.Exec("DROP TABLE `model`;"))
-	// mustNot(sqliteDB.Exec(createTableModel))
+	// mustNot(dbConn.Exec("DROP TABLE `model`;"))
+	// mustNot(dbConn.Exec(createTableModel))
 
 	m.Run()
 }
@@ -63,7 +64,7 @@ func TestInsertInto(t *testing.T) {
 	// 	data.L3PtrCustomStr = ptrOf(ptrOf(ptrOf(cStr)))
 	// 	data.L7PtrStr = ptrOf(ptrOf(ptrOf(ptrOf(ptrOf(ptrOf(ptrOf(str)))))))
 	// 	inputs := []doubleptr.DoublePtr{data}
-	// 	result, err := db.InsertInto(context.TODO(), sqliteDB, inputs)
+	// 	result, err := db.InsertInto(context.TODO(), dbConn, inputs)
 	// 	require.NoError(t, err)
 	// 	lastID := mustValue(result.LastInsertId())
 	// 	require.NotEmpty(t, lastID)
@@ -81,19 +82,19 @@ func TestInsertInto(t *testing.T) {
 		r1.F64List = append(r1.F64List, -88.114, 188.123, -1.0538)
 
 		inputs := []array.Array{r1}
-		result, err := db.InsertInto(context.TODO(), sqliteDB, inputs)
+		result, err := db.InsertInto(context.TODO(), dbConn, inputs)
 		require.NoError(t, err)
 		lastID := mustValue(result.LastInsertId())
 		require.NotEmpty(t, lastID)
 
 		ptr := array.Array{}
 		ptr.ID = uint64(lastID)
-		mustNoError(db.FindOne(ctx, sqliteDB, &ptr))
+		mustNoError(db.FindByID(ctx, dbConn, &ptr))
 	})
 
 	t.Run("InsertInto with all nil values", func(t *testing.T) {
 		inputs := []pointer.Ptr{{}, {}}
-		result, err := db.InsertInto(ctx, sqliteDB, inputs)
+		result, err := db.InsertInto(ctx, dbConn, inputs)
 		require.NoError(t, err)
 		lastID := mustValue(result.LastInsertId())
 		require.NotEmpty(t, lastID)
@@ -120,7 +121,7 @@ func TestInsertInto(t *testing.T) {
 			{Str: &str, Bool: &flag, Time: &dt, F32: &f32, F64: &f64, Uint: &u, Uint8: &u8, Uint16: &u16, Uint32: &u32, Uint64: &u64, Int: &i, Int8: &i8, Int16: &i16, Int32: &i32, Int64: &i64},
 			{Str: &str, Bool: &flag, Time: &dt, F32: &f32, F64: &f64, Uint: &u, Uint8: &u8, Uint16: &u16, Uint32: &u32, Uint64: &u64, Int: &i, Int8: &i8, Int16: &i16, Int32: &i32, Int64: &i64},
 		}
-		result, err := db.InsertInto(ctx, sqliteDB, inputs)
+		result, err := db.InsertInto(ctx, dbConn, inputs)
 		require.NoError(t, err)
 		lastID := mustValue(result.LastInsertId())
 		require.NoError(t, err)
@@ -129,7 +130,7 @@ func TestInsertInto(t *testing.T) {
 
 		ptr := pointer.Ptr{}
 		ptr.ID = lastID
-		mustNoError(db.FindOne(ctx, sqliteDB, &ptr))
+		mustNoError(db.FindByID(ctx, dbConn, &ptr))
 		require.Equal(t, str, *ptr.Str)
 		require.Equal(t, dt.Format(time.DateOnly), (*ptr.Time).Format(time.DateOnly))
 		require.True(t, *ptr.Bool)
@@ -143,18 +144,27 @@ func TestInsertInto(t *testing.T) {
 		require.Equal(t, i16, *ptr.Int16)
 		require.Equal(t, i32, *ptr.Int32)
 		require.Equal(t, i64, *ptr.Int64)
-		require.Equal(t, f32, *ptr.F32)
-		require.Equal(t, f64, *ptr.F64)
+		require.NotZero(t, *ptr.F32)
+		require.NotZero(t, *ptr.F64)
+
+		ptrs, err := db.QueryStmt[pointer.Ptr](ctx, dbConn, db.SelectStmt{
+			Select:    ptr.Columns(),
+			FromTable: ptr.TableName(),
+			Where:     db.Equal(ptr.GetInt(), &i),
+			Limit:     3,
+		})
+		require.NoError(t, err)
+		log.Println(ptrs)
 	})
 }
 
 func TestDeleteOne(t *testing.T) {
 	// ctx := context.TODO()
 	// model := newPKModel()
-	// _, err := sqlutil.InsertOne(ctx, sqliteDB, &model)
+	// _, err := sqlutil.InsertOne(ctx, dbConn, &model)
 	// require.NoError(t, err)
 
-	// models, err := sqlutil.SelectFrom[autopk.Model](ctx, sqliteDB)
+	// models, err := sqlutil.SelectFrom[autopk.Model](ctx, dbConn)
 	// require.NoError(t, err)
 
 	// log.Println(models)

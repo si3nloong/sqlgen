@@ -1,6 +1,7 @@
 package types
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/si3nloong/sqlgen/internal/strfmt"
@@ -43,12 +44,17 @@ func (p ptrOfFloatLike[T]) Scan(v any) error {
 		}
 		val := T(f)
 		*p.addr = &val
+	case float32:
+		val := T(vi)
+		*p.addr = &val
 	case float64:
 		val := T(vi)
 		*p.addr = &val
 	case int64:
 		val := T(vi)
 		*p.addr = &val
+	default:
+		return fmt.Errorf(`sqlgen: unable to scan to float`)
 	}
 	return nil
 }

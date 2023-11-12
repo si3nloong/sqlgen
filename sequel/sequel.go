@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"database/sql/driver"
+	"fmt"
+	"io"
 )
 
 type Name struct{ Local string }
@@ -66,5 +68,29 @@ type SingleInserter interface {
 
 type Inserter interface {
 	Columner
-	InsertVarStmt() string
+	InsertVarQuery() string
 }
+
+type StmtWriter interface {
+	io.StringWriter
+	io.ByteWriter
+}
+
+type StmtBuilder interface {
+	StmtWriter
+	Var(query string, v any)
+	Vars(query string, v []any)
+}
+
+type Stmt interface {
+	StmtBuilder
+	fmt.Stringer
+	Args() []any
+	Reset()
+}
+
+type (
+	WhereClause   func(StmtBuilder)
+	SetClause     func(StmtBuilder)
+	OrderByClause func(StmtWriter)
+)

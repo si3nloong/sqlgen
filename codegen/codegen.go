@@ -83,12 +83,14 @@ func (t tagOpts) Lookup(key tagOption, keys ...tagOption) (v string, ok bool) {
 	return
 }
 
-var path2regex = strings.NewReplacer(
+var path2Regex = strings.NewReplacer(
 	`.`, `\.`,
 	`*`, `.*`,
 	`\`, `[\\/]`,
 	`/`, `[\\/]`,
 )
+
+var nameRegex = regexp.MustCompile(`(?i)^[a-z]+[a-z0-9\_]*$`)
 
 func Generate(c *config.Config) error {
 	var (
@@ -128,7 +130,7 @@ func Generate(c *config.Config) error {
 			rootDir = strings.TrimSuffix(strings.TrimSpace(paths[0]), "/")
 			suffix := `(?:[\\/]\w+\.\w+)`
 			if paths[1] != "" {
-				suffix = path2regex.Replace(paths[1])
+				suffix = path2Regex.Replace(paths[1])
 			}
 			if err := filepath.WalkDir(rootDir, func(path string, d fs.DirEntry, err error) error {
 				// If the directory is not exists, the "d" will be nil
@@ -141,11 +143,11 @@ func Generate(c *config.Config) error {
 			}); err != nil {
 				return fmt.Errorf(`sqlgen: failed to walk schema %s: %w`, paths[0], err)
 			}
-			matcher = &RegexMatcher{regexp.MustCompile(path2regex.Replace(rootDir) + `([\\/][a-z0-9_-]+)*` + suffix)}
+			matcher = &RegexMatcher{regexp.MustCompile(path2Regex.Replace(rootDir) + `([\\/][a-z0-9_-]+)*` + suffix)}
 		} else if len(subMatches) > 0 {
 			rootDir = strings.TrimSuffix(subMatches[1], "/")
 			dirs = append(dirs, "")
-			matcher = &RegexMatcher{regexp.MustCompile(path2regex.Replace(srcDir))}
+			matcher = &RegexMatcher{regexp.MustCompile(path2Regex.Replace(srcDir))}
 		} else {
 			fi, err := os.Stat(srcDir)
 			// If the file or folder not exists, we skip!
@@ -171,6 +173,41 @@ func Generate(c *config.Config) error {
 
 	nextSrc:
 		sources = sources[1:]
+	}
+
+	if cfg.Database != nil {
+		// Generate db code
+		os.Remove(filepath.Join(cfg.Database.Dir, cfg.Database.Filename))
+		if err := renderTemplate(
+			"db.go.tpl",
+			cfg.SkipHeader,
+			cfg.Dialect(),
+			"",
+			cfg.Database.Package,
+			cfg.Getter.Prefix,
+			cfg.Database.Dir,
+			cfg.Database.Filename,
+			struct{}{},
+		); err != nil {
+			return err
+		}
+	}
+
+	if cfg.Database.Operator != nil {
+		os.Remove(filepath.Join(cfg.Database.Dir, cfg.Database.Operator.Filename))
+		if err := renderTemplate(
+			"operator.go.tpl",
+			cfg.SkipHeader,
+			cfg.Dialect(),
+			"",
+			cfg.Database.Operator.Package,
+			cfg.Getter.Prefix,
+			cfg.Database.Operator.Dir,
+			cfg.Database.Operator.Filename,
+			struct{}{},
+		); err != nil {
+			return err
+		}
 	}
 
 	return goModTidy()
@@ -414,6 +451,9 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 					if n == "-" {
 						continue
 					} else if n != "" {
+						if cfg.Strict && !nameRegex.MatchString(n) {
+							return fmt.Errorf(`sqlgen: invalid column name %q in struct %q`, n, s.name)
+						}
 						tf.ColumnName = n
 					}
 
@@ -501,7 +541,9 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 			"model.go.tpl",
 			cfg.SkipHeader,
 			dialect,
+			pkg.PkgPath,
 			pkg.Name,
+			cfg.Getter.Prefix,
 			dir,
 			cfg.Exec.Filename,
 			params,
@@ -511,21 +553,6 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 
 	nextDir:
 		dirs = dirs[1:]
-	}
-
-	if cfg.Database != nil {
-		// Generate db code
-		if err := renderTemplate(
-			"db.go.tpl",
-			cfg.SkipHeader,
-			dialect,
-			cfg.Database.Package,
-			cfg.Database.Dir,
-			cfg.Database.Filename,
-			templates.DBTmplParams{},
-		); err != nil {
-			return err
-		}
 	}
 
 	if cfg.SkipModTidy {

@@ -1,37 +1,44 @@
 {{- reserveImport "database/sql/driver" }}
 {{- reserveImport "github.com/si3nloong/sqlgen/sequel" }}
 {{ range .Models }}
-func (v {{ .GoName }}) CreateTableStmt() string {
+{{- $structName := .GoName -}}
+func (v {{ $structName }}) CreateTableStmt() string {
 	return {{ createTable "v" . }}
 }
-func ({{ .GoName }}) AlterTableStmt() string {
+func ({{ $structName }}) AlterTableStmt() string {
 	return {{ quote (alterTable .) }}
 }
 {{ if eq .HasTableName false -}}
-func ({{ .GoName }}) TableName() string {
+func ({{ $structName }}) TableName() string {
 	return {{ quote (wrap .TableName) }}
 }
 {{ end -}}
-func ({{ .GoName }}) InsertVarStmt() string {
+func ({{ $structName }}) InsertVarQuery() string {
 	return {{ quote (varStmt .Fields) }}
 }
 {{ if eq .HasColumn false -}}
-func ({{ .GoName }}) Columns() []string {
+func ({{ $structName }}) Columns() []string {
 	return {{ "[]string{" }}{{- range $i, $f := .Fields }}{{- if $i }}{{ ", " }}{{ end }}{{ quote (wrap $f.ColumnName) }}{{ end }}{{- "}" }}
 }
 {{ end -}}
 {{ if ne .PK nil -}}
-func (v {{ .GoName }}) IsAutoIncr() bool {
+func (v {{ $structName }}) IsAutoIncr() bool {
 	return {{ .PK.IsAutoIncr }}
 }
-func (v {{ .GoName }}) PK() (columnName string, pos int, value driver.Value) {
-	return {{ quote (wrap .PK.Field.ColumnName) }}, {{ .PK.Field.Index }}, {{ castAs "v" .PK.Field }}
+func (v {{ $structName }}) PK() (columnName string, pos int, value driver.Value) {
+	return {{ quote (wrap .PK.Field.ColumnName) }}, {{ .PK.Field.Index }}, {{ castAs .PK.Field }}
 }
 {{ end -}}
-func (v {{ .GoName }}) Values() []any {
-	return {{ `[]any{` }}{{ range $i, $f := .Fields }}{{- if $i }}{{ ", " }}{{ end }}{{ castAs "v" $f }}{{ end }}{{- `}` }}
+func (v {{ $structName }}) Values() []any {
+	return {{ `[]any{` }}{{ range $i, $f := .Fields }}{{- if $i }}{{ ", " }}{{ end }}{{ castAs $f }}{{ end }}{{- `}` }}
 }
-func (v *{{ .GoName }}) Addrs() []any {
+func (v *{{ $structName }}) Addrs() []any {
 	return {{ `[]any{` }}{{ range $i, $f := .Fields }}{{- if $i }}{{ `, ` }}{{ end }}{{ addrOf "v" $f }}{{ end }}{{- `}` }}
 }
+{{ range $f := .Fields -}}
+{{- $return := getFieldTypeValue $f -}}
+func (v {{ $structName }}) {{ $return.FuncName }}() (sequel.ColumnValuer[{{ $return.Type }}]) {
+	return sequel.Column[{{ $return.Type }}]({{ quote (wrap $f.ColumnName) }}, v.{{ .GoName }}, func(vi {{ $return.Type }}) driver.Value { return {{ castAs $f "vi" }} })
+}
+{{ end -}}
 {{ end }}

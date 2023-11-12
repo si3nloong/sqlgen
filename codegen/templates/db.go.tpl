@@ -1,7 +1,7 @@
 {{- reserveImport "context" }}
 {{- reserveImport "database/sql" }}
 {{- reserveImport "strings" }}
-{{- reserveImport "sync" }}
+{{- reserveImport "strconv" }}
 {{- reserveImport "github.com/si3nloong/sqlgen/sequel" }}
 {{- reserveImport "github.com/si3nloong/sqlgen/sequel/strpool" }}
 func InsertOne[T sequel.KeyValuer[T], Ptr interface {
@@ -12,34 +12,29 @@ func InsertOne[T sequel.KeyValuer[T], Ptr interface {
 	switch vi := any(v).(type) {
 	case sequel.Keyer:
 		if vi.IsAutoIncr() {
-            // If it's a auto increment primary key
-            // We don't need to pass the value
+			// If it's a auto increment primary key
+			// We don't need to pass the value
 			_, idx, _ := vi.PK()
 			columns = append(columns[:idx], columns[idx+1:]...)
 			args = append(args[:idx], args[idx+1:]...)
 		}
 	}
-	var (
-		noOfCols = len(columns)
-		stmt     = strpool.AcquireString()
-	)
+	stmt := strpool.AcquireString()
 	defer strpool.ReleaseString(stmt)
-	stmt.WriteString("INSERT INTO " + v.TableName() + " (")
-	for i := 0; i < noOfCols; i++ {
-		if i > 0 {
-			stmt.WriteString("," + columns[i])
-		} else {
-			stmt.WriteString(columns[i])
+	stmt.WriteString("INSERT INTO " + v.TableName() + " (" + strings.Join(columns, ",") + ") VALUES ")
+	switch vi := any(v).(type) {
+	case sequel.Inserter:
+		stmt.WriteString(vi.InsertVarQuery() + ";")
+	default:
+		stmt.WriteByte('(')
+		for i := range args {
+			if i > 0 {
+				stmt.WriteByte(',')
+			}
+			stmt.WriteString({{ quote (var 1) }})
 		}
+		stmt.WriteString(");")
 	}
-	stmt.WriteString(") VALUES (")
-	for i := range args {
-		if i > 0 {
-			stmt.WriteByte(',')
-		}
-		stmt.WriteByte('{{ var 1 }}')
-	}
-	stmt.WriteString(");")
 	return db.ExecContext(ctx, stmt.String(), args...)
 }
 
@@ -55,33 +50,35 @@ func InsertInto[T interface {
 	}
 
 	var (
-		model   T
-		columns = model.Columns()
-		idx     = -1
+		model    T
+		columns  = model.Columns()
+		idx      = -1
+		noOfCols = len(columns)
+		args     = make([]any, 0, noOfCols*len(data))
+		stmt     = strpool.AcquireString()
 	)
+	defer strpool.ReleaseString(stmt)
+
 	switch vi := any(model).(type) {
 	case sequel.Keyer:
 		if vi.IsAutoIncr() {
 			_, idx, _ = vi.PK()
 			columns = append(columns[:idx], columns[idx+1:]...)
 		}
-	}
-	var (
-		noOfCols = len(columns)
-		args     = make([]any, 0, noOfCols * len(data))
-		stmt     = strpool.AcquireString()
-		pos 	 int
-	)
-	defer strpool.ReleaseString(stmt)
-	stmt.WriteString("INSERT INTO " + model.TableName() + " (")
-	for i := 0; i < noOfCols; i++ {
-		if i > 0 {
-			stmt.WriteString("," + columns[i])
-		} else {
-			stmt.WriteString(columns[i])
+
+	case sequel.Inserter:
+		stmt.WriteString("INSERT INTO " + model.TableName() + " (" + strings.Join(columns, ",") + ") VALUES ")
+		for i := range data {
+			if i > 0 {
+				stmt.WriteByte(',')
+			}
+			stmt.WriteString(vi.InsertVarQuery())
 		}
+		stmt.WriteByte(';')
+		return db.ExecContext(ctx, stmt.String(), args...)
 	}
-	stmt.WriteString(") VALUES ")
+
+	stmt.WriteString("INSERT INTO " + model.TableName() + " (" + strings.Join(columns, ",") + ") VALUES ")
 	for i := range data {
 		if i > 0 {
 			stmt.WriteString(",(")
@@ -93,7 +90,6 @@ func InsertInto[T interface {
 				stmt.WriteByte(',')
 			}
 			stmt.WriteString({{ quote (var 1) }})
-			pos++
 		}
 		if idx > -1 {
 			values := data[i].Values()
@@ -185,4 +181,168 @@ func Migrate[T sequel.Migrator](ctx context.Context, db sequel.DB) error {
 		return err
 	}
 	return nil
+}
+
+type SelectStmt struct {
+	Select    []string
+	FromTable string
+	Where     sequel.WhereClause
+	OrderBy   []sequel.OrderByClause
+	Limit     uint16
+}
+
+func QueryStmt[T any, Ptr interface {
+	*T
+	sequel.Scanner[T]
+}, Stmt interface{ SelectStmt }](ctx context.Context, dbConn sequel.DB, stmt Stmt) ([]T, error) {
+	blr := NewStmt()
+	defer blr.Reset()
+
+	switch vi := any(stmt).(type) {
+	case SelectStmt:
+		blr.WriteString("SELECT ")
+		for i := range vi.Select {
+			if i > 0 {
+				blr.WriteByte(',')
+			}
+			blr.WriteString(vi.Select[i])
+		}
+		blr.WriteString(" FROM " + vi.FromTable)
+		if vi.Where != nil {
+			blr.WriteString(" WHERE ")
+			vi.Where(blr)
+		}
+		if len(vi.OrderBy) > 0 {
+			blr.WriteString(" ORDER BY ")
+			for i := range vi.OrderBy {
+				if i > 0 {
+					blr.WriteByte(',')
+				}
+				vi.OrderBy[i](blr)
+			}
+		}
+		if vi.Limit > 0 {
+			blr.WriteString(" LIMIT " + strconv.FormatUint(uint64(vi.Limit), 10))
+		}
+		blr.WriteByte(';')
+	}
+
+	rows, err := dbConn.QueryContext(ctx, blr.String(), blr.Args()...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var result []T
+	for rows.Next() {
+		var v T
+		if err := rows.Scan(Ptr(&v).Addrs()...); err != nil {
+			return nil, err
+		}
+		result = append(result, v)
+	}
+	return result, nil
+}
+
+type UpdateStmt struct {
+	FromTable string
+	Set       []string
+	Where     sequel.WhereClause
+	OrderBy   []sequel.OrderByClause
+	Limit     uint16
+}
+
+type DeleteStmt struct {
+	FromTable string
+	Where     sequel.WhereClause
+	OrderBy   []sequel.OrderByClause
+	Limit     uint16
+}
+
+func ExecStmt[T any, Stmt interface {
+	UpdateStmt | DeleteStmt
+}](ctx context.Context, dbConn sequel.DB, stmt Stmt) error {
+	blr := NewStmt()
+	defer blr.Reset()
+
+	switch vi := any(stmt).(type) {
+	case UpdateStmt:
+		blr.WriteString("UPDATE " + vi.FromTable)
+		if vi.Where != nil {
+			blr.WriteString(" WHERE ")
+			vi.Where(blr)
+		}
+		if len(vi.Set) > 0 {
+			blr.WriteString(" SET ")
+		}
+		if len(vi.OrderBy) > 0 {
+			blr.WriteString(" ORDER BY ")
+			for i := range vi.OrderBy {
+				if i > 0 {
+					blr.WriteByte(',')
+				}
+				vi.OrderBy[i](blr)
+			}
+		}
+		if vi.Limit > 0 {
+			blr.WriteString(" LIMIT " + strconv.FormatUint(uint64(vi.Limit), 10))
+		}
+		blr.WriteByte(';')
+
+	case DeleteStmt:
+		blr.WriteString("DELETE FROM " + vi.FromTable)
+		if vi.Where != nil {
+			blr.WriteString(" WHERE ")
+			vi.Where(blr)
+		}
+		if len(vi.OrderBy) > 0 {
+			blr.WriteString(" ORDER BY ")
+			for i := range vi.OrderBy {
+				if i > 0 {
+					blr.WriteByte(',')
+				}
+				vi.OrderBy[i](blr)
+			}
+		}
+		if vi.Limit > 0 {
+			blr.WriteString(" LIMIT " + strconv.FormatUint(uint64(vi.Limit), 10))
+		}
+		blr.WriteByte(';')
+	}
+	return nil
+}
+
+func NewStmt() sequel.Stmt {
+	return &sqlStmt{}
+}
+
+type sqlStmt struct {
+	strings.Builder
+	pos  uint
+	args []any
+}
+
+func (s *sqlStmt) Var(query string, value any) {
+	s.WriteString(query)
+	s.WriteByte('?')
+	s.args = append(s.args, value)
+	s.pos++
+}
+
+func (s *sqlStmt) Vars(query string, values []any) {
+	s.WriteString(query)
+	noOfLen := len(values)
+	s.WriteString("(" + strings.Repeat("?,", noOfLen)[:(noOfLen*2)-1] + ")")
+	s.args = append(s.args, values...)
+	s.pos += uint(noOfLen)
+}
+
+func (s sqlStmt) Args() []any {
+	return s.args
+}
+
+func (s *sqlStmt) Reset() {
+	s.args = nil
+	s.pos = 0
+	s.Builder.Reset()
 }
