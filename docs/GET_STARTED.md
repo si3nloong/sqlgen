@@ -424,7 +424,7 @@
     }
     ```
 
-    But these seem too easy to handle my use case, I need to handle more complex statements. Don't worry, we do provide `getter` to support more complex statements such as dynamic SQL statement.
+    But these seem too easy to handle my use case, I need to handle more complex statements. Don't worry, we do provide `QueryStmt` to support more complex statements such as dynamic SQL statement.
 
     For example :
 
