@@ -24,6 +24,6 @@ func (v A) Values() []any {
 func (v *A) Addrs() []any {
 	return []any{types.String(&v.Name)}
 }
-func (v A) Get_Name() sequel.ColumnValuer[string] {
+func (v A) GetName() sequel.ColumnValuer[string] {
 	return sequel.Column[string]("`name`", v.Name, func(vi string) driver.Value { return string(vi) })
 }

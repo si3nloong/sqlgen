@@ -32,9 +32,9 @@ func (v User) Values() []any {
 func (v *User) Addrs() []any {
 	return []any{(sql.Scanner)(&v.ID), types.String(&v.Name)}
 }
-func (v User) Get_ID() sequel.ColumnValuer[uuid.UUID] {
+func (v User) GetID() sequel.ColumnValuer[uuid.UUID] {
 	return sequel.Column[uuid.UUID]("`id`", v.ID, func(vi uuid.UUID) driver.Value { return (driver.Valuer)(vi) })
 }
-func (v User) Get_Name() sequel.ColumnValuer[string] {
+func (v User) GetName() sequel.ColumnValuer[string] {
 	return sequel.Column[string]("`name`", v.Name, func(vi string) driver.Value { return string(vi) })
 }

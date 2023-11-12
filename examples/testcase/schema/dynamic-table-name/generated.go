@@ -27,6 +27,6 @@ func (v Model) Values() []any {
 func (v *Model) Addrs() []any {
 	return []any{types.String(&v.Name)}
 }
-func (v Model) Get_Name() sequel.ColumnValuer[string] {
+func (v Model) GetName() sequel.ColumnValuer[string] {
 	return sequel.Column[string]("`name`", v.Name, func(vi string) driver.Value { return string(vi) })
 }

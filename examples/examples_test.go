@@ -150,7 +150,7 @@ func TestInsertInto(t *testing.T) {
 		ptrs, err := db.QueryStmtContext[pointer.Ptr](ctx, dbConn, db.SelectStmt{
 			Select:    ptr.Columns(),
 			FromTable: ptr.TableName(),
-			Where:     db.Equal(ptr.Get_Int(), &i),
+			Where:     db.Equal(ptr.GetInt(), &i),
 			Limit:     3,
 		})
 		require.NoError(t, err)

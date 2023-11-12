@@ -3,6 +3,9 @@
 package nopk
 
 import (
+	"database/sql/driver"
+
+	"github.com/si3nloong/sqlgen/sequel"
 	"github.com/si3nloong/sqlgen/sequel/types"
 )
 
@@ -26,4 +29,13 @@ func (v Customer) Values() []any {
 }
 func (v *Customer) Addrs() []any {
 	return []any{types.String(&v.Name), types.Integer(&v.Age), types.Bool(&v.Married)}
+}
+func (v Customer) GetName() sequel.ColumnValuer[string] {
+	return sequel.Column[string]("`name`", v.Name, func(vi string) driver.Value { return string(vi) })
+}
+func (v Customer) GetAge() sequel.ColumnValuer[uint8] {
+	return sequel.Column[uint8]("`age`", v.Age, func(vi uint8) driver.Value { return int64(vi) })
+}
+func (v Customer) GetMarried() sequel.ColumnValuer[bool] {
+	return sequel.Column[bool]("`married`", v.Married, func(vi bool) driver.Value { return bool(vi) })
 }

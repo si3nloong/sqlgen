@@ -38,31 +38,30 @@ func (v AliasStruct) Values() []any {
 func (v *AliasStruct) Addrs() []any {
 	return []any{types.Float(&v.B), types.Integer(&v.pk.ID), types.String(&v.Header), types.String(&v.Raw), types.String(&v.Text), (sql.Scanner)(&v.NullStr), (*time.Time)(&v.model.Created), (*time.Time)(&v.model.Updated)}
 }
-func (v AliasStruct) Get_B() sequel.ColumnValuer[float64] {
+func (v AliasStruct) GetB() sequel.ColumnValuer[float64] {
 	return sequel.Column[float64]("`b`", v.B, func(vi float64) driver.Value { return float64(vi) })
 }
-func (v AliasStruct) Get_ID() sequel.ColumnValuer[int64] {
+func (v AliasStruct) GetID() sequel.ColumnValuer[int64] {
 	return sequel.Column[int64]("`Id`", v.ID, func(vi int64) driver.Value { return int64(vi) })
 }
-func (v AliasStruct) Get_Header() sequel.ColumnValuer[customStr] {
+func (v AliasStruct) GetHeader() sequel.ColumnValuer[customStr] {
 	return sequel.Column[customStr]("`header`", v.Header, func(vi customStr) driver.Value { return string(vi) })
 }
-func (v AliasStruct) Get_Raw() sequel.ColumnValuer[sql.RawBytes] {
+func (v AliasStruct) GetRaw() sequel.ColumnValuer[sql.RawBytes] {
 	return sequel.Column[sql.RawBytes]("`raw`", v.Raw, func(vi sql.RawBytes) driver.Value { return string(vi) })
 }
-func (v AliasStruct) Get_Text() sequel.ColumnValuer[customStr] {
+func (v AliasStruct) GetText() sequel.ColumnValuer[customStr] {
 	return sequel.Column[customStr]("`text`", v.Text, func(vi customStr) driver.Value { return string(vi) })
 }
-func (v AliasStruct) Get_NullStr() sequel.ColumnValuer[sql.NullString] {
+func (v AliasStruct) GetNullStr() sequel.ColumnValuer[sql.NullString] {
 	return sequel.Column[sql.NullString]("`null_str`", v.NullStr, func(vi sql.NullString) driver.Value { return (driver.Valuer)(vi) })
 }
-func (v AliasStruct) Get_Created() sequel.ColumnValuer[time.Time] {
+func (v AliasStruct) GetCreated() sequel.ColumnValuer[time.Time] {
 	return sequel.Column[time.Time]("`created`", v.Created, func(vi time.Time) driver.Value { return time.Time(vi) })
 }
-func (v AliasStruct) Get_Updated() sequel.ColumnValuer[time.Time] {
+func (v AliasStruct) GetUpdated() sequel.ColumnValuer[time.Time] {
 	return sequel.Column[time.Time]("`updated`", v.Updated, func(vi time.Time) driver.Value { return time.Time(vi) })
 }
-
 func (v B) CreateTableStmt() string {
 	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`name` VARCHAR(255) NOT NULL);"
 }
@@ -84,10 +83,9 @@ func (v B) Values() []any {
 func (v *B) Addrs() []any {
 	return []any{types.String(&v.Name)}
 }
-func (v B) Get_Name() sequel.ColumnValuer[string] {
+func (v B) GetName() sequel.ColumnValuer[string] {
 	return sequel.Column[string]("`name`", v.Name, func(vi string) driver.Value { return string(vi) })
 }
-
 func (v C) CreateTableStmt() string {
 	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`id` BIGINT NOT NULL);"
 }
@@ -109,6 +107,6 @@ func (v C) Values() []any {
 func (v *C) Addrs() []any {
 	return []any{types.Integer(&v.ID)}
 }
-func (v C) Get_ID() sequel.ColumnValuer[int64] {
+func (v C) GetID() sequel.ColumnValuer[int64] {
 	return sequel.Column[int64]("`id`", v.ID, func(vi int64) driver.Value { return int64(vi) })
 }

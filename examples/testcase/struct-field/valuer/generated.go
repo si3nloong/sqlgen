@@ -30,12 +30,12 @@ func (v B) Values() []any {
 func (v *B) Addrs() []any {
 	return []any{types.Integer(&v.ID), &v.Value, types.String(&v.N)}
 }
-func (v B) Get_ID() sequel.ColumnValuer[int64] {
+func (v B) GetID() sequel.ColumnValuer[int64] {
 	return sequel.Column[int64]("`id`", v.ID, func(vi int64) driver.Value { return int64(vi) })
 }
-func (v B) Get_Value() sequel.ColumnValuer[anyType] {
+func (v B) GetValue() sequel.ColumnValuer[anyType] {
 	return sequel.Column[anyType]("`value`", v.Value, func(vi anyType) driver.Value { return (driver.Valuer)(vi) })
 }
-func (v B) Get_N() sequel.ColumnValuer[string] {
+func (v B) GetN() sequel.ColumnValuer[string] {
 	return sequel.Column[string]("`n`", v.N, func(vi string) driver.Value { return string(vi) })
 }

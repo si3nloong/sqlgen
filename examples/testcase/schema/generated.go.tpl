@@ -7,6 +7,7 @@ import (
 	"database/sql/driver"
 	"time"
 
+	"github.com/si3nloong/sqlgen/sequel"
 	"github.com/si3nloong/sqlgen/sequel/types"
 )
 
@@ -31,7 +32,15 @@ func (v A) Values() []any {
 func (v *A) Addrs() []any {
 	return []any{types.String(&v.ID), types.String(&v.Text), (*time.Time)(&v.CreatedAt)}
 }
-
+func (v A) GetID() sequel.ColumnValuer[string] {
+	return sequel.Column[string]("`id`", v.ID, func(vi string) driver.Value { return string(vi) })
+}
+func (v A) GetText() sequel.ColumnValuer[LongText] {
+	return sequel.Column[LongText]("`text`", v.Text, func(vi LongText) driver.Value { return string(vi) })
+}
+func (v A) GetCreatedAt() sequel.ColumnValuer[time.Time] {
+	return sequel.Column[time.Time]("`created_at`", v.CreatedAt, func(vi time.Time) driver.Value { return time.Time(vi) })
+}
 func (v B) CreateTableStmt() string {
 	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`id` VARCHAR(255) NOT NULL,`created_at` DATETIME NOT NULL);"
 }
@@ -53,7 +62,12 @@ func (v B) Values() []any {
 func (v *B) Addrs() []any {
 	return []any{types.String(&v.ID), (*time.Time)(&v.CreatedAt)}
 }
-
+func (v B) GetID() sequel.ColumnValuer[string] {
+	return sequel.Column[string]("`id`", v.ID, func(vi string) driver.Value { return string(vi) })
+}
+func (v B) GetCreatedAt() sequel.ColumnValuer[time.Time] {
+	return sequel.Column[time.Time]("`created_at`", v.CreatedAt, func(vi time.Time) driver.Value { return time.Time(vi) })
+}
 func (v C) CreateTableStmt() string {
 	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`id` BIGINT NOT NULL,PRIMARY KEY (`id`));"
 }
@@ -81,7 +95,9 @@ func (v C) Values() []any {
 func (v *C) Addrs() []any {
 	return []any{types.Integer(&v.ID)}
 }
-
+func (v C) GetID() sequel.ColumnValuer[int64] {
+	return sequel.Column[int64]("`id`", v.ID, func(vi int64) driver.Value { return int64(vi) })
+}
 func (v D) CreateTableStmt() string {
 	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`id` VARCHAR(255) NOT NULL,PRIMARY KEY (`id`));"
 }
@@ -108,4 +124,7 @@ func (v D) Values() []any {
 }
 func (v *D) Addrs() []any {
 	return []any{(sql.Scanner)(&v.ID)}
+}
+func (v D) GetID() sequel.ColumnValuer[sql.NullString] {
+	return sequel.Column[sql.NullString]("`id`", v.ID, func(vi sql.NullString) driver.Value { return (driver.Valuer)(vi) })
 }

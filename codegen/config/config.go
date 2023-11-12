@@ -63,13 +63,13 @@ type GetterConfig struct {
 }
 
 type DatabaseConfig struct {
-	Package  string                   `yaml:"package"`
-	Dir      string                   `yaml:"dir"`
-	Filename string                   `yaml:"filename"`
-	Operator *DatabaseOperationConfig `yaml:"operator"`
+	Package  string                  `yaml:"package"`
+	Dir      string                  `yaml:"dir"`
+	Filename string                  `yaml:"filename"`
+	Operator *DatabaseOperatorConfig `yaml:"operator"`
 }
 
-type DatabaseOperationConfig struct {
+type DatabaseOperatorConfig struct {
 	Package  string `yaml:"package"`
 	Dir      string `yaml:"dir"`
 	Filename string `yaml:"filename"`
@@ -82,14 +82,14 @@ func (c *Config) init() {
 	c.Driver = MySQL
 	c.Strict = true
 	c.Exec.Filename = DefaultGeneratedFile
-	c.Getter.Prefix = "Get_"
+	c.Getter.Prefix = "Get"
 	c.Database = new(DatabaseConfig)
 	c.Database.Package = "db"
 	c.Database.Dir = "db"
 	c.Database.Filename = "db.go"
-	c.Database.Operator = new(DatabaseOperationConfig)
-	// c.Database.Operator.Package = c.Database.Package
-	// c.Database.Operator.Dir = c.Database.Dir
+	c.Database.Operator = new(DatabaseOperatorConfig)
+	c.Database.Operator.Package = c.Database.Package
+	c.Database.Operator.Dir = c.Database.Dir
 	c.Database.Operator.Filename = "operator.go"
 }
 
@@ -126,7 +126,7 @@ func (c Config) Clone() *Config {
 			newConfig.Database.Filename = c.Database.Filename
 		}
 		if c.Database.Operator != nil {
-			newConfig.Database.Operator = new(DatabaseOperationConfig)
+			newConfig.Database.Operator = new(DatabaseOperatorConfig)
 			newConfig.Database.Operator.Dir = newConfig.Database.Dir
 			newConfig.Database.Operator.Package = newConfig.Database.Package
 

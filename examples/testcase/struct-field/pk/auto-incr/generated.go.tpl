@@ -5,6 +5,7 @@ package pkautoincr
 import (
 	"database/sql/driver"
 
+	"github.com/si3nloong/sqlgen/sequel"
 	"github.com/si3nloong/sqlgen/sequel/types"
 )
 
@@ -34,4 +35,16 @@ func (v Model) Values() []any {
 }
 func (v *Model) Addrs() []any {
 	return []any{types.String(&v.Name), types.Bool(&v.F), types.Integer(&v.ID), types.Integer(&v.N)}
+}
+func (v Model) GetName() sequel.ColumnValuer[LongText] {
+	return sequel.Column[LongText]("`name`", v.Name, func(vi LongText) driver.Value { return string(vi) })
+}
+func (v Model) GetF() sequel.ColumnValuer[Flag] {
+	return sequel.Column[Flag]("`f`", v.F, func(vi Flag) driver.Value { return bool(vi) })
+}
+func (v Model) GetID() sequel.ColumnValuer[uint] {
+	return sequel.Column[uint]("`id`", v.ID, func(vi uint) driver.Value { return int64(vi) })
+}
+func (v Model) GetN() sequel.ColumnValuer[int64] {
+	return sequel.Column[int64]("`n`", v.N, func(vi int64) driver.Value { return int64(vi) })
 }

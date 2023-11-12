@@ -3,6 +3,9 @@
 package tabler
 
 import (
+	"database/sql/driver"
+
+	"github.com/si3nloong/sqlgen/sequel"
 	"github.com/si3nloong/sqlgen/sequel/types"
 )
 
@@ -23,4 +26,7 @@ func (v Model) Values() []any {
 }
 func (v *Model) Addrs() []any {
 	return []any{types.String(&v.Name)}
+}
+func (v Model) GetName() sequel.ColumnValuer[string] {
+	return sequel.Column[string]("`name`", v.Name, func(vi string) driver.Value { return string(vi) })
 }

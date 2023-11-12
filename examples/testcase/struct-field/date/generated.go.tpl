@@ -6,6 +6,9 @@ import (
 	"database/sql"
 	"database/sql/driver"
 
+	"cloud.google.com/go/civil"
+	"github.com/google/uuid"
+	"github.com/si3nloong/sqlgen/sequel"
 	"github.com/si3nloong/sqlgen/sequel/types"
 )
 
@@ -35,4 +38,10 @@ func (v User) Values() []any {
 }
 func (v *User) Addrs() []any {
 	return []any{(sql.Scanner)(&v.ID), types.TextUnmarshaler(&v.BirthDate)}
+}
+func (v User) GetID() sequel.ColumnValuer[uuid.UUID] {
+	return sequel.Column[uuid.UUID]("`id`", v.ID, func(vi uuid.UUID) driver.Value { return (driver.Valuer)(vi) })
+}
+func (v User) GetBirthDate() sequel.ColumnValuer[civil.Date] {
+	return sequel.Column[civil.Date]("`birth_date`", v.BirthDate, func(vi civil.Date) driver.Value { return types.TextMarshaler(vi) })
 }

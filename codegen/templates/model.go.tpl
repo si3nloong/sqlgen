@@ -1,7 +1,7 @@
 {{- reserveImport "database/sql/driver" }}
 {{- reserveImport "github.com/si3nloong/sqlgen/sequel" }}
 {{ range .Models }}
-{{ $structName := .GoName }}
+{{- $structName := .GoName -}}
 func (v {{ $structName }}) CreateTableStmt() string {
 	return {{ createTable "v" . }}
 }

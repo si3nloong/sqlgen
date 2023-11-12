@@ -3,6 +3,9 @@
 package embedded
 
 import (
+	"database/sql/driver"
+
+	"github.com/si3nloong/sqlgen/sequel"
 	"github.com/si3nloong/sqlgen/sequel/types"
 )
 
@@ -26,4 +29,13 @@ func (v B) Values() []any {
 }
 func (v *B) Addrs() []any {
 	return []any{types.Integer(&v.a.ID), types.String(&v.a.Name), types.Bool(&v.a.Z)}
+}
+func (v B) GetID() sequel.ColumnValuer[int64] {
+	return sequel.Column[int64]("`id`", v.ID, func(vi int64) driver.Value { return int64(vi) })
+}
+func (v B) GetName() sequel.ColumnValuer[string] {
+	return sequel.Column[string]("`name`", v.Name, func(vi string) driver.Value { return string(vi) })
+}
+func (v B) GetZ() sequel.ColumnValuer[bool] {
+	return sequel.Column[bool]("`z`", v.Z, func(vi bool) driver.Value { return bool(vi) })
 }

@@ -3,6 +3,9 @@
 package tablename
 
 import (
+	"database/sql/driver"
+
+	"github.com/si3nloong/sqlgen/sequel"
 	"github.com/si3nloong/sqlgen/sequel/types"
 )
 
@@ -27,7 +30,9 @@ func (v CustomTableName1) Values() []any {
 func (v *CustomTableName1) Addrs() []any {
 	return []any{types.String(&v.Text)}
 }
-
+func (v CustomTableName1) GetText() sequel.ColumnValuer[string] {
+	return sequel.Column[string]("`text`", v.Text, func(vi string) driver.Value { return string(vi) })
+}
 func (v CustomTableName2) CreateTableStmt() string {
 	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`text` VARCHAR(255) NOT NULL);"
 }
@@ -49,7 +54,9 @@ func (v CustomTableName2) Values() []any {
 func (v *CustomTableName2) Addrs() []any {
 	return []any{types.String(&v.Text)}
 }
-
+func (v CustomTableName2) GetText() sequel.ColumnValuer[string] {
+	return sequel.Column[string]("`text`", v.Text, func(vi string) driver.Value { return string(vi) })
+}
 func (v CustomTableName3) CreateTableStmt() string {
 	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`text` VARCHAR(255) NOT NULL);"
 }
@@ -70,4 +77,7 @@ func (v CustomTableName3) Values() []any {
 }
 func (v *CustomTableName3) Addrs() []any {
 	return []any{types.String(&v.Text)}
+}
+func (v CustomTableName3) GetText() sequel.ColumnValuer[string] {
+	return sequel.Column[string]("`text`", v.Text, func(vi string) driver.Value { return string(vi) })
 }

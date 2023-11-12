@@ -30,12 +30,12 @@ func (v Custom) Values() []any {
 func (v *Custom) Addrs() []any {
 	return []any{types.String(&v.Str), types.Integer(&v.Enum), types.Integer(&v.Num)}
 }
-func (v Custom) Get_Str() sequel.ColumnValuer[longText] {
+func (v Custom) GetStr() sequel.ColumnValuer[longText] {
 	return sequel.Column[longText]("`text`", v.Str, func(vi longText) driver.Value { return string(vi) })
 }
-func (v Custom) Get_Enum() sequel.ColumnValuer[Enum] {
+func (v Custom) GetEnum() sequel.ColumnValuer[Enum] {
 	return sequel.Column[Enum]("`e`", v.Enum, func(vi Enum) driver.Value { return int64(vi) })
 }
-func (v Custom) Get_Num() sequel.ColumnValuer[uint16] {
+func (v Custom) GetNum() sequel.ColumnValuer[uint16] {
 	return sequel.Column[uint16]("`num`", v.Num, func(vi uint16) driver.Value { return int64(vi) })
 }
