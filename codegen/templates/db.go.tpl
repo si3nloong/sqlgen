@@ -326,16 +326,19 @@ type sqlStmt struct {
 	args []any
 }
 
-func (s *sqlStmt) Var(query string, values ...any) {
+func (s *sqlStmt) Var(query string, value any) {
+	s.WriteString(query)
+	s.WriteByte('?')
+	s.args = append(s.args, value)
+	s.pos++
+}
+
+func (s *sqlStmt) Vars(query string, values []any) {
 	s.WriteString(query)
 	noOfLen := len(values)
-	if noOfLen == 1 {
-		s.WriteByte('?')
-	} else if noOfLen > 1 {
-		s.WriteString("(" + strings.Repeat("?,", noOfLen)[:(noOfLen*2)-1] + ")")
-	}
+	s.WriteString("(" + strings.Repeat("?,", noOfLen)[:(noOfLen*2)-1] + ")")
 	s.args = append(s.args, values...)
-	s.pos++
+	s.pos += uint(noOfLen)
 }
 
 func (s sqlStmt) Args() []any {

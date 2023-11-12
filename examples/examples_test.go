@@ -15,10 +15,10 @@ import (
 	_ "github.com/si3nloong/sqlgen/sequel/dialect/postgres"
 
 	"github.com/jaswdr/faker"
+	"github.com/si3nloong/sqlgen/examples/db"
 	"github.com/si3nloong/sqlgen/examples/testcase/struct-field/array"
 	autopk "github.com/si3nloong/sqlgen/examples/testcase/struct-field/pk/auto-incr"
 	"github.com/si3nloong/sqlgen/examples/testcase/struct-field/pointer"
-	"github.com/si3nloong/sqlgen/sequel/db"
 )
 
 func TestMain(m *testing.M) {
@@ -89,7 +89,7 @@ func TestInsertInto(t *testing.T) {
 
 		ptr := array.Array{}
 		ptr.ID = uint64(lastID)
-		mustNoError(db.FindOne(ctx, dbConn, &ptr))
+		mustNoError(db.FindByID(ctx, dbConn, &ptr))
 	})
 
 	t.Run("InsertInto with all nil values", func(t *testing.T) {
@@ -130,7 +130,7 @@ func TestInsertInto(t *testing.T) {
 
 		ptr := pointer.Ptr{}
 		ptr.ID = lastID
-		mustNoError(db.FindOne(ctx, dbConn, &ptr))
+		mustNoError(db.FindByID(ctx, dbConn, &ptr))
 		require.Equal(t, str, *ptr.Str)
 		require.Equal(t, dt.Format(time.DateOnly), (*ptr.Time).Format(time.DateOnly))
 		require.True(t, *ptr.Bool)

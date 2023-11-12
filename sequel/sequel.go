@@ -78,7 +78,8 @@ type StmtWriter interface {
 
 type StmtBuilder interface {
 	StmtWriter
-	Var(query string, v ...any)
+	Var(query string, v any)
+	Vars(query string, v []any)
 }
 
 type Stmt interface {

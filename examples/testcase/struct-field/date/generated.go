@@ -37,7 +37,7 @@ func (v User) Values() []any {
 	return []any{(driver.Valuer)(v.ID), types.TextMarshaler(v.BirthDate)}
 }
 func (v *User) Addrs() []any {
-	return []any{(sql.Scanner)(&v.ID), types.TextUnmarshaler(&v.BirthDate)}
+	return []any{(sql.Scanner)(&v.ID), types.Date(&v.BirthDate)}
 }
 func (v User) GetID() sequel.ColumnValuer[uuid.UUID] {
 	return sequel.Column[uuid.UUID]("`id`", v.ID, func(vi uuid.UUID) driver.Value { return (driver.Valuer)(vi) })

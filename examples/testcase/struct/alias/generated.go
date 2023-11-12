@@ -26,7 +26,7 @@ func (v A) Values() []any {
 	return []any{types.TextMarshaler(v.Date), types.TextMarshaler(v.Time)}
 }
 func (v *A) Addrs() []any {
-	return []any{types.TextUnmarshaler(&v.Date), types.TextUnmarshaler(&v.Time)}
+	return []any{types.Date(&v.Date), types.TextUnmarshaler(&v.Time)}
 }
 func (v A) GetDate() sequel.ColumnValuer[civil.Date] {
 	return sequel.Column[civil.Date]("`date`", v.Date, func(vi civil.Date) driver.Value { return types.TextMarshaler(vi) })

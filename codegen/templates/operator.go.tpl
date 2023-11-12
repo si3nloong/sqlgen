@@ -43,7 +43,7 @@ func In[T any](f sequel.ColumnValuer[T], values ...T) sequel.WhereClause {
 		for idx := range values {
 			args[idx] = f.Convert(values[idx])
 		}
-		stmt.Var(f.ColumnName()+" IN ", args...)
+		stmt.Vars(f.ColumnName()+" IN ", args)
 	}
 }
 
@@ -53,7 +53,7 @@ func NotIn[T any](f sequel.ColumnValuer[T], values ...T) sequel.WhereClause {
 		for idx := range values {
 			args[idx] = f.Convert(values[idx])
 		}
-		stmt.Var(f.ColumnName()+" NOT IN ", args...)
+		stmt.Vars(f.ColumnName()+" NOT IN ", args)
 	}
 }
 
