@@ -210,6 +210,9 @@ func Generate(c *config.Config) error {
 		}
 	}
 
+	if cfg.SkipModTidy {
+		return nil
+	}
 	return goModTidy()
 }
 
@@ -555,10 +558,7 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 		dirs = dirs[1:]
 	}
 
-	if cfg.SkipModTidy {
-		return nil
-	}
-	return goModTidy()
+	return nil
 }
 
 func IsImplemented(t types.Type, iv *types.Interface) bool {
