@@ -20,7 +20,7 @@ func (Array) TableName() string {
 	return "`array`"
 }
 func (v Array) InsertOneStmt() string {
-	return "INSERT INTO " + v.TableName() + " (`bool_list`,`uint_8_list`,`uint_16_list`,`uint_32_list`,`uint_64_list`,`f_32_list`,`f_64_list`,`str_list`,`custom_str_list`,`int_list`,`int_8_list`,`int_16_list`,`int_32_list`,`int_64_list`,`uint_list`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);"
+	return "INSERT INTO `array` (`bool_list`,`uint_8_list`,`uint_16_list`,`uint_32_list`,`uint_64_list`,`f_32_list`,`f_64_list`,`str_list`,`custom_str_list`,`int_list`,`int_8_list`,`int_16_list`,`int_32_list`,`int_64_list`,`uint_list`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);"
 }
 func (Array) InsertVarQuery() string {
 	return "(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
@@ -33,6 +33,9 @@ func (v Array) IsAutoIncr() bool {
 }
 func (v Array) PK() (columnName string, pos int, value driver.Value) {
 	return "`id`", 0, int64(v.ID)
+}
+func (v Array) FindByPKStmt() string {
+	return "SELECT `id`,`bool_list`,`uint_8_list`,`uint_16_list`,`uint_32_list`,`uint_64_list`,`f_32_list`,`f_64_list`,`str_list`,`custom_str_list`,`int_list`,`int_8_list`,`int_16_list`,`int_32_list`,`int_64_list`,`uint_list` FROM `array` WHERE `id` = ? LIMIT 1;"
 }
 func (v Array) Values() []any {
 	return []any{int64(v.ID), encoding.MarshalBoolList(v.BoolList), encoding.MarshalUnsignedIntList(v.Uint8List), encoding.MarshalUnsignedIntList(v.Uint16List), encoding.MarshalUnsignedIntList(v.Uint32List), encoding.MarshalUnsignedIntList(v.Uint64List), encoding.MarshalFloatList(v.F32List), encoding.MarshalFloatList(v.F64List), encoding.MarshalStringList(v.StrList), encoding.MarshalStringList(v.CustomStrList), encoding.MarshalSignedIntList(v.IntList), encoding.MarshalSignedIntList(v.Int8List), encoding.MarshalSignedIntList(v.Int16List), encoding.MarshalSignedIntList(v.Int32List), encoding.MarshalSignedIntList(v.Int64List), encoding.MarshalUnsignedIntList(v.UintList)}

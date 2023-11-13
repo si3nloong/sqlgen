@@ -19,7 +19,7 @@ func (CustomTableName1) TableName() string {
 	return "`custom_table_name_1`"
 }
 func (v CustomTableName1) InsertOneStmt() string {
-	return "INSERT INTO " + v.TableName() + " (`text`) VALUES (?);"
+	return "INSERT INTO `custom_table_name_1` (`text`) VALUES (?);"
 }
 func (CustomTableName1) InsertVarQuery() string {
 	return "(?)"
@@ -46,7 +46,7 @@ func (CustomTableName2) TableName() string {
 	return "`custom_table_2`"
 }
 func (v CustomTableName2) InsertOneStmt() string {
-	return "INSERT INTO " + v.TableName() + " (`text`) VALUES (?);"
+	return "INSERT INTO `custom_table_2` (`text`) VALUES (?);"
 }
 func (CustomTableName2) InsertVarQuery() string {
 	return "(?)"
@@ -73,7 +73,7 @@ func (CustomTableName3) TableName() string {
 	return "`custom_table3`"
 }
 func (v CustomTableName3) InsertOneStmt() string {
-	return "INSERT INTO " + v.TableName() + " (`text`) VALUES (?);"
+	return "INSERT INTO `custom_table3` (`text`) VALUES (?);"
 }
 func (CustomTableName3) InsertVarQuery() string {
 	return "(?)"

@@ -21,7 +21,7 @@ func (A) TableName() string {
 	return "`a`"
 }
 func (v A) InsertOneStmt() string {
-	return "INSERT INTO " + v.TableName() + " (`id`,`text`,`created_at`) VALUES (?,?,?);"
+	return "INSERT INTO `a` (`id`,`text`,`created_at`) VALUES (?,?,?);"
 }
 func (A) InsertVarQuery() string {
 	return "(?,?,?)"
@@ -54,7 +54,7 @@ func (B) TableName() string {
 	return "`b`"
 }
 func (v B) InsertOneStmt() string {
-	return "INSERT INTO " + v.TableName() + " (`id`,`created_at`) VALUES (?,?);"
+	return "INSERT INTO `b` (`id`,`created_at`) VALUES (?,?);"
 }
 func (B) InsertVarQuery() string {
 	return "(?,?)"
@@ -84,7 +84,7 @@ func (C) TableName() string {
 	return "`c`"
 }
 func (v C) InsertOneStmt() string {
-	return "INSERT INTO " + v.TableName() + " (`id`) VALUES (?);"
+	return "INSERT INTO `c` (`id`) VALUES (?);"
 }
 func (C) InsertVarQuery() string {
 	return "(?)"
@@ -97,6 +97,9 @@ func (v C) IsAutoIncr() bool {
 }
 func (v C) PK() (columnName string, pos int, value driver.Value) {
 	return "`id`", 0, int64(v.ID)
+}
+func (v C) FindByPKStmt() string {
+	return "SELECT `id` FROM `c` WHERE `id` = ? LIMIT 1;"
 }
 func (v C) Values() []any {
 	return []any{int64(v.ID)}
@@ -117,7 +120,7 @@ func (D) TableName() string {
 	return "`d`"
 }
 func (v D) InsertOneStmt() string {
-	return "INSERT INTO " + v.TableName() + " (`id`) VALUES (?);"
+	return "INSERT INTO `d` (`id`) VALUES (?);"
 }
 func (D) InsertVarQuery() string {
 	return "(?)"
@@ -130,6 +133,9 @@ func (v D) IsAutoIncr() bool {
 }
 func (v D) PK() (columnName string, pos int, value driver.Value) {
 	return "`id`", 0, (driver.Valuer)(v.ID)
+}
+func (v D) FindByPKStmt() string {
+	return "SELECT `id` FROM `d` WHERE `id` = ? LIMIT 1;"
 }
 func (v D) Values() []any {
 	return []any{(driver.Valuer)(v.ID)}

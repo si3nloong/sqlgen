@@ -72,6 +72,11 @@ type SingleInserter interface {
 	InsertOneStmt() string
 }
 
+type KeyFinder interface {
+	Keyer
+	FindByPKStmt() string
+}
+
 type Inserter interface {
 	Columner
 	InsertVarQuery() string

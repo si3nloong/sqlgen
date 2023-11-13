@@ -20,7 +20,7 @@ func (Primitive) TableName() string {
 	return "`primitive`"
 }
 func (v Primitive) InsertOneStmt() string {
-	return "INSERT INTO " + v.TableName() + " (`str`,`bytes`,`uint_16`,`uint_32`,`uint_64`,`f_32`,`f_64`,`time`,`bool`,`int`,`int_8`,`int_16`,`int_32`,`int_64`,`uint`,`uint_8`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);"
+	return "INSERT INTO `primitive` (`str`,`bytes`,`uint_16`,`uint_32`,`uint_64`,`f_32`,`f_64`,`time`,`bool`,`int`,`int_8`,`int_16`,`int_32`,`int_64`,`uint`,`uint_8`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);"
 }
 func (Primitive) InsertVarQuery() string {
 	return "(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"

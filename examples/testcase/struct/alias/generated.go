@@ -17,7 +17,7 @@ func (A) AlterTableStmt() string {
 	return "ALTER TABLE `a` MODIFY `date` DATE NOT NULL,MODIFY `time` VARCHAR(255) NOT NULL AFTER `date`;"
 }
 func (v A) InsertOneStmt() string {
-	return "INSERT INTO " + v.TableName() + " (`date`,`time`) VALUES (?,?);"
+	return "INSERT INTO `a` (`date`,`time`) VALUES (?,?);"
 }
 func (A) InsertVarQuery() string {
 	return "(?,?)"
@@ -47,7 +47,7 @@ func (C) TableName() string {
 	return "`c`"
 }
 func (v C) InsertOneStmt() string {
-	return "INSERT INTO " + v.TableName() + " (`string`,`valid`) VALUES (?,?);"
+	return "INSERT INTO `c` (`string`,`valid`) VALUES (?,?);"
 }
 func (C) InsertVarQuery() string {
 	return "(?,?)"

@@ -110,8 +110,14 @@ func InsertInto[T sequel.TableColumnValuer[T]](ctx context.Context, db sequel.DB
 	return db.ExecContext(ctx, stmt.String(), args...)
 }
 
-// FindByID is to find single record using primary key.
-func FindByID[T sequel.KeyValuer[T], Ptr sequel.KeyValueScanner[T]](ctx context.Context, db sequel.DB, v Ptr) error {
+// FindByPK is to find single record using primary key.
+func FindByPK[T sequel.KeyValuer[T], Ptr sequel.KeyValueScanner[T]](ctx context.Context, db sequel.DB, v Ptr) error {
+	switch vi := any(v).(type) {
+	case sequel.KeyFinder:
+		_, _, pk := vi.PK()
+		return db.QueryRowContext(ctx, vi.FindByPKStmt(), pk).Scan(v.Addrs()...)
+	}
+	
 	var (
 		pkName, _, pk = v.PK()
 		columns       = v.Columns()
@@ -129,8 +135,8 @@ func FindByID[T sequel.KeyValuer[T], Ptr sequel.KeyValueScanner[T]](ctx context.
 	return db.QueryRowContext(ctx, stmt.String(), pk).Scan(v.Addrs()...)
 }
 
-// UpdateByID is to update single record using primary key.
-func UpdateByID[T sequel.KeyValuer[T]](ctx context.Context, db sequel.DB, v T) (sql.Result, error) {
+// UpdateByPK is to update single record using primary key.
+func UpdateByPK[T sequel.KeyValuer[T]](ctx context.Context, db sequel.DB, v T) (sql.Result, error) {
 	var (
 		pkName, idx, pk = v.PK()
 		columns, values = v.Columns(), v.Values()
@@ -151,8 +157,8 @@ func UpdateByID[T sequel.KeyValuer[T]](ctx context.Context, db sequel.DB, v T) (
 	return db.ExecContext(ctx, stmt.String(), append(values, pk)...)
 }
 
-// DeleteByID is to update single record using primary key.
-func DeleteByID[T sequel.KeyValuer[T]](ctx context.Context, db sequel.DB, v T) (sql.Result, error) {
+// DeleteByPK is to update single record using primary key.
+func DeleteByPK[T sequel.KeyValuer[T]](ctx context.Context, db sequel.DB, v T) (sql.Result, error) {
 	var (
 		pkName, _, pk = v.PK()
 		stmt          = strpool.AcquireString()
@@ -237,6 +243,7 @@ func QueryStmt[T any, Ptr interface {
 	if err != nil {
 		return nil, err
 	}
+	blr.Reset()
 	defer rows.Close()
 
 	var result []T
@@ -270,7 +277,7 @@ type DeleteStmt struct {
 
 func ExecStmt[T any, Stmt interface {
 	UpdateStmt | DeleteStmt
-}](ctx context.Context, dbConn sequel.DB, stmt Stmt) error {
+}](ctx context.Context, dbConn sequel.DB, stmt Stmt) (sql.Result, error) {
 	blr := NewStmt()
 	defer blr.Reset()
 
@@ -318,7 +325,7 @@ func ExecStmt[T any, Stmt interface {
 		}
 		blr.WriteByte(';')
 	}
-	return nil
+	return dbConn.ExecContext(ctx, blr.String(), blr.Args()...)
 }
 
 func NewStmt() sequel.Stmt {

@@ -1,3 +1,4 @@
+{{- reserveImport "strings" }}
 {{- reserveImport "database/sql/driver" }}
 {{- reserveImport "github.com/si3nloong/sqlgen/sequel" }}
 {{ range .Models }}
@@ -30,6 +31,9 @@ func (v {{ $structName }}) IsAutoIncr() bool {
 }
 func (v {{ $structName }}) PK() (columnName string, pos int, value driver.Value) {
 	return {{ quote (wrap .PK.Field.ColumnName) }}, {{ .PK.Field.Index }}, {{ castAs .PK.Field }}
+}
+func (v {{ $structName }}) FindByPKStmt() string {
+	return {{ findByPKStmt . }}
 }
 {{ end -}}
 func (v {{ $structName }}) Values() []any {

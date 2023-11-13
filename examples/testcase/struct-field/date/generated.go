@@ -22,7 +22,7 @@ func (User) TableName() string {
 	return "`user`"
 }
 func (v User) InsertOneStmt() string {
-	return "INSERT INTO " + v.TableName() + " (`id`,`birth_date`) VALUES (?,?);"
+	return "INSERT INTO `user` (`id`,`birth_date`) VALUES (?,?);"
 }
 func (User) InsertVarQuery() string {
 	return "(?,?)"
@@ -35,6 +35,9 @@ func (v User) IsAutoIncr() bool {
 }
 func (v User) PK() (columnName string, pos int, value driver.Value) {
 	return "`id`", 0, (driver.Valuer)(v.ID)
+}
+func (v User) FindByPKStmt() string {
+	return "SELECT `id`,`birth_date` FROM `user` WHERE `id` = ? LIMIT 1;"
 }
 func (v User) Values() []any {
 	return []any{(driver.Valuer)(v.ID), types.TextMarshaler(v.BirthDate)}

@@ -22,7 +22,7 @@ func (Address) TableName() string {
 	return "`address`"
 }
 func (v Address) InsertOneStmt() string {
-	return "INSERT INTO " + v.TableName() + " (`line_1`,`line_2`,`city`,`post_code`,`state_code`,`country_code`) VALUES (?,?,?,?,?,?);"
+	return "INSERT INTO `address` (`line_1`,`line_2`,`city`,`post_code`,`state_code`,`country_code`) VALUES (?,?,?,?,?,?);"
 }
 func (Address) InsertVarQuery() string {
 	return "(?,?,?,?,?,?)"
@@ -64,7 +64,7 @@ func (Customer) TableName() string {
 	return "`customer`"
 }
 func (v Customer) InsertOneStmt() string {
-	return "INSERT INTO " + v.TableName() + " (`id`,`howOld`,`name`,`address`,`nicknames`,`status`,`join_at`) VALUES (?,?,?,?,?,?,?);"
+	return "INSERT INTO `customer` (`id`,`howOld`,`name`,`address`,`nicknames`,`status`,`join_at`) VALUES (?,?,?,?,?,?,?);"
 }
 func (Customer) InsertVarQuery() string {
 	return "(?,?,?,?,?,?,?)"

@@ -89,7 +89,7 @@ func TestInsertInto(t *testing.T) {
 
 		ptr := array.Array{}
 		ptr.ID = uint64(lastID)
-		mustNoError(db.FindByID(ctx, dbConn, &ptr))
+		mustNoError(db.FindByPK(ctx, dbConn, &ptr))
 	})
 
 	t.Run("InsertInto with all nil values", func(t *testing.T) {
@@ -130,7 +130,7 @@ func TestInsertInto(t *testing.T) {
 
 		ptr := pointer.Ptr{}
 		ptr.ID = lastID
-		mustNoError(db.FindByID(ctx, dbConn, &ptr))
+		mustNoError(db.FindByPK(ctx, dbConn, &ptr))
 		require.Equal(t, str, *ptr.Str)
 		require.Equal(t, dt.Format(time.DateOnly), (*ptr.Time).Format(time.DateOnly))
 		require.True(t, *ptr.Bool)

@@ -122,8 +122,7 @@ func insertOneStmt(dialect sequel.Dialect) func(*templates.Model) string {
 	return func(model *templates.Model) string {
 		buf := strpool.AcquireString()
 		defer strpool.ReleaseString(buf)
-		buf.WriteString(`"INSERT INTO "+ `)
-		buf.WriteString(`v.TableName() +" (`)
+		buf.WriteString(`"INSERT INTO ` + dialect.Wrap(model.TableName) + " (")
 		var fields []*templates.Field
 		if model.PK != nil && model.PK.IsAutoIncr {
 			for _, f := range model.Fields {
@@ -148,6 +147,24 @@ func insertOneStmt(dialect sequel.Dialect) func(*templates.Model) string {
 			buf.WriteString(dialect.Var(i))
 		}
 		buf.WriteString(`);"`)
+		return buf.String()
+	}
+}
+
+func findByPKStmt(dialect sequel.Dialect) func(*templates.Model) string {
+	return func(model *templates.Model) string {
+		buf := strpool.AcquireString()
+		defer strpool.ReleaseString(buf)
+		buf.WriteString(`"SELECT `)
+		for i := range model.Fields {
+			if i > 0 {
+				buf.WriteByte(',')
+			}
+			buf.WriteString(dialect.Wrap(model.Fields[i].ColumnName))
+		}
+		buf.WriteString(" FROM " + dialect.Wrap(model.TableName) + " WHERE ")
+		buf.WriteString(dialect.Wrap(model.PK.Field.ColumnName))
+		buf.WriteString(` = ` + dialect.Var(1) + ` LIMIT 1;"`)
 		return buf.String()
 	}
 }
