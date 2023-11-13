@@ -6,7 +6,6 @@ import (
 	"go/ast"
 	"go/types"
 	"io/fs"
-	"log"
 	"os"
 	"os/exec"
 	"path"
@@ -53,10 +52,11 @@ type typeQueue struct {
 	path string
 	idx  []int
 	t    *ast.StructType
+	pkg  *packages.Package
 }
 
 type structType struct {
-	pkg    *packages.Package
+	// pkg    *packages.Package
 	t      types.Type
 	name   *ast.Ident
 	fields []structField
@@ -265,7 +265,7 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 		}
 
 		var (
-			structTypes = make([]structCache, 0)
+			structCaches = make([]structCache, 0)
 		)
 
 		for _, f := range pkg.Syntax {
@@ -296,9 +296,14 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 				// There are 2 types we're interested in
 				// 1. struct (*ast.StructType)
 				// 2. Type Definition from external package (*ast.SelectorExpr)
+				//
+				// The other is struct alias which we aren't cover, e.g :
+				// ```go
+				// type A = time.Time
+				// ```
 				switch t := typeSpec.Type.(type) {
 				case *ast.StructType:
-					structTypes = append(structTypes, structCache{name: typeSpec.Name, t: t, pkg: pkg})
+					structCaches = append(structCaches, structCache{name: typeSpec.Name, t: t, pkg: pkg})
 
 				case *ast.SelectorExpr:
 					var (
@@ -314,13 +319,18 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 						}
 					}
 
+					// Skip if unable to find the specific object
+					if obj == nil {
+						return true
+					}
+
 					decl := assertAsPtr[ast.TypeSpec](obj.Decl)
 					if decl == nil {
 						return true
 					}
 
 					if v := assertAsPtr[ast.StructType](decl.Type); v != nil {
-						structTypes = append(structTypes, structCache{name: typeSpec.Name, t: v, pkg: importPkg})
+						structCaches = append(structCaches, structCache{name: typeSpec.Name, t: v, pkg: importPkg})
 					}
 				}
 				return true
@@ -333,11 +343,12 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 			structs = make([]structType, 0)
 		)
 
-		// Loop every struct and map the fields
-		for _, s := range structTypes {
+		// Loop every struct and inspect the fields
+		for len(structCaches) > 0 {
 			var (
+				s = structCaches[0]
 				// Struct queue, this is useful when handling embedded struct
-				q      = []typeQueue{{t: s.t}}
+				q      = []typeQueue{{t: s.t, pkg: s.pkg}}
 				f      typeQueue
 				fields = make([]structField, 0)
 			)
@@ -347,12 +358,15 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 
 				// If the struct has empty field, just skip
 				if len(f.t.Fields.List) == 0 {
-					goto next
+					goto nextQueue
 				}
 
 				// Loop every struct field
-				for i, fi := range f.t.Fields.List {
-					var tag reflect.StructTag
+				for i := range f.t.Fields.List {
+					var (
+						tag reflect.StructTag
+						fi  = f.t.Fields.List[i]
+					)
 					if fi.Tag != nil {
 						// Trim backtick
 						tag = reflect.StructTag(strings.TrimFunc(fi.Tag.Value, func(r rune) bool {
@@ -375,13 +389,46 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 								path = f.path + "." + path
 							}
 							t := vi.Obj.Decl.(*ast.TypeSpec)
-							q = append(q, typeQueue{path: path, idx: append(f.idx, i), t: t.Type.(*ast.StructType)})
+							q = append(q, typeQueue{path: path, idx: append(f.idx, i), t: t.Type.(*ast.StructType), pkg: f.pkg})
 							continue
 
-						// Imported struct
+						// Embedded with imported struct
 						case *ast.SelectorExpr:
-							// TODO: support imported struct
-							log.Println("debug =>", vi)
+							var (
+								t         = f.pkg.TypesInfo.TypeOf(vi)
+								pkgPath   = t.String()
+								idx       = strings.LastIndex(pkgPath, ".")
+								importPkg = f.pkg.Imports[pkgPath[:idx]]
+								obj       *ast.Object
+							)
+
+							for i := range importPkg.Syntax {
+								obj = importPkg.Syntax[i].Scope.Lookup(vi.Sel.Name)
+								if obj != nil {
+									break
+								}
+							}
+
+							// Skip if unable to find the specific object
+							if obj == nil {
+								continue
+							}
+
+							decl := assertAsPtr[ast.TypeSpec](obj.Decl)
+							if decl == nil {
+								continue
+							}
+
+							path := types.ExprString(vi.Sel)
+							if f.path != "" {
+								path = f.path + "." + path
+							}
+
+							// If it's a embedded struct, we continue on next loop
+							if st := assertAsPtr[ast.StructType](decl.Type); st != nil {
+								q = append(q, typeQueue{path: path, idx: append(f.idx, i), t: st, pkg: importPkg})
+							}
+							continue
 						}
 					}
 
@@ -391,20 +438,22 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 							path = f.path + "." + path
 						}
 
-						fields = append(fields, structField{id: toID(append(f.idx, i+j)), exported: n.IsExported(), name: types.ExprString(n), tag: tag, path: path, t: s.pkg.TypesInfo.TypeOf(fi.Type)})
+						fields = append(fields, structField{id: toID(append(f.idx, i+j)), exported: n.IsExported(), name: types.ExprString(n), tag: tag, path: path, t: f.pkg.TypesInfo.TypeOf(fi.Type)})
 					}
 				}
 
-			next:
+			nextQueue:
 				q = q[1:]
 			}
+
 			if len(fields) > 0 {
 				sort.Slice(fields, func(i, j int) bool {
 					return fields[j].id > fields[i].id
 				})
-
-				structs = append(structs, structType{name: s.name, fields: fields, pkg: s.pkg, t: pkg.TypesInfo.TypeOf(s.name)})
+				structs = append(structs, structType{name: s.name, fields: fields, t: pkg.TypesInfo.TypeOf(s.name)})
 			}
+
+			structCaches = structCaches[1:]
 		}
 
 		// Generate interface code
