@@ -42,9 +42,19 @@ func (p *Package) Import(pkg *types.Package) (*types.Package, bool) {
 	}); i > -1 {
 		return p.imports[i], false
 	}
+
+	pkgs, err := packages.Load(&packages.Config{
+		Mode: packages.NeedName,
+	}, pkg.Path())
+	if err != nil {
+		return pkg, false
+	}
+
 	// If the import path is this package, skip to import
 	if pkg.Path() == p.PkgPath() {
 		return nil, false
+	} else if pkgs[0].Name != "" && pkgs[0].Name != pkg.Name() {
+		pkg.SetName(pkgs[0].Name)
 	}
 	alias := p.newAliasIfExists(pkg)
 	pkg.SetName(alias)

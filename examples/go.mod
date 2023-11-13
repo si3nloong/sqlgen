@@ -7,6 +7,7 @@ toolchain go1.21.3
 require (
 	cloud.google.com/go v0.110.10
 	github.com/go-sql-driver/mysql v1.7.1
+	github.com/gofrs/uuid/v5 v5.0.0
 	github.com/google/uuid v1.4.0
 	github.com/jaswdr/faker v1.16.0
 	github.com/lib/pq v1.10.7
