@@ -113,6 +113,8 @@ func Generate(c *config.Config) error {
 		// If the prefix is ".", mean it's refer to current directory
 		if srcDir[0] == '.' {
 			srcDir = fileutil.Getpwd() + srcDir[1:]
+		} else if srcDir[0] != '/' {
+			srcDir = filepath.Join(fileutil.Getpwd(), srcDir)
 		}
 
 		// File: examples/testdata/test.go
