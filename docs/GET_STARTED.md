@@ -5,6 +5,8 @@
 1.  Install `sqlgen` CLI.
 
     ```console
+    printf '// +build tools\npackage tools\nimport (_ "github.com/si3nloong/sqlgen/sequel")' | gofmt > tools.go
+    go mod tidy
     go install github.com/si3nloong/sqlgen@main
     ```
 

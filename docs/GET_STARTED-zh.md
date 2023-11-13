@@ -5,7 +5,9 @@
 1. 安装 `sqlgen` 命令行工具。
 
    ```console
-   go install github.com/si3nloong/sqlgen@main
+    printf '// +build tools\npackage tools\nimport (_ "github.com/si3nloong/sqlgen/sequel")' | gofmt > tools.go
+    go mod tidy
+    go install github.com/si3nloong/sqlgen@main
    ```
 
 2. 定义您的[模型](./MODELS.md)结构。
