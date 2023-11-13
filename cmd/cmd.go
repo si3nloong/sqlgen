@@ -17,7 +17,7 @@ var (
 
 	rootCmd = &cobra.Command{
 		Use:          "sqlgen",
-		Short:        "🚀 Transform your struct to SQL Go code!!!",
+		Short:        "🚀 Transform your struct to Go code!!!",
 		Long:         ``,
 		SilenceUsage: true,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {

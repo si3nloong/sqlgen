@@ -1,6 +1,6 @@
 # Configuration
 
-`sqlgen` can be configured using a `sqlgen.yml` file, by default it will be loaded from the current directory.
+`sqlgen` can be configured using a `sqlgen.yml`, `sqlgen.yml`, `.sqlgen.yaml` or `sqlgen.yaml` file, by default it will be loaded from the current directory.
 
 Example :
 

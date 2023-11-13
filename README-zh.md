@@ -96,6 +96,8 @@
 
 - [入门教程](/docs/GET_STARTED-zh.md) - 一份全面的指南，以帮助您入门
 - [CLI 指南](/docs/CLI-zh.md) 用于 CLI 命令的指南。
+- [FAQ（常见问题解答）](/docs/FAQ-zh.md) - 常见的问题解答。
+- [配置文件](/docs/CONFIGURATION-zh.md) - 配置代码生成。
 
 ## 报告问题
 
