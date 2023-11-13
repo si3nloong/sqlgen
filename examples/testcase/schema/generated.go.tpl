@@ -44,6 +44,7 @@ func (v A) GetText() sequel.ColumnValuer[LongText] {
 func (v A) GetCreatedAt() sequel.ColumnValuer[time.Time] {
 	return sequel.Column[time.Time]("`created_at`", v.CreatedAt, func(vi time.Time) driver.Value { return time.Time(vi) })
 }
+
 func (v B) CreateTableStmt() string {
 	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`id` VARCHAR(255) NOT NULL,`created_at` DATETIME NOT NULL);"
 }
@@ -74,6 +75,7 @@ func (v B) GetID() sequel.ColumnValuer[string] {
 func (v B) GetCreatedAt() sequel.ColumnValuer[time.Time] {
 	return sequel.Column[time.Time]("`created_at`", v.CreatedAt, func(vi time.Time) driver.Value { return time.Time(vi) })
 }
+
 func (v C) CreateTableStmt() string {
 	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`id` BIGINT NOT NULL,PRIMARY KEY (`id`));"
 }
@@ -107,6 +109,7 @@ func (v *C) Addrs() []any {
 func (v C) GetID() sequel.ColumnValuer[int64] {
 	return sequel.Column[int64]("`id`", v.ID, func(vi int64) driver.Value { return int64(vi) })
 }
+
 func (v D) CreateTableStmt() string {
 	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`id` VARCHAR(255) NOT NULL,PRIMARY KEY (`id`));"
 }

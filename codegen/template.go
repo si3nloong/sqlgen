@@ -30,7 +30,9 @@ func castAs(impPkgs *Package) func(*templates.Field, ...string) string {
 		} else {
 			name = "v." + f.GoPath
 		}
-		if f.IsBinary {
+		if f.CustomMarshaler != "" {
+			return Expr(f.CustomMarshaler+"(%s)").Format(impPkgs, name)
+		} else if f.IsBinary {
 			return Expr("github.com/si3nloong/sqlgen/sequel/types.BinaryMarshaler(%s)").Format(impPkgs, name)
 		} else if _, wrong := types.MissingMethod(f.Type, sqlValuer, true); wrong {
 			return Expr("(database/sql/driver.Valuer)(%s)").Format(impPkgs, name)
@@ -45,17 +47,19 @@ func castAs(impPkgs *Package) func(*templates.Field, ...string) string {
 
 func addrOf(impPkgs *Package) func(string, *templates.Field) string {
 	return func(n string, f *templates.Field) string {
-		v := "&" + n + "." + f.GoPath
-		if f.IsBinary {
-			return Expr("github.com/si3nloong/sqlgen/sequel/types.BinaryUnmarshaler(%s)").Format(impPkgs, v)
+		name := "&" + n + "." + f.GoPath
+		if f.CustomUnmarshaler != "" {
+			return Expr(f.CustomUnmarshaler+"(%s)").Format(impPkgs, name)
+		} else if f.IsBinary {
+			return Expr("github.com/si3nloong/sqlgen/sequel/types.BinaryUnmarshaler(%s)").Format(impPkgs, name)
 		} else if types.Implements(newPointer(f.Type), sqlScanner) {
-			return Expr("(database/sql.Scanner)(%s)").Format(impPkgs, v)
+			return Expr("(database/sql.Scanner)(%s)").Format(impPkgs, name)
 		} else if typ, ok := UnderlyingType(f.Type); ok {
-			return typ.Decoder.Format(impPkgs, v)
+			return typ.Decoder.Format(impPkgs, name)
 		} else if f.IsTextUnmarshaler {
-			return Expr("github.com/si3nloong/sqlgen/sequel/types.TextUnmarshaler(%s)").Format(impPkgs, v)
+			return Expr("github.com/si3nloong/sqlgen/sequel/types.TextUnmarshaler(%s)").Format(impPkgs, name)
 		}
-		return v
+		return name
 	}
 }
 

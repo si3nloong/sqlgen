@@ -65,6 +65,7 @@ func (v AliasStruct) GetCreated() sequel.ColumnValuer[time.Time] {
 func (v AliasStruct) GetUpdated() sequel.ColumnValuer[time.Time] {
 	return sequel.Column[time.Time]("`updated`", v.model.Updated, func(vi time.Time) driver.Value { return time.Time(vi) })
 }
+
 func (v B) CreateTableStmt() string {
 	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`name` VARCHAR(255) NOT NULL);"
 }
@@ -92,6 +93,7 @@ func (v *B) Addrs() []any {
 func (v B) GetName() sequel.ColumnValuer[string] {
 	return sequel.Column[string]("`name`", v.Name, func(vi string) driver.Value { return string(vi) })
 }
+
 func (v C) CreateTableStmt() string {
 	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`id` BIGINT NOT NULL);"
 }

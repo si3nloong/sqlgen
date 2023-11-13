@@ -36,6 +36,7 @@ func (v *CustomTableName1) Addrs() []any {
 func (v CustomTableName1) GetText() sequel.ColumnValuer[string] {
 	return sequel.Column[string]("`text`", v.Text, func(vi string) driver.Value { return string(vi) })
 }
+
 func (v CustomTableName2) CreateTableStmt() string {
 	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`text` VARCHAR(255) NOT NULL);"
 }
@@ -63,6 +64,7 @@ func (v *CustomTableName2) Addrs() []any {
 func (v CustomTableName2) GetText() sequel.ColumnValuer[string] {
 	return sequel.Column[string]("`text`", v.Text, func(vi string) driver.Value { return string(vi) })
 }
+
 func (v CustomTableName3) CreateTableStmt() string {
 	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`text` VARCHAR(255) NOT NULL);"
 }

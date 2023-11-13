@@ -52,6 +52,7 @@ func (v Car) GetColor() sequel.ColumnValuer[Color] {
 func (v Car) GetManucDate() sequel.ColumnValuer[time.Time] {
 	return sequel.Column[time.Time]("`manuc_date`", v.ManucDate, func(vi time.Time) driver.Value { return time.Time(vi) })
 }
+
 func (v User) CreateTableStmt() string {
 	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`id` BIGINT NOT NULL,`name` VARCHAR(255) NOT NULL,`age` TINYINT UNSIGNED NOT NULL,`email` VARCHAR(255) NOT NULL,PRIMARY KEY (`id`));"
 }
@@ -94,6 +95,7 @@ func (v User) GetAge() sequel.ColumnValuer[uint8] {
 func (v User) GetEmail() sequel.ColumnValuer[string] {
 	return sequel.Column[string]("`email`", v.Email, func(vi string) driver.Value { return string(vi) })
 }
+
 func (v House) CreateTableStmt() string {
 	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`id` INTEGER UNSIGNED NOT NULL,`no` VARCHAR(255) NOT NULL,PRIMARY KEY (`id`));"
 }

@@ -40,6 +40,8 @@ const (
 	TagOptionUnsigned      tagOption = "unsigned"
 	TagOptionSize          tagOption = "size"
 	TagOptionDataType      tagOption = "data_type"
+	TagOptionEncode        tagOption = "encode"
+	TagOptionDecode        tagOption = "decode"
 	TagOptionUnique        tagOption = "unique"
 )
 
@@ -538,6 +540,12 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 				tf.GoName = f.name
 				tf.GoPath = f.path
 				tf.Index = index
+				if val, ok := tag.Lookup(TagOptionEncode); ok {
+					tf.CustomMarshaler = val
+				}
+				if val, ok := tag.Lookup(TagOptionDecode); ok {
+					tf.CustomUnmarshaler = val
+				}
 				if _, ok := tag.Lookup(TagOptionBinary); ok {
 					if IsImplemented(tf.Type, binaryMarshaler) && IsImplemented(newPointer(tf.Type), binaryUnmarshaler) {
 						tf.IsBinary = true
@@ -545,8 +553,8 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 						return fmt.Errorf(`sqlgen: field %q of struct %q specific for "binary" must comply to encoding.BinaryMarshaler and encoding.BinaryUnmarshaler`, tf.GoName, model.GoName)
 					}
 				}
-				if v, ok := tag.Lookup(TagOptionSize); ok {
-					tf.Size, _ = strconv.Atoi(v)
+				if val, ok := tag.Lookup(TagOptionSize); ok {
+					tf.Size, _ = strconv.Atoi(val)
 				}
 				tf.IsTextMarshaler = IsImplemented(tf.Type, textMarshaler)
 				tf.IsTextUnmarshaler = IsImplemented(newPointer(tf.Type), textUnmarshaler)

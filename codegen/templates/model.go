@@ -41,6 +41,9 @@ type Field struct {
 
 	Type types.Type
 
+	CustomMarshaler   string
+	CustomUnmarshaler string
+
 	IsBinary          bool
 	IsTextMarshaler   bool
 	IsTextUnmarshaler bool
