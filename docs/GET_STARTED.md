@@ -79,9 +79,7 @@
     func (User) Columns() []string {
         return []string{"`id`", "`name`", "`birth_date`", "`gender`", "`address`", "`created`"}
     }
-    func (v User) IsAutoIncr() bool {
-        return true
-    }
+    func (v User) IsAutoIncr() {}
     func (v User) PK() (columnName string, pos int, value driver.Value) {
         return "`id`", 0, int64(v.ID)
     }
@@ -121,102 +119,52 @@
     import (
         "context"
         "database/sql"
+        "strconv"
+        "strings"
 
         "github.com/si3nloong/sqlgen/sequel"
         "github.com/si3nloong/sqlgen/sequel/strpool"
     )
 
-    func InsertOne[T sequel.KeyValuer[T], Ptr interface {
-        sequel.KeyValuer[T]
+    func InsertOne[T sequel.TableColumnValuer[T], Ptr interface {
+        sequel.TableColumnValuer[T]
         sequel.Scanner[T]
     }](ctx context.Context, db sequel.DB, v Ptr) (sql.Result, error) {
-        columns, args := v.Columns(), v.Values()
+        args := v.Values()
         switch vi := any(v).(type) {
-        case sequel.Keyer:
-            if vi.IsAutoIncr() {
-                // If it's a auto increment primary key
-                // We don't need to pass the value
-                _, idx, _ := vi.PK()
-                columns = append(columns[:idx], columns[idx+1:]...)
+        case sequel.SingleInserter:
+            switch vk := vi.(type) {
+            case sequel.AutoIncrKeyer:
+                _, idx, _ := vk.PK()
                 args = append(args[:idx], args[idx+1:]...)
             }
+            return db.ExecContext(ctx, vi.InsertOneStmt(), args...)
         }
-        var (
-            noOfCols = len(columns)
-            stmt     = strpool.AcquireString()
-        )
+
+        columns := v.Columns()
+        switch vi := any(v).(type) {
+        case sequel.AutoIncrKeyer:
+            // If it's a auto increment primary key
+            // We don't need to pass the value
+            _, idx, _ := vi.PK()
+            columns = append(columns[:idx], columns[idx+1:]...)
+            args = append(args[:idx], args[idx+1:]...)
+        }
+        stmt := strpool.AcquireString()
         defer strpool.ReleaseString(stmt)
-        stmt.WriteString("INSERT INTO " + v.TableName() + " (")
-        for i := 0; i < noOfCols; i++ {
-            if i > 0 {
-                stmt.WriteString("," + columns[i])
-            } else {
-                stmt.WriteString(columns[i])
-            }
-        }
-        stmt.WriteString(") VALUES (")
+        stmt.WriteString("INSERT INTO " + v.TableName() + " (" + strings.Join(columns, ",") + ") VALUES ")
+        stmt.WriteByte('(')
         for i := range args {
             if i > 0 {
                 stmt.WriteByte(',')
             }
-            stmt.WriteByte('?')
+            stmt.WriteString("?")
         }
         stmt.WriteString(");")
         return db.ExecContext(ctx, stmt.String(), args...)
     }
 
-    // FindByID is to find single record using primary key.
-    func FindByID[T sequel.KeyValuer[T], Ptr sequel.KeyValueScanner[T]](ctx context.Context, db sequel.DB, v Ptr) error {
-        var (
-            pkName, _, pk = v.PK()
-            columns       = v.Columns()
-            stmt          = strpool.AcquireString()
-        )
-        defer strpool.ReleaseString(stmt)
-        stmt.WriteString("SELECT ")
-        for i := range columns {
-            if i > 0 {
-                stmt.WriteByte(',')
-            }
-            stmt.WriteString(columns[i])
-        }
-        stmt.WriteString(" FROM " + v.TableName() + " WHERE " + pkName + " = ? LIMIT 1;")
-        return db.QueryRowContext(ctx, stmt.String(), pk).Scan(v.Addrs()...)
-    }
-
-    // UpdateByID is to update single record using primary key.
-    func UpdateByID[T sequel.KeyValuer[T]](ctx context.Context, db sequel.DB, v T) (sql.Result, error) {
-        var (
-            pkName, idx, pk = v.PK()
-            columns, values = v.Columns(), v.Values()
-            stmt            = strpool.AcquireString()
-        )
-        columns = append(columns[:idx], columns[idx+1:]...)
-        values = append(values[:idx], values[idx+1:]...)
-        var noOfCols = len(columns)
-        defer strpool.ReleaseString(stmt)
-        stmt.WriteString("UPDATE " + v.TableName() + " SET ")
-        for i := 0; i < noOfCols; i++ {
-            if i > 0 {
-                stmt.WriteByte(',')
-            }
-            stmt.WriteString(columns[i] + " = ?")
-        }
-        stmt.WriteString(" WHERE " + pkName + " = ?;")
-        return db.ExecContext(ctx, stmt.String(), append(values, pk)...)
-    }
-
-    // DeleteByID is to update single record using primary key.
-    func DeleteByID[T sequel.KeyValuer[T]](ctx context.Context, db sequel.DB, v T) (sql.Result, error) {
-        var (
-            pkName, _, pk = v.PK()
-            stmt          = strpool.AcquireString()
-        )
-        defer strpool.ReleaseString(stmt)
-        stmt.WriteString("DELETE FROM " + v.TableName() + " WHERE " + pkName + " = ?;")
-
-        return db.ExecContext(ctx, stmt.String(), pk)
-    }
+    ...
     ```
 
     <h5 a><strong><code>db/operator.go</code></strong></h5>
@@ -243,110 +191,7 @@
         }
     }
 
-    func Or(stmts ...sequel.WhereClause) sequel.WhereClause {
-        return func(stmt sequel.StmtBuilder) {
-            stmt.WriteByte('(')
-            for i := range stmts {
-                if i > 0 {
-                    stmt.WriteString(" OR ")
-                }
-                stmts[i](stmt)
-            }
-            stmt.WriteByte(')')
-        }
-    }
-
-    func Equal[T comparable](f sequel.ColumnValuer[T], value T) sequel.WhereClause {
-        return func(stmt sequel.StmtBuilder) {
-            stmt.Var(f.ColumnName()+" = ", f.Convert(value))
-        }
-    }
-
-    func NotEqual[T comparable](f sequel.ColumnValuer[T], value T) sequel.WhereClause {
-        return func(stmt sequel.StmtBuilder) {
-            stmt.Var(f.ColumnName()+" <> ", f.Convert(value))
-        }
-    }
-
-    func In[T any](f sequel.ColumnValuer[T], values ...T) sequel.WhereClause {
-        return func(stmt sequel.StmtBuilder) {
-            args := make([]any, len(values))
-            for idx := range values {
-                args[idx] = f.Convert(values[idx])
-            }
-            stmt.Var(f.ColumnName()+" IN ", args...)
-        }
-    }
-
-    func NotIn[T any](f sequel.ColumnValuer[T], values ...T) sequel.WhereClause {
-        return func(stmt sequel.StmtBuilder) {
-            args := make([]any, len(values))
-            for idx := range values {
-                args[idx] = f.Convert(values[idx])
-            }
-            stmt.Var(f.ColumnName()+" NOT IN ", args...)
-        }
-    }
-
-    func GreaterThan[T comparable](f sequel.ColumnValuer[T], value T) sequel.WhereClause {
-        return func(stmt sequel.StmtBuilder) {
-            stmt.Var(f.ColumnName()+" > ", f.Convert(value))
-        }
-    }
-
-    func GreaterThanOrEqual[T comparable](f sequel.ColumnValuer[T], value T) sequel.WhereClause {
-        return func(stmt sequel.StmtBuilder) {
-            stmt.Var(f.ColumnName()+" >= ", f.Convert(value))
-        }
-    }
-
-    func LessThan[T comparable](f sequel.ColumnValuer[T], value T) sequel.WhereClause {
-        return func(stmt sequel.StmtBuilder) {
-            stmt.Var(f.ColumnName()+" < ", f.Convert(value))
-        }
-    }
-
-    func LessThanOrEqual[T comparable](f sequel.ColumnValuer[T], value T) sequel.WhereClause {
-        return func(stmt sequel.StmtBuilder) {
-            stmt.Var(f.ColumnName()+" >= ", f.Convert(value))
-        }
-    }
-
-    func Like[T comparable](f sequel.ColumnValuer[T], value T) sequel.WhereClause {
-        return func(stmt sequel.StmtBuilder) {
-            stmt.Var(f.ColumnName()+" LIKE ", f.Convert(value))
-        }
-    }
-
-    func NotLike[T comparable](f sequel.ColumnValuer[T], value T) sequel.WhereClause {
-        return func(stmt sequel.StmtBuilder) {
-            stmt.Var(f.ColumnName()+" NOT LIKE ", f.Convert(value))
-        }
-    }
-
-    func IsNull[T any](f sequel.ColumnValuer[T]) sequel.WhereClause {
-        return func(stmt sequel.StmtBuilder) {
-            stmt.WriteString(f.ColumnName() + " IS NULL")
-        }
-    }
-
-    func IsNotNull[T any](f sequel.ColumnValuer[T]) sequel.WhereClause {
-        return func(stmt sequel.StmtBuilder) {
-            stmt.WriteString(f.ColumnName() + " IS NOT NULL")
-        }
-    }
-
-    func Asc[T any](f sequel.ColumnValuer[T]) sequel.OrderByClause {
-        return func(sw sequel.StmtWriter) {
-            sw.WriteString(f.ColumnName() + " ASC")
-        }
-    }
-
-    func Desc[T any](f sequel.ColumnValuer[T]) sequel.OrderByClause {
-        return func(sw sequel.StmtWriter) {
-            sw.WriteString(f.ColumnName() + " DESC")
-        }
-    }
+    ...
     ```
 
 5.  We can now utilise the generated codes.
@@ -404,21 +249,21 @@
 
         newUser := model.User{}
         newUser.ID, _ = result.LastInsertId()
-        // find record by id
-        if err := db.FindByID(ctx, dbConn, &newUser); err != nil {
+        // find record using primary key
+        if err := db.FindByPK(ctx, dbConn, &newUser); err != nil {
             panic(err)
         }
         log.Println(newUser)
 
         newUser.Age = 27
-        // update record by id
-        if _, err := db.UpdateByID(ctx, dbConn, newUser); err != nil {
+        // update record using primary key
+        if _, err := db.UpdateByPK(ctx, dbConn, newUser); err != nil {
             panic(err)
         }
         log.Println(newUser)
 
-        // remove record by id
-        if _, err := db.DeleteByID(ctx, dbConn, newUser); err != nil {
+        // remove record using primary key
+        if _, err := db.DeleteByPK(ctx, dbConn, newUser); err != nil {
             panic(err)
         }
     }

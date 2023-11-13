@@ -78,9 +78,7 @@
    func (User) Columns() []string {
        return []string{"`id`", "`name`", "`age`", "`address`", "`created`"}
    }
-   func (v User) IsAutoIncr() bool {
-       return true
-   }
+   func (v User) IsAutoIncr() {}
    func (v User) PK() (columnName string, pos int, value driver.Value) {
        return "`id`", 0, int64(v.ID)
    }
