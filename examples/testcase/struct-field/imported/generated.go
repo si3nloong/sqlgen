@@ -56,6 +56,7 @@ func (v Model) GetInt64() sequel.ColumnValuer[sql.NullInt64] {
 func (v Model) GetTime() sequel.ColumnValuer[sql.NullTime] {
 	return sequel.Column[sql.NullTime]("`time`", v.Time, func(vi sql.NullTime) driver.Value { return (driver.Valuer)(vi) })
 }
+
 func (v Some) CreateTableStmt() string {
 	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`id` VARCHAR(36) NOT NULL);"
 }

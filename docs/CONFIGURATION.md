@@ -33,6 +33,9 @@ database:
   dir: db
   package: db
   filename: db.go
+  operator:
+    dir: db
+    filename: operator.go
 
 # Optional:
 strict: true

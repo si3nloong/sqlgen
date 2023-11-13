@@ -2,6 +2,7 @@
 {{- reserveImport "database/sql/driver" }}
 {{- reserveImport "github.com/si3nloong/sqlgen/sequel" }}
 {{ range .Models }}
+{{- $hasCustomTabler := .HasTableName -}}
 {{- $structName := .GoName -}}
 func (v {{ $structName }}) CreateTableStmt() string {
 	return {{ createTable "v" . }}
@@ -9,14 +10,14 @@ func (v {{ $structName }}) CreateTableStmt() string {
 func ({{ $structName }}) AlterTableStmt() string {
 	return {{ quote (alterTable .) }}
 }
-{{ if eq .HasTableName false -}}
+{{ if eq $hasCustomTabler false -}}
 func ({{ $structName }}) TableName() string {
 	return {{ quote (wrap .TableName) }}
 }
-{{ end -}}
 func (v {{ $structName }}) InsertOneStmt() string {
 	return {{ insertOneStmt . }}
 }
+{{ end -}}
 func ({{ $structName }}) InsertVarQuery() string {
 	return {{ quote (varStmt .) }}
 }
@@ -32,9 +33,11 @@ func ({{ $structName }}) IsAutoIncr() {}
 func (v {{ $structName }}) PK() (columnName string, pos int, value driver.Value) {
 	return {{ quote (wrap .PK.Field.ColumnName) }}, {{ .PK.Field.Index }}, {{ castAs .PK.Field }}
 }
+{{ if eq $hasCustomTabler false -}}
 func (v {{ $structName }}) FindByPKStmt() string {
 	return {{ findByPKStmt . }}
 }
+{{ end -}}
 {{ end -}}
 func (v {{ $structName }}) Values() []any {
 	return {{ `[]any{` }}{{ range $i, $f := .Fields }}{{- if $i }}{{ ", " }}{{ end }}{{ castAs $f }}{{ end }}{{- `}` }}
@@ -48,4 +51,5 @@ func (v {{ $structName }}) {{ $return.FuncName }}() (sequel.ColumnValuer[{{ $ret
 	return sequel.Column[{{ $return.Type }}]({{ quote (wrap $f.ColumnName) }}, v.{{ .GoPath }}, func(vi {{ $return.Type }}) driver.Value { return {{ castAs $f "vi" }} })
 }
 {{ end -}}
+{{ "" }}
 {{ end }}

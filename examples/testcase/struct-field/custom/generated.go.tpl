@@ -54,6 +54,7 @@ func (v Address) GetStateCode() sequel.ColumnValuer[StateCode] {
 func (v Address) GetCountryCode() sequel.ColumnValuer[CountryCode] {
 	return sequel.Column[CountryCode]("`country_code`", v.CountryCode, func(vi CountryCode) driver.Value { return string(vi) })
 }
+
 func (v Customer) CreateTableStmt() string {
 	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`id` BIGINT NOT NULL,`howOld` TINYINT UNSIGNED NOT NULL,`name` VARCHAR(255) NOT NULL,`address` JSON NOT NULL,`nicknames` JSON NOT NULL,`status` VARCHAR(255) NOT NULL,`join_at` DATETIME NOT NULL);"
 }

@@ -16,9 +16,6 @@ func (v A) CreateTableStmt() string {
 func (A) AlterTableStmt() string {
 	return "ALTER TABLE `a` MODIFY `date` DATE NOT NULL,MODIFY `time` VARCHAR(255) NOT NULL AFTER `date`;"
 }
-func (v A) InsertOneStmt() string {
-	return "INSERT INTO `a` (`date`,`time`) VALUES (?,?);"
-}
 func (A) InsertVarQuery() string {
 	return "(?,?)"
 }
@@ -37,6 +34,7 @@ func (v A) GetDate() sequel.ColumnValuer[civil.Date] {
 func (v A) GetTime() sequel.ColumnValuer[civil.Time] {
 	return sequel.Column[civil.Time]("`time`", v.Time, func(vi civil.Time) driver.Value { return types.TextMarshaler(vi) })
 }
+
 func (v C) CreateTableStmt() string {
 	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`string` VARCHAR(255) NOT NULL,`valid` TINYINT NOT NULL);"
 }
