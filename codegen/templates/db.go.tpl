@@ -247,6 +247,9 @@ func QueryStmt[T any, Ptr interface {
 		}
 		result = append(result, v)
 	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
 	return result, nil
 }
 
