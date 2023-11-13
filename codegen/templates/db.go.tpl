@@ -11,12 +11,9 @@ func InsertOne[T sequel.TableColumnValuer[T], Ptr interface {
 	args := v.Values()
 	switch vi := any(v).(type) {
 	case sequel.SingleInserter:
-		k, ok := vi.(sequel.Keyer)
-		if !ok {
-			return db.ExecContext(ctx, vi.InsertOneStmt(), args...)
-		}
-		if k.IsAutoIncr() {
-			_, idx, _ := k.PK()
+		switch vk := vi.(type) {
+		case sequel.AutoIncrKeyer:
+			_, idx, _ := vk.PK()
 			args = append(args[:idx], args[idx+1:]...)
 		}
 		return db.ExecContext(ctx, vi.InsertOneStmt(), args...)
@@ -24,14 +21,12 @@ func InsertOne[T sequel.TableColumnValuer[T], Ptr interface {
 
 	columns := v.Columns()
 	switch vi := any(v).(type) {
-	case sequel.Keyer:
-		if vi.IsAutoIncr() {
-			// If it's a auto increment primary key
-			// We don't need to pass the value
-			_, idx, _ := vi.PK()
-			columns = append(columns[:idx], columns[idx+1:]...)
-			args = append(args[:idx], args[idx+1:]...)
-		}
+	case sequel.AutoIncrKeyer:
+		// If it's a auto increment primary key
+		// We don't need to pass the value
+		_, idx, _ := vi.PK()
+		columns = append(columns[:idx], columns[idx+1:]...)
+		args = append(args[:idx], args[idx+1:]...)
 	}
 	stmt := strpool.AcquireString()
 	defer strpool.ReleaseString(stmt)
@@ -65,12 +60,10 @@ func InsertInto[T sequel.TableColumnValuer[T]](ctx context.Context, db sequel.DB
 	defer strpool.ReleaseString(stmt)
 
 	switch vi := any(model).(type) {
-	case sequel.Keyer:
-		if vi.IsAutoIncr() {
-			_, idx, _ = vi.PK()
-			noOfCols--
-			columns = append(columns[:idx], columns[idx+1:]...)
-		}
+	case sequel.AutoIncrKeyer:
+		_, idx, _ = vi.PK()
+		noOfCols--
+		columns = append(columns[:idx], columns[idx+1:]...)
 
 	case sequel.Inserter:
 		stmt.WriteString("INSERT INTO " + model.TableName() + " (" + strings.Join(columns, ",") + ") VALUES ")

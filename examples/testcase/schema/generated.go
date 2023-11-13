@@ -92,9 +92,6 @@ func (C) InsertVarQuery() string {
 func (C) Columns() []string {
 	return []string{"`id`"}
 }
-func (v C) IsAutoIncr() bool {
-	return false
-}
 func (v C) PK() (columnName string, pos int, value driver.Value) {
 	return "`id`", 0, int64(v.ID)
 }
@@ -127,9 +124,6 @@ func (D) InsertVarQuery() string {
 }
 func (D) Columns() []string {
 	return []string{"`id`"}
-}
-func (v D) IsAutoIncr() bool {
-	return false
 }
 func (v D) PK() (columnName string, pos int, value driver.Value) {
 	return "`id`", 0, (driver.Valuer)(v.ID)

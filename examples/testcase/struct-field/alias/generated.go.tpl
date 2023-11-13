@@ -21,7 +21,7 @@ func (AliasStruct) TableName() string {
 	return "`alias_struct`"
 }
 func (v AliasStruct) InsertOneStmt() string {
-	return "INSERT INTO " + v.TableName() + " (`b`,`Id`,`header`,`raw`,`text`,`null_str`,`created`,`updated`) VALUES (?,?,?,?,?,?,?,?);"
+	return "INSERT INTO `alias_struct` (`b`,`Id`,`header`,`raw`,`text`,`null_str`,`created`,`updated`) VALUES (?,?,?,?,?,?,?,?);"
 }
 func (AliasStruct) InsertVarQuery() string {
 	return "(?,?,?,?,?,?,?,?)"
@@ -29,11 +29,11 @@ func (AliasStruct) InsertVarQuery() string {
 func (AliasStruct) Columns() []string {
 	return []string{"`b`", "`Id`", "`header`", "`raw`", "`text`", "`null_str`", "`created`", "`updated`"}
 }
-func (v AliasStruct) IsAutoIncr() bool {
-	return false
-}
 func (v AliasStruct) PK() (columnName string, pos int, value driver.Value) {
 	return "`Id`", 1, int64(v.pk.ID)
+}
+func (v AliasStruct) FindByPKStmt() string {
+	return "SELECT `b`,`Id`,`header`,`raw`,`text`,`null_str`,`created`,`updated` FROM `alias_struct` WHERE `Id` = ? LIMIT 1;"
 }
 func (v AliasStruct) Values() []any {
 	return []any{float64(v.B), int64(v.pk.ID), string(v.Header), string(v.Raw), string(v.Text), (driver.Valuer)(v.NullStr), time.Time(v.model.Created), time.Time(v.model.Updated)}
@@ -75,7 +75,7 @@ func (B) TableName() string {
 	return "`b`"
 }
 func (v B) InsertOneStmt() string {
-	return "INSERT INTO " + v.TableName() + " (`name`) VALUES (?);"
+	return "INSERT INTO `b` (`name`) VALUES (?);"
 }
 func (B) InsertVarQuery() string {
 	return "(?)"
@@ -102,7 +102,7 @@ func (C) TableName() string {
 	return "`c`"
 }
 func (v C) InsertOneStmt() string {
-	return "INSERT INTO " + v.TableName() + " (`id`) VALUES (?);"
+	return "INSERT INTO `c` (`id`) VALUES (?);"
 }
 func (C) InsertVarQuery() string {
 	return "(?)"

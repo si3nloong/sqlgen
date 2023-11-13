@@ -21,7 +21,7 @@ func (Binary) TableName() string {
 	return "`binary`"
 }
 func (v Binary) InsertOneStmt() string {
-	return "INSERT INTO " + v.TableName() + " (`id`,`str`,`time`) VALUES (?,?,?);"
+	return "INSERT INTO `binary` (`id`,`str`,`time`) VALUES (?,?,?);"
 }
 func (Binary) InsertVarQuery() string {
 	return "(?,?,?)"
@@ -29,11 +29,11 @@ func (Binary) InsertVarQuery() string {
 func (Binary) Columns() []string {
 	return []string{"`id`", "`str`", "`time`"}
 }
-func (v Binary) IsAutoIncr() bool {
-	return false
-}
 func (v Binary) PK() (columnName string, pos int, value driver.Value) {
 	return "`id`", 0, types.BinaryMarshaler(v.ID)
+}
+func (v Binary) FindByPKStmt() string {
+	return "SELECT `id`,`str`,`time` FROM `binary` WHERE `id` = ? LIMIT 1;"
 }
 func (v Binary) Values() []any {
 	return []any{types.BinaryMarshaler(v.ID), string(v.Str), time.Time(v.Time)}

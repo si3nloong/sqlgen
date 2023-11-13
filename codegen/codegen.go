@@ -409,18 +409,17 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 
 		// Generate interface code
 		var (
-			nameMap map[string]struct{}
-			params  = templates.ModelTmplParams{}
+			params = templates.ModelTmplParams{}
 		)
 
 		// Convert struct to models and generate code
 		for _, s := range structs {
-			nameMap = make(map[string]struct{})
-
 			var (
-				index int
-				model = templates.Model{}
+				index   int
+				nameMap = make(map[string]struct{})
+				model   = templates.Model{}
 			)
+
 			model.GoName = types.ExprString(s.name)
 			model.TableName = rename(model.GoName)
 

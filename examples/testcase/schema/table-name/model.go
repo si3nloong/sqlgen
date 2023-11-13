@@ -9,11 +9,11 @@ type CustomTableName1 struct {
 }
 
 type CustomTableName2 struct {
-	priv sequel.Name `sql:"custom_table_2"`
+	priv sequel.Name `sql:"table_2"`
 	Text string
 }
 
 type CustomTableName3 struct {
-	Public sequel.Name `sql:"custom_table3"`
+	Public sequel.Name `sql:"table_3"`
 	Text   string
 }

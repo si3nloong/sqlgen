@@ -28,9 +28,7 @@ func (Ptr) InsertVarQuery() string {
 func (Ptr) Columns() []string {
 	return []string{"`id`", "`str`", "`uint_8`", "`uint_16`", "`uint_32`", "`uint_64`", "`f_32`", "`f_64`", "`time`", "`bytes`", "`bool`", "`int`", "`int_8`", "`int_16`", "`int_32`", "`int_64`", "`uint`"}
 }
-func (v Ptr) IsAutoIncr() bool {
-	return true
-}
+func (Ptr) IsAutoIncr() {}
 func (v Ptr) PK() (columnName string, pos int, value driver.Value) {
 	return "`id`", 0, int64(v.ID)
 }

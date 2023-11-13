@@ -16,7 +16,7 @@ func (Model) AlterTableStmt() string {
 	return "ALTER TABLE `model` MODIFY `name` VARCHAR(255) NOT NULL;"
 }
 func (v Model) InsertOneStmt() string {
-	return "INSERT INTO " + v.TableName() + " (`name`) VALUES (?);"
+	return "INSERT INTO `model` (`name`) VALUES (?);"
 }
 func (Model) InsertVarQuery() string {
 	return "(?)"

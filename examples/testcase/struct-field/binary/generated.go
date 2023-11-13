@@ -29,9 +29,6 @@ func (Binary) InsertVarQuery() string {
 func (Binary) Columns() []string {
 	return []string{"`id`", "`str`", "`time`"}
 }
-func (v Binary) IsAutoIncr() bool {
-	return false
-}
 func (v Binary) PK() (columnName string, pos int, value driver.Value) {
 	return "`id`", 0, types.BinaryMarshaler(v.ID)
 }

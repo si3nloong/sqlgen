@@ -28,9 +28,6 @@ func (Car) InsertVarQuery() string {
 func (Car) Columns() []string {
 	return []string{"`id`", "`no`", "`color`", "`manuc_date`"}
 }
-func (v Car) IsAutoIncr() bool {
-	return false
-}
 func (v Car) PK() (columnName string, pos int, value driver.Value) {
 	return "`id`", 0, (driver.Valuer)(v.ID)
 }
@@ -73,9 +70,6 @@ func (User) InsertVarQuery() string {
 func (User) Columns() []string {
 	return []string{"`id`", "`name`", "`age`", "`email`"}
 }
-func (v User) IsAutoIncr() bool {
-	return false
-}
 func (v User) PK() (columnName string, pos int, value driver.Value) {
 	return "`id`", 0, int64(v.ID)
 }
@@ -117,9 +111,6 @@ func (House) InsertVarQuery() string {
 }
 func (House) Columns() []string {
 	return []string{"`id`", "`no`"}
-}
-func (v House) IsAutoIncr() bool {
-	return false
 }
 func (v House) PK() (columnName string, pos int, value driver.Value) {
 	return "`id`", 0, int64(v.ID)

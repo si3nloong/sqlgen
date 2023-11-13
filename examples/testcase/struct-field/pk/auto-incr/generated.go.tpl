@@ -19,7 +19,7 @@ func (Model) TableName() string {
 	return "`model`"
 }
 func (v Model) InsertOneStmt() string {
-	return "INSERT INTO " + v.TableName() + " (`name`,`f`,`n`) VALUES (?,?,?);"
+	return "INSERT INTO `model` (`name`,`f`,`n`) VALUES (?,?,?);"
 }
 func (Model) InsertVarQuery() string {
 	return "(?,?,?)"
@@ -27,11 +27,12 @@ func (Model) InsertVarQuery() string {
 func (Model) Columns() []string {
 	return []string{"`name`", "`f`", "`id`", "`n`"}
 }
-func (v Model) IsAutoIncr() bool {
-	return true
-}
+func (Model) IsAutoIncr() {}
 func (v Model) PK() (columnName string, pos int, value driver.Value) {
 	return "`id`", 2, int64(v.ID)
+}
+func (v Model) FindByPKStmt() string {
+	return "SELECT `name`,`f`,`id`,`n` FROM `model` WHERE `id` = ? LIMIT 1;"
 }
 func (v Model) Values() []any {
 	return []any{string(v.Name), bool(v.F), int64(v.ID), int64(v.N)}

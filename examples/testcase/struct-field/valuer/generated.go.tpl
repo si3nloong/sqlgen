@@ -19,7 +19,7 @@ func (B) TableName() string {
 	return "`b`"
 }
 func (v B) InsertOneStmt() string {
-	return "INSERT INTO " + v.TableName() + " (`id`,`value`,`n`) VALUES (?,?,?);"
+	return "INSERT INTO `b` (`id`,`value`,`n`) VALUES (?,?,?);"
 }
 func (B) InsertVarQuery() string {
 	return "(?,?,?)"

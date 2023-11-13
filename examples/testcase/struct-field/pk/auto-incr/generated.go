@@ -27,9 +27,7 @@ func (Model) InsertVarQuery() string {
 func (Model) Columns() []string {
 	return []string{"`name`", "`f`", "`id`", "`n`"}
 }
-func (v Model) IsAutoIncr() bool {
-	return true
-}
+func (Model) IsAutoIncr() {}
 func (v Model) PK() (columnName string, pos int, value driver.Value) {
 	return "`id`", 2, int64(v.ID)
 }

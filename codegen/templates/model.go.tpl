@@ -26,9 +26,9 @@ func ({{ $structName }}) Columns() []string {
 }
 {{ end -}}
 {{ if ne .PK nil -}}
-func (v {{ $structName }}) IsAutoIncr() bool {
-	return {{ .PK.IsAutoIncr }}
-}
+{{ if .PK.IsAutoIncr -}}
+func ({{ $structName }}) IsAutoIncr() {}
+{{ end -}}
 func (v {{ $structName }}) PK() (columnName string, pos int, value driver.Value) {
 	return {{ quote (wrap .PK.Field.ColumnName) }}, {{ .PK.Field.Index }}, {{ castAs .PK.Field }}
 }
