@@ -8,7 +8,8 @@ import (
 	"io"
 )
 
-type Name struct{ Local string }
+// For rename table name
+type Name struct{}
 
 type Scanner[T any] interface {
 	*T
