@@ -1,3 +1,3 @@
 package sequel
 
-const Version = "v1.0.0-alpha.2"
+const Version = "v1.0.0-alpha.3"
