@@ -55,9 +55,7 @@ func (User) TableName() string {
 func (User) Columns() []string {
 	return []string{"`id`", "`created`"}
 }
-func (v User) IsAutoIncr() bool {
-	return false
-}
+func (v User) IsAutoIncr() {}
 func (v User) PK() (columnName string, pos int, value driver.Value) {
 	return "`id`", 0, (driver.Valuer)(v.ID)
 }
@@ -118,9 +116,7 @@ func (User) TableName() string {
 func (User) Columns() []string {
 	return []string{"`id`", "`created`"}
 }
-func (v User) IsAutoIncr() bool {
-	return false
-}
+func (v User) IsAutoIncr() {}
 func (v User) PK() (columnName string, pos int, value driver.Value) {
 	return "`id`", 0, types.BinaryMarshaler(v.ID)
 }

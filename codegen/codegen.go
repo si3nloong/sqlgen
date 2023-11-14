@@ -110,8 +110,10 @@ func Generate(c *config.Config) error {
 			return fmt.Errorf(`sqlgen: src is empty path`)
 		}
 
-		// If the prefix is ".", mean it's refer to current directory
-		if srcDir[0] == '.' {
+		if srcDir == "." {
+			srcDir = fileutil.Getpwd()
+			// If the prefix is ".", mean it's refer to current directory
+		} else if srcDir[0] == '.' {
 			srcDir = fileutil.Getpwd() + srcDir[1:]
 		} else if srcDir[0] != '/' {
 			srcDir = filepath.Join(fileutil.Getpwd(), srcDir)
