@@ -7,7 +7,7 @@ A scalar message field can have one of the following types – the table shows t
 | `~string`                        | VARCHAR(255)       | VARCHAR(255)          | VARCHAR(255)        |
 | `~[]byte`                        | BLOB               | BLOB                  | BLOB                |
 | `~[16]byte`                      | BINARY(16)         | BINARY(16)            | BINARY(16)          |
-| `sql.RawBytes`                   | VARCHAR(255)       | VARCHAR(255)          | VARCHAR(255)        |
+| `database/sql.RawBytes`          | VARCHAR(255)       | VARCHAR(255)          | VARCHAR(255)        |
 | `~int`                           | INTEGER            | INTEGER               | INTEGER             |
 | `~int8`                          | TINYINT            | TINYINT               | TINYINT             |
 | `~int16`                         | SMALLINT           | SMALLINT              | SMALLINT            |

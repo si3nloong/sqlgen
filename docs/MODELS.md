@@ -8,6 +8,15 @@ Format
 `sql:"[column name],[tag options...]"`
 ```
 
+Example:
+
+```go
+type User struct{
+    ID   int64  `sql:",pk,auto_increment"`
+    Name string `sql:",size:10"`
+}
+```
+
 Tags are case insensitive, however `snake_case` is preferred. Tags are optional to use when declaring models, `sqlgen` supports the following tags:
 
 | Tag Name         | Alias | Description                                                                                                      | Example                                                                |
