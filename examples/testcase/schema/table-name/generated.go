@@ -13,13 +13,13 @@ func (v CustomTableName1) CreateTableStmt() string {
 	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`text` VARCHAR(255) NOT NULL);"
 }
 func (CustomTableName1) AlterTableStmt() string {
-	return "ALTER TABLE `custom_table_name_1` MODIFY `text` VARCHAR(255) NOT NULL;"
+	return "ALTER TABLE `CustomTableName_1` MODIFY `text` VARCHAR(255) NOT NULL;"
 }
 func (CustomTableName1) TableName() string {
-	return "`custom_table_name_1`"
+	return "`CustomTableName_1`"
 }
 func (v CustomTableName1) InsertOneStmt() string {
-	return "INSERT INTO `custom_table_name_1` (`text`) VALUES (?);"
+	return "INSERT INTO `CustomTableName_1` (`text`) VALUES (?);"
 }
 func (CustomTableName1) InsertVarQuery() string {
 	return "(?)"

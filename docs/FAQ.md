@@ -4,6 +4,10 @@
 
 You may refer to [this guide](./MODELS.md).
 
+### How do I rename my table name?
+
+By default, `sqlgen` is using struct name as table name, but we also offer `sequel.Table` for user to rename their table name. For more details, you may refer to [here](./TABLE_NAME.md).
+
 ### I don't want primary key on my table, can I do that?
 
 Absolutely, yes. If you didn't specific the `pk`, `primary_key` or `auto_increment` value in struct tag, the primary key methods will not be generated.

@@ -9,7 +9,7 @@ import (
 type B struct {
 	// Embedded struct
 	c.DateTime
-	time.Time
+	t time.Time
 
 	// Embedded int64
 	time.Duration

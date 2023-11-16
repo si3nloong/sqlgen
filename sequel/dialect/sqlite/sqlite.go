@@ -21,8 +21,5 @@ func (*sqliteDriver) Var(n int) string {
 }
 
 func (*sqliteDriver) Wrap(v string) string {
-	if v[0] == '"' {
-		return v
-	}
 	return strconv.Quote(v)
 }

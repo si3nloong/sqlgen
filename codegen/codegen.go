@@ -21,7 +21,6 @@ import (
 	"github.com/si3nloong/sqlgen/codegen/templates"
 	"github.com/si3nloong/sqlgen/internal/fileutil"
 	"github.com/si3nloong/sqlgen/sequel"
-	"github.com/si3nloong/sqlgen/sequel/strpool"
 	"golang.org/x/tools/go/packages"
 )
 
@@ -46,7 +45,7 @@ const (
 )
 
 var (
-	schemaName      = reflect.TypeOf(sequel.Name{})
+	schemaName      = reflect.TypeOf(sequel.Table{})
 	tableNameSchema = schemaName.PkgPath() + "." + schemaName.Name()
 )
 
@@ -70,6 +69,7 @@ type structField struct {
 	path     string
 	t        types.Type
 	exported bool
+	embedded bool
 	tag      reflect.StructTag
 }
 
@@ -396,6 +396,8 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 							}
 							t := vi.Obj.Decl.(*ast.TypeSpec)
 							q = append(q, typeQueue{path: path, idx: append(f.idx, i), t: t.Type.(*ast.StructType), pkg: f.pkg})
+
+							fields = append(fields, structField{id: toID(append(f.idx, i)), exported: vi.IsExported(), embedded: true, name: types.ExprString(vi), tag: tag, path: path, t: f.pkg.TypesInfo.TypeOf(fi.Type)})
 							continue
 
 						// Embedded with imported struct
@@ -433,6 +435,8 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 							// If it's a embedded struct, we continue on next loop
 							if st := assertAsPtr[ast.StructType](decl.Type); st != nil {
 								q = append(q, typeQueue{path: path, idx: append(f.idx, i), t: st, pkg: importPkg})
+
+								fields = append(fields, structField{id: toID(append(f.idx, i)), exported: vi.Sel.IsExported(), embedded: true, name: types.ExprString(vi.Sel), tag: tag, path: path, t: f.pkg.TypesInfo.TypeOf(fi.Type)})
 							}
 							continue
 						}
@@ -539,6 +543,9 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 				if !f.exported {
 					continue
 				}
+				if f.embedded {
+					continue
+				}
 
 				tf.Type = f.t
 				tf.GoName = f.name
@@ -551,7 +558,7 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 					tf.CustomUnmarshaler = val
 				}
 				if _, ok := tag.Lookup(TagOptionBinary); ok {
-					if IsImplemented(tf.Type, binaryMarshaler) && IsImplemented(newPointer(tf.Type), binaryUnmarshaler) {
+					if isImplemented(tf.Type, binaryMarshaler) && isImplemented(newPointer(tf.Type), binaryUnmarshaler) {
 						tf.IsBinary = true
 					} else if cfg.Strict {
 						return fmt.Errorf(`sqlgen: field %q of struct %q specific for "binary" must comply to encoding.BinaryMarshaler and encoding.BinaryUnmarshaler`, tf.GoName, model.GoName)
@@ -560,8 +567,8 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 				if val, ok := tag.Lookup(TagOptionSize); ok {
 					tf.Size, _ = strconv.Atoi(val)
 				}
-				tf.IsTextMarshaler = IsImplemented(tf.Type, textMarshaler)
-				tf.IsTextUnmarshaler = IsImplemented(newPointer(tf.Type), textUnmarshaler)
+				tf.IsTextMarshaler = isImplemented(tf.Type, textMarshaler)
+				tf.IsTextUnmarshaler = isImplemented(newPointer(tf.Type), textUnmarshaler)
 				index++
 
 				if _, ok := tag.Lookup(TagOptionPK, TagOptionPKAlias, TagOptionAutoIncrement); ok {
@@ -621,76 +628,9 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 	return nil
 }
 
-func IsImplemented(t types.Type, iv *types.Interface) bool {
-	method, wrongType := types.MissingMethod(t, iv, true)
-	return method == nil && !wrongType
-}
-
 func goModTidy() error {
 	tidyCmd := exec.Command("go", "mod", "tidy")
 	tidyCmd.Stdout = os.Stdout
 	tidyCmd.Stderr = os.Stdout
 	return tidyCmd.Run()
-}
-
-func toID(val []int) string {
-	buf := strpool.AcquireString()
-	defer strpool.ReleaseString(buf)
-	for i, v := range val {
-		if i > 0 {
-			buf.WriteByte('.')
-		}
-		buf.WriteString(strconv.Itoa(v))
-	}
-	return buf.String()
-}
-
-func assertAsPtr[T any](v any) *T {
-	t, ok := v.(*T)
-	if ok {
-		return t
-	}
-	return nil
-}
-
-func UnderlyingType(t types.Type) (*Mapping, bool) {
-	var (
-		typeStr string
-		prev    = t
-	)
-
-loop:
-	for t != nil {
-		switch v := t.(type) {
-		case *types.Basic:
-			typeStr += v.String()
-			break loop
-		case *types.Named:
-			if _, ok := v.Underlying().(*types.Struct); ok {
-				typeStr += v.String()
-				break loop
-			}
-			typeStr += v.Underlying().String()
-			prev = t.Underlying()
-		case *types.Pointer:
-			typeStr += "*"
-			prev = v.Elem()
-		case *types.Slice:
-			typeStr += "[]"
-			prev = v.Elem()
-		default:
-			break loop
-		}
-		if v, ok := typeMap[typeStr]; ok {
-			return v, ok
-		}
-		if prev == t {
-			break loop
-		}
-		t = prev
-	}
-	if v, ok := typeMap[typeStr]; ok {
-		return v, ok
-	}
-	return nil, false
 }

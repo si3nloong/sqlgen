@@ -17,8 +17,5 @@ func (*mysqlDriver) Var(n int) string {
 }
 
 func (*mysqlDriver) Wrap(v string) string {
-	if v[0] == '`' {
-		return v
-	}
 	return "`" + v + "`"
 }

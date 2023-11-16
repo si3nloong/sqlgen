@@ -9,7 +9,7 @@ import (
 )
 
 // For rename table name
-type Name struct{}
+type Table struct{}
 
 type Scanner[T any] interface {
 	*T

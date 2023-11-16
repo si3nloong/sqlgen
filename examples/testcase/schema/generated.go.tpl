@@ -15,13 +15,13 @@ func (v A) CreateTableStmt() string {
 	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`id` VARCHAR(255) NOT NULL,`text` VARCHAR(255) NOT NULL,`created_at` DATETIME NOT NULL);"
 }
 func (A) AlterTableStmt() string {
-	return "ALTER TABLE `a` MODIFY `id` VARCHAR(255) NOT NULL,MODIFY `text` VARCHAR(255) NOT NULL AFTER `id`,MODIFY `created_at` DATETIME NOT NULL AFTER `text`;"
+	return "ALTER TABLE `Apple` MODIFY `id` VARCHAR(255) NOT NULL,MODIFY `text` VARCHAR(255) NOT NULL AFTER `id`,MODIFY `created_at` DATETIME NOT NULL AFTER `text`;"
 }
 func (A) TableName() string {
-	return "`a`"
+	return "`Apple`"
 }
 func (v A) InsertOneStmt() string {
-	return "INSERT INTO `a` (`id`,`text`,`created_at`) VALUES (?,?,?);"
+	return "INSERT INTO `Apple` (`id`,`text`,`created_at`) VALUES (?,?,?);"
 }
 func (A) InsertVarQuery() string {
 	return "(?,?,?)"
