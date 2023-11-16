@@ -97,6 +97,10 @@ More help to get started:
 - [FAQ](/docs/FAQ.md) - frequent ask questions.
 - [Configuration file](/docs/CONFIGURATION.md) - configure code generation.
 
+## Benchmark
+
+<img src="./docs/images/orm_benchmark.jpg" />
+
 ## Reporting Issues
 
 If you think you've found a bug, or something isn't behaving the way you think it should, please raise an [issue](https://github.com/si3nloong/sqlgen/issues) on GitHub.

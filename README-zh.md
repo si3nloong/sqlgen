@@ -97,6 +97,10 @@
 - [FAQ（常见问题解答）](/docs/FAQ-zh.md) - 常见的问题解答。
 - [配置文件](/docs/CONFIGURATION-zh.md) - 配置代码生成。
 
+## 基准测试
+
+<img src="./docs/images/orm_benchmark.jpg" />
+
 ## 报告问题
 
 如果您认为发现了错误，或某些事情的行为不如您所期望，请在 GitHub 上提出[问题](https://github.com/si3nloong/sqlgen/issues)。
