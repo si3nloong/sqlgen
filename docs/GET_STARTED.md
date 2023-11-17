@@ -314,7 +314,9 @@
         }
 
         /*
-        SELECT `id`, `name`, `birth_date`, `gender`, `address`, `created` FROM `user` WHERE `gender` = 0 AND `birth_date` >= "1995-01-28" ORDER BY `created` LIMIT 50;
+        SELECT `id`, `name`, `birth_date`, `gender`, `address`, `created`
+        FROM `user` WHERE `gender` = 0 AND `birth_date` >= "1995-01-28"
+        ORDER BY `created` DESC LIMIT 50;
         */
         users, err := db.QueryStmt[model.User](ctx, dbConn, db.SelectStmt{
             Select:    user.Columns(),
