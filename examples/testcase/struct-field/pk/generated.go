@@ -32,6 +32,9 @@ func (v Car) PK() (columnName string, pos int, value driver.Value) {
 func (v Car) FindByPKStmt() string {
 	return "SELECT `id`,`no`,`color`,`manuc_date` FROM `car` WHERE `id` = ? LIMIT 1;"
 }
+func (v Car) UpdateByPKStmt() string {
+	return "UPDATE `car` SET `no` = ?,`color` = ?,`manuc_date` = ? WHERE `id` = ? LIMIT 1;"
+}
 func (v Car) Values() []any {
 	return []any{(driver.Valuer)(v.ID), string(v.No), int64(v.Color), time.Time(v.ManucDate)}
 }
@@ -75,6 +78,9 @@ func (v User) PK() (columnName string, pos int, value driver.Value) {
 func (v User) FindByPKStmt() string {
 	return "SELECT `id`,`name`,`age`,`email` FROM `user` WHERE `id` = ? LIMIT 1;"
 }
+func (v User) UpdateByPKStmt() string {
+	return "UPDATE `user` SET `name` = ?,`age` = ?,`email` = ? WHERE `id` = ? LIMIT 1;"
+}
 func (v User) Values() []any {
 	return []any{int64(v.ID), string(v.Name), int64(v.Age), string(v.Email)}
 }
@@ -117,6 +123,9 @@ func (v House) PK() (columnName string, pos int, value driver.Value) {
 }
 func (v House) FindByPKStmt() string {
 	return "SELECT `id`,`no` FROM `house` WHERE `id` = ? LIMIT 1;"
+}
+func (v House) UpdateByPKStmt() string {
+	return "UPDATE `house` SET `no` = ? WHERE `id` = ? LIMIT 1;"
 }
 func (v House) Values() []any {
 	return []any{int64(v.ID), string(v.No)}

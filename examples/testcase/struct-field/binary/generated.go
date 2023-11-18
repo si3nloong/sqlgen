@@ -33,6 +33,9 @@ func (v Binary) PK() (columnName string, pos int, value driver.Value) {
 func (v Binary) FindByPKStmt() string {
 	return "SELECT `id`,`str`,`time` FROM `binary` WHERE `id` = ? LIMIT 1;"
 }
+func (v Binary) UpdateByPKStmt() string {
+	return "UPDATE `binary` SET `str` = ?,`time` = ? WHERE `id` = ? LIMIT 1;"
+}
 func (v Binary) Values() []any {
 	return []any{types.BinaryMarshaler(v.ID), string(v.Str), time.Time(v.Time)}
 }

@@ -173,6 +173,29 @@ func (g *Generator) findByPKStmt(dialect sequel.Dialect) func(*templates.Model) 
 	}
 }
 
+func (g *Generator) updateByPKStmt(dialect sequel.Dialect) func(*templates.Model) string {
+	return func(model *templates.Model) string {
+		buf := strpool.AcquireString()
+		defer strpool.ReleaseString(buf)
+		buf.WriteString("UPDATE " + dialect.Wrap(model.TableName) + " SET ")
+		var pos int
+		for i := range model.Fields {
+			if model.PK != nil && model.PK.Field == model.Fields[i] {
+				continue
+			}
+			if pos > 0 {
+				buf.WriteByte(',')
+			}
+			pos++
+			buf.WriteString(dialect.Wrap(model.Fields[i].ColumnName) + " = " + dialect.Var(pos))
+		}
+		buf.WriteString(" WHERE ")
+		buf.WriteString(dialect.Wrap(model.PK.Field.ColumnName))
+		buf.WriteString(" = " + dialect.Var(pos+1) + " LIMIT 1;")
+		return g.Quote(buf.String())
+	}
+}
+
 func varStmt(dialect sequel.Dialect) func(*templates.Model) string {
 	return func(model *templates.Model) string {
 		blr := strpool.AcquireString()

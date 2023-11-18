@@ -32,6 +32,9 @@ func (v Model) PK() (columnName string, pos int, value driver.Value) {
 func (v Model) FindByPKStmt() string {
 	return "SELECT `name`,`f`,`id`,`n` FROM `model` WHERE `id` = ? LIMIT 1;"
 }
+func (v Model) UpdateByPKStmt() string {
+	return "UPDATE `model` SET `name` = ?,`f` = ?,`n` = ? WHERE `id` = ? LIMIT 1;"
+}
 func (v Model) Values() []any {
 	return []any{string(v.Name), bool(v.F), int64(v.ID), int64(v.N)}
 }
