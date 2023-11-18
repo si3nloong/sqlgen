@@ -12,7 +12,7 @@ require (
 	github.com/jaswdr/faker v1.16.0
 	github.com/lib/pq v1.10.7
 	github.com/mattn/go-sqlite3 v1.14.16
-	github.com/si3nloong/sqlgen v0.0.0-20230404062952-cbb69b02fc6a
+	github.com/si3nloong/sqlgen v1.0.0-alpha.3.0.20231118095154-390f9683bb93
 	github.com/stretchr/testify v1.8.4
 )
 
