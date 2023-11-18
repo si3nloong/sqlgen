@@ -63,13 +63,13 @@ func addrOf(impPkgs *Package) func(string, *templates.Field) string {
 	}
 }
 
-func createTableStmt(dialect sequel.Dialect) func(string, *templates.Model) string {
+func (g *Generator) createTableStmt(dialect sequel.Dialect) func(string, *templates.Model) string {
 	return func(n string, model *templates.Model) string {
 		buf := strpool.AcquireString()
 		defer strpool.ReleaseString(buf)
 
-		buf.WriteString(`"CREATE TABLE IF NOT EXISTS "+ `)
-		buf.WriteString(n + `.TableName() +" (`)
+		buf.WriteString(g.Quote("CREATE TABLE IF NOT EXISTS "))
+		buf.WriteString("+ " + n + ".TableName() +" + g.QuoteStart() + " (")
 		for i, f := range model.Fields {
 			if i > 0 {
 				buf.WriteByte(',')
@@ -86,7 +86,7 @@ func createTableStmt(dialect sequel.Dialect) func(string, *templates.Model) stri
 		if model.PK != nil {
 			buf.WriteString(",PRIMARY KEY (" + dialect.Wrap(model.PK.Field.ColumnName) + ")")
 		}
-		buf.WriteString(`);"`)
+		buf.WriteString(");" + g.QuoteEnd())
 		return buf.String()
 	}
 }
@@ -122,11 +122,11 @@ func alterTableStmt(dialect sequel.Dialect) func(*templates.Model) string {
 	}
 }
 
-func insertOneStmt(dialect sequel.Dialect) func(*templates.Model) string {
+func (g *Generator) insertOneStmt(dialect sequel.Dialect) func(*templates.Model) string {
 	return func(model *templates.Model) string {
 		buf := strpool.AcquireString()
 		defer strpool.ReleaseString(buf)
-		buf.WriteString(`"INSERT INTO ` + dialect.Wrap(model.TableName) + " (")
+		buf.WriteString("INSERT INTO " + dialect.Wrap(model.TableName) + " (")
 		var fields []*templates.Field
 		if model.PK != nil && model.PK.IsAutoIncr {
 			for _, f := range model.Fields {
@@ -148,18 +148,18 @@ func insertOneStmt(dialect sequel.Dialect) func(*templates.Model) string {
 			if i > 0 {
 				buf.WriteByte(',')
 			}
-			buf.WriteString(dialect.Var(i))
+			buf.WriteString(dialect.Var(i + 1))
 		}
-		buf.WriteString(`);"`)
-		return buf.String()
+		buf.WriteString(");")
+		return g.Quote(buf.String())
 	}
 }
 
-func findByPKStmt(dialect sequel.Dialect) func(*templates.Model) string {
+func (g *Generator) findByPKStmt(dialect sequel.Dialect) func(*templates.Model) string {
 	return func(model *templates.Model) string {
 		buf := strpool.AcquireString()
 		defer strpool.ReleaseString(buf)
-		buf.WriteString(`"SELECT `)
+		buf.WriteString("SELECT ")
 		for i := range model.Fields {
 			if i > 0 {
 				buf.WriteByte(',')
@@ -168,8 +168,8 @@ func findByPKStmt(dialect sequel.Dialect) func(*templates.Model) string {
 		}
 		buf.WriteString(" FROM " + dialect.Wrap(model.TableName) + " WHERE ")
 		buf.WriteString(dialect.Wrap(model.PK.Field.ColumnName))
-		buf.WriteString(` = ` + dialect.Var(1) + ` LIMIT 1;"`)
-		return buf.String()
+		buf.WriteString(" = " + dialect.Var(1) + " LIMIT 1;")
+		return g.Quote(buf.String())
 	}
 }
 
@@ -186,7 +186,7 @@ func varStmt(dialect sequel.Dialect) func(*templates.Model) string {
 			if i > 0 {
 				blr.WriteByte(',')
 			}
-			blr.WriteString(dialect.Var(i))
+			blr.WriteString(dialect.Var(i + 1))
 		}
 		blr.WriteByte(')')
 		return blr.String()

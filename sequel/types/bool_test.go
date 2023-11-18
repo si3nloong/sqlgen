@@ -45,4 +45,14 @@ func TestBool(t *testing.T) {
 		require.False(t, flag)
 		require.False(t, v.Interface())
 	})
+
+	t.Run("Value method", func(t *testing.T) {
+		var value bool
+		b := Bool(&value)
+
+		// Test Value method
+		val, err := b.Value()
+		require.NoError(t, err)
+		require.Equal(t, false, val)
+	})
 }

@@ -62,9 +62,12 @@ type DB interface {
 }
 
 type Dialect interface {
+	Driver() string
+	// argument string to escape SQL injection
 	Var(n int) string
 	Wrap(v string) string
-	Driver() string
+	// character to escape table, column name
+	QuoteChar() rune
 }
 
 type Migrator interface {
