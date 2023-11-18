@@ -15,6 +15,23 @@ import (
 	"golang.org/x/tools/imports"
 )
 
+type Generator struct {
+	dialect   sequel.Dialect
+	quoteChar rune
+}
+
+func (g Generator) QuoteStart() string {
+	return string(g.quoteChar)
+}
+
+func (g Generator) Quote(v string) string {
+	return string(g.quoteChar) + v + string(g.quoteChar)
+}
+
+func (g Generator) QuoteEnd() string {
+	return string(g.quoteChar)
+}
+
 func Init(cfg *config.Config) error {
 	tmpl, err := template.ParseFS(codegenTemplates, "templates/init.yml.go.tpl")
 	if err != nil {
@@ -50,21 +67,24 @@ func renderTemplate[T templates.ModelTmplParams | struct{}](
 		strpool.ReleaseString(blr)
 	}()
 
+	quoteChar := rune('"')
 	quote := strconv.Quote
 	switch dialect.Driver() {
 	case "postgres", "sqlite":
+		quoteChar = rune('`')
 		quote = func(s string) string {
 			return "`" + s + "`"
 		}
 	}
 
+	g := &Generator{quoteChar: quoteChar}
 	impPkg := NewPackage(pkgPath, pkgName)
 	tmpl, err := template.New(tmplName).Funcs(template.FuncMap{
 		"quote":             quote,
-		"createTable":       createTableStmt(dialect),
+		"createTable":       g.createTableStmt(dialect),
 		"alterTable":        alterTableStmt(dialect),
-		"insertOneStmt":     insertOneStmt(dialect),
-		"findByPKStmt":      findByPKStmt(dialect),
+		"insertOneStmt":     g.insertOneStmt(dialect),
+		"findByPKStmt":      g.findByPKStmt(dialect),
 		"reserveImport":     reserveImport(impPkg),
 		"castAs":            castAs(impPkg),
 		"addrOf":            addrOf(impPkg),

@@ -18,6 +18,10 @@ struct_tag: {{ .Tag }}
 # Optional: 
 skip_escape: {{ .SkipEscape }}
 
+# Optional: to add prefix to getter
+getter:
+  prefix: "Prefix"
+
 # Optional: Where should the generated model code go?
 exec:
   skip_empty: {{ .Exec.SkipEmpty }}
