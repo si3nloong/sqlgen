@@ -139,7 +139,14 @@ func UpdateByPK[T sequel.KeyValuer[T]](ctx context.Context, db sequel.DB, v T) (
 	var (
 		pkName, idx, pk = v.PK()
 		columns, values = v.Columns(), v.Values()
-		stmt            = strpool.AcquireString()
+	)
+	switch vi := any(v).(type) {
+	case sequel.KeyUpdater:
+		values = append(values[:idx], append(values[idx+1:], pk)...)
+		return db.ExecContext(ctx, vi.UpdateByPKStmt(), values...)
+	}
+	var (
+		stmt = strpool.AcquireString()
 	)
 	columns = append(columns[:idx], columns[idx+1:]...)
 	values = append(values[:idx], values[idx+1:]...)

@@ -85,6 +85,11 @@ type KeyFinder interface {
 	FindByPKStmt() string
 }
 
+type KeyUpdater interface {
+	Keyer
+	UpdateByPKStmt() string
+}
+
 type Inserter interface {
 	Columner
 	InsertVarQuery() string

@@ -83,6 +83,7 @@ func renderTemplate[T templates.ModelTmplParams | struct{}](
 		"alterTable":        alterTableStmt(dialect),
 		"insertOneStmt":     g.insertOneStmt(dialect),
 		"findByPKStmt":      g.findByPKStmt(dialect),
+		"updateByPKStmt":    g.updateByPKStmt(dialect),
 		"reserveImport":     reserveImport(impPkg),
 		"castAs":            castAs(impPkg),
 		"addrOf":            addrOf(impPkg),

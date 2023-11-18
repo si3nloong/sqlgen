@@ -3,6 +3,7 @@
 {{- reserveImport "github.com/si3nloong/sqlgen/sequel" }}
 {{ range .Models }}
 {{- $hasCustomTabler := .HasTableName -}}
+{{- $hasNotOnlyPK := .HasNotOnlyPK -}}
 {{- $structName := .GoName -}}
 func (v {{ $structName }}) CreateTableStmt() string {
 	return {{ createTable "v" . }}
@@ -10,7 +11,7 @@ func (v {{ $structName }}) CreateTableStmt() string {
 func ({{ $structName }}) AlterTableStmt() string {
 	return {{ quote (alterTable .) }}
 }
-{{ if eq $hasCustomTabler false -}}
+{{ if not $hasCustomTabler -}}
 func ({{ $structName }}) TableName() string {
 	return {{ quote (wrap .TableName) }}
 }
@@ -21,7 +22,7 @@ func (v {{ $structName }}) InsertOneStmt() string {
 func ({{ $structName }}) InsertVarQuery() string {
 	return {{ quote (varStmt .) }}
 }
-{{ if eq .HasColumn false -}}
+{{ if not .HasColumn -}}
 func ({{ $structName }}) Columns() []string {
 	return {{ "[]string{" }}{{- range $i, $f := .Fields }}{{- if $i }}{{ ", " }}{{ end }}{{ quote (wrap $f.ColumnName) }}{{ end }}{{- "}" }}
 }
@@ -33,9 +34,14 @@ func ({{ $structName }}) IsAutoIncr() {}
 func (v {{ $structName }}) PK() (columnName string, pos int, value driver.Value) {
 	return {{ quote (wrap .PK.Field.ColumnName) }}, {{ .PK.Field.Index }}, {{ castAs .PK.Field }}
 }
-{{ if eq $hasCustomTabler false -}}
+{{ if (and (not $hasCustomTabler) ($hasNotOnlyPK)) -}}
 func (v {{ $structName }}) FindByPKStmt() string {
 	return {{ findByPKStmt . }}
+}
+{{ end -}}
+{{ if (and (not $hasCustomTabler) ($hasNotOnlyPK)) -}}
+func (v {{ $structName }}) UpdateByPKStmt() string {
+	return {{ updateByPKStmt . }}
 }
 {{ end -}}
 {{ end -}}

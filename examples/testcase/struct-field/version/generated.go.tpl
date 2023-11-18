@@ -29,9 +29,6 @@ func (Version) Columns() []string {
 func (v Version) PK() (columnName string, pos int, value driver.Value) {
 	return "`id`", 0, (driver.Valuer)(v.ID)
 }
-func (v Version) FindByPKStmt() string {
-	return "SELECT `id` FROM `version` WHERE `id` = ? LIMIT 1;"
-}
 func (v Version) Values() []any {
 	return []any{(driver.Valuer)(v.ID)}
 }

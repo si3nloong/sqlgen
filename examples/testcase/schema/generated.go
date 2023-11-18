@@ -95,9 +95,6 @@ func (C) Columns() []string {
 func (v C) PK() (columnName string, pos int, value driver.Value) {
 	return "`id`", 0, int64(v.ID)
 }
-func (v C) FindByPKStmt() string {
-	return "SELECT `id` FROM `c` WHERE `id` = ? LIMIT 1;"
-}
 func (v C) Values() []any {
 	return []any{int64(v.ID)}
 }
@@ -128,9 +125,6 @@ func (D) Columns() []string {
 }
 func (v D) PK() (columnName string, pos int, value driver.Value) {
 	return "`id`", 0, (driver.Valuer)(v.ID)
-}
-func (v D) FindByPKStmt() string {
-	return "SELECT `id` FROM `d` WHERE `id` = ? LIMIT 1;"
 }
 func (v D) Values() []any {
 	return []any{(driver.Valuer)(v.ID)}

@@ -33,6 +33,9 @@ func (v AliasStruct) PK() (columnName string, pos int, value driver.Value) {
 func (v AliasStruct) FindByPKStmt() string {
 	return "SELECT `b`,`Id`,`header`,`raw`,`text`,`null_str`,`created`,`updated` FROM `alias_struct` WHERE `Id` = ? LIMIT 1;"
 }
+func (v AliasStruct) UpdateByPKStmt() string {
+	return "UPDATE `alias_struct` SET `b` = ?,`header` = ?,`raw` = ?,`text` = ?,`null_str` = ?,`created` = ?,`updated` = ? WHERE `Id` = ? LIMIT 1;"
+}
 func (v AliasStruct) Values() []any {
 	return []any{float64(v.B), int64(v.pk.ID), string(v.Header), string(v.Raw), string(v.Text), (driver.Valuer)(v.NullStr), time.Time(v.model.Created), time.Time(v.model.Updated)}
 }

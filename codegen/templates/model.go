@@ -32,6 +32,15 @@ type Model struct {
 	// HasRow bool
 }
 
+func (m Model) HasNotOnlyPK() bool {
+	for i := range m.Fields {
+		if m.PK != nil && m.Fields[i] != m.PK.Field {
+			return true
+		}
+	}
+	return false
+}
+
 type Field struct {
 	// Struct property name
 	GoName string

@@ -133,20 +133,27 @@ func UpdateByPK[T sequel.KeyValuer[T]](ctx context.Context, db sequel.DB, v T) (
 	var (
 		pkName, idx, pk = v.PK()
 		columns, values = v.Columns(), v.Values()
-		stmt            = strpool.AcquireString()
 	)
-    columns = append(columns[:idx], columns[idx+1:]...)
-    values = append(values[:idx], values[idx+1:]...)
-    var noOfCols = len(columns)
+	switch vi := any(v).(type) {
+	case sequel.KeyUpdater:
+		values = append(values[:idx], append(values[idx+1:], pk)...)
+		return db.ExecContext(ctx, vi.UpdateByPKStmt(), values...)
+	}
+	var (
+		stmt = strpool.AcquireString()
+	)
+	columns = append(columns[:idx], columns[idx+1:]...)
+	values = append(values[:idx], values[idx+1:]...)
+	var noOfCols = len(columns)
 	defer strpool.ReleaseString(stmt)
 	stmt.WriteString("UPDATE " + v.TableName() + " SET ")
 	for i := 0; i < noOfCols; i++ {
 		if i > 0 {
 			stmt.WriteByte(',')
 		}
-		stmt.WriteString(columns[i] + " = {{ var 1 }}")
+		stmt.WriteString(columns[i] + " = ?")
 	}
-	stmt.WriteString(" WHERE " + pkName + " = {{ var 1 }};")
+	stmt.WriteString(" WHERE " + pkName + " = ?;")
 	return db.ExecContext(ctx, stmt.String(), append(values, pk)...)
 }
 

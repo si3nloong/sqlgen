@@ -34,6 +34,9 @@ func (v User) PK() (columnName string, pos int, value driver.Value) {
 func (v User) FindByPKStmt() string {
 	return "SELECT `id`,`birth_date` FROM `user` WHERE `id` = ? LIMIT 1;"
 }
+func (v User) UpdateByPKStmt() string {
+	return "UPDATE `user` SET `birth_date` = ? WHERE `id` = ? LIMIT 1;"
+}
 func (v User) Values() []any {
 	return []any{(driver.Valuer)(v.ID), types.TextMarshaler(v.BirthDate)}
 }
