@@ -23,3 +23,7 @@ func (*sqliteDriver) Var(n int) string {
 func (*sqliteDriver) Wrap(v string) string {
 	return strconv.Quote(v)
 }
+
+func (*sqliteDriver) QuoteChar() rune {
+	return '"'
+}

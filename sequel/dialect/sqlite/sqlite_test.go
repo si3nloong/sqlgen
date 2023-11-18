@@ -21,4 +21,8 @@ func TestSqliteDriver(t *testing.T) {
 		require.Equal(t, `"abc"`, driver.Wrap("abc"))
 		require.Equal(t, `"abc_def"`, driver.Wrap("abc_def"))
 	})
+
+	t.Run("QuoteChar", func(t *testing.T) {
+		require.Equal(t, rune('"'), driver.QuoteChar())
+	})
 }

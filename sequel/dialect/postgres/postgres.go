@@ -23,3 +23,7 @@ func (*postgresDriver) Var(n int) string {
 func (*postgresDriver) Wrap(v string) string {
 	return strconv.Quote(v)
 }
+
+func (*postgresDriver) QuoteChar() rune {
+	return '"'
+}

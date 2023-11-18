@@ -67,20 +67,10 @@ func renderTemplate[T templates.ModelTmplParams | struct{}](
 		strpool.ReleaseString(blr)
 	}()
 
-	quoteChar := rune('"')
-	quote := strconv.Quote
-	switch dialect.Driver() {
-	case "postgres", "sqlite":
-		quoteChar = rune('`')
-		quote = func(s string) string {
-			return "`" + s + "`"
-		}
-	}
-
-	g := &Generator{quoteChar: quoteChar}
+	g := &Generator{quoteChar: dialect.QuoteChar()}
 	impPkg := NewPackage(pkgPath, pkgName)
 	tmpl, err := template.New(tmplName).Funcs(template.FuncMap{
-		"quote":             quote,
+		"quote":             g.Quote,
 		"createTable":       g.createTableStmt(dialect),
 		"alterTable":        alterTableStmt(dialect),
 		"insertOneStmt":     g.insertOneStmt(dialect),
