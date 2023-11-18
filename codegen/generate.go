@@ -67,7 +67,15 @@ func renderTemplate[T templates.ModelTmplParams | struct{}](
 		strpool.ReleaseString(blr)
 	}()
 
-	g := &Generator{quoteChar: dialect.QuoteChar()}
+	quoteChar := rune('"')
+	switch dialect.QuoteChar() {
+	case '`':
+		quoteChar = '"'
+	case '"':
+		quoteChar = '`'
+	}
+
+	g := &Generator{quoteChar: quoteChar}
 	impPkg := NewPackage(pkgPath, pkgName)
 	tmpl, err := template.New(tmplName).Funcs(template.FuncMap{
 		"quote":             g.Quote,

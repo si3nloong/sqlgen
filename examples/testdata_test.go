@@ -26,14 +26,15 @@ func TestAll(t *testing.T) {
 	const rootDir = "./testcase"
 
 	if err := codegen.Generate(&config.Config{
-		Source: []string{rootDir + "/**/*.go"},
+		Source:     []string{rootDir + "/**/*.go"},
+		SkipHeader: true,
 	}); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := patchVersionInFiles(t, rootDir); err != nil {
-		t.Fatal(err)
-	}
+	// if err := patchVersionInFiles(t, rootDir); err != nil {
+	// 	t.Fatal(err)
+	// }
 
 	// Re-generate all files
 	if err := generateModel(t, rootDir); err != nil {
