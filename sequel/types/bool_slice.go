@@ -2,19 +2,36 @@ package types
 
 import (
 	"bytes"
+	"database/sql"
+	"database/sql/driver"
 	"fmt"
 	"reflect"
 	"strconv"
 
 	"github.com/si3nloong/sqlgen/internal/strfmt"
+	"github.com/si3nloong/sqlgen/sequel/encoding"
 )
 
 type boolList[T ~bool] struct {
 	v *[]T
 }
 
+var (
+	_ driver.Valuer = boolList[bool]{}
+	_ sql.Scanner   = boolList[bool]{}
+)
+
 func BoolList[T ~bool](v *[]T) boolList[T] {
 	return boolList[T]{v: v}
+}
+
+func (s boolList[T]) Value() (driver.Value, error) {
+	if (*s.v) == nil {
+		val := make([]byte, len(nullBytes))
+		copy(val, nullBytes)
+		return val, nil
+	}
+	return encoding.MarshalBoolList(*(s.v)), nil
 }
 
 func (s boolList[T]) Scan(v any) error {
