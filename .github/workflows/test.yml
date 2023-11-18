@@ -28,10 +28,10 @@ jobs:
           go test ./examples/testdata_test.go
           go test -race -coverprofile=coverage.txt -covermode=atomic ./...
 
-      # - name: Codecov
-      #   uses: codecov/codecov-action@v2.0.3
-      #   with:
-      #     token: ${{secrets.CODECOV_TOKEN}}
+      - name: Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{secrets.CODECOV_TOKEN}}
 
       # - name: Golint
       #   run: |
