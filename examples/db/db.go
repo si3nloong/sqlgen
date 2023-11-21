@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/si3nloong/sqlgen/sequel"
 	"github.com/si3nloong/sqlgen/sequel/strpool"
@@ -120,18 +121,8 @@ func FindByPK[T sequel.KeyValuer[T], Ptr sequel.KeyValueScanner[T]](ctx context.
 	var (
 		pkName, _, pk = v.PK()
 		columns       = v.Columns()
-		stmt          = strpool.AcquireString()
 	)
-	defer strpool.ReleaseString(stmt)
-	stmt.WriteString("SELECT ")
-	for i := range columns {
-		if i > 0 {
-			stmt.WriteByte(',')
-		}
-		stmt.WriteString(columns[i])
-	}
-	stmt.WriteString(" FROM " + v.TableName() + " WHERE " + pkName + " = ? LIMIT 1;")
-	return db.QueryRowContext(ctx, stmt.String(), pk).Scan(v.Addrs()...)
+	return db.QueryRowContext(ctx, "SELECT "+strings.Join(columns, ",")+" FROM "+v.TableName()+" WHERE "+pkName+" = ? LIMIT 1;", pk).Scan(v.Addrs()...)
 }
 
 // UpdateByPK is to update single record using primary key.
@@ -213,19 +204,12 @@ func QueryStmt[T any, Ptr interface {
 	*T
 	sequel.Scanner[T]
 }, Stmt interface{ SelectStmt }](ctx context.Context, dbConn sequel.DB, stmt Stmt) ([]T, error) {
-	blr := NewStmt()
-	defer blr.Reset()
+	blr := AcquireStmt()
+	defer ReleaseStmt(blr)
 
 	switch vi := any(stmt).(type) {
 	case SelectStmt:
-		blr.WriteString("SELECT ")
-		for i := range vi.Select {
-			if i > 0 {
-				blr.WriteByte(',')
-			}
-			blr.WriteString(vi.Select[i])
-		}
-		blr.WriteString(" FROM " + vi.FromTable)
+		blr.WriteString("SELECT " + strings.Join(vi.Select, ",") + " FROM " + vi.FromTable)
 		if vi.Where != nil {
 			blr.WriteString(" WHERE ")
 			vi.Where(blr)
@@ -249,7 +233,7 @@ func QueryStmt[T any, Ptr interface {
 	if err != nil {
 		return nil, err
 	}
-	blr.Reset()
+	ReleaseStmt(blr)
 	defer rows.Close()
 
 	var result []T
@@ -284,8 +268,8 @@ type DeleteStmt struct {
 func ExecStmt[T any, Stmt interface {
 	UpdateStmt | DeleteStmt
 }](ctx context.Context, dbConn sequel.DB, stmt Stmt) (sql.Result, error) {
-	blr := NewStmt()
-	defer blr.Reset()
+	blr := AcquireStmt()
+	defer ReleaseStmt(blr)
 
 	switch vi := any(stmt).(type) {
 	case UpdateStmt:
@@ -334,8 +318,21 @@ func ExecStmt[T any, Stmt interface {
 	return dbConn.ExecContext(ctx, blr.String(), blr.Args()...)
 }
 
-func NewStmt() sequel.Stmt {
-	return &sqlStmt{}
+var (
+	pool = sync.Pool{
+		New: func() any {
+			return new(sqlStmt)
+		},
+	}
+)
+
+func AcquireStmt() sequel.Stmt {
+	return pool.Get().(*sqlStmt)
+}
+
+func ReleaseStmt(stmt sequel.Stmt) {
+	stmt.Reset()
+	pool.Put(stmt)
 }
 
 type sqlStmt struct {
