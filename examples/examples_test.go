@@ -2,7 +2,6 @@ package examples
 
 import (
 	"context"
-	"log"
 	"testing"
 	"time"
 
@@ -28,6 +27,10 @@ func TestMain(m *testing.M) {
 
 	// m1 := autopk.Model{}
 	// sqlutil.FindOne(nil, nil, &m1)
+
+	if err := db.Migrate[autopk.Model](context.TODO(), dbConn); err != nil {
+		panic(err)
+	}
 
 	if err := db.Migrate[pointer.Ptr](context.TODO(), dbConn); err != nil {
 		panic(err)
@@ -153,9 +156,30 @@ func TestInsertInto(t *testing.T) {
 			Where:     db.Equal(ptr.GetInt(), &i),
 			Limit:     3,
 		})
+		_ = ptrs
 		require.NoError(t, err)
-		log.Println(ptrs)
 	})
+}
+
+func TestUpdateOne(t *testing.T) {
+	var (
+		ctx = context.Background()
+	)
+
+	data := autopk.Model{}
+	result, err := db.InsertOne(ctx, dbConn, &data)
+	if err != nil {
+		panic(err)
+	}
+
+	i64, _ := result.LastInsertId()
+	newData := autopk.Model{}
+	newData.ID = uint(i64)
+	newData.Name = autopk.LongText(`Updated Text`)
+
+	if _, err := db.UpdateByPK(ctx, dbConn, newData); err != nil {
+		panic(err)
+	}
 }
 
 func TestDeleteOne(t *testing.T) {

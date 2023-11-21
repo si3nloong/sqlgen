@@ -13,9 +13,6 @@ import (
 
 	"github.com/si3nloong/sqlgen/codegen/config"
 	"github.com/si3nloong/sqlgen/sequel"
-	_ "github.com/si3nloong/sqlgen/sequel/dialect/mysql"
-	_ "github.com/si3nloong/sqlgen/sequel/dialect/postgres"
-	_ "github.com/si3nloong/sqlgen/sequel/dialect/sqlite"
 
 	"github.com/si3nloong/sqlgen/codegen"
 	"github.com/si3nloong/sqlgen/internal/fileutil"

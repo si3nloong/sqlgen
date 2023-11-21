@@ -20,7 +20,6 @@ func watcher() error {
 				if !ok {
 					return
 				}
-				log.Println("event:", event)
 				if event.Has(fsnotify.Write) {
 					log.Println("modified file:", event.Name)
 				}

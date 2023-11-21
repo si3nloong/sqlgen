@@ -129,35 +129,18 @@ func UpdateByPK[T sequel.KeyValuer[T]](ctx context.Context, db sequel.DB, v T) (
 	case sequel.KeyUpdater:
 		values = append(values[:idx], append(values[idx+1:], pk)...)
 		return db.ExecContext(ctx, vi.UpdateByPKStmt(), values...)
+
+	default:
+		columns = append(columns[:idx], columns[idx+1:]...)
+		values = append(values[:idx], values[idx+1:]...)
+		return db.ExecContext(ctx, "UPDATE "+v.TableName()+" SET "+strings.Join(columns, " = {{ var 1 }},")+" = {{ var 1 }} WHERE "+pkName+" = {{ var 1 }};", append(values, pk)...)
 	}
-	var (
-		stmt = strpool.AcquireString()
-	)
-	columns = append(columns[:idx], columns[idx+1:]...)
-	values = append(values[:idx], values[idx+1:]...)
-	var noOfCols = len(columns)
-	defer strpool.ReleaseString(stmt)
-	stmt.WriteString("UPDATE " + v.TableName() + " SET ")
-	for i := 0; i < noOfCols; i++ {
-		if i > 0 {
-			stmt.WriteByte(',')
-		}
-		stmt.WriteString(columns[i] + " = ?")
-	}
-	stmt.WriteString(" WHERE " + pkName + " = ?;")
-	return db.ExecContext(ctx, stmt.String(), append(values, pk)...)
 }
 
 // DeleteByPK is to update single record using primary key.
 func DeleteByPK[T sequel.KeyValuer[T]](ctx context.Context, db sequel.DB, v T) (sql.Result, error) {
-	var (
-		pkName, _, pk = v.PK()
-		stmt          = strpool.AcquireString()
-	)
-	defer strpool.ReleaseString(stmt)
-	stmt.WriteString("DELETE FROM " + v.TableName() + " WHERE " + pkName + " = {{ var 1 }};")
-
-	return db.ExecContext(ctx, stmt.String(), pk)
+	pkName, _, pk := v.PK()
+	return db.ExecContext(ctx, "DELETE FROM "+v.TableName()+" WHERE "+pkName+" = {{ var 1 }};", pk)
 }
 
 // Migrate is to create or alter the table based on the defined schemas.

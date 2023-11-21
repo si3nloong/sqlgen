@@ -11,13 +11,13 @@ func (v Model) CreateTableStmt() string {
 	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`name` VARCHAR(255) NOT NULL,`f` TINYINT NOT NULL,`id` INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,`n` BIGINT NOT NULL,PRIMARY KEY (`id`));"
 }
 func (Model) AlterTableStmt() string {
-	return "ALTER TABLE `model` MODIFY `name` VARCHAR(255) NOT NULL,MODIFY `f` TINYINT NOT NULL AFTER `name`,MODIFY `id` INTEGER UNSIGNED NOT NULL AUTO_INCREMENT AFTER `f`,MODIFY `n` BIGINT NOT NULL AFTER `id`;"
+	return "ALTER TABLE `AutoIncrPK` MODIFY `name` VARCHAR(255) NOT NULL,MODIFY `f` TINYINT NOT NULL AFTER `name`,MODIFY `id` INTEGER UNSIGNED NOT NULL AUTO_INCREMENT AFTER `f`,MODIFY `n` BIGINT NOT NULL AFTER `id`;"
 }
 func (Model) TableName() string {
-	return "`model`"
+	return "`AutoIncrPK`"
 }
 func (v Model) InsertOneStmt() string {
-	return "INSERT INTO `model` (`name`,`f`,`n`) VALUES (?,?,?);"
+	return "INSERT INTO `AutoIncrPK` (`name`,`f`,`n`) VALUES (?,?,?);"
 }
 func (Model) InsertVarQuery() string {
 	return "(?,?,?)"
@@ -30,10 +30,10 @@ func (v Model) PK() (columnName string, pos int, value driver.Value) {
 	return "`id`", 2, int64(v.ID)
 }
 func (v Model) FindByPKStmt() string {
-	return "SELECT `name`,`f`,`id`,`n` FROM `model` WHERE `id` = ? LIMIT 1;"
+	return "SELECT `name`,`f`,`id`,`n` FROM `AutoIncrPK` WHERE `id` = ? LIMIT 1;"
 }
 func (v Model) UpdateByPKStmt() string {
-	return "UPDATE `model` SET `name` = ?,`f` = ?,`n` = ? WHERE `id` = ? LIMIT 1;"
+	return "UPDATE `AutoIncrPK` SET `name` = ?,`f` = ?,`n` = ? WHERE `id` = ? LIMIT 1;"
 }
 func (v Model) Values() []any {
 	return []any{string(v.Name), bool(v.F), int64(v.ID), int64(v.N)}

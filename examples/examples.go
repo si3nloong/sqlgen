@@ -34,7 +34,3 @@ func mustNoError(err error) {
 		panic(err)
 	}
 }
-
-func ptrOf[T any](v T) *T {
-	return &v
-}
