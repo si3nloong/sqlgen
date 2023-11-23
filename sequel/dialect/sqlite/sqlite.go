@@ -8,6 +8,10 @@ import (
 
 type sqliteDriver struct{}
 
+var (
+	_ sequel.Dialect = (*sqliteDriver)(nil)
+)
+
 func init() {
 	sequel.RegisterDialect("sqlite", &sqliteDriver{})
 }

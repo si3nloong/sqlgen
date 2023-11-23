@@ -25,4 +25,8 @@ func TestPostgresDriver(t *testing.T) {
 	t.Run("QuoteChar", func(t *testing.T) {
 		require.Equal(t, rune('"'), driver.QuoteChar())
 	})
+
+	t.Run("VarChar", func(t *testing.T) {
+		require.Equal(t, "$", driver.VarChar())
+	})
 }

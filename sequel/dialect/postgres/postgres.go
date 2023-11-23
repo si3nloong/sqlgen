@@ -8,6 +8,11 @@ import (
 
 type postgresDriver struct{}
 
+var (
+	_ sequel.Dialect    = (*postgresDriver)(nil)
+	_ sequel.DialectVar = (*postgresDriver)(nil)
+)
+
 func init() {
 	sequel.RegisterDialect("postgres", &postgresDriver{})
 }
@@ -16,8 +21,12 @@ func (*postgresDriver) Driver() string {
 	return "postgres"
 }
 
-func (*postgresDriver) Var(n int) string {
-	return "$" + strconv.Itoa(n)
+func (*postgresDriver) VarChar() string {
+	return "$"
+}
+
+func (s postgresDriver) Var(n int) string {
+	return s.VarChar() + strconv.Itoa(n)
 }
 
 func (*postgresDriver) Wrap(v string) string {

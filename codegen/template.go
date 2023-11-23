@@ -216,25 +216,40 @@ func varStmt(dialect sequel.Dialect) func(*templates.Model) string {
 	}
 }
 
-type FieldTypeValue struct {
+type FieldTypeValueResult struct {
 	FuncName string
 	Type     string
 	Valuer   string
 	Value    string
 }
 
-func getFieldTypeValue(impPkgs *Package, prefix string) func(*templates.Field) FieldTypeValue {
-	return func(f *templates.Field) FieldTypeValue {
+func getFieldTypeValue(impPkgs *Package, prefix string) func(*templates.Field) FieldTypeValueResult {
+	return func(f *templates.Field) FieldTypeValueResult {
 		typeStr := f.Type.String()
 		if idx := strings.Index(typeStr, "."); idx > 0 {
 			typeStr = Expr(typeStr).Format(impPkgs)
 		}
-		return FieldTypeValue{
+		return FieldTypeValueResult{
 			FuncName: prefix + f.GoName,
 			Type:     typeStr,
 			Valuer:   castAs(impPkgs)(f),
 			Value:    "v." + f.GoName,
 		}
+	}
+}
+
+type DialectVarResult struct {
+	Var       string
+	IsVarSame bool
+}
+
+func dialectVar(dialect sequel.Dialect) func() DialectVarResult {
+	return func() DialectVarResult {
+		v, ok := dialect.(sequel.DialectVar)
+		if ok {
+			return DialectVarResult{Var: v.VarChar(), IsVarSame: false}
+		}
+		return DialectVarResult{Var: dialect.Var(1), IsVarSame: true}
 	}
 }
 
@@ -321,12 +336,4 @@ func inspectDataType(f *templates.Field) (dataType string, null bool) {
 		t = prev
 	}
 	return "VARCHAR(255)", len(ptrs) > 0
-}
-
-func newPointer(t types.Type) *types.Pointer {
-	v, ok := t.(*types.Pointer)
-	if ok {
-		return v
-	}
-	return types.NewPointer(t)
 }

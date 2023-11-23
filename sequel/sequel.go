@@ -70,6 +70,10 @@ type Dialect interface {
 	QuoteChar() rune
 }
 
+type DialectVar interface {
+	VarChar() string
+}
+
 type Migrator interface {
 	Tabler
 	CreateTableStmt() string

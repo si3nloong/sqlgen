@@ -73,3 +73,11 @@ loop:
 	}
 	return nil, false
 }
+
+func newPointer(t types.Type) *types.Pointer {
+	v, ok := t.(*types.Pointer)
+	if ok {
+		return v
+	}
+	return types.NewPointer(t)
+}

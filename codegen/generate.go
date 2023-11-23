@@ -91,6 +91,7 @@ func renderTemplate[T templates.ModelTmplParams | struct{}](
 		"getFieldTypeValue": getFieldTypeValue(impPkg, getter),
 		"varStmt":           varStmt(dialect),
 		"var":               dialect.Var,
+		"dialectVar":        dialectVar(dialect),
 	}).ParseFS(codegenTemplates, "templates/"+tmplName)
 	if err != nil {
 		return err

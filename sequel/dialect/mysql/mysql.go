@@ -4,6 +4,10 @@ import "github.com/si3nloong/sqlgen/sequel"
 
 type mysqlDriver struct{}
 
+var (
+	_ sequel.Dialect = (*mysqlDriver)(nil)
+)
+
 func init() {
 	sequel.RegisterDialect("mysql", &mysqlDriver{})
 }

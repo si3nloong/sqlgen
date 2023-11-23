@@ -5,6 +5,10 @@
 {{- reserveImport "sync" }}
 {{- reserveImport "github.com/si3nloong/sqlgen/sequel" }}
 {{- reserveImport "github.com/si3nloong/sqlgen/sequel/strpool" }}
+
+const _getTableSQL = "SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_NAME = {{ var 1 }} LIMIT 1;"
+
+{{ $dialect := dialectVar }}
 func InsertOne[T sequel.TableColumnValuer[T], Ptr interface {
 	sequel.TableColumnValuer[T]
 	sequel.Scanner[T]
@@ -29,18 +33,21 @@ func InsertOne[T sequel.TableColumnValuer[T], Ptr interface {
 		columns = append(columns[:idx], columns[idx+1:]...)
 		args = append(args[:idx], args[idx+1:]...)
 	}
+	{{ if not $dialect.IsVarSame -}}
 	stmt := strpool.AcquireString()
 	defer strpool.ReleaseString(stmt)
-	stmt.WriteString("INSERT INTO " + v.TableName() + " (" + strings.Join(columns, ",") + ") VALUES ")
-	stmt.WriteByte('(')
+	stmt.WriteString("INSERT INTO " + v.TableName() + " (" + strings.Join(columns, ",") + ") VALUES (")
 	for i := range args {
 		if i > 0 {
 			stmt.WriteByte(',')
 		}
-		stmt.WriteString("?")
+		stmt.WriteString(wrapVar(i))
 	}
 	stmt.WriteString(");")
 	return db.ExecContext(ctx, stmt.String(), args...)
+	{{ else -}}
+	return db.ExecContext(ctx, "INSERT INTO "+ v.TableName() +" ("+ strings.Join(columns, ",") +") VALUES ("+ strings.Repeat({{ quote (print "," $dialect.Var) }}, len(columns))[1:]+")", args...)
+	{{ end -}}
 }
 
 // InsertInto is a helper function to insert your records.
@@ -85,11 +92,18 @@ func InsertInto[T sequel.TableColumnValuer[T]](ctx context.Context, db sequel.DB
 		} else {
 			stmt.WriteByte('(')
 		}
+		{{ if not $dialect.IsVarSame -}}
+		offset := noOfCols * i
+		{{ end -}}
 		for j := 0; j < noOfCols; j++ {
 			if j > 0 {
 				stmt.WriteByte(',')
 			}
-			stmt.WriteString("?")
+			{{ if $dialect.IsVarSame -}}
+			stmt.WriteString({{ quote $dialect.Var }})
+			{{ else -}}
+			stmt.WriteString(wrapVar(offset + j))
+			{{ end -}}
 		}
 		if idx > -1 {
 			values := data[i].Values()
@@ -116,7 +130,7 @@ func FindByPK[T sequel.KeyValuer[T], Ptr sequel.KeyValueScanner[T]](ctx context.
 		pkName, _, pk = v.PK()
 		columns       = v.Columns()
 	)
-	return db.QueryRowContext(ctx, "SELECT "+strings.Join(columns, ",")+" FROM "+v.TableName()+" WHERE "+pkName+" = ? LIMIT 1;", pk).Scan(v.Addrs()...)
+	return db.QueryRowContext(ctx, "SELECT "+strings.Join(columns, ",")+" FROM "+v.TableName()+" WHERE "+pkName+" = {{ var 1 }} LIMIT 1;", pk).Scan(v.Addrs()...)
 }
 
 // UpdateByPK is to update single record using primary key.
@@ -133,7 +147,22 @@ func UpdateByPK[T sequel.KeyValuer[T]](ctx context.Context, db sequel.DB, v T) (
 	default:
 		columns = append(columns[:idx], columns[idx+1:]...)
 		values = append(values[:idx], values[idx+1:]...)
+		{{ if $dialect.IsVarSame -}}
 		return db.ExecContext(ctx, "UPDATE "+v.TableName()+" SET "+strings.Join(columns, " = {{ var 1 }},")+" = {{ var 1 }} WHERE "+pkName+" = {{ var 1 }};", append(values, pk)...)
+		{{ else -}}
+		stmt := strpool.AcquireString()
+		defer strpool.ReleaseString(stmt)
+		stmt.WriteString("UPDATE "+ v.TableName()+ " SET ")
+		for idx := range columns {
+			if idx > 0 {
+				stmt.WriteByte(',')
+			}
+			stmt.WriteString(columns[idx] +" = "+ wrapVar(idx + 1))
+		}
+		stmt.WriteString(" WHERE "+ pkName +" = "+ wrapVar(len(columns) + 2)+ ";")
+		return db.ExecContext(ctx, stmt.String(), append(values, pk)...)
+		{{ end -}}
+
 	}
 }
 
@@ -149,10 +178,8 @@ func Migrate[T sequel.Migrator](ctx context.Context, db sequel.DB) error {
 		v           T
 		table       string
 		tableExists bool
-		stmt        = strpool.AcquireString()
 	)
-	defer strpool.ReleaseString(stmt)
-	if err := db.QueryRowContext(ctx, "SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_NAME = {{ var 1 }} LIMIT 1;", v.TableName()).Scan(&table); err != nil {
+	if err := db.QueryRowContext(ctx, _getTableSQL, v.TableName()).Scan(&table); err != nil {
 		tableExists = false
 	} else {
 		tableExists = true
@@ -174,6 +201,7 @@ type SelectStmt struct {
 	FromTable string
 	Where     sequel.WhereClause
 	OrderBy   []sequel.OrderByClause
+	Offset	  uint64
 	Limit     uint16
 }
 
@@ -202,6 +230,9 @@ func QueryStmt[T any, Ptr interface {
 		}
 		if vi.Limit > 0 {
 			blr.WriteString(" LIMIT " + strconv.FormatUint(uint64(vi.Limit), 10))
+		}
+		if vi.Offset > 0 {
+			blr.WriteString(" OFFSET " + strconv.FormatUint(vi.Offset, 10))
 		}
 		blr.WriteByte(';')
 	}
@@ -314,23 +345,35 @@ func ReleaseStmt(stmt sequel.Stmt) {
 
 type sqlStmt struct {
 	strings.Builder
-	pos  uint
+	pos  int
 	args []any
 }
 
 func (s *sqlStmt) Var(query string, value any) {
-	s.WriteString(query)
-	s.WriteByte('?')
-	s.args = append(s.args, value)
 	s.pos++
+	{{ if $dialect.IsVarSame -}}
+	s.WriteString(query+"?")
+	{{ else -}}
+	s.WriteString(wrapVar(s.pos))
+	{{ end -}}
+	s.args = append(s.args, value)
 }
 
 func (s *sqlStmt) Vars(query string, values []any) {
 	s.WriteString(query)
 	noOfLen := len(values)
-	s.WriteString("(" + strings.Repeat("?,", noOfLen)[:(noOfLen*2)-1] + ")")
+	{{ if $dialect.IsVarSame -}}
+	s.WriteString("(" + strings.Repeat(",?", noOfLen)[1:] + ")")
+	{{ else -}}
+	s.WriteByte('(')
+	i := s.pos
+	s.pos += noOfLen
+	for ; i < s.pos; i++ {
+		s.WriteString(wrapVar(i + 1))
+	}
+	s.WriteByte(')')
+	{{ end -}}
 	s.args = append(s.args, values...)
-	s.pos += uint(noOfLen)
 }
 
 func (s sqlStmt) Args() []any {
@@ -342,3 +385,9 @@ func (s *sqlStmt) Reset() {
 	s.pos = 0
 	s.Builder.Reset()
 }
+
+{{ if not $dialect.IsVarSame -}}
+func wrapVar(i int) string {
+	return "{{ $dialect.Var }}"+ strconv.Itoa(i)
+}
+{{ end }}
