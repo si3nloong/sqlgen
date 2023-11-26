@@ -7,6 +7,15 @@ import (
 	"github.com/si3nloong/sqlgen/sequel/strpool"
 )
 
+func firstEl[T map[K]V, K, V comparable](mapItem T) V {
+	var v V
+	for _, item := range mapItem {
+		v = item
+		break
+	}
+	return v
+}
+
 func toID(val []int) string {
 	buf := strpool.AcquireString()
 	defer strpool.ReleaseString(buf)

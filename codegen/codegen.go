@@ -4,8 +4,12 @@ import (
 	"embed"
 	"fmt"
 	"go/ast"
+	"go/importer"
+	"go/parser"
+	"go/token"
 	"go/types"
 	"io/fs"
+	"log"
 	"os"
 	"os/exec"
 	"path"
@@ -250,31 +254,68 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 
 		filename = path.Join(dir, cfg.Exec.Filename)
 		// Remove the generated file, ignore the error
-		os.Remove(filename)
+		// os.Remove(filename)
 
-		pkgs, err := packages.Load(&packages.Config{
-			Dir:  dir,
-			Mode: mode,
-		})
+		// pkgs, err := packages.Load(&packages.Config{
+		// 	Dir:  dir,
+		// 	Mode: mode,
+		// })
+		// if err != nil {
+		// 	return err
+		// } else if len(pkgs) == 0 {
+		// 	return nil
+		// }
+
+		fset := token.NewFileSet()
+
+		pkgs, err := parser.ParseDir(fset, dir, func(fi fs.FileInfo) bool {
+			filename := fi.Name()
+			if strings.HasSuffix(filename, "_test.go") || strings.EqualFold(cfg.Exec.Filename, filename) {
+				return false
+			}
+			return true
+		}, parser.AllErrors)
 		if err != nil {
 			return err
 		} else if len(pkgs) == 0 {
 			return nil
 		}
 
-		var (
-			pkg = pkgs[0]
-		)
+		// var (
+		// 	pkg = firstEl(pkgs)
+		// )
 
-		if len(pkg.Errors) > 0 {
-			return pkg.Errors[0]
+		// log.Println(pkg.Files)
+
+		log.Println("DEBUG =======>")
+		log.Println(rename, dialect, filename)
+		files := lo.MapToSlice(firstEl(pkgs).Files, func(_ string, f *ast.File) *ast.File {
+			return f
+		})
+		log.Println(len(files), files)
+
+		conf := &types.Config{Importer: importer.Default()}
+		info := &types.Info{
+			Types:      make(map[ast.Expr]types.TypeAndValue),
+			Selections: make(map[*ast.SelectorExpr]*types.Selection),
+			Defs:       make(map[*ast.Ident]types.Object),
+			Uses:       make(map[*ast.Ident]types.Object),
+			Scopes:     make(map[ast.Node]*types.Scope),
+		}
+
+		log.Println(info.Scopes)
+		pkg, err := conf.Check(dir, fset, files, info)
+		if err != nil {
+			log.Println("Err =>", err)
+			return err
 		}
 
 		var (
 			structCaches = make([]structCache, 0)
 		)
 
-		for _, f := range pkg.Syntax {
+		// for _, f := range pkg.Syntax {
+		for _, f := range files {
 			// ast.Print(pkg.Fset, f)
 			ast.Inspect(f, func(node ast.Node) bool {
 				typeSpec := assertAsPtr[ast.TypeSpec](node)
@@ -288,12 +329,14 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 					return true
 				}
 
-				filename = pkg.Fset.Position(typeSpec.Name.NamePos).Filename
+				// filename = pkg.Fset.Position(typeSpec.Name.NamePos).Filename
+				filename = fset.Position(typeSpec.Name.NamePos).Filename
 				if !matcher.Match(filename) {
 					return true
 				}
 
-				objType := pkg.TypesInfo.ObjectOf(typeSpec.Name)
+				// objType := pkg.TypesInfo.ObjectOf(typeSpec.Name)
+				objType := info.ObjectOf(typeSpec.Name)
 				// We're not interested in the unexported type
 				if !objType.Exported() {
 					return true
@@ -309,35 +352,38 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 				// ```
 				switch t := typeSpec.Type.(type) {
 				case *ast.StructType:
-					structCaches = append(structCaches, structCache{name: typeSpec.Name, t: t, pkg: pkg})
+					structCaches = append(structCaches, structCache{name: typeSpec.Name, t: t, pkg: nil})
 
 				case *ast.SelectorExpr:
-					var (
-						pkgPath   = pkg.TypesInfo.ObjectOf(t.Sel).Pkg()
-						importPkg = pkg.Imports[pkgPath.Path()]
-						obj       *ast.Object
-					)
+					log.Println("HERE ===>")
+					log.Println(info.Selections[t].Obj())
 
-					for i := range importPkg.Syntax {
-						obj = importPkg.Syntax[i].Scope.Lookup(t.Sel.Name)
-						if obj != nil {
-							break
-						}
-					}
+					// var (
+					// 	pkgPath   = pkg.TypesInfo.ObjectOf(t.Sel).Pkg()
+					// 	importPkg = pkg.Imports[pkgPath.Path()]
+					// 	obj       *ast.Object
+					// )
 
-					// Skip if unable to find the specific object
-					if obj == nil {
-						return true
-					}
+					// for i := range importPkg.Syntax {
+					// 	obj = importPkg.Syntax[i].Scope.Lookup(t.Sel.Name)
+					// 	if obj != nil {
+					// 		break
+					// 	}
+					// }
 
-					decl := assertAsPtr[ast.TypeSpec](obj.Decl)
-					if decl == nil {
-						return true
-					}
+					// // Skip if unable to find the specific object
+					// if obj == nil {
+					// 	return true
+					// }
 
-					if v := assertAsPtr[ast.StructType](decl.Type); v != nil {
-						structCaches = append(structCaches, structCache{name: typeSpec.Name, t: v, pkg: importPkg})
-					}
+					// decl := assertAsPtr[ast.TypeSpec](obj.Decl)
+					// if decl == nil {
+					// 	return true
+					// }
+
+					// if v := assertAsPtr[ast.StructType](decl.Type); v != nil {
+					// 	structCaches = append(structCaches, structCache{name: typeSpec.Name, t: v, pkg: importPkg})
+					// }
 				}
 				return true
 			})
@@ -436,7 +482,7 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 							if st := assertAsPtr[ast.StructType](decl.Type); st != nil {
 								q = append(q, typeQueue{path: path, idx: append(f.idx, i), t: st, pkg: importPkg})
 
-								fields = append(fields, structField{id: toID(append(f.idx, i)), exported: vi.Sel.IsExported(), embedded: true, name: types.ExprString(vi.Sel), tag: tag, path: path, t: f.pkg.TypesInfo.TypeOf(fi.Type)})
+								fields = append(fields, structField{id: toID(append(f.idx, i)), exported: vi.Sel.IsExported(), embedded: true, name: types.ExprString(vi.Sel), tag: tag, path: path, t: info.TypeOf(fi.Type)})
 							}
 							continue
 						}
@@ -448,7 +494,7 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 							path = f.path + "." + path
 						}
 
-						fields = append(fields, structField{id: toID(append(f.idx, i+j)), exported: n.IsExported(), name: types.ExprString(n), tag: tag, path: path, t: f.pkg.TypesInfo.TypeOf(fi.Type)})
+						fields = append(fields, structField{id: toID(append(f.idx, i+j)), exported: n.IsExported(), name: types.ExprString(n), tag: tag, path: path, t: info.TypeOf(fi.Type)})
 					}
 				}
 
@@ -460,7 +506,7 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 				sort.Slice(fields, func(i, j int) bool {
 					return fields[j].id > fields[i].id
 				})
-				structs = append(structs, structType{name: s.name, fields: fields, t: pkg.TypesInfo.TypeOf(s.name)})
+				structs = append(structs, structType{name: s.name, fields: fields, t: info.TypeOf(s.name)})
 			}
 
 			structCaches = structCaches[1:]
@@ -611,8 +657,8 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 			"model.go.tpl",
 			cfg.SkipHeader,
 			dialect,
-			pkg.PkgPath,
-			pkg.Name,
+			pkg.Path(),
+			pkg.Name(),
 			cfg.Getter.Prefix,
 			dir,
 			cfg.Exec.Filename,
