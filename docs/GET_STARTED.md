@@ -5,7 +5,7 @@
 1.  Install `sqlgen` CLI.
 
     ```console
-    go install github.com/si3nloong/sqlgen@main
+    go install github.com/si3nloong/sqlgen/cmd@main
     ```
 
 2.  Define your [model](./MODELS.md) struct.
