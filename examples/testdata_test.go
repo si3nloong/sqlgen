@@ -11,8 +11,8 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/si3nloong/sqlgen"
 	"github.com/si3nloong/sqlgen/codegen/config"
-	"github.com/si3nloong/sqlgen/sequel"
 
 	"github.com/si3nloong/sqlgen/codegen"
 	"github.com/si3nloong/sqlgen/internal/fileutil"
@@ -71,7 +71,7 @@ func patchVersionInFiles(t *testing.T, rootDir string) error {
 		line := b[:idx]
 		matches := headerRegex.FindSubmatch(line)
 		if len(matches) > 1 {
-			newVersion := []byte(sequel.Version)
+			newVersion := []byte(sqlgen.Version)
 			if bytes.Equal(matches[1], newVersion) {
 				return nil
 			}

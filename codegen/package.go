@@ -8,7 +8,7 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-const mode = packages.NeedName |
+const pkgMode = packages.NeedName |
 	// packages.NeedFiles |
 	packages.NeedImports |
 	packages.NeedTypes |

@@ -6,7 +6,7 @@ import (
 	"github.com/fsnotify/fsnotify"
 )
 
-func watcher() error {
+func watcher(dir string) error {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return err

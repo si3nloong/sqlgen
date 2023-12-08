@@ -51,6 +51,7 @@ func Execute() {
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 	rootCmd.Flags().StringVarP(&rootOpts.config, "config", "c", "", "config file")
+	// rootCmd.Flags().BoolVarP(&rootOpts.watch, "watch", "w", false, "watch the file changes and re-generate.")
 	rootCmd.PersistentFlags().BoolVarP(&rootOpts.verbose, "verbose", "v", false, "shows the logs")
 	cobra.CheckErr(rootCmd.Execute())
 }

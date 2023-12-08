@@ -30,6 +30,6 @@ var (
 )
 
 func init() {
-	// genCmd.Flags().BoolVarP(&genOpts.watch, "watch", "w", false, "watch the file changes and re-generate.")
+	genCmd.Flags().BoolVarP(&genOpts.watch, "watch", "w", false, "watch the file changes and re-generate.")
 	genCmd.Flags().BoolVarP(&genOpts.force, "force", "f", false, "force to execute")
 }

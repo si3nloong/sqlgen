@@ -254,7 +254,7 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 
 		pkgs, err := packages.Load(&packages.Config{
 			Dir:  dir,
-			Mode: mode,
+			Mode: pkgMode,
 		})
 		if err != nil {
 			return err
