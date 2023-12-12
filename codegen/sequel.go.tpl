@@ -9,7 +9,7 @@ import (
 )
 
 // For rename table name
-type Name struct{}
+type Table struct{}
 
 type Scanner[T any] interface {
 	*T
@@ -62,9 +62,16 @@ type DB interface {
 }
 
 type Dialect interface {
+	Driver() string
+	// argument string to escape SQL injection
 	Var(n int) string
 	Wrap(v string) string
-	Driver() string
+	// character to escape table, column name
+	QuoteChar() rune
+}
+
+type DialectVar interface {
+	VarChar() string
 }
 
 type Migrator interface {
@@ -80,6 +87,11 @@ type SingleInserter interface {
 type KeyFinder interface {
 	Keyer
 	FindByPKStmt() string
+}
+
+type KeyUpdater interface {
+	Keyer
+	UpdateByPKStmt() string
 }
 
 type Inserter interface {

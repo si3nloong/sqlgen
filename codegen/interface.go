@@ -41,23 +41,19 @@ func init() {
 			binaryUnmarshaler = p.Types.Scope().Lookup("BinaryUnmarshaler").Type().Underlying().(*types.Interface)
 			textMarshaler = p.Types.Scope().Lookup("TextMarshaler").Type().Underlying().(*types.Interface)
 			textUnmarshaler = p.Types.Scope().Lookup("TextUnmarshaler").Type().Underlying().(*types.Interface)
-			// case "github.com/si3nloong/sqlgen/sequel":
-			// 	sqlTabler = p.Types.Scope().Lookup("Tabler").Type().Underlying().(*types.Interface)
-			// 	sqlColumner = p.Types.Scope().Lookup("Columner").Type().Underlying().(*types.Interface)
-			// sqlRower = p.Types.Scope().Lookup("Valuer").Type().Underlying().(*types.Interface)
 		}
-
-		fset := token.NewFileSet()
-		f, err := parser.ParseFile(fset, "", sqlBytes, parser.AllErrors)
-		if err != nil {
-			panic(err)
-		}
-		conf := types.Config{Importer: importer.Default()}
-		pkg, err := conf.Check("sequel", fset, []*ast.File{f}, nil)
-		if err != nil {
-			panic(err)
-		}
-		sqlTabler = pkg.Scope().Lookup("Tabler").Type().Underlying().(*types.Interface)
-		sqlColumner = pkg.Scope().Lookup("Columner").Type().Underlying().(*types.Interface)
 	}
+
+	fset := token.NewFileSet()
+	f, err := parser.ParseFile(fset, "", sqlBytes, parser.AllErrors)
+	if err != nil {
+		panic(err)
+	}
+	conf := types.Config{Importer: importer.Default()}
+	pkg, err := conf.Check("sequel", fset, []*ast.File{f}, nil)
+	if err != nil {
+		panic(err)
+	}
+	sqlTabler = pkg.Scope().Lookup("Tabler").Type().Underlying().(*types.Interface)
+	sqlColumner = pkg.Scope().Lookup("Columner").Type().Underlying().(*types.Interface)
 }

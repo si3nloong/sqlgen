@@ -53,9 +53,7 @@ func InsertInto[T sequel.TableColumnValuer[T]](ctx context.Context, db sequel.DB
 		idx      = -1
 		noOfCols = len(columns)
 		args     = make([]any, 0, noOfCols*len(data))
-		stmt     = strpool.AcquireString()
 	)
-	defer strpool.ReleaseString(stmt)
 
 	switch vi := any(model).(type) {
 	case sequel.AutoIncrKeyer:
@@ -64,17 +62,12 @@ func InsertInto[T sequel.TableColumnValuer[T]](ctx context.Context, db sequel.DB
 		columns = append(columns[:idx], columns[idx+1:]...)
 
 	case sequel.Inserter:
-		stmt.WriteString("INSERT INTO " + model.TableName() + " (" + strings.Join(columns, ",") + ") VALUES ")
-		for i := range data {
-			if i > 0 {
-				stmt.WriteByte(',')
-			}
-			stmt.WriteString(vi.InsertVarQuery())
-		}
-		stmt.WriteByte(';')
-		return db.ExecContext(ctx, stmt.String(), args...)
+		query := strings.Repeat(vi.InsertVarQuery(), len(data))
+		return db.ExecContext(ctx, "INSERT INTO "+model.TableName()+" ("+strings.Join(columns, ",")+") VALUES "+query[:len(query)-1]+";", args...)
 	}
 
+	var stmt = strpool.AcquireString()
+	defer strpool.ReleaseString(stmt)
 	stmt.WriteString("INSERT INTO " + model.TableName() + " (" + strings.Join(columns, ",") + ") VALUES ")
 	for i := range data {
 		if i > 0 {
