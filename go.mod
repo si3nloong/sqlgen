@@ -3,7 +3,7 @@ module github.com/si3nloong/sqlgen
 go 1.21
 
 require (
-	cloud.google.com/go v0.111.0
+	cloud.google.com/go v0.112.0
 	github.com/AlecAivazis/survey/v2 v2.3.7
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/samber/lo v1.39.0
@@ -24,7 +24,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	golang.org/x/mod v0.14.0 // indirect
-	golang.org/x/sys v0.14.0 // indirect
+	golang.org/x/sys v0.15.0 // indirect
 	golang.org/x/term v0.6.0 // indirect
-	golang.org/x/text v0.13.0 // indirect
+	golang.org/x/text v0.14.0 // indirect
 )
