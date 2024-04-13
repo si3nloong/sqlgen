@@ -6,6 +6,7 @@ import (
 	"go/ast"
 	"go/types"
 	"io/fs"
+	"log/slog"
 	"os"
 	"os/exec"
 	"path"
@@ -36,6 +37,8 @@ const (
 	TagOptionBinary        tagOption = "binary"
 	TagOptionPKAlias       tagOption = "pk"
 	TagOptionPK            tagOption = "primary_key"
+	TagOptionFKAlias       tagOption = "fk"
+	TagOptionFK            tagOption = "foreign_key"
 	TagOptionUnsigned      tagOption = "unsigned"
 	TagOptionSize          tagOption = "size"
 	TagOptionDataType      tagOption = "data_type"
@@ -119,6 +122,8 @@ func Generate(c *config.Config) error {
 			srcDir = filepath.Join(fileutil.Getpwd(), srcDir)
 		}
 
+		slog.Info("Processing", "dir", srcDir)
+
 		// File: examples/testdata/test.go
 		// Folder: examples/testdata
 		// Wildcard: [examples/**, examples/testdata/**/*.go,  examples/testdata/**/*]
@@ -153,6 +158,7 @@ func Generate(c *config.Config) error {
 		} else if len(subMatches) > 0 {
 			rootDir = strings.TrimSuffix(subMatches[1], "/")
 			dirs = append(dirs, "")
+			slog.Info("Submatch", "rootDir", rootDir, "dir", path2Regex.Replace(srcDir))
 			matcher = &RegexMatcher{regexp.MustCompile(path2Regex.Replace(srcDir))}
 		} else {
 			fi, err := os.Stat(srcDir)
@@ -243,7 +249,9 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 
 	for len(dirs) > 0 {
 		dir = path.Join(rootDir, dirs[0])
+		slog.Info("Process", "dir", dir)
 		if fileutil.IsDirEmptyFiles(dir, cfg.Exec.Filename) {
+			slog.Info("Folder is empty, so not processing")
 			dirs = dirs[1:]
 			continue
 		}
@@ -252,6 +260,7 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 		// Remove the generated file, ignore the error
 		os.Remove(filename)
 
+		// slog.Info("Load package", "dir", dir)
 		pkgs, err := packages.Load(&packages.Config{
 			Dir:  dir,
 			Mode: pkgMode,
@@ -386,15 +395,28 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 						switch vi := fi.Type.(type) {
 						// Local struct
 						case *ast.Ident:
-							// Object can be nil
+							// Object is nil when it's not found in current scope (different file)
+							obj := vi.Obj
 							if vi.Obj == nil {
+								// Since it's a local struct, we will find it in the local module files
+								for i := range f.pkg.Syntax {
+									obj = f.pkg.Syntax[i].Scope.Lookup(vi.Name)
+									// exit when found the struct
+									if obj != nil {
+										break
+									}
+								}
+							}
+
+							if obj == nil {
 								continue
 							}
+
 							path := types.ExprString(vi)
 							if f.path != "" {
 								path = f.path + "." + path
 							}
-							t := vi.Obj.Decl.(*ast.TypeSpec)
+							t := obj.Decl.(*ast.TypeSpec)
 							q = append(q, typeQueue{path: path, idx: append(f.idx, i), t: t.Type.(*ast.StructType), pkg: f.pkg})
 
 							fields = append(fields, structField{id: toID(append(f.idx, i)), exported: vi.IsExported(), embedded: true, name: types.ExprString(vi), tag: tag, path: path, t: f.pkg.TypesInfo.TypeOf(fi.Type)})

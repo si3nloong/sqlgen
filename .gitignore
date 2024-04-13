@@ -19,4 +19,4 @@ vendor/
 coverage.txt
 tmp
 sqlgen.yml
-sqlgen
+/sqlgen

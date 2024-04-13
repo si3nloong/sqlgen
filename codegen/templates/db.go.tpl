@@ -234,8 +234,8 @@ func QueryStmt[T any, Ptr interface {
 	if err != nil {
 		return nil, err
 	}
-	ReleaseStmt(blr)
 	defer rows.Close()
+	ReleaseStmt(blr)
 
 	var result []T
 	for rows.Next() {

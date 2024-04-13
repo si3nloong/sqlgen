@@ -17,9 +17,10 @@ import (
 type SqlDriver string
 
 const (
-	MySQL    SqlDriver = "mysql"
-	Postgres SqlDriver = "postgres"
-	Sqlite   SqlDriver = "sqlite"
+	MySQL      SqlDriver = "mysql"
+	Postgres   SqlDriver = "postgres"
+	Sqlite     SqlDriver = "sqlite"
+	Clickhouse SqlDriver = "clickhouse"
 )
 
 type naming string

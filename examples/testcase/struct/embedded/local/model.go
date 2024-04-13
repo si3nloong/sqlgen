@@ -8,6 +8,7 @@ type a struct {
 
 type B struct {
 	a
+	ts
 	// // FIXME: embedded will never overwrite parent property
 	// Name string
 }

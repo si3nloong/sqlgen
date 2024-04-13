@@ -28,7 +28,7 @@
 1.  Install sqlgen.
 
     ```console
-    go install github.com/si3nloong/sqlgen/cmd@main
+    go install github.com/si3nloong/sqlgen/cmd/sqlgen@main
     ```
 
 2.  Define your [model](./docs/MODELS.md) struct.
