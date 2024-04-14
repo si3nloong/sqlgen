@@ -5,11 +5,11 @@ jobs:
   test:
     strategy:
       matrix:
-        # os: [ubuntu-latest, windows-latest]
-        os: [ubuntu-latest]
-        go: ["1.21"]
+        os: [ubuntu-latest, windows-latest]
+        # os: [ubuntu-latest]
+        go: ["1.21", "1.22"]
     runs-on: ${{ matrix.os }}
-    # continue-on-error: false
+    continue-on-error: false
     steps:
       - name: Check out code into the Go module directory
         uses: actions/checkout@v4
