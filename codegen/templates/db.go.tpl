@@ -3,11 +3,10 @@
 {{- reserveImport "strings" }}
 {{- reserveImport "strconv" }}
 {{- reserveImport "sync" }}
-{{- reserveImport "fmt" }}
 {{- reserveImport "github.com/si3nloong/sqlgen/sequel" }}
 {{- reserveImport "github.com/si3nloong/sqlgen/sequel/strpool" }}
 
-const _getTableSQL = "SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_NAME = %s LIMIT 1;"
+const _getTableSQL = "SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_NAME = {{ var 1 }} LIMIT 1;"
 
 {{ $dialect := dialectVar }}
 func InsertOne[T sequel.TableColumnValuer[T], Ptr interface {
@@ -173,7 +172,8 @@ func Migrate[T sequel.Migrator](ctx context.Context, db sequel.DB) error {
 		table       string
 		tableExists bool
 	)
-	if err := db.QueryRowContext(ctx, fmt.Sprintf(_getTableSQL, v.TableName())).Scan(&table); err != nil {
+	tableName, _ := strconv.Unquote(v.TableName())
+	if err := db.QueryRowContext(ctx, _getTableSQL, tableName).Scan(&table); err != nil {
 		tableExists = false
 	} else {
 		tableExists = true

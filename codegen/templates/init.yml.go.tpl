@@ -5,7 +5,7 @@ src:
 {{- end }}
 
 # Optional: 
-# Possibly values : `mysql`, `postgres` or `sqlite`
+# Possibly values : `mysql`, `postgres`, `sqlite` or `clickhouse`
 driver: {{ .Driver }}
 
 # Optional: 
