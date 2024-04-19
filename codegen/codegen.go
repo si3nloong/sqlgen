@@ -135,6 +135,11 @@ func Generate(c *config.Config) error {
 			srcDir = filepath.Join(fileutil.Getpwd(), srcDir)
 		}
 
+		// If suffix is *, we will add go extension to it
+		if srcDir[len(srcDir)-1] == '*' {
+			srcDir = srcDir + ".go"
+		}
+
 		slog.Info("Processing", "dir", srcDir)
 
 		// File: examples/testdata/test.go
@@ -258,6 +263,15 @@ func parseGoPackage(cfg *config.Config, dialect sequel.Dialect, rootDir string, 
 
 	for len(dirs) > 0 {
 		dir = path.Join(rootDir, dirs[0])
+		// Skip if the file is exists in db folder
+		if idx := sort.SearchStrings([]string{
+			path.Join(fileutil.Getpwd(), cfg.Database.Dir),
+			path.Join(fileutil.Getpwd(), cfg.Database.Operator.Dir),
+		}, dir); idx != 2 {
+			dirs = dirs[1:]
+			continue
+		}
+
 		slog.Info("Process", "dir", dir)
 		if fileutil.IsDirEmptyFiles(dir, cfg.Exec.Filename) {
 			slog.Info("Folder is empty, so not processing")

@@ -23,7 +23,7 @@ func TestAll(t *testing.T) {
 	const rootDir = "./testcase"
 
 	if err := codegen.Generate(&config.Config{
-		Source:     []string{rootDir + "/**/*.go"},
+		Source:     []string{rootDir + "/**/*.go", rootDir + "/db/*"},
 		SkipHeader: true,
 		Strict:     true,
 		Exec: config.ExecConfig{
