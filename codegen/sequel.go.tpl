@@ -67,11 +67,11 @@ type Dialect interface {
 	Var(n int) string
 	Wrap(v string) string
 	// character to escape table, column name
-	QuoteChar() rune
+	QuoteRune() rune
 }
 
 type DialectVar interface {
-	VarChar() string
+	VarRune() string
 }
 
 type Migrator interface {

@@ -17,20 +17,37 @@ import (
 )
 
 type Generator struct {
-	// dialect   sequel.Dialect
-	quoteChar rune
+	dialect           sequel.Dialect
+	quotedIndentifier bool
+	quoteStrRune      rune
+	static            bool
 }
 
-func (g Generator) QuoteStart() string {
-	return string(g.quoteChar)
+func (g Generator) QuoteStringBegin() string {
+	return string(g.quoteStrRune)
 }
 
 func (g Generator) Quote(v string) string {
-	return string(g.quoteChar) + v + string(g.quoteChar)
+	return string(g.quoteStrRune) + v + string(g.quoteStrRune)
 }
 
-func (g Generator) QuoteEnd() string {
-	return string(g.quoteChar)
+func (g Generator) QuoteStringEnd() string {
+	return string(g.quoteStrRune)
+}
+
+func (g Generator) IsStatic() bool {
+	return g.static
+}
+
+func (g Generator) QuoteVar(i int) string {
+	return g.dialect.QuoteVar(i)
+}
+
+func (g Generator) QuoteIdentifier(v string) string {
+	if !g.quotedIndentifier {
+		return v
+	}
+	return g.dialect.QuoteIdentifier(v)
 }
 
 func Init(cfg *config.Config) error {
@@ -54,6 +71,7 @@ func Init(cfg *config.Config) error {
 func renderTemplate[T templates.ModelTmplParams | struct{}](
 	tmplName string,
 	skipHeader bool,
+	quotedIndentifier bool,
 	dialect sequel.Dialect,
 	pkgPath string,
 	pkgName string,
@@ -68,32 +86,37 @@ func renderTemplate[T templates.ModelTmplParams | struct{}](
 		strpool.ReleaseString(blr)
 	}()
 
-	quoteChar := rune('"')
-	switch dialect.QuoteChar() {
+	quoteStrRune := rune('"')
+	switch dialect.QuoteRune() {
 	case '`':
-		quoteChar = '"'
+		quoteStrRune = '"'
 	case '"':
-		quoteChar = '`'
+		quoteStrRune = '`'
 	}
 
-	g := &Generator{quoteChar: quoteChar}
+	g := &Generator{
+		dialect:           dialect,
+		quoteStrRune:      quoteStrRune,
+		quotedIndentifier: quotedIndentifier,
+		static:            dialect.QuoteVar(1) == dialect.QuoteVar(0),
+	}
 	impPkg := NewPackage(pkgPath, pkgName)
 	tmpl, err := template.New(tmplName).Funcs(template.FuncMap{
 		"quote":             g.Quote,
-		"quoteChar":         func() string { return strconv.Quote(string(quoteChar)) },
-		"createTable":       g.createTableStmt(dialect),
-		"alterTable":        alterTableStmt(dialect),
-		"insertOneStmt":     g.insertOneStmt(dialect),
-		"findByPKStmt":      g.findByPKStmt(dialect),
-		"updateByPKStmt":    g.updateByPKStmt(dialect),
+		"quoteVar":          g.QuoteVar,
+		"quoteIdentifier":   g.QuoteIdentifier,
+		"isStaticVar":       g.IsStatic,
+		"createTable":       g.createTableStmt(),
+		"alterTable":        g.alterTableStmt(),
+		"insertOneStmt":     g.insertOneStmt(),
+		"findByPKStmt":      g.findByPKStmt(),
+		"updateByPKStmt":    g.updateByPKStmt(),
 		"reserveImport":     reserveImport(impPkg),
 		"castAs":            castAs(impPkg),
 		"addrOf":            addrOf(impPkg),
-		"wrap":              dialect.Wrap,
 		"getFieldTypeValue": getFieldTypeValue(impPkg, getter),
+		"varRune":           func() string { return string(dialect.VarRune()) },
 		"varStmt":           varStmt(dialect),
-		"var":               dialect.Var,
-		"dialectVar":        dialectVar(dialect),
 	}).ParseFS(codegenTemplates, "templates/"+tmplName)
 	if err != nil {
 		return err
@@ -124,6 +147,10 @@ func renderTemplate[T templates.ModelTmplParams | struct{}](
 
 	os.MkdirAll(dstDir, fileMode)
 	fileDest := filepath.Join(dstDir, dstFilename)
+	// formatted, err := format.Source([]byte(w.String()))
+	// if err != nil {
+	// 	return err
+	// }
 	formatted, err := imports.Process(fileDest, []byte(w.String()), &imports.Options{Comments: true})
 	if err != nil {
 		return err

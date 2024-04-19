@@ -16,14 +16,18 @@ func (*mysqlDriver) Driver() string {
 	return "mysql"
 }
 
-func (*mysqlDriver) Var(n int) string {
+func (*mysqlDriver) VarRune() rune {
+	return '?'
+}
+
+func (*mysqlDriver) QuoteVar(_ int) string {
 	return "?"
 }
 
-func (*mysqlDriver) Wrap(v string) string {
+func (*mysqlDriver) QuoteIdentifier(v string) string {
 	return "`" + v + "`"
 }
 
-func (*mysqlDriver) QuoteChar() rune {
+func (*mysqlDriver) QuoteRune() rune {
 	return '`'
 }

@@ -62,16 +62,14 @@ type DB interface {
 }
 
 type Dialect interface {
+	// SQL driver name
 	Driver() string
-	// argument string to escape SQL injection
-	Var(n int) string
-	Wrap(v string) string
-	// character to escape table, column name
-	QuoteChar() rune
-}
-
-type DialectVar interface {
-	VarChar() string
+	// Argument string to escape SQL injection
+	QuoteVar(n int) string
+	VarRune() rune
+	// Character to escape table, column name
+	QuoteIdentifier(v string) string
+	QuoteRune() rune
 }
 
 type Migrator interface {

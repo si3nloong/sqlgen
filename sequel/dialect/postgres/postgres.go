@@ -9,8 +9,7 @@ import (
 type postgresDriver struct{}
 
 var (
-	_ sequel.Dialect    = (*postgresDriver)(nil)
-	_ sequel.DialectVar = (*postgresDriver)(nil)
+	_ sequel.Dialect = (*postgresDriver)(nil)
 )
 
 func init() {
@@ -21,18 +20,18 @@ func (*postgresDriver) Driver() string {
 	return "postgres"
 }
 
-func (*postgresDriver) VarChar() string {
-	return "$"
+func (*postgresDriver) VarRune() rune {
+	return '$'
 }
 
-func (s postgresDriver) Var(n int) string {
-	return s.VarChar() + strconv.Itoa(n)
+func (s postgresDriver) QuoteVar(n int) string {
+	return string(s.VarRune()) + strconv.Itoa(n)
 }
 
-func (*postgresDriver) Wrap(v string) string {
+func (*postgresDriver) QuoteIdentifier(v string) string {
 	return strconv.Quote(v)
 }
 
-func (*postgresDriver) QuoteChar() rune {
+func (*postgresDriver) QuoteRune() rune {
 	return '"'
 }

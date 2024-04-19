@@ -63,19 +63,19 @@ func addrOf(impPkgs *Package) func(string, *templates.Field) string {
 	}
 }
 
-func (g *Generator) createTableStmt(dialect sequel.Dialect) func(string, *templates.Model) string {
+func (g *Generator) createTableStmt() func(string, *templates.Model) string {
 	return func(n string, model *templates.Model) string {
 		buf := strpool.AcquireString()
 		defer strpool.ReleaseString(buf)
 
 		buf.WriteString(g.Quote("CREATE TABLE IF NOT EXISTS "))
-		buf.WriteString("+ " + n + ".TableName() +" + g.QuoteStart() + " (")
+		buf.WriteString("+ " + n + ".TableName() +" + g.QuoteStringBegin() + " (")
 		for i, f := range model.Fields {
 			if i > 0 {
 				buf.WriteByte(',')
 			}
 			dataType, isNull := inspectDataType(f)
-			buf.WriteString(dialect.Wrap(f.ColumnName) + " " + dataType)
+			buf.WriteString(g.QuoteIdentifier(f.ColumnName) + " " + dataType)
 			if !isNull {
 				buf.WriteString(" NOT NULL")
 			}
@@ -84,25 +84,25 @@ func (g *Generator) createTableStmt(dialect sequel.Dialect) func(string, *templa
 			}
 		}
 		if model.PK != nil {
-			buf.WriteString(",PRIMARY KEY (" + dialect.Wrap(model.PK.Field.ColumnName) + ")")
+			buf.WriteString(",PRIMARY KEY (" + g.QuoteIdentifier(model.PK.Field.ColumnName) + ")")
 		}
-		buf.WriteString(");" + g.QuoteEnd())
+		buf.WriteString(");" + g.QuoteStringEnd())
 		return buf.String()
 	}
 }
 
-func alterTableStmt(dialect sequel.Dialect) func(*templates.Model) string {
+func (g *Generator) alterTableStmt() func(*templates.Model) string {
 	return func(model *templates.Model) string {
 		buf := strpool.AcquireString()
 		defer strpool.ReleaseString(buf)
-		buf.WriteString("ALTER TABLE " + dialect.Wrap(model.TableName) + " ")
+		buf.WriteString("ALTER TABLE " + g.QuoteIdentifier(model.TableName) + " ")
 		for i, f := range model.Fields {
 			if i > 0 {
 				buf.WriteByte(',')
 			}
 			buf.WriteString("MODIFY ")
 			dataType, isNull := inspectDataType(f)
-			buf.WriteString(dialect.Wrap(f.ColumnName) + " " + dataType)
+			buf.WriteString(g.QuoteIdentifier(f.ColumnName) + " " + dataType)
 			if !isNull {
 				buf.WriteString(" NOT NULL")
 			}
@@ -111,7 +111,7 @@ func alterTableStmt(dialect sequel.Dialect) func(*templates.Model) string {
 			}
 			if i > 0 {
 				// buf.WriteString(" FIRST")
-				buf.WriteString(" AFTER " + dialect.Wrap(model.Fields[i-1].ColumnName))
+				buf.WriteString(" AFTER " + g.QuoteIdentifier(model.Fields[i-1].ColumnName))
 			}
 		}
 		// if model.PK != nil {
@@ -122,40 +122,40 @@ func alterTableStmt(dialect sequel.Dialect) func(*templates.Model) string {
 	}
 }
 
-func (g *Generator) insertOneStmt(dialect sequel.Dialect) func(*templates.Model) string {
+func (g *Generator) insertOneStmt() func(*templates.Model) string {
 	return func(model *templates.Model) string {
 		buf := strpool.AcquireString()
 		defer strpool.ReleaseString(buf)
-		buf.WriteString("INSERT INTO " + dialect.Wrap(model.TableName) + " (")
+		buf.WriteString("INSERT INTO " + g.QuoteIdentifier(model.TableName) + " (")
 		var fields []*templates.Field
 		if model.PK != nil && model.PK.IsAutoIncr {
-			for _, f := range model.Fields {
-				if f != model.PK.Field {
-					fields = append(fields, f)
+			for i := range model.Fields {
+				if model.Fields[i] != model.PK.Field {
+					fields = append(fields, model.Fields[i])
 				}
 			}
 		} else {
 			fields = append(fields, model.Fields...)
 		}
-		for i, f := range fields {
+		for i := range fields {
 			if i > 0 {
 				buf.WriteByte(',')
 			}
-			buf.WriteString(dialect.Wrap(f.ColumnName))
+			buf.WriteString(g.QuoteIdentifier(fields[i].ColumnName))
 		}
 		buf.WriteString(") VALUES (")
 		for i := range fields {
 			if i > 0 {
 				buf.WriteByte(',')
 			}
-			buf.WriteString(dialect.Var(i + 1))
+			buf.WriteString(g.QuoteVar(i + 1))
 		}
 		buf.WriteString(");")
 		return g.Quote(buf.String())
 	}
 }
 
-func (g *Generator) findByPKStmt(dialect sequel.Dialect) func(*templates.Model) string {
+func (g *Generator) findByPKStmt() func(*templates.Model) string {
 	return func(model *templates.Model) string {
 		buf := strpool.AcquireString()
 		defer strpool.ReleaseString(buf)
@@ -164,20 +164,20 @@ func (g *Generator) findByPKStmt(dialect sequel.Dialect) func(*templates.Model) 
 			if i > 0 {
 				buf.WriteByte(',')
 			}
-			buf.WriteString(dialect.Wrap(model.Fields[i].ColumnName))
+			buf.WriteString(g.QuoteIdentifier(model.Fields[i].ColumnName))
 		}
-		buf.WriteString(" FROM " + dialect.Wrap(model.TableName) + " WHERE ")
-		buf.WriteString(dialect.Wrap(model.PK.Field.ColumnName))
-		buf.WriteString(" = " + dialect.Var(1) + " LIMIT 1;")
+		buf.WriteString(" FROM " + g.QuoteIdentifier(model.TableName) + " WHERE ")
+		buf.WriteString(g.QuoteIdentifier(model.PK.Field.ColumnName))
+		buf.WriteString(" = " + g.QuoteVar(1) + " LIMIT 1;")
 		return g.Quote(buf.String())
 	}
 }
 
-func (g *Generator) updateByPKStmt(dialect sequel.Dialect) func(*templates.Model) string {
+func (g *Generator) updateByPKStmt() func(*templates.Model) string {
 	return func(model *templates.Model) string {
 		buf := strpool.AcquireString()
 		defer strpool.ReleaseString(buf)
-		buf.WriteString("UPDATE " + dialect.Wrap(model.TableName) + " SET ")
+		buf.WriteString("UPDATE " + g.QuoteIdentifier(model.TableName) + " SET ")
 		var pos int
 		for i := range model.Fields {
 			if model.PK != nil && model.PK.Field == model.Fields[i] {
@@ -187,11 +187,11 @@ func (g *Generator) updateByPKStmt(dialect sequel.Dialect) func(*templates.Model
 				buf.WriteByte(',')
 			}
 			pos++
-			buf.WriteString(dialect.Wrap(model.Fields[i].ColumnName) + " = " + dialect.Var(pos))
+			buf.WriteString(g.QuoteIdentifier(model.Fields[i].ColumnName) + " = " + g.QuoteVar(pos))
 		}
 		buf.WriteString(" WHERE ")
-		buf.WriteString(dialect.Wrap(model.PK.Field.ColumnName))
-		buf.WriteString(" = " + dialect.Var(pos+1) + " LIMIT 1;")
+		buf.WriteString(g.QuoteIdentifier(model.PK.Field.ColumnName))
+		buf.WriteString(" = " + g.QuoteVar(pos+1) + " LIMIT 1;")
 		return g.Quote(buf.String())
 	}
 }
@@ -209,7 +209,7 @@ func varStmt(dialect sequel.Dialect) func(*templates.Model) string {
 			if i > 0 {
 				blr.WriteByte(',')
 			}
-			blr.WriteString(dialect.Var(i + 1))
+			blr.WriteString(dialect.QuoteVar(i + 1))
 		}
 		blr.WriteByte(')')
 		return blr.String()
@@ -235,21 +235,6 @@ func getFieldTypeValue(impPkgs *Package, prefix string) func(*templates.Field) F
 			Valuer:   castAs(impPkgs)(f),
 			Value:    "v." + f.GoName,
 		}
-	}
-}
-
-type DialectVarResult struct {
-	Var       string
-	IsVarSame bool
-}
-
-func dialectVar(dialect sequel.Dialect) func() DialectVarResult {
-	return func() DialectVarResult {
-		v, ok := dialect.(sequel.DialectVar)
-		if ok {
-			return DialectVarResult{Var: v.VarChar(), IsVarSame: false}
-		}
-		return DialectVarResult{Var: dialect.Var(1), IsVarSame: true}
 	}
 }
 

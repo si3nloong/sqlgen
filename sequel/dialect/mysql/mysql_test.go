@@ -13,16 +13,16 @@ func TestMysqlDriver(t *testing.T) {
 	})
 
 	t.Run("Var", func(t *testing.T) {
-		require.Equal(t, "?", driver.Var(0))
-		require.Equal(t, "?", driver.Var(10))
+		require.Equal(t, "?", driver.QuoteVar(0))
+		require.Equal(t, "?", driver.QuoteVar(10))
 	})
 
 	t.Run("Wrap", func(t *testing.T) {
-		require.Equal(t, "`abc`", driver.Wrap("abc"))
-		require.Equal(t, "`abc_def`", driver.Wrap("abc_def"))
+		require.Equal(t, "`abc`", driver.QuoteIdentifier("abc"))
+		require.Equal(t, "`abc_def`", driver.QuoteIdentifier("abc_def"))
 	})
 
-	t.Run("QuoteChar", func(t *testing.T) {
-		require.Equal(t, rune('`'), driver.QuoteChar())
+	t.Run("QuoteRune", func(t *testing.T) {
+		require.Equal(t, rune('`'), driver.QuoteRune())
 	})
 }

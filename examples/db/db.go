@@ -16,32 +16,37 @@ const _getTableSQL = "SELECT TABLE_NAME FROM information_schema.TABLES WHERE TAB
 func InsertOne[T sequel.TableColumnValuer[T], Ptr interface {
 	sequel.TableColumnValuer[T]
 	sequel.Scanner[T]
-}](ctx context.Context, db sequel.DB, v Ptr) (sql.Result, error) {
-	args := v.Values()
-	switch vi := any(v).(type) {
+}](ctx context.Context, sqlConn sequel.DB, model Ptr) (sql.Result, error) {
+	var (
+		args    = model.Values()
+		columns []string
+	)
+	switch vi := any(model).(type) {
 	case sequel.SingleInserter:
 		switch vk := vi.(type) {
 		case sequel.AutoIncrKeyer:
 			_, idx, _ := vk.PK()
 			args = append(args[:idx], args[idx+1:]...)
 		}
-		return db.ExecContext(ctx, vi.InsertOneStmt(), args...)
-	}
+		return sqlConn.ExecContext(ctx, vi.InsertOneStmt(), args...)
 
-	columns := v.Columns()
-	switch vi := any(v).(type) {
 	case sequel.AutoIncrKeyer:
-		// If it's a auto increment primary key
+		// If it's an AUTO_INCREMENT primary key
 		// We don't need to pass the value
 		_, idx, _ := vi.PK()
+		columns = model.Columns()
 		columns = append(columns[:idx], columns[idx+1:]...)
 		args = append(args[:idx], args[idx+1:]...)
+
+	default:
+		columns = model.Columns()
 	}
-	return db.ExecContext(ctx, "INSERT INTO "+v.TableName()+" ("+strings.Join(columns, ",")+") VALUES ("+strings.Repeat(",?", len(columns))[1:]+")", args...)
+
+	return sqlConn.ExecContext(ctx, "INSERT INTO "+model.TableName()+" ("+strings.Join(columns, ",")+") VALUES ("+strings.Repeat(",?", len(columns))[1:]+")", args...)
 }
 
 // InsertInto is a helper function to insert your records.
-func InsertInto[T sequel.TableColumnValuer[T]](ctx context.Context, db sequel.DB, data []T) (sql.Result, error) {
+func InsertInto[T sequel.TableColumnValuer[T]](ctx context.Context, sqlConn sequel.DB, data []T) (sql.Result, error) {
 	n := len(data)
 	if n == 0 {
 		return new(sequel.EmptyResult), nil
@@ -62,8 +67,8 @@ func InsertInto[T sequel.TableColumnValuer[T]](ctx context.Context, db sequel.DB
 		columns = append(columns[:idx], columns[idx+1:]...)
 
 	case sequel.Inserter:
-		query := strings.Repeat(vi.InsertVarQuery(), len(data))
-		return db.ExecContext(ctx, "INSERT INTO "+model.TableName()+" ("+strings.Join(columns, ",")+") VALUES "+query[:len(query)-1]+";", args...)
+		query := strings.Repeat(vi.InsertVarQuery()+",", len(data))
+		return sqlConn.ExecContext(ctx, "INSERT INTO "+model.TableName()+" ("+strings.Join(columns, ",")+") VALUES "+query[:len(query)-1]+";", args...)
 	}
 
 	var stmt = strpool.AcquireString()
@@ -91,68 +96,68 @@ func InsertInto[T sequel.TableColumnValuer[T]](ctx context.Context, db sequel.DB
 		stmt.WriteByte(')')
 	}
 	stmt.WriteByte(';')
-	return db.ExecContext(ctx, stmt.String(), args...)
+	return sqlConn.ExecContext(ctx, stmt.String(), args...)
 }
 
 // FindByPK is to find single record using primary key.
-func FindByPK[T sequel.KeyValuer[T], Ptr sequel.KeyValueScanner[T]](ctx context.Context, db sequel.DB, v Ptr) error {
-	switch vi := any(v).(type) {
+func FindByPK[T sequel.KeyValuer[T], Ptr sequel.KeyValueScanner[T]](ctx context.Context, sqlConn sequel.DB, model Ptr) error {
+	switch vi := any(model).(type) {
 	case sequel.KeyFinder:
 		_, _, pk := vi.PK()
-		return db.QueryRowContext(ctx, vi.FindByPKStmt(), pk).Scan(v.Addrs()...)
+		return sqlConn.QueryRowContext(ctx, vi.FindByPKStmt(), pk).Scan(model.Addrs()...)
 	}
 
 	var (
-		pkName, _, pk = v.PK()
-		columns       = v.Columns()
+		pkName, _, pk = model.PK()
+		columns       = model.Columns()
 	)
-	return db.QueryRowContext(ctx, "SELECT "+strings.Join(columns, ",")+" FROM "+v.TableName()+" WHERE "+pkName+" = ? LIMIT 1;", pk).Scan(v.Addrs()...)
+	return sqlConn.QueryRowContext(ctx, "SELECT "+strings.Join(columns, ",")+" FROM "+model.TableName()+" WHERE "+pkName+" = ? LIMIT 1;", pk).Scan(model.Addrs()...)
 }
 
 // UpdateByPK is to update single record using primary key.
-func UpdateByPK[T sequel.KeyValuer[T]](ctx context.Context, db sequel.DB, v T) (sql.Result, error) {
+func UpdateByPK[T sequel.KeyValuer[T]](ctx context.Context, sqlConn sequel.DB, model T) (sql.Result, error) {
 	var (
-		pkName, idx, pk = v.PK()
-		columns, values = v.Columns(), v.Values()
+		pkName, idx, pk = model.PK()
+		columns, values = model.Columns(), model.Values()
 	)
-	switch vi := any(v).(type) {
+	switch vi := any(model).(type) {
 	case sequel.KeyUpdater:
 		values = append(values[:idx], append(values[idx+1:], pk)...)
-		return db.ExecContext(ctx, vi.UpdateByPKStmt(), values...)
+		return sqlConn.ExecContext(ctx, vi.UpdateByPKStmt(), values...)
 
 	default:
 		columns = append(columns[:idx], columns[idx+1:]...)
 		values = append(values[:idx], values[idx+1:]...)
-		return db.ExecContext(ctx, "UPDATE "+v.TableName()+" SET "+strings.Join(columns, " = ?,")+" = ? WHERE "+pkName+" = ?;", append(values, pk)...)
+		return sqlConn.ExecContext(ctx, "UPDATE "+model.TableName()+" SET "+strings.Join(columns, " = ?,")+" = ? WHERE "+pkName+" = ?;", append(values, pk)...)
 	}
 }
 
 // DeleteByPK is to update single record using primary key.
-func DeleteByPK[T sequel.KeyValuer[T]](ctx context.Context, db sequel.DB, v T) (sql.Result, error) {
-	pkName, _, pk := v.PK()
-	return db.ExecContext(ctx, "DELETE FROM "+v.TableName()+" WHERE "+pkName+" = ?;", pk)
+func DeleteByPK[T sequel.KeyValuer[T]](ctx context.Context, sqlConn sequel.DB, model T) (sql.Result, error) {
+	pkName, _, pk := model.PK()
+	return sqlConn.ExecContext(ctx, "DELETE FROM "+model.TableName()+" WHERE "+pkName+" = ?;", pk)
 }
 
 // Migrate is to create or alter the table based on the defined schemas.
-func Migrate[T sequel.Migrator](ctx context.Context, db sequel.DB) error {
+func Migrate[T sequel.Migrator](ctx context.Context, sqlConn sequel.DB) error {
 	var (
 		v           T
 		table       string
 		tableExists bool
 	)
 	tableName, _ := strconv.Unquote(v.TableName())
-	if err := db.QueryRowContext(ctx, _getTableSQL, tableName).Scan(&table); err != nil {
+	if err := sqlConn.QueryRowContext(ctx, _getTableSQL, tableName).Scan(&table); err != nil {
 		tableExists = false
 	} else {
 		tableExists = true
 	}
 	if tableExists {
-		if _, err := db.ExecContext(ctx, v.AlterTableStmt()); err != nil {
+		if _, err := sqlConn.ExecContext(ctx, v.AlterTableStmt()); err != nil {
 			return err
 		}
 		return nil
 	}
-	if _, err := db.ExecContext(ctx, v.CreateTableStmt()); err != nil {
+	if _, err := sqlConn.ExecContext(ctx, v.CreateTableStmt()); err != nil {
 		return err
 	}
 	return nil
@@ -170,7 +175,7 @@ type SelectStmt struct {
 func QueryStmt[T any, Ptr interface {
 	*T
 	sequel.Scanner[T]
-}, Stmt interface{ SelectStmt }](ctx context.Context, dbConn sequel.DB, stmt Stmt) ([]T, error) {
+}, Stmt interface{ SelectStmt }](ctx context.Context, sqlConn sequel.DB, stmt Stmt) ([]T, error) {
 	blr := AcquireStmt()
 	defer ReleaseStmt(blr)
 
@@ -199,7 +204,7 @@ func QueryStmt[T any, Ptr interface {
 		blr.WriteByte(';')
 	}
 
-	rows, err := dbConn.QueryContext(ctx, blr.String(), blr.Args()...)
+	rows, err := sqlConn.QueryContext(ctx, blr.String(), blr.Args()...)
 	if err != nil {
 		return nil, err
 	}
@@ -237,7 +242,7 @@ type DeleteStmt struct {
 
 func ExecStmt[T any, Stmt interface {
 	UpdateStmt | DeleteStmt
-}](ctx context.Context, dbConn sequel.DB, stmt Stmt) (sql.Result, error) {
+}](ctx context.Context, sqlConn sequel.DB, stmt Stmt) (sql.Result, error) {
 	blr := AcquireStmt()
 	defer ReleaseStmt(blr)
 
@@ -285,7 +290,7 @@ func ExecStmt[T any, Stmt interface {
 		}
 		blr.WriteByte(';')
 	}
-	return dbConn.ExecContext(ctx, blr.String(), blr.Args()...)
+	return sqlConn.ExecContext(ctx, blr.String(), blr.Args()...)
 }
 
 var (
@@ -332,8 +337,4 @@ func (s *sqlStmt) Reset() {
 	s.args = nil
 	s.pos = 0
 	s.Builder.Reset()
-}
-
-func QuoteIdentifier(v string) string {
-	return string("\"") + v + string("\"")
 }

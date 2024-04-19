@@ -102,31 +102,18 @@ var path2Regex = strings.NewReplacer(
 
 var nameRegex = regexp.MustCompile(`(?i)^[a-z]+[a-z0-9\_]*$`)
 
-type dialectController struct {
-	sequel.Dialect
-	quotedIndentifier bool
-}
-
-func (c *dialectController) Wrap(v string) string {
-	if !c.quotedIndentifier {
-		return v
-	}
-	return c.Dialect.Wrap(v)
-}
-
 func Generate(c *config.Config) error {
 	var (
 		cfg = c.Clone()
 	)
 
-	d, ok := sequel.GetDialect(string(cfg.Driver))
+	dialect, ok := sequel.GetDialect(string(cfg.Driver))
 	if !ok {
 		panic("sqlgen: missing dialect, please register your dialect first")
 	}
 
 	var (
 		srcDir  string
-		dialect = &dialectController{d, cfg.QuotedIdentifier}
 		sources = make([]string, len(cfg.Source))
 	)
 
@@ -219,6 +206,7 @@ func Generate(c *config.Config) error {
 		if err := renderTemplate(
 			"db.go.tpl",
 			cfg.SkipHeader,
+			cfg.QuotedIdentifier,
 			dialect,
 			"",
 			cfg.Database.Package,
@@ -236,6 +224,7 @@ func Generate(c *config.Config) error {
 		if err := renderTemplate(
 			"operator.go.tpl",
 			cfg.SkipHeader,
+			cfg.QuotedIdentifier,
 			dialect,
 			"",
 			cfg.Database.Operator.Package,
@@ -660,6 +649,7 @@ func parseGoPackage(cfg *config.Config, dialect sequel.Dialect, rootDir string, 
 		if err := renderTemplate(
 			"model.go.tpl",
 			cfg.SkipHeader,
+			cfg.QuotedIdentifier,
 			dialect,
 			pkg.PkgPath,
 			pkg.Name,

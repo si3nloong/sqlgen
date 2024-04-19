@@ -20,14 +20,18 @@ func (*sqliteDriver) Driver() string {
 	return "sqlite"
 }
 
-func (*sqliteDriver) Var(n int) string {
+func (*sqliteDriver) VarRune() rune {
+	return '?'
+}
+
+func (*sqliteDriver) QuoteVar(_ int) string {
 	return "?"
 }
 
-func (*sqliteDriver) Wrap(v string) string {
+func (*sqliteDriver) QuoteIdentifier(v string) string {
 	return strconv.Quote(v)
 }
 
-func (*sqliteDriver) QuoteChar() rune {
+func (*sqliteDriver) QuoteRune() rune {
 	return '"'
 }

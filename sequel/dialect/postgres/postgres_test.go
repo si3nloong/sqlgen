@@ -13,20 +13,16 @@ func TestPostgresDriver(t *testing.T) {
 	})
 
 	t.Run("Var", func(t *testing.T) {
-		require.Equal(t, "$1", driver.Var(1))
-		require.Equal(t, "$10", driver.Var(10))
+		require.Equal(t, "$1", driver.QuoteVar(1))
+		require.Equal(t, "$10", driver.QuoteVar(10))
 	})
 
 	t.Run("Wrap", func(t *testing.T) {
-		require.Equal(t, `"abc"`, driver.Wrap("abc"))
-		require.Equal(t, `"abc_def"`, driver.Wrap("abc_def"))
+		require.Equal(t, `"abc"`, driver.QuoteIdentifier("abc"))
+		require.Equal(t, `"abc_def"`, driver.QuoteIdentifier("abc_def"))
 	})
 
-	t.Run("QuoteChar", func(t *testing.T) {
-		require.Equal(t, rune('"'), driver.QuoteChar())
-	})
-
-	t.Run("VarChar", func(t *testing.T) {
-		require.Equal(t, "$", driver.VarChar())
+	t.Run("QuoteRune", func(t *testing.T) {
+		require.Equal(t, rune('"'), driver.QuoteRune())
 	})
 }
