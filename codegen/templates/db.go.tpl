@@ -72,7 +72,7 @@ func InsertInto[T sequel.TableColumnValuer[T]](ctx context.Context, db sequel.DB
 		columns = append(columns[:idx], columns[idx+1:]...)
 
 	case sequel.Inserter:
-		query := strings.Repeat(vi.InsertVarQuery(), len(data))
+		query := strings.Repeat(vi.InsertVarQuery()+",", len(data))
 		return db.ExecContext(ctx, "INSERT INTO "+model.TableName()+" ("+strings.Join(columns, ",")+") VALUES "+query[:len(query)-1]+";", args...)
 	}
 
