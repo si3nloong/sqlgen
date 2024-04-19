@@ -380,6 +380,10 @@ func (s *sqlStmt) Reset() {
 	s.Builder.Reset()
 }
 
+func QuoteIdentifier(v string) string {
+	return string({{ quoteChar }}) + v + string({{ quoteChar }})
+}
+
 {{ if not $dialect.IsVarSame -}}
 func wrapVar(i int) string {
 	return "{{ $dialect.Var }}"+ strconv.Itoa(i)

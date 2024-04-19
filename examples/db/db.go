@@ -3,7 +3,6 @@ package db
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"strconv"
 	"strings"
 	"sync"
@@ -12,7 +11,7 @@ import (
 	"github.com/si3nloong/sqlgen/sequel/strpool"
 )
 
-const _getTableSQL = "SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_NAME = %s LIMIT 1;"
+const _getTableSQL = "SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? LIMIT 1;"
 
 func InsertOne[T sequel.TableColumnValuer[T], Ptr interface {
 	sequel.TableColumnValuer[T]
@@ -141,7 +140,8 @@ func Migrate[T sequel.Migrator](ctx context.Context, db sequel.DB) error {
 		table       string
 		tableExists bool
 	)
-	if err := db.QueryRowContext(ctx, fmt.Sprintf(_getTableSQL, v.TableName())).Scan(&table); err != nil {
+	tableName, _ := strconv.Unquote(v.TableName())
+	if err := db.QueryRowContext(ctx, _getTableSQL, tableName).Scan(&table); err != nil {
 		tableExists = false
 	} else {
 		tableExists = true
@@ -332,4 +332,8 @@ func (s *sqlStmt) Reset() {
 	s.args = nil
 	s.pos = 0
 	s.Builder.Reset()
+}
+
+func QuoteIdentifier(v string) string {
+	return string("\"") + v + string("\"")
 }

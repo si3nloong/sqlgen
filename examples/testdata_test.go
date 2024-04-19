@@ -25,6 +25,10 @@ func TestAll(t *testing.T) {
 	if err := codegen.Generate(&config.Config{
 		Source:     []string{rootDir + "/**/*.go"},
 		SkipHeader: true,
+		Strict:     true,
+		Exec: config.ExecConfig{
+			SkipEmpty: false,
+		},
 	}); err != nil {
 		t.Fatal(err)
 	}

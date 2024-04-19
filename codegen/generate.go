@@ -17,7 +17,7 @@ import (
 )
 
 type Generator struct {
-	dialect   sequel.Dialect
+	// dialect   sequel.Dialect
 	quoteChar rune
 }
 
@@ -80,6 +80,7 @@ func renderTemplate[T templates.ModelTmplParams | struct{}](
 	impPkg := NewPackage(pkgPath, pkgName)
 	tmpl, err := template.New(tmplName).Funcs(template.FuncMap{
 		"quote":             g.Quote,
+		"quoteChar":         func() string { return strconv.Quote(string(quoteChar)) },
 		"createTable":       g.createTableStmt(dialect),
 		"alterTable":        alterTableStmt(dialect),
 		"insertOneStmt":     g.insertOneStmt(dialect),

@@ -6,10 +6,8 @@ import (
 
 	"github.com/si3nloong/sqlgen/internal/fileutil"
 	"github.com/si3nloong/sqlgen/internal/strfmt"
-	"github.com/si3nloong/sqlgen/sequel"
 	"gopkg.in/yaml.v3"
 
-	_ "github.com/si3nloong/sqlgen/sequel/dialect/clickhouse"
 	_ "github.com/si3nloong/sqlgen/sequel/dialect/mysql"
 	_ "github.com/si3nloong/sqlgen/sequel/dialect/postgres"
 	_ "github.com/si3nloong/sqlgen/sequel/dialect/sqlite"
@@ -18,10 +16,9 @@ import (
 type SqlDriver string
 
 const (
-	MySQL      SqlDriver = "mysql"
-	Postgres   SqlDriver = "postgres"
-	Sqlite     SqlDriver = "sqlite"
-	Clickhouse SqlDriver = "clickhouse"
+	MySQL    SqlDriver = "mysql"
+	Postgres SqlDriver = "postgres"
+	Sqlite   SqlDriver = "sqlite"
 )
 
 type naming string
@@ -41,12 +38,13 @@ const (
 var cfgFilenames = []string{DefaultConfigFile, ".sqlgen.yml", ".sqlgen.yaml", "sqlgen.yaml"}
 
 type Config struct {
-	Source           []string        `yaml:"src"`
-	Driver           SqlDriver       `yaml:"driver"`
-	NamingConvention naming          `yaml:"naming_convention,omitempty"`
-	Tag              string          `yaml:"struct_tag,omitempty"`
+	Source           []string  `yaml:"src"`
+	Driver           SqlDriver `yaml:"driver"`
+	NamingConvention naming    `yaml:"naming_convention,omitempty"`
+	Tag              string    `yaml:"struct_tag,omitempty"`
+	// Whether to quote the table name, column name
+	QuotedIdentifier bool            `yaml:"quoted_identifier"`
 	Strict           bool            `yaml:"strict"`
-	SkipEscape       bool            `yaml:"skip_escape"`
 	Exec             ExecConfig      `yaml:"exec"`
 	Getter           GetterConfig    `yaml:"getter"`
 	Database         *DatabaseConfig `yaml:"database"`
@@ -56,8 +54,10 @@ type Config struct {
 }
 
 type ExecConfig struct {
-	SkipEmpty bool   `yaml:"skip_empty"`
-	Filename  string `yaml:"filename"`
+	// Skip `generated.go` file being generated if the input has no matching struct
+	SkipEmpty bool `yaml:"skip_empty"`
+	// Declare the name of generated go file. Default is `generated.go`
+	Filename string `yaml:"filename"`
 }
 
 type GetterConfig struct {
@@ -84,6 +84,7 @@ func (c *Config) init() {
 	c.Driver = MySQL
 	c.Strict = true
 	c.Exec.Filename = DefaultGeneratedFile
+	c.Exec.SkipEmpty = true
 	c.Getter.Prefix = "Get"
 	c.Database = new(DatabaseConfig)
 	c.Database.Package = "db"
@@ -96,7 +97,7 @@ func (c *Config) init() {
 }
 
 func (c Config) Clone() *Config {
-	newConfig := &Config{}
+	newConfig := new(Config)
 	newConfig.init()
 	if len(c.Source) > 0 {
 		newConfig.Source = make([]string, len(c.Source))
@@ -108,11 +109,17 @@ func (c Config) Clone() *Config {
 	if c.NamingConvention != "" {
 		newConfig.NamingConvention = c.NamingConvention
 	}
+	if c.QuotedIdentifier != newConfig.QuotedIdentifier {
+		newConfig.QuotedIdentifier = c.QuotedIdentifier
+	}
 	if c.Tag != "" {
 		newConfig.Tag = c.Tag
 	}
 	if c.Exec.Filename != "" {
 		newConfig.Exec.Filename = c.Exec.Filename
+	}
+	if c.Exec.SkipEmpty != newConfig.Exec.SkipEmpty {
+		newConfig.Exec.SkipEmpty = c.Exec.SkipEmpty
 	}
 	if c.Database != nil {
 		if newConfig.Database == nil {
@@ -156,14 +163,6 @@ func (c Config) Clone() *Config {
 		newConfig.SkipModTidy = c.SkipModTidy
 	}
 	return newConfig
-}
-
-func (c Config) Dialect() sequel.Dialect {
-	d, ok := sequel.GetDialect(string(c.Driver))
-	if !ok {
-		panic("sqlgen: missing dialect, please register your dialect first")
-	}
-	return d
 }
 
 func (c Config) RenameFunc() func(string) string {

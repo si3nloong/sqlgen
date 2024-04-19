@@ -34,7 +34,7 @@ func runInitCommand(cmd *cobra.Command, args []string) error {
 				Name: "driver",
 				Prompt: &survey.Select{
 					Message: "What is your sql driver:",
-					Options: []string{string(config.MySQL), string(config.Postgres), string(config.Sqlite), string(config.Clickhouse)},
+					Options: []string{string(config.MySQL), string(config.Postgres), string(config.Sqlite)},
 					Default: string(config.MySQL),
 				},
 			},

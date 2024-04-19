@@ -5,18 +5,20 @@ src:
 {{- end }}
 
 # Optional: 
-# Possibly values : `mysql`, `postgres`, `sqlite` or `clickhouse`
+# Possibly values : `mysql`, `postgres` or `sqlite`
 driver: {{ .Driver }}
 
 # Optional: 
 # Possibly values : `snake_case`, `camelCase` or `PascalCase`
 naming_convention: {{ .NamingConvention }}
 
-# Optional: 
+# Optional:
+# The struct tag for "sqlgen" to read from. Default is `sql`
 struct_tag: {{ .Tag }}
 
-# Optional: 
-skip_escape: {{ .SkipEscape }}
+# Optional:
+# Whether to quote the table name, column name
+quoted_identifier: {{ .QuotedIdentifier }}
 
 # Optional: to add prefix to getter
 getter:

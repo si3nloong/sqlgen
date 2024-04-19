@@ -7,31 +7,6 @@ import (
 	"github.com/si3nloong/sqlgen/sequel/strpool"
 )
 
-func toID(val []int) string {
-	buf := strpool.AcquireString()
-	defer strpool.ReleaseString(buf)
-	for i, v := range val {
-		if i > 0 {
-			buf.WriteByte('.')
-		}
-		buf.WriteString(strconv.Itoa(v))
-	}
-	return buf.String()
-}
-
-func assertAsPtr[T any](v any) *T {
-	t, ok := v.(*T)
-	if ok {
-		return t
-	}
-	return nil
-}
-
-func isImplemented(t types.Type, iv *types.Interface) bool {
-	method, wrongType := types.MissingMethod(t, iv, true)
-	return method == nil && !wrongType
-}
-
 func UnderlyingType(t types.Type) (*Mapping, bool) {
 	var (
 		typeStr string
@@ -72,6 +47,31 @@ loop:
 		return v, ok
 	}
 	return nil, false
+}
+
+func toID(val []int) string {
+	buf := strpool.AcquireString()
+	defer strpool.ReleaseString(buf)
+	for i, v := range val {
+		if i > 0 {
+			buf.WriteByte('.')
+		}
+		buf.WriteString(strconv.Itoa(v))
+	}
+	return buf.String()
+}
+
+func assertAsPtr[T any](v any) *T {
+	t, ok := v.(*T)
+	if ok {
+		return t
+	}
+	return nil
+}
+
+func isImplemented(t types.Type, iv *types.Interface) bool {
+	method, wrongType := types.MissingMethod(t, iv, true)
+	return method == nil && !wrongType
 }
 
 func newPointer(t types.Type) *types.Pointer {

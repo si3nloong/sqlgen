@@ -25,8 +25,13 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-//go:embed templates/*.go.tpl
-var codegenTemplates embed.FS
+var (
+	//go:embed templates/*.go.tpl
+	codegenTemplates embed.FS
+
+	// https://pkg.go.dev/cmd/go#hdr-Generate_Go_files_by_processing_source
+	genCodeRegexp = regexp.MustCompile(`^// Code generated .* DO NOT EDIT\.$`)
+)
 
 const fileMode = 0o755
 
@@ -97,10 +102,31 @@ var path2Regex = strings.NewReplacer(
 
 var nameRegex = regexp.MustCompile(`(?i)^[a-z]+[a-z0-9\_]*$`)
 
+type dialectController struct {
+	sequel.Dialect
+	quotedIndentifier bool
+}
+
+func (c *dialectController) Wrap(v string) string {
+	if !c.quotedIndentifier {
+		return v
+	}
+	return c.Dialect.Wrap(v)
+}
+
 func Generate(c *config.Config) error {
 	var (
+		cfg = c.Clone()
+	)
+
+	d, ok := sequel.GetDialect(string(cfg.Driver))
+	if !ok {
+		panic("sqlgen: missing dialect, please register your dialect first")
+	}
+
+	var (
 		srcDir  string
-		cfg     = c.Clone()
+		dialect = &dialectController{d, cfg.QuotedIdentifier}
 		sources = make([]string, len(cfg.Source))
 	)
 
@@ -179,7 +205,7 @@ func Generate(c *config.Config) error {
 			dirs = append(dirs, "")
 		}
 
-		if err := parseGoPackage(cfg, rootDir, dirs, matcher); err != nil {
+		if err := parseGoPackage(cfg, dialect, rootDir, dirs, matcher); err != nil {
 			return err
 		}
 
@@ -193,7 +219,7 @@ func Generate(c *config.Config) error {
 		if err := renderTemplate(
 			"db.go.tpl",
 			cfg.SkipHeader,
-			cfg.Dialect(),
+			dialect,
 			"",
 			cfg.Database.Package,
 			cfg.Getter.Prefix,
@@ -210,7 +236,7 @@ func Generate(c *config.Config) error {
 		if err := renderTemplate(
 			"operator.go.tpl",
 			cfg.SkipHeader,
-			cfg.Dialect(),
+			dialect,
 			"",
 			cfg.Database.Operator.Package,
 			cfg.Getter.Prefix,
@@ -228,7 +254,7 @@ func Generate(c *config.Config) error {
 	return goModTidy()
 }
 
-func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher Matcher) error {
+func parseGoPackage(cfg *config.Config, dialect sequel.Dialect, rootDir string, dirs []string, matcher Matcher) error {
 	type structCache struct {
 		name *ast.Ident
 		t    *ast.StructType
@@ -237,15 +263,9 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 
 	var (
 		rename   = cfg.RenameFunc()
-		dialect  = cfg.Dialect()
 		dir      string
 		filename string
 	)
-
-	// If `skip_escape` is false, we escape the table and column value
-	if !cfg.SkipEscape {
-		dialect = cfg.Dialect()
-	}
 
 	for len(dirs) > 0 {
 		dir = path.Join(rootDir, dirs[0])
@@ -283,9 +303,17 @@ func parseGoPackage(cfg *config.Config, rootDir string, dirs []string, matcher M
 			structCaches = make([]structCache, 0)
 		)
 
-		for _, f := range pkg.Syntax {
+		for _, file := range pkg.Syntax {
+			if len(file.Comments) > 0 && len(file.Comments[0].List) > 0 {
+				// If the first comment is "^// Code generated .* DO NOT EDIT\.$"
+				// we will skip it
+				if genCodeRegexp.MatchString(file.Comments[0].List[0].Text) {
+					continue
+				}
+			}
+
 			// ast.Print(pkg.Fset, f)
-			ast.Inspect(f, func(node ast.Node) bool {
+			ast.Inspect(file, func(node ast.Node) bool {
 				typeSpec := assertAsPtr[ast.TypeSpec](node)
 				if typeSpec == nil {
 					return true
