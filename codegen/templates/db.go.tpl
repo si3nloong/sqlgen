@@ -45,7 +45,8 @@ func InsertOne[T sequel.TableColumnValuer[T], Ptr interface {
 		if i > 0 {
 			stmt.WriteByte(',')
 		}
-		stmt.WriteString(wrapVar(i))
+		// argument always started from 1
+		stmt.WriteString(wrapVar(i + 1))
 	}
 	stmt.WriteString(");")
 	return sqlConn.ExecContext(ctx, stmt.String(), args...)
@@ -99,7 +100,7 @@ func InsertInto[T sequel.TableColumnValuer[T]](ctx context.Context, sqlConn sequ
 			{{ if isStaticVar -}}
 			stmt.WriteString({{ quote varRune }})
 			{{ else -}}
-			stmt.WriteString(wrapVar(offset + j))
+			stmt.WriteString(wrapVar(offset + 1 + j))
 			{{ end -}}
 		}
 		if idx > -1 {
@@ -351,7 +352,7 @@ func (s *sqlStmt) Var(query string, value any) {
 	{{ if isStaticVar -}}
 	s.WriteString(query+"?")
 	{{ else -}}
-	s.WriteString(wrapVar(s.pos))
+	s.WriteString(wrapVar(s.pos + 1))
 	{{ end -}}
 	s.args = append(s.args, value)
 }
