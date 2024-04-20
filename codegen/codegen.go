@@ -305,14 +305,7 @@ func parseGoPackage(
 		}
 
 		var (
-			pkg = pkgs[0]
-		)
-
-		if len(pkg.Errors) > 0 {
-			return pkg.Errors[0]
-		}
-
-		var (
+			pkg          = pkgs[0]
 			structCaches = make([]structCache, 0)
 		)
 
