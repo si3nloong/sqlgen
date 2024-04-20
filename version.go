@@ -1,3 +1,3 @@
 package sqlgen
 
-const Version = "v1.0.0-alpha.6"
+const Version = "v1.0.0-alpha.5"
