@@ -16,6 +16,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"syscall"
 
 	"github.com/samber/lo"
 	"github.com/si3nloong/sqlgen/codegen/config"
@@ -210,7 +211,7 @@ func Generate(c *config.Config) error {
 
 	if cfg.Database != nil {
 		// Generate db code
-		os.Remove(filepath.Join(cfg.Database.Dir, cfg.Database.Filename))
+		_ = syscall.Unlink(filepath.Join(cfg.Database.Dir, cfg.Database.Filename))
 		if err := renderTemplate(
 			"db.go.tpl",
 			cfg.SkipHeader,
@@ -228,7 +229,7 @@ func Generate(c *config.Config) error {
 	}
 
 	if cfg.Database.Operator != nil {
-		os.Remove(filepath.Join(cfg.Database.Dir, cfg.Database.Operator.Filename))
+		_ = syscall.Unlink(filepath.Join(cfg.Database.Dir, cfg.Database.Operator.Filename))
 		if err := renderTemplate(
 			"operator.go.tpl",
 			cfg.SkipHeader,
@@ -289,8 +290,8 @@ func parseGoPackage(
 		}
 
 		filename = path.Join(dir, cfg.Exec.Filename)
-		// Remove the generated file, ignore the error
-		os.Remove(filename)
+		// Unlink the generated file, ignore the error
+		_ = syscall.Unlink(filename)
 
 		// slog.Info("Load package", "dir", dir)
 		pkgs, err := packages.Load(&packages.Config{
