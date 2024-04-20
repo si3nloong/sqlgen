@@ -36,5 +36,5 @@ func (v *Version) Addrs() []any {
 	return []any{(sql.Scanner)(&v.ID)}
 }
 func (v Version) GetID() sequel.ColumnValuer[uuid.UUID] {
-	return sequel.Column[uuid.UUID]("id", v.ID, func(vi uuid.UUID) driver.Value { return (driver.Valuer)(vi) })
+	return sequel.Column("id", v.ID, func(vi uuid.UUID) driver.Value { return (driver.Valuer)(vi) })
 }

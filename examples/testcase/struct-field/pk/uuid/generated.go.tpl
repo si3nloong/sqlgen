@@ -34,8 +34,8 @@ func (v *User) Addrs() []any {
 	return []any{(sql.Scanner)(&v.ID), types.String(&v.Name)}
 }
 func (v User) GetID() sequel.ColumnValuer[uuid.UUID] {
-	return sequel.Column[uuid.UUID]("id", v.ID, func(vi uuid.UUID) driver.Value { return (driver.Valuer)(vi) })
+	return sequel.Column("id", v.ID, func(vi uuid.UUID) driver.Value { return (driver.Valuer)(vi) })
 }
 func (v User) GetName() sequel.ColumnValuer[string] {
-	return sequel.Column[string]("name", v.Name, func(vi string) driver.Value { return string(vi) })
+	return sequel.Column("name", v.Name, func(vi string) driver.Value { return string(vi) })
 }

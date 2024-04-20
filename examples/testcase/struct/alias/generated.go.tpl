@@ -27,10 +27,10 @@ func (v *A) Addrs() []any {
 	return []any{types.Date(&v.Date), types.TextUnmarshaler(&v.Time)}
 }
 func (v A) GetDate() sequel.ColumnValuer[civil.Date] {
-	return sequel.Column[civil.Date]("date", v.Date, func(vi civil.Date) driver.Value { return types.TextMarshaler(vi) })
+	return sequel.Column("date", v.Date, func(vi civil.Date) driver.Value { return types.TextMarshaler(vi) })
 }
 func (v A) GetTime() sequel.ColumnValuer[civil.Time] {
-	return sequel.Column[civil.Time]("time", v.Time, func(vi civil.Time) driver.Value { return types.TextMarshaler(vi) })
+	return sequel.Column("time", v.Time, func(vi civil.Time) driver.Value { return types.TextMarshaler(vi) })
 }
 
 func (v C) CreateTableStmt() string {
@@ -58,8 +58,8 @@ func (v *C) Addrs() []any {
 	return []any{types.String(&v.String), types.Bool(&v.Valid)}
 }
 func (v C) GetString() sequel.ColumnValuer[string] {
-	return sequel.Column[string]("string", v.String, func(vi string) driver.Value { return string(vi) })
+	return sequel.Column("string", v.String, func(vi string) driver.Value { return string(vi) })
 }
 func (v C) GetValid() sequel.ColumnValuer[bool] {
-	return sequel.Column[bool]("valid", v.Valid, func(vi bool) driver.Value { return bool(vi) })
+	return sequel.Column("valid", v.Valid, func(vi bool) driver.Value { return bool(vi) })
 }

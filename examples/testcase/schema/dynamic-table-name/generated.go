@@ -26,7 +26,7 @@ func (v *Model) Addrs() []any {
 	return []any{types.String(&v.Name)}
 }
 func (v Model) GetName() sequel.ColumnValuer[string] {
-	return sequel.Column[string]("name", v.Name, func(vi string) driver.Value { return string(vi) })
+	return sequel.Column("name", v.Name, func(vi string) driver.Value { return string(vi) })
 }
 
 func (v A) CreateTableStmt() string {
@@ -51,8 +51,8 @@ func (v *A) Addrs() []any {
 	return []any{types.Integer(&v.ID), types.String(&v.Name)}
 }
 func (v A) GetID() sequel.ColumnValuer[int64] {
-	return sequel.Column[int64]("id", v.ID, func(vi int64) driver.Value { return int64(vi) })
+	return sequel.Column("id", v.ID, func(vi int64) driver.Value { return int64(vi) })
 }
 func (v A) GetName() sequel.ColumnValuer[string] {
-	return sequel.Column[string]("name", v.Name, func(vi string) driver.Value { return string(vi) })
+	return sequel.Column("name", v.Name, func(vi string) driver.Value { return string(vi) })
 }

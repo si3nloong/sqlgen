@@ -33,11 +33,11 @@ func (v *Model) Addrs() []any {
 	return []any{testencoding.UnmarshalAny(&v.ID), testencoding.UnmarshalString(&v.Text), (*time.Time)(&v.T)}
 }
 func (v Model) GetID() sequel.ColumnValuer[uint8] {
-	return sequel.Column[uint8]("id", v.ID, func(vi uint8) driver.Value { return int64(vi) })
+	return sequel.Column("id", v.ID, func(vi uint8) driver.Value { return int64(vi) })
 }
 func (v Model) GetText() sequel.ColumnValuer[LongText] {
-	return sequel.Column[LongText]("text", v.Text, func(vi LongText) driver.Value { return string(vi) })
+	return sequel.Column("text", v.Text, func(vi LongText) driver.Value { return string(vi) })
 }
 func (v Model) GetT() sequel.ColumnValuer[time.Time] {
-	return sequel.Column[time.Time]("t", v.T, func(vi time.Time) driver.Value { return time.Time(vi) })
+	return sequel.Column("t", v.T, func(vi time.Time) driver.Value { return time.Time(vi) })
 }

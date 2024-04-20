@@ -35,22 +35,22 @@ func (v *Address) Addrs() []any {
 	return []any{types.String(&v.Line1), (sql.Scanner)(&v.Line2), types.String(&v.City), types.Integer(&v.PostCode), types.String(&v.StateCode), types.String(&v.CountryCode)}
 }
 func (v Address) GetLine1() sequel.ColumnValuer[string] {
-	return sequel.Column[string]("line_1", v.Line1, func(vi string) driver.Value { return string(vi) })
+	return sequel.Column("line_1", v.Line1, func(vi string) driver.Value { return string(vi) })
 }
 func (v Address) GetLine2() sequel.ColumnValuer[sql.NullString] {
-	return sequel.Column[sql.NullString]("line_2", v.Line2, func(vi sql.NullString) driver.Value { return (driver.Valuer)(vi) })
+	return sequel.Column("line_2", v.Line2, func(vi sql.NullString) driver.Value { return (driver.Valuer)(vi) })
 }
 func (v Address) GetCity() sequel.ColumnValuer[string] {
-	return sequel.Column[string]("city", v.City, func(vi string) driver.Value { return string(vi) })
+	return sequel.Column("city", v.City, func(vi string) driver.Value { return string(vi) })
 }
 func (v Address) GetPostCode() sequel.ColumnValuer[uint] {
-	return sequel.Column[uint]("post_code", v.PostCode, func(vi uint) driver.Value { return int64(vi) })
+	return sequel.Column("post_code", v.PostCode, func(vi uint) driver.Value { return int64(vi) })
 }
 func (v Address) GetStateCode() sequel.ColumnValuer[StateCode] {
-	return sequel.Column[StateCode]("state_code", v.StateCode, func(vi StateCode) driver.Value { return string(vi) })
+	return sequel.Column("state_code", v.StateCode, func(vi StateCode) driver.Value { return string(vi) })
 }
 func (v Address) GetCountryCode() sequel.ColumnValuer[CountryCode] {
-	return sequel.Column[CountryCode]("country_code", v.CountryCode, func(vi CountryCode) driver.Value { return string(vi) })
+	return sequel.Column("country_code", v.CountryCode, func(vi CountryCode) driver.Value { return string(vi) })
 }
 
 func (v Customer) CreateTableStmt() string {
@@ -78,23 +78,23 @@ func (v *Customer) Addrs() []any {
 	return []any{types.Integer(&v.ID), types.Integer(&v.Age), (sql.Scanner)(&v.Name), &v.Address, types.StringList(&v.Nicknames), types.String(&v.Status), (*time.Time)(&v.JoinAt)}
 }
 func (v Customer) GetID() sequel.ColumnValuer[int64] {
-	return sequel.Column[int64]("id", v.ID, func(vi int64) driver.Value { return int64(vi) })
+	return sequel.Column("id", v.ID, func(vi int64) driver.Value { return int64(vi) })
 }
 func (v Customer) GetAge() sequel.ColumnValuer[uint8] {
-	return sequel.Column[uint8]("howOld", v.Age, func(vi uint8) driver.Value { return int64(vi) })
+	return sequel.Column("howOld", v.Age, func(vi uint8) driver.Value { return int64(vi) })
 }
 func (v Customer) GetName() sequel.ColumnValuer[longText] {
-	return sequel.Column[longText]("name", v.Name, func(vi longText) driver.Value { return (driver.Valuer)(vi) })
+	return sequel.Column("name", v.Name, func(vi longText) driver.Value { return (driver.Valuer)(vi) })
 }
 func (v Customer) GetAddress() sequel.ColumnValuer[Addresses] {
-	return sequel.Column[Addresses]("address", v.Address, func(vi Addresses) driver.Value { return (driver.Valuer)(vi) })
+	return sequel.Column("address", v.Address, func(vi Addresses) driver.Value { return (driver.Valuer)(vi) })
 }
 func (v Customer) GetNicknames() sequel.ColumnValuer[[]longText] {
-	return sequel.Column[[]longText]("nicknames", v.Nicknames, func(vi []longText) driver.Value { return encoding.MarshalStringList(vi) })
+	return sequel.Column("nicknames", v.Nicknames, func(vi []longText) driver.Value { return encoding.MarshalStringList(vi) })
 }
 func (v Customer) GetStatus() sequel.ColumnValuer[string] {
-	return sequel.Column[string]("status", v.Status, func(vi string) driver.Value { return string(vi) })
+	return sequel.Column("status", v.Status, func(vi string) driver.Value { return string(vi) })
 }
 func (v Customer) GetJoinAt() sequel.ColumnValuer[time.Time] {
-	return sequel.Column[time.Time]("join_at", v.JoinAt, func(vi time.Time) driver.Value { return time.Time(vi) })
+	return sequel.Column("join_at", v.JoinAt, func(vi time.Time) driver.Value { return time.Time(vi) })
 }
