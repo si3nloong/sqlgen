@@ -33,8 +33,8 @@ func (v *B) Addrs() []any {
 	return []any{types.Date(&v.DateTime.Date), types.TextUnmarshaler(&v.DateTime.Time)}
 }
 func (v B) GetDate() sequel.ColumnValuer[civil.Date] {
-	return sequel.Column[civil.Date]("date", v.DateTime.Date, func(vi civil.Date) driver.Value { return types.TextMarshaler(vi) })
+	return sequel.Column("date", v.DateTime.Date, func(vi civil.Date) driver.Value { return types.TextMarshaler(vi) })
 }
 func (v B) GetTime() sequel.ColumnValuer[civil.Time] {
-	return sequel.Column[civil.Time]("time", v.DateTime.Time, func(vi civil.Time) driver.Value { return types.TextMarshaler(vi) })
+	return sequel.Column("time", v.DateTime.Time, func(vi civil.Time) driver.Value { return types.TextMarshaler(vi) })
 }

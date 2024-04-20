@@ -43,11 +43,11 @@ func (v *Binary) Addrs() []any {
 	return []any{types.BinaryUnmarshaler(&v.ID), types.String(&v.Str), (*time.Time)(&v.Time)}
 }
 func (v Binary) GetID() sequel.ColumnValuer[uuid.UUID] {
-	return sequel.Column[uuid.UUID]("id", v.ID, func(vi uuid.UUID) driver.Value { return types.BinaryMarshaler(vi) })
+	return sequel.Column("id", v.ID, func(vi uuid.UUID) driver.Value { return types.BinaryMarshaler(vi) })
 }
 func (v Binary) GetStr() sequel.ColumnValuer[string] {
-	return sequel.Column[string]("str", v.Str, func(vi string) driver.Value { return string(vi) })
+	return sequel.Column("str", v.Str, func(vi string) driver.Value { return string(vi) })
 }
 func (v Binary) GetTime() sequel.ColumnValuer[time.Time] {
-	return sequel.Column[time.Time]("time", v.Time, func(vi time.Time) driver.Value { return time.Time(vi) })
+	return sequel.Column("time", v.Time, func(vi time.Time) driver.Value { return time.Time(vi) })
 }

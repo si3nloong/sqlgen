@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/si3nloong/sqlgen/codegen/templates"
-	"github.com/si3nloong/sqlgen/sequel"
 	"github.com/si3nloong/sqlgen/sequel/strpool"
 )
 
@@ -196,7 +195,7 @@ func (g *Generator) updateByPKStmt() func(*templates.Model) string {
 	}
 }
 
-func varStmt(dialect sequel.Dialect) func(*templates.Model) string {
+func (g *Generator) varStmt() func(*templates.Model) string {
 	return func(model *templates.Model) string {
 		blr := strpool.AcquireString()
 		defer strpool.ReleaseString(blr)
@@ -209,10 +208,23 @@ func varStmt(dialect sequel.Dialect) func(*templates.Model) string {
 			if i > 0 {
 				blr.WriteByte(',')
 			}
-			blr.WriteString(dialect.QuoteVar(i + 1))
+			blr.WriteString(g.QuoteVar(i + 1))
 		}
 		blr.WriteByte(')')
 		return blr.String()
+	}
+}
+
+func (g *Generator) varRune() string {
+	return string(g.dialect.VarRune())
+}
+
+func (g *Generator) typeConstraint(typeInferred bool) func(FieldTypeValueResult) string {
+	return func(result FieldTypeValueResult) string {
+		if typeInferred {
+			return ""
+		}
+		return "[" + result.Type + "]"
 	}
 }
 

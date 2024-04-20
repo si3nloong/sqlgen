@@ -5,6 +5,7 @@ go 1.21
 require (
 	cloud.google.com/go v0.112.2
 	github.com/AlecAivazis/survey/v2 v2.3.7
+	github.com/Masterminds/semver/v3 v3.2.1
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/samber/lo v1.39.0
 	github.com/spf13/cobra v1.8.0

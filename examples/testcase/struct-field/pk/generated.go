@@ -42,16 +42,16 @@ func (v *Car) Addrs() []any {
 	return []any{types.Integer(&v.ID), types.String(&v.No), types.Integer(&v.Color), (*time.Time)(&v.ManucDate)}
 }
 func (v Car) GetID() sequel.ColumnValuer[PK] {
-	return sequel.Column[PK]("id", v.ID, func(vi PK) driver.Value { return (driver.Valuer)(vi) })
+	return sequel.Column("id", v.ID, func(vi PK) driver.Value { return (driver.Valuer)(vi) })
 }
 func (v Car) GetNo() sequel.ColumnValuer[string] {
-	return sequel.Column[string]("no", v.No, func(vi string) driver.Value { return string(vi) })
+	return sequel.Column("no", v.No, func(vi string) driver.Value { return string(vi) })
 }
 func (v Car) GetColor() sequel.ColumnValuer[Color] {
-	return sequel.Column[Color]("color", v.Color, func(vi Color) driver.Value { return int64(vi) })
+	return sequel.Column("color", v.Color, func(vi Color) driver.Value { return int64(vi) })
 }
 func (v Car) GetManucDate() sequel.ColumnValuer[time.Time] {
-	return sequel.Column[time.Time]("manuc_date", v.ManucDate, func(vi time.Time) driver.Value { return time.Time(vi) })
+	return sequel.Column("manuc_date", v.ManucDate, func(vi time.Time) driver.Value { return time.Time(vi) })
 }
 
 func (v User) CreateTableStmt() string {
@@ -88,16 +88,16 @@ func (v *User) Addrs() []any {
 	return []any{types.Integer(&v.ID), types.String(&v.Name), types.Integer(&v.Age), types.String(&v.Email)}
 }
 func (v User) GetID() sequel.ColumnValuer[int64] {
-	return sequel.Column[int64]("id", v.ID, func(vi int64) driver.Value { return int64(vi) })
+	return sequel.Column("id", v.ID, func(vi int64) driver.Value { return int64(vi) })
 }
 func (v User) GetName() sequel.ColumnValuer[LongText] {
-	return sequel.Column[LongText]("name", v.Name, func(vi LongText) driver.Value { return string(vi) })
+	return sequel.Column("name", v.Name, func(vi LongText) driver.Value { return string(vi) })
 }
 func (v User) GetAge() sequel.ColumnValuer[uint8] {
-	return sequel.Column[uint8]("age", v.Age, func(vi uint8) driver.Value { return int64(vi) })
+	return sequel.Column("age", v.Age, func(vi uint8) driver.Value { return int64(vi) })
 }
 func (v User) GetEmail() sequel.ColumnValuer[string] {
-	return sequel.Column[string]("email", v.Email, func(vi string) driver.Value { return string(vi) })
+	return sequel.Column("email", v.Email, func(vi string) driver.Value { return string(vi) })
 }
 
 func (v House) CreateTableStmt() string {
@@ -134,8 +134,8 @@ func (v *House) Addrs() []any {
 	return []any{types.Integer(&v.ID), types.String(&v.No)}
 }
 func (v House) GetID() sequel.ColumnValuer[uint] {
-	return sequel.Column[uint]("id", v.ID, func(vi uint) driver.Value { return int64(vi) })
+	return sequel.Column("id", v.ID, func(vi uint) driver.Value { return int64(vi) })
 }
 func (v House) GetNo() sequel.ColumnValuer[string] {
-	return sequel.Column[string]("no", v.No, func(vi string) driver.Value { return string(vi) })
+	return sequel.Column("no", v.No, func(vi string) driver.Value { return string(vi) })
 }

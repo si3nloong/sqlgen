@@ -18,6 +18,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/samber/lo"
 	"github.com/si3nloong/sqlgen/codegen/config"
 	"github.com/si3nloong/sqlgen/codegen/templates"
@@ -31,7 +32,15 @@ var (
 	codegenTemplates embed.FS
 
 	// https://pkg.go.dev/cmd/go#hdr-Generate_Go_files_by_processing_source
-	genCodeRegexp = regexp.MustCompile(`^// Code generated .* DO NOT EDIT\.$`)
+	path2Regex = strings.NewReplacer(
+		`.`, `\.`,
+		`*`, `.*`,
+		`\`, `[\\/]`,
+		`/`, `[\\/]`,
+	)
+	nameRegex    = regexp.MustCompile(`(?i)^[a-z]+[a-z0-9\_]*$`)
+	codegenRegex = regexp.MustCompile(`^// Code generated .* DO NOT EDIT\.$`)
+	go121        = lo.Must1(semver.NewConstraint(">= 1.2.1"))
 )
 
 const fileMode = 0o755
@@ -73,7 +82,7 @@ type structType struct {
 }
 
 type structField struct {
-	id       string
+	index    []int
 	name     string
 	path     string
 	t        types.Type
@@ -94,15 +103,6 @@ func (t tagOpts) Lookup(key tagOption, keys ...tagOption) (v string, ok bool) {
 	return
 }
 
-var path2Regex = strings.NewReplacer(
-	`.`, `\.`,
-	`*`, `.*`,
-	`\`, `[\\/]`,
-	`/`, `[\\/]`,
-)
-
-var nameRegex = regexp.MustCompile(`(?i)^[a-z]+[a-z0-9\_]*$`)
-
 func Generate(c *config.Config) error {
 	cfg := *config.DefaultConfig()
 	if c != nil {
@@ -119,6 +119,7 @@ func Generate(c *config.Config) error {
 	var (
 		srcDir  string
 		sources = make([]string, len(cfg.Source))
+		gen     = newGenerator(cfg, dialect)
 	)
 
 	copy(sources, cfg.Source)
@@ -201,7 +202,7 @@ func Generate(c *config.Config) error {
 			dirs = append(dirs, "")
 		}
 
-		if err := parseGoPackage(cfg, dialect, rootDir, dirs, matcher); err != nil {
+		if err := parseGoPackage(gen, rootDir, dirs, matcher); err != nil {
 			return err
 		}
 
@@ -213,10 +214,9 @@ func Generate(c *config.Config) error {
 		// Generate db code
 		_ = syscall.Unlink(filepath.Join(cfg.Database.Dir, cfg.Database.Filename))
 		if err := renderTemplate(
+			gen,
 			"db.go.tpl",
-			cfg.SkipHeader,
-			cfg.QuoteIdentifier,
-			dialect,
+			true,
 			"",
 			cfg.Database.Package,
 			cfg.Getter.Prefix,
@@ -231,10 +231,9 @@ func Generate(c *config.Config) error {
 	if cfg.Database.Operator != nil {
 		_ = syscall.Unlink(filepath.Join(cfg.Database.Dir, cfg.Database.Operator.Filename))
 		if err := renderTemplate(
+			gen,
 			"operator.go.tpl",
-			cfg.SkipHeader,
-			cfg.QuoteIdentifier,
-			dialect,
+			true,
 			"",
 			cfg.Database.Operator.Package,
 			cfg.Getter.Prefix,
@@ -253,8 +252,7 @@ func Generate(c *config.Config) error {
 }
 
 func parseGoPackage(
-	cfg config.Config,
-	dialect sequel.Dialect,
+	gen *Generator,
 	rootDir string,
 	dirs []string,
 	matcher Matcher,
@@ -266,7 +264,7 @@ func parseGoPackage(
 	}
 
 	var (
-		rename   = cfg.RenameFunc()
+		rename   = gen.config.RenameFunc()
 		dir      string
 		filename string
 	)
@@ -275,21 +273,21 @@ func parseGoPackage(
 		dir = path.Join(rootDir, dirs[0])
 		// Skip if the file is exists in db folder
 		if idx := sort.SearchStrings([]string{
-			path.Join(fileutil.Getpwd(), cfg.Database.Dir),
-			path.Join(fileutil.Getpwd(), cfg.Database.Operator.Dir),
+			path.Join(fileutil.Getpwd(), gen.config.Database.Dir),
+			path.Join(fileutil.Getpwd(), gen.config.Database.Operator.Dir),
 		}, dir); idx != 2 {
 			dirs = dirs[1:]
 			continue
 		}
 
 		slog.Info("Process", "dir", dir)
-		if fileutil.IsDirEmptyFiles(dir, cfg.Exec.Filename) {
+		if fileutil.IsDirEmptyFiles(dir, gen.config.Exec.Filename) {
 			slog.Info("Folder is empty, so not processing")
 			dirs = dirs[1:]
 			continue
 		}
 
-		filename = path.Join(dir, cfg.Exec.Filename)
+		filename = path.Join(dir, gen.config.Exec.Filename)
 		// Unlink the generated file, ignore the error
 		_ = syscall.Unlink(filename)
 
@@ -306,6 +304,7 @@ func parseGoPackage(
 
 		var (
 			pkg          = pkgs[0]
+			typeInferred = false
 			structCaches = make([]structCache, 0)
 		)
 
@@ -313,8 +312,15 @@ func parseGoPackage(
 			if len(file.Comments) > 0 && len(file.Comments[0].List) > 0 {
 				// If the first comment is "^// Code generated .* DO NOT EDIT\.$"
 				// we will skip it
-				if genCodeRegexp.MatchString(file.Comments[0].List[0].Text) {
+				if codegenRegex.MatchString(file.Comments[0].List[0].Text) {
 					continue
+				}
+			}
+
+			if pkg.Module != nil {
+				// If go version is 1.21, then it don't have infer type
+				if go121.Check(lo.Must1(semver.NewVersion(pkg.Module.GoVersion))) {
+					typeInferred = true
 				}
 			}
 
@@ -453,7 +459,7 @@ func parseGoPackage(
 							t := obj.Decl.(*ast.TypeSpec)
 							q = append(q, typeQueue{path: path, idx: append(f.idx, i), t: t.Type.(*ast.StructType), pkg: f.pkg})
 
-							fields = append(fields, structField{id: toID(append(f.idx, i)), exported: vi.IsExported(), embedded: true, name: types.ExprString(vi), tag: tag, path: path, t: f.pkg.TypesInfo.TypeOf(fi.Type)})
+							fields = append(fields, structField{index: append(f.idx, i), exported: vi.IsExported(), embedded: true, name: types.ExprString(vi), tag: tag, path: path, t: f.pkg.TypesInfo.TypeOf(fi.Type)})
 							continue
 
 						// Embedded with imported struct
@@ -492,7 +498,7 @@ func parseGoPackage(
 							if st := assertAsPtr[ast.StructType](decl.Type); st != nil {
 								q = append(q, typeQueue{path: path, idx: append(f.idx, i), t: st, pkg: importPkg})
 
-								fields = append(fields, structField{id: toID(append(f.idx, i)), exported: vi.Sel.IsExported(), embedded: true, name: types.ExprString(vi.Sel), tag: tag, path: path, t: f.pkg.TypesInfo.TypeOf(fi.Type)})
+								fields = append(fields, structField{index: append(f.idx, i), exported: vi.Sel.IsExported(), embedded: true, name: types.ExprString(vi.Sel), tag: tag, path: path, t: f.pkg.TypesInfo.TypeOf(fi.Type)})
 							}
 							continue
 						}
@@ -504,7 +510,7 @@ func parseGoPackage(
 							path = f.path + "." + path
 						}
 
-						fields = append(fields, structField{id: toID(append(f.idx, i+j)), exported: n.IsExported(), name: types.ExprString(n), tag: tag, path: path, t: f.pkg.TypesInfo.TypeOf(fi.Type)})
+						fields = append(fields, structField{index: append(f.idx, i+j), exported: n.IsExported(), name: types.ExprString(n), tag: tag, path: path, t: f.pkg.TypesInfo.TypeOf(fi.Type)})
 					}
 				}
 
@@ -514,7 +520,15 @@ func parseGoPackage(
 
 			if len(fields) > 0 {
 				sort.Slice(fields, func(i, j int) bool {
-					return fields[j].id > fields[i].id
+					for k, xik := range fields[i].index {
+						if k >= len(fields[j].index) {
+							return false
+						}
+						if xik != fields[j].index[k] {
+							return xik < fields[j].index[k]
+						}
+					}
+					return len(fields[i].index) < len(fields[j].index)
 				})
 				structs = append(structs, structType{name: s.name, fields: fields, t: pkg.TypesInfo.TypeOf(s.name)})
 			}
@@ -539,14 +553,14 @@ func parseGoPackage(
 			model.TableName = rename(model.GoName)
 
 			// Check struct implements `sequel.Tabler`
-			if m, w := types.MissingMethod(s.t, sqlTabler, true); !cfg.NoStrict && w {
+			if m, w := types.MissingMethod(s.t, sqlTabler, true); !gen.config.NoStrict && w {
 				return fmt.Errorf(`sqlgen: struct %q has implements "sequel.Tabler" but wrong footprint`, s.name)
 			} else if m == nil && !w {
 				model.HasTableName = true
 			}
 
 			// Check struct implements `sequel.Columner`
-			if m, w := types.MissingMethod(s.t, sqlColumner, true); !cfg.NoStrict && w {
+			if m, w := types.MissingMethod(s.t, sqlColumner, true); !gen.config.NoStrict && w {
 				return fmt.Errorf(`sqlgen: struct %q has implements "sequel.Columner" but wrong footprint`, s.name)
 			} else if m == nil && !w {
 				model.HasColumn = true
@@ -554,7 +568,7 @@ func parseGoPackage(
 
 			for _, f := range s.fields {
 				var (
-					tv  = f.tag.Get(cfg.Tag)
+					tv  = f.tag.Get(gen.config.Tag)
 					tf  = &templates.Field{}
 					tag = make(tagOpts)
 					n   string
@@ -568,7 +582,7 @@ func parseGoPackage(
 					if n == "-" {
 						continue
 					} else if n != "" {
-						if !cfg.NoStrict && !nameRegex.MatchString(n) {
+						if !gen.config.NoStrict && !nameRegex.MatchString(n) {
 							return fmt.Errorf(`sqlgen: invalid column name %q in struct %q`, n, s.name)
 						}
 						tf.ColumnName = n
@@ -616,7 +630,7 @@ func parseGoPackage(
 				if _, ok := tag.Lookup(TagOptionBinary); ok {
 					if isImplemented(tf.Type, binaryMarshaler) && isImplemented(newPointer(tf.Type), binaryUnmarshaler) {
 						tf.IsBinary = true
-					} else if !cfg.NoStrict {
+					} else if !gen.config.NoStrict {
 						return fmt.Errorf(`sqlgen: field %q of struct %q specific for "binary" must comply to encoding.BinaryMarshaler and encoding.BinaryUnmarshaler`, tf.GoName, model.GoName)
 					}
 				}
@@ -628,7 +642,7 @@ func parseGoPackage(
 				index++
 
 				if _, ok := tag.Lookup(TagOptionPK, TagOptionPKAlias, TagOptionAutoIncrement); ok {
-					if !cfg.NoStrict && model.PK != nil {
+					if !gen.config.NoStrict && model.PK != nil {
 						return fmt.Errorf(`sqlgen: a model can only allow one primary key, else it will get overriden`)
 					}
 
@@ -638,7 +652,7 @@ func parseGoPackage(
 					model.PK = &pk
 				}
 
-				if !cfg.NoStrict {
+				if !gen.config.NoStrict {
 					// Check uniqueness of the column
 					if _, ok := nameMap[tf.ColumnName]; ok {
 						return fmt.Errorf("sqlgen: struct %q has duplicate key %q in %s", s.name, tf.ColumnName, dir)
@@ -659,20 +673,19 @@ func parseGoPackage(
 			}
 		}
 
-		if cfg.Exec.SkipEmpty && len(params.Models) == 0 {
+		if gen.config.Exec.SkipEmpty && len(params.Models) == 0 {
 			goto nextDir
 		}
 
 		if err := renderTemplate(
+			gen,
 			"model.go.tpl",
-			cfg.SkipHeader,
-			cfg.QuoteIdentifier,
-			dialect,
+			typeInferred,
 			pkg.PkgPath,
 			pkg.Name,
-			cfg.Getter.Prefix,
+			gen.config.Getter.Prefix,
 			dir,
-			cfg.Exec.Filename,
+			gen.config.Exec.Filename,
 			params,
 		); err != nil {
 			return err

@@ -57,7 +57,7 @@ func (v *{{ $structName }}) Addrs() []any {
 {{ range $f := .Fields -}}
 {{- $return := getFieldTypeValue $f -}}
 func (v {{ $structName }}) {{ $return.FuncName }}() (sequel.ColumnValuer[{{ $return.Type }}]) {
-	return sequel.Column[{{ $return.Type }}]({{ quote (quoteIdentifier $f.ColumnName) }}, v.{{ .GoPath }}, func(vi {{ $return.Type }}) driver.Value { return {{ castAs $f "vi" }} })
+	return sequel.Column{{ typeConstraint $return }}({{ quote (quoteIdentifier $f.ColumnName) }}, v.{{ .GoPath }}, func(vi {{ $return.Type }}) driver.Value { return {{ castAs $f "vi" }} })
 }
 {{ end -}}
 {{ "" }}

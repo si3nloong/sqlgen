@@ -2,9 +2,6 @@ package codegen
 
 import (
 	"go/types"
-	"strconv"
-
-	"github.com/si3nloong/sqlgen/sequel/strpool"
 )
 
 func UnderlyingType(t types.Type) (*Mapping, bool) {
@@ -47,18 +44,6 @@ loop:
 		return v, ok
 	}
 	return nil, false
-}
-
-func toID(val []int) string {
-	buf := strpool.AcquireString()
-	defer strpool.ReleaseString(buf)
-	for i, v := range val {
-		if i > 0 {
-			buf.WriteByte('.')
-		}
-		buf.WriteString(strconv.Itoa(v))
-	}
-	return buf.String()
 }
 
 func assertAsPtr[T any](v any) *T {

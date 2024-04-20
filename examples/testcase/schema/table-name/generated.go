@@ -32,7 +32,7 @@ func (v *CustomTableName1) Addrs() []any {
 	return []any{types.String(&v.Text)}
 }
 func (v CustomTableName1) GetText() sequel.ColumnValuer[string] {
-	return sequel.Column[string]("text", v.Text, func(vi string) driver.Value { return string(vi) })
+	return sequel.Column("text", v.Text, func(vi string) driver.Value { return string(vi) })
 }
 
 func (v CustomTableName2) CreateTableStmt() string {
@@ -60,7 +60,7 @@ func (v *CustomTableName2) Addrs() []any {
 	return []any{types.String(&v.Text)}
 }
 func (v CustomTableName2) GetText() sequel.ColumnValuer[string] {
-	return sequel.Column[string]("text", v.Text, func(vi string) driver.Value { return string(vi) })
+	return sequel.Column("text", v.Text, func(vi string) driver.Value { return string(vi) })
 }
 
 func (v CustomTableName3) CreateTableStmt() string {
@@ -88,5 +88,5 @@ func (v *CustomTableName3) Addrs() []any {
 	return []any{types.String(&v.Text)}
 }
 func (v CustomTableName3) GetText() sequel.ColumnValuer[string] {
-	return sequel.Column[string]("text", v.Text, func(vi string) driver.Value { return string(vi) })
+	return sequel.Column("text", v.Text, func(vi string) driver.Value { return string(vi) })
 }
