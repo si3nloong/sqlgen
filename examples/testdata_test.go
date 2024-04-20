@@ -25,7 +25,6 @@ func TestAll(t *testing.T) {
 	if err := codegen.Generate(&config.Config{
 		Source:     []string{rootDir + "/**/*.go", rootDir + "/db/*"},
 		SkipHeader: true,
-		Strict:     true,
 		Exec: config.ExecConfig{
 			SkipEmpty: false,
 		},

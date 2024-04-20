@@ -103,9 +103,12 @@ var path2Regex = strings.NewReplacer(
 var nameRegex = regexp.MustCompile(`(?i)^[a-z]+[a-z0-9\_]*$`)
 
 func Generate(c *config.Config) error {
-	var (
-		cfg = c.Clone()
-	)
+	cfg := *config.DefaultConfig()
+	if c != nil {
+		cfg = *c
+	}
+
+	cfg.Init()
 
 	dialect, ok := sequel.GetDialect(string(cfg.Driver))
 	if !ok {
@@ -211,7 +214,7 @@ func Generate(c *config.Config) error {
 		if err := renderTemplate(
 			"db.go.tpl",
 			cfg.SkipHeader,
-			cfg.QuotedIdentifier,
+			cfg.QuoteIdentifier,
 			dialect,
 			"",
 			cfg.Database.Package,
@@ -229,7 +232,7 @@ func Generate(c *config.Config) error {
 		if err := renderTemplate(
 			"operator.go.tpl",
 			cfg.SkipHeader,
-			cfg.QuotedIdentifier,
+			cfg.QuoteIdentifier,
 			dialect,
 			"",
 			cfg.Database.Operator.Package,
@@ -248,7 +251,13 @@ func Generate(c *config.Config) error {
 	return goModTidy()
 }
 
-func parseGoPackage(cfg *config.Config, dialect sequel.Dialect, rootDir string, dirs []string, matcher Matcher) error {
+func parseGoPackage(
+	cfg config.Config,
+	dialect sequel.Dialect,
+	rootDir string,
+	dirs []string,
+	matcher Matcher,
+) error {
 	type structCache struct {
 		name *ast.Ident
 		t    *ast.StructType
@@ -536,14 +545,14 @@ func parseGoPackage(cfg *config.Config, dialect sequel.Dialect, rootDir string, 
 			model.TableName = rename(model.GoName)
 
 			// Check struct implements `sequel.Tabler`
-			if m, w := types.MissingMethod(s.t, sqlTabler, true); cfg.Strict && w {
+			if m, w := types.MissingMethod(s.t, sqlTabler, true); !cfg.NoStrict && w {
 				return fmt.Errorf(`sqlgen: struct %q has implements "sequel.Tabler" but wrong footprint`, s.name)
 			} else if m == nil && !w {
 				model.HasTableName = true
 			}
 
 			// Check struct implements `sequel.Columner`
-			if m, w := types.MissingMethod(s.t, sqlColumner, true); cfg.Strict && w {
+			if m, w := types.MissingMethod(s.t, sqlColumner, true); !cfg.NoStrict && w {
 				return fmt.Errorf(`sqlgen: struct %q has implements "sequel.Columner" but wrong footprint`, s.name)
 			} else if m == nil && !w {
 				model.HasColumn = true
@@ -565,7 +574,7 @@ func parseGoPackage(cfg *config.Config, dialect sequel.Dialect, rootDir string, 
 					if n == "-" {
 						continue
 					} else if n != "" {
-						if cfg.Strict && !nameRegex.MatchString(n) {
+						if !cfg.NoStrict && !nameRegex.MatchString(n) {
 							return fmt.Errorf(`sqlgen: invalid column name %q in struct %q`, n, s.name)
 						}
 						tf.ColumnName = n
@@ -613,7 +622,7 @@ func parseGoPackage(cfg *config.Config, dialect sequel.Dialect, rootDir string, 
 				if _, ok := tag.Lookup(TagOptionBinary); ok {
 					if isImplemented(tf.Type, binaryMarshaler) && isImplemented(newPointer(tf.Type), binaryUnmarshaler) {
 						tf.IsBinary = true
-					} else if cfg.Strict {
+					} else if !cfg.NoStrict {
 						return fmt.Errorf(`sqlgen: field %q of struct %q specific for "binary" must comply to encoding.BinaryMarshaler and encoding.BinaryUnmarshaler`, tf.GoName, model.GoName)
 					}
 				}
@@ -625,7 +634,7 @@ func parseGoPackage(cfg *config.Config, dialect sequel.Dialect, rootDir string, 
 				index++
 
 				if _, ok := tag.Lookup(TagOptionPK, TagOptionPKAlias, TagOptionAutoIncrement); ok {
-					if cfg.Strict && model.PK != nil {
+					if !cfg.NoStrict && model.PK != nil {
 						return fmt.Errorf(`sqlgen: a model can only allow one primary key, else it will get overriden`)
 					}
 
@@ -635,7 +644,7 @@ func parseGoPackage(cfg *config.Config, dialect sequel.Dialect, rootDir string, 
 					model.PK = &pk
 				}
 
-				if cfg.Strict {
+				if !cfg.NoStrict {
 					// Check uniqueness of the column
 					if _, ok := nameMap[tf.ColumnName]; ok {
 						return fmt.Errorf("sqlgen: struct %q has duplicate key %q in %s", s.name, tf.ColumnName, dir)
@@ -663,7 +672,7 @@ func parseGoPackage(cfg *config.Config, dialect sequel.Dialect, rootDir string, 
 		if err := renderTemplate(
 			"model.go.tpl",
 			cfg.SkipHeader,
-			cfg.QuotedIdentifier,
+			cfg.QuoteIdentifier,
 			dialect,
 			pkg.PkgPath,
 			pkg.Name,

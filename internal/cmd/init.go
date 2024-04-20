@@ -100,7 +100,7 @@ func runInitCommand(cmd *cobra.Command, args []string) error {
 		cfg.NamingConvention = config.CamelCase
 	}
 	cfg.Tag = answer.Tag
-	cfg.Strict = answer.Strict
+	cfg.NoStrict = !answer.Strict
 
 	cmd.Println("\nAbout to write to " + fileDest + ":\n")
 

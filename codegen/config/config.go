@@ -42,15 +42,16 @@ type Config struct {
 	Driver           SqlDriver `yaml:"driver"`
 	NamingConvention naming    `yaml:"naming_convention,omitempty"`
 	Tag              string    `yaml:"struct_tag,omitempty"`
-	// Whether to quote the table name, column name
-	QuotedIdentifier bool            `yaml:"quoted_identifier"`
-	Strict           bool            `yaml:"strict"`
-	Exec             ExecConfig      `yaml:"exec"`
-	Getter           GetterConfig    `yaml:"getter"`
-	Database         *DatabaseConfig `yaml:"database"`
-	SkipHeader       bool            `yaml:"skip_header"`
-	SourceMap        bool            `yaml:"source_map"`
-	SkipModTidy      bool            `yaml:"skip_mod_tidy"`
+	// Whether to quote the table name and column name
+	QuoteIdentifier bool            `yaml:"quote_identifier,omitempty"`
+	OmitGetters     bool            `yaml:"omit_getters,omitempty"`
+	NoStrict        bool            `yaml:"no_strict,omitempty"`
+	Exec            ExecConfig      `yaml:"exec"`
+	Getter          GetterConfig    `yaml:"getter"`
+	Database        *DatabaseConfig `yaml:"database"`
+	SourceMap       bool            `yaml:"source_map"`
+	SkipHeader      bool            `yaml:"skip_header"`
+	SkipModTidy     bool            `yaml:"skip_mod_tidy"`
 }
 
 type ExecConfig struct {
@@ -77,12 +78,15 @@ type DatabaseOperatorConfig struct {
 	Filename string `yaml:"filename"`
 }
 
+func (c Config) IsStrict() bool {
+	return !c.NoStrict
+}
+
 func (c *Config) init() {
 	c.Source = []string{"./**/*"}
 	c.NamingConvention = SnakeCase
 	c.Tag = DefaultStructTag
 	c.Driver = MySQL
-	c.Strict = true
 	c.Exec.Filename = DefaultGeneratedFile
 	c.Exec.SkipEmpty = true
 	c.Getter.Prefix = "Get"
@@ -96,73 +100,51 @@ func (c *Config) init() {
 	c.Database.Operator.Filename = "operator.go"
 }
 
-func (c Config) Clone() *Config {
-	newConfig := new(Config)
-	newConfig.init()
-	if len(c.Source) > 0 {
-		newConfig.Source = make([]string, len(c.Source))
-		copy(newConfig.Source, c.Source)
+func (c *Config) Init() {
+	if c.Source == nil {
+		c.Source = []string{"./**/*"}
 	}
-	if c.Driver != "" {
-		newConfig.Driver = c.Driver
+	if c.Driver == "" {
+		c.Driver = MySQL
 	}
-	if c.NamingConvention != "" {
-		newConfig.NamingConvention = c.NamingConvention
+	if c.NamingConvention == "" {
+		c.NamingConvention = SnakeCase
 	}
-	if c.QuotedIdentifier != newConfig.QuotedIdentifier {
-		newConfig.QuotedIdentifier = c.QuotedIdentifier
+	if c.Tag == "" {
+		c.Tag = DefaultStructTag
 	}
-	if c.Tag != "" {
-		newConfig.Tag = c.Tag
+	if c.Getter.Prefix == "" {
+		c.Getter.Prefix = "Get"
 	}
-	if c.Exec.Filename != "" {
-		newConfig.Exec.Filename = c.Exec.Filename
+	if c.Exec.Filename == "" {
+		c.Exec.Filename = DefaultGeneratedFile
 	}
-	if c.Exec.SkipEmpty != newConfig.Exec.SkipEmpty {
-		newConfig.Exec.SkipEmpty = c.Exec.SkipEmpty
-	}
-	if c.Database != nil {
-		if newConfig.Database == nil {
-			newConfig.Database = new(DatabaseConfig)
-		}
-		if c.Database.Dir != "" {
-			newConfig.Database.Dir = c.Database.Dir
-		}
-		if c.Database.Package != "" {
-			newConfig.Database.Package = c.Database.Package
-		}
-		if c.Database.Filename != "" {
-			newConfig.Database.Filename = c.Database.Filename
-		}
-		if c.Database.Operator != nil {
-			newConfig.Database.Operator = new(DatabaseOperatorConfig)
-			newConfig.Database.Operator.Dir = newConfig.Database.Dir
-			newConfig.Database.Operator.Package = newConfig.Database.Package
 
-			if c.Database.Operator.Dir != "" {
-				newConfig.Database.Operator.Dir = c.Database.Operator.Dir
-			}
-			if c.Database.Operator.Package != "" {
-				newConfig.Database.Operator.Package = c.Database.Operator.Package
-			}
-			if c.Database.Operator.Filename != "" {
-				newConfig.Database.Operator.Filename = c.Database.Operator.Filename
-			}
-		}
+	if c.Database == nil {
+		c.Database = new(DatabaseConfig)
 	}
-	if c.Strict != newConfig.Strict {
-		newConfig.Strict = c.Strict
+	if c.Database.Operator == nil {
+		c.Database.Operator = new(DatabaseOperatorConfig)
 	}
-	if c.SkipHeader != newConfig.SkipHeader {
-		newConfig.SkipHeader = c.SkipHeader
+
+	if c.Database.Package == "" {
+		c.Database.Package = "db"
 	}
-	if c.SourceMap != newConfig.SourceMap {
-		newConfig.SourceMap = c.SourceMap
+	if c.Database.Dir == "" {
+		c.Database.Dir = "db"
 	}
-	if c.SkipModTidy != newConfig.SkipModTidy {
-		newConfig.SkipModTidy = c.SkipModTidy
+	if c.Database.Filename == "" {
+		c.Database.Filename = "db.go"
 	}
-	return newConfig
+	if c.Database.Operator.Package == "" {
+		c.Database.Operator.Package = c.Database.Package
+	}
+	if c.Database.Operator.Dir == "" {
+		c.Database.Operator.Dir = c.Database.Dir
+	}
+	if c.Database.Operator.Filename == "" {
+		c.Database.Operator.Filename = "operator.go"
+	}
 }
 
 func (c Config) RenameFunc() func(string) string {

@@ -17,8 +17,8 @@ naming_convention: {{ .NamingConvention }}
 struct_tag: {{ .Tag }}
 
 # Optional:
-# Whether to quote the table name, column name
-quoted_identifier: {{ .QuotedIdentifier }}
+# Whether to omit the quote on table name and column name
+quote_identifier: {{ .QuoteIdentifier }}
 
 # Optional: to add prefix to getter
 getter:
@@ -38,7 +38,7 @@ database:
     filename: {{ .Database.Operator.Filename }}
 
 # Optional: 
-strict: {{ .Strict }}
+no_strict: {{ .NoStrict }}
 
 # Optional: turn on to not generate any file header in generated files
 skip_header: {{ .SkipHeader }}
@@ -47,4 +47,4 @@ skip_header: {{ .SkipHeader }}
 source_map: {{ .SourceMap }}
 
 # Optional: set to skip running `go mod tidy` when generating server code
-# skip_mod_tidy: {{ .SkipModTidy }}
+skip_mod_tidy: {{ .SkipModTidy }}

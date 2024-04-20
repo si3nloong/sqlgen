@@ -17,10 +17,10 @@ import (
 )
 
 type Generator struct {
-	dialect           sequel.Dialect
-	quotedIndentifier bool
-	quoteStrRune      rune
-	static            bool
+	dialect         sequel.Dialect
+	quoteStrRune    rune
+	quoteIdentifier bool
+	staticVar       bool
 }
 
 func (g Generator) QuoteStringBegin() string {
@@ -35,8 +35,8 @@ func (g Generator) QuoteStringEnd() string {
 	return string(g.quoteStrRune)
 }
 
-func (g Generator) IsStatic() bool {
-	return g.static
+func (g Generator) IsStaticVar() bool {
+	return g.staticVar
 }
 
 func (g Generator) QuoteVar(i int) string {
@@ -44,7 +44,7 @@ func (g Generator) QuoteVar(i int) string {
 }
 
 func (g Generator) QuoteIdentifier(v string) string {
-	if !g.quotedIndentifier {
+	if !g.quoteIdentifier {
 		return v
 	}
 	return g.dialect.QuoteIdentifier(v)
@@ -71,7 +71,7 @@ func Init(cfg *config.Config) error {
 func renderTemplate[T templates.ModelTmplParams | struct{}](
 	tmplName string,
 	skipHeader bool,
-	quotedIndentifier bool,
+	quoteIdentifier bool,
 	dialect sequel.Dialect,
 	pkgPath string,
 	pkgName string,
@@ -95,17 +95,17 @@ func renderTemplate[T templates.ModelTmplParams | struct{}](
 	}
 
 	g := &Generator{
-		dialect:           dialect,
-		quoteStrRune:      quoteStrRune,
-		quotedIndentifier: quotedIndentifier,
-		static:            dialect.QuoteVar(1) == dialect.QuoteVar(0),
+		dialect:         dialect,
+		quoteStrRune:    quoteStrRune,
+		quoteIdentifier: quoteIdentifier,
+		staticVar:       dialect.QuoteVar(1) == dialect.QuoteVar(0),
 	}
 	impPkg := NewPackage(pkgPath, pkgName)
 	tmpl, err := template.New(tmplName).Funcs(template.FuncMap{
 		"quote":             g.Quote,
 		"quoteVar":          g.QuoteVar,
 		"quoteIdentifier":   g.QuoteIdentifier,
-		"isStaticVar":       g.IsStatic,
+		"isStaticVar":       g.IsStaticVar,
 		"createTable":       g.createTableStmt(),
 		"alterTable":        g.alterTableStmt(),
 		"insertOneStmt":     g.insertOneStmt(),

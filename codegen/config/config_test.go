@@ -14,7 +14,7 @@ func TestConfig(t *testing.T) {
 	require.Equal(t, DefaultStructTag, cfg.Tag)
 	require.Equal(t, DefaultGeneratedFile, cfg.Exec.Filename)
 
-	require.True(t, cfg.Strict)
+	require.False(t, cfg.NoStrict)
 	require.False(t, cfg.SkipHeader)
 	require.False(t, cfg.SkipModTidy)
 	require.False(t, cfg.SourceMap)
@@ -47,5 +47,5 @@ func TestLoadConfigFrom(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 	require.Equal(t, Sqlite, cfg.Driver)
-	require.True(t, cfg.Strict)
+	require.False(t, cfg.NoStrict)
 }
