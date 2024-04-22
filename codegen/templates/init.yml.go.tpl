@@ -18,7 +18,11 @@ struct_tag: {{ .Tag }}
 
 # Optional:
 # Whether to omit the quote on table name and column name
-quote_identifier: {{ .QuoteIdentifier }}
+omit_quote_identifier: {{ .QuoteIdentifier }}
+
+# Optional:
+# Whether to omit the getters
+omit_getter: {{ .OmitGetter }}
 
 # Optional: to add prefix to getter
 getter:

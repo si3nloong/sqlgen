@@ -6,7 +6,8 @@ import (
 
 type ModelTmplParams struct {
 	// Models
-	Models []*Model
+	Models      []*Model
+	OmitGetters bool
 }
 
 type PK struct {

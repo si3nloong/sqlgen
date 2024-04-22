@@ -18,8 +18,9 @@ func TestAll(t *testing.T) {
 	const rootDir = "./testcase"
 
 	if err := codegen.Generate(&config.Config{
-		Source:     []string{rootDir + "/**/*.go", rootDir + "/db/*"},
-		SkipHeader: true,
+		Source:              []string{rootDir + "/**/*.go", rootDir + "/db/*"},
+		SkipHeader:          true,
+		OmitQuoteIdentifier: true,
 		Exec: config.ExecConfig{
 			SkipEmpty: false,
 		},

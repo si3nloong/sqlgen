@@ -43,15 +43,15 @@ type Config struct {
 	NamingConvention naming    `yaml:"naming_convention,omitempty"`
 	Tag              string    `yaml:"struct_tag,omitempty"`
 	// Whether to quote the table name and column name
-	QuoteIdentifier bool            `yaml:"quote_identifier,omitempty"`
-	OmitGetters     bool            `yaml:"omit_getters,omitempty"`
-	NoStrict        bool            `yaml:"no_strict,omitempty"`
-	Exec            ExecConfig      `yaml:"exec"`
-	Getter          GetterConfig    `yaml:"getter"`
-	Database        *DatabaseConfig `yaml:"database"`
-	SourceMap       bool            `yaml:"source_map"`
-	SkipHeader      bool            `yaml:"skip_header"`
-	SkipModTidy     bool            `yaml:"skip_mod_tidy"`
+	OmitQuoteIdentifier bool            `yaml:"omit_quote_identifier,omitempty"`
+	OmitGetters         bool            `yaml:"omit_getters,omitempty"`
+	NoStrict            bool            `yaml:"no_strict,omitempty"`
+	Exec                ExecConfig      `yaml:"exec"`
+	Getter              GetterConfig    `yaml:"getter"`
+	Database            *DatabaseConfig `yaml:"database"`
+	SourceMap           bool            `yaml:"source_map"`
+	SkipHeader          bool            `yaml:"skip_header"`
+	SkipModTidy         bool            `yaml:"skip_mod_tidy"`
 }
 
 type ExecConfig struct {
