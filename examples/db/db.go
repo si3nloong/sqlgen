@@ -263,15 +263,14 @@ func QueryStmt[T any, Ptr interface {
 				blr.WriteByte('*')
 			}
 		}
-		blr.WriteString(" FROM ")
 		if vi.FromTable != "" {
-			blr.WriteString(vi.FromTable)
+			blr.WriteString(" FROM " + vi.FromTable)
 		} else {
 			switch vj := any(v).(type) {
 			case sequel.Tabler:
-				blr.WriteString(vj.TableName())
+				blr.WriteString(" FROM " + vj.TableName())
 			default:
-				return nil, fmt.Errorf(`missing table name for model %v`, v)
+				return nil, fmt.Errorf("missing table name for model %T", v)
 			}
 		}
 		if vi.Where != nil {
