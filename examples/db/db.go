@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"strconv"
 	"strings"
 	"sync"
@@ -45,8 +46,8 @@ func InsertOne[T sequel.TableColumnValuer[T], Ptr interface {
 	return sqlConn.ExecContext(ctx, "INSERT INTO "+model.TableName()+" ("+strings.Join(columns, ",")+") VALUES ("+strings.Repeat(",?", len(columns))[1:]+")", args...)
 }
 
-// InsertInto is a helper function to insert your records.
-func InsertInto[T sequel.TableColumnValuer[T]](ctx context.Context, sqlConn sequel.DB, data []T) (sql.Result, error) {
+// Insert is a helper function to insert multiple records.
+func Insert[T sequel.TableColumnValuer[T]](ctx context.Context, sqlConn sequel.DB, data []T) (sql.Result, error) {
 	n := len(data)
 	if n == 0 {
 		return new(sequel.EmptyResult), nil
@@ -61,14 +62,14 @@ func InsertInto[T sequel.TableColumnValuer[T]](ctx context.Context, sqlConn sequ
 	)
 
 	switch vi := any(model).(type) {
+	case sequel.Inserter:
+		query := strings.Repeat(vi.InsertVarQuery()+",", len(data))
+		return sqlConn.ExecContext(ctx, "INSERT INTO "+model.TableName()+" ("+strings.Join(columns, ",")+") VALUES "+query[:len(query)-1]+";", args...)
+
 	case sequel.AutoIncrKeyer:
 		_, idx, _ = vi.PK()
 		noOfCols--
 		columns = append(columns[:idx], columns[idx+1:]...)
-
-	case sequel.Inserter:
-		query := strings.Repeat(vi.InsertVarQuery()+",", len(data))
-		return sqlConn.ExecContext(ctx, "INSERT INTO "+model.TableName()+" ("+strings.Join(columns, ",")+") VALUES "+query[:len(query)-1]+";", args...)
 	}
 
 	var stmt = strpool.AcquireString()
@@ -96,6 +97,76 @@ func InsertInto[T sequel.TableColumnValuer[T]](ctx context.Context, sqlConn sequ
 		stmt.WriteByte(')')
 	}
 	stmt.WriteByte(';')
+	return sqlConn.ExecContext(ctx, stmt.String(), args...)
+}
+
+// Upsert is a helper function to upsert multiple records.
+func Upsert[T sequel.KeyValuer[T]](ctx context.Context, sqlConn sequel.DB, data []T, override bool, conflictKey ...string) (sql.Result, error) {
+	n := len(data)
+	if n == 0 {
+		return new(sequel.EmptyResult), nil
+	}
+
+	var (
+		model    T
+		columns  = model.Columns()
+		noOfCols = len(columns)
+		args     = make([]any, 0, noOfCols*len(data))
+	)
+
+	pkName, idx, _ := model.PK()
+	switch vi := any(model).(type) {
+	case sequel.AutoIncrKeyer:
+		noOfCols--
+		columns = append(columns[:idx], columns[idx+1:]...)
+	}
+
+	var stmt = strpool.AcquireString()
+	defer strpool.ReleaseString(stmt)
+	stmt.WriteString("INSERT INTO " + model.TableName() + " (" + strings.Join(columns, ",") + ") VALUES ")
+	for i := range data {
+		if i > 0 {
+			stmt.WriteString(",(")
+		} else {
+			stmt.WriteByte('(')
+		}
+		offset := noOfCols * i
+		for j := 0; j < noOfCols; j++ {
+			if j > 0 {
+				stmt.WriteByte(',')
+			}
+			stmt.WriteString(wrapVar(offset + 1 + j))
+		}
+		if idx > -1 {
+			values := data[i].Values()
+			values = append(values[:idx], values[idx+1:]...)
+			args = append(args, values...)
+		} else {
+			args = append(args, data[i].Values()...)
+		}
+		stmt.WriteByte(')')
+	}
+	var onKey = pkName
+	if len(conflictKey) > 0 {
+		onKey = conflictKey[0]
+	}
+	stmt.WriteString(" ON CONFLICT(" + onKey + ")")
+	if override {
+		stmt.WriteString(" DO UPDATE SET ")
+		for i := range columns {
+			if columns[i] == pkName || columns[i] == onKey {
+				continue
+			}
+			if i < noOfCols-1 {
+				stmt.WriteString(columns[i] + " = EXCLUDED." + columns[i] + ",")
+			} else {
+				stmt.WriteString(columns[i] + " = EXCLUDED." + columns[i])
+			}
+		}
+		stmt.WriteByte(';')
+	} else {
+		stmt.WriteString(" DO NOTHING;")
+	}
 	return sqlConn.ExecContext(ctx, stmt.String(), args...)
 }
 
@@ -181,7 +252,29 @@ func QueryStmt[T any, Ptr interface {
 
 	switch vi := any(stmt).(type) {
 	case SelectStmt:
-		blr.WriteString("SELECT " + strings.Join(vi.Select, ",") + " FROM " + vi.FromTable)
+		var v T
+		blr.WriteString("SELECT ")
+		if len(vi.Select) > 0 {
+			blr.WriteString(strings.Join(vi.Select, ","))
+		} else {
+			switch vj := any(v).(type) {
+			case sequel.Columner:
+				blr.WriteString(strings.Join(vj.Columns(), ","))
+			default:
+				blr.WriteByte('*')
+			}
+		}
+		blr.WriteString(" FROM ")
+		if vi.FromTable != "" {
+			blr.WriteString(vi.FromTable)
+		} else {
+			switch vj := any(v).(type) {
+			case sequel.Tabler:
+				blr.WriteString(vj.TableName())
+			default:
+				return nil, fmt.Errorf(`missing table name for model %v`, v)
+			}
+		}
 		if vi.Where != nil {
 			blr.WriteString(" WHERE ")
 			vi.Where(blr)

@@ -55,10 +55,10 @@ func newPKModel() autopk.Model {
 	}
 }
 
-func TestInsertInto(t *testing.T) {
+func TestInsert(t *testing.T) {
 	ctx := context.TODO()
 
-	// t.Run("InsertInto with double ptr", func(t *testing.T) {
+	// t.Run("Insert with double ptr", func(t *testing.T) {
 	// 	u8 := uint(188)
 	// 	str := "Hello, james!"
 	// 	cStr := doubleptr.LongStr(`Hi, bye`)
@@ -67,13 +67,13 @@ func TestInsertInto(t *testing.T) {
 	// 	data.L3PtrCustomStr = ptrOf(ptrOf(ptrOf(cStr)))
 	// 	data.L7PtrStr = ptrOf(ptrOf(ptrOf(ptrOf(ptrOf(ptrOf(ptrOf(str)))))))
 	// 	inputs := []doubleptr.DoublePtr{data}
-	// 	result, err := db.InsertInto(context.TODO(), dbConn, inputs)
+	// 	result, err := db.Insert(context.TODO(), dbConn, inputs)
 	// 	require.NoError(t, err)
 	// 	lastID := mustValue(result.LastInsertId())
 	// 	require.NotEmpty(t, lastID)
 	// })
 
-	t.Run("InsertInto with array", func(t *testing.T) {
+	t.Run("Insert with array", func(t *testing.T) {
 		r1 := array.Array{}
 		r1.StrList = []string{"a", "b", "c"}
 		r1.CustomStrList = append(r1.CustomStrList, "x", "y", "z")
@@ -85,7 +85,7 @@ func TestInsertInto(t *testing.T) {
 		r1.F64List = append(r1.F64List, -88.114, 188.123, -1.0538)
 
 		inputs := []array.Array{r1}
-		result, err := db.InsertInto(context.TODO(), dbConn, inputs)
+		result, err := db.Insert(context.TODO(), dbConn, inputs)
 		require.NoError(t, err)
 		lastID := mustValue(result.LastInsertId())
 		require.NotEmpty(t, lastID)
@@ -95,16 +95,16 @@ func TestInsertInto(t *testing.T) {
 		mustNoError(db.FindByPK(ctx, dbConn, &ptr))
 	})
 
-	t.Run("InsertInto with all nil values", func(t *testing.T) {
+	t.Run("Insert with all nil values", func(t *testing.T) {
 		inputs := []pointer.Ptr{{}, {}}
-		result, err := db.InsertInto(ctx, dbConn, inputs)
+		result, err := db.Insert(ctx, dbConn, inputs)
 		require.NoError(t, err)
 		lastID := mustValue(result.LastInsertId())
 		require.NotEmpty(t, lastID)
 		require.Equal(t, int64(2), mustValue(result.RowsAffected()))
 	})
 
-	t.Run("InsertInto with pointer values", func(t *testing.T) {
+	t.Run("Insert with pointer values", func(t *testing.T) {
 		str := "hello world"
 		flag := true
 		dt := time.Now().UTC()
@@ -124,7 +124,7 @@ func TestInsertInto(t *testing.T) {
 			{Str: &str, Bool: &flag, Time: &dt, F32: &f32, F64: &f64, Uint: &u, Uint8: &u8, Uint16: &u16, Uint32: &u32, Uint64: &u64, Int: &i, Int8: &i8, Int16: &i16, Int32: &i32, Int64: &i64},
 			{Str: &str, Bool: &flag, Time: &dt, F32: &f32, F64: &f64, Uint: &u, Uint8: &u8, Uint16: &u16, Uint32: &u32, Uint64: &u64, Int: &i, Int8: &i8, Int16: &i16, Int32: &i32, Int64: &i64},
 		}
-		result, err := db.InsertInto(ctx, dbConn, inputs)
+		result, err := db.Insert(ctx, dbConn, inputs)
 		require.NoError(t, err)
 		lastID := mustValue(result.LastInsertId())
 		require.NoError(t, err)
