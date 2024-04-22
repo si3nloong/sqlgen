@@ -538,7 +538,9 @@ func parseGoPackage(
 
 		// Generate interface code
 		var (
-			params = templates.ModelTmplParams{}
+			params = templates.ModelTmplParams{
+				OmitGetters: gen.config.OmitGetters,
+			}
 		)
 
 		// Convert struct to models and generate code

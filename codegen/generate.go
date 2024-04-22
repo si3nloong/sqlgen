@@ -44,7 +44,7 @@ func (g Generator) QuoteVar(i int) string {
 }
 
 func (g Generator) QuoteIdentifier(v string) string {
-	if !g.config.QuoteIdentifier {
+	if g.config.OmitQuoteIdentifier {
 		return v
 	}
 	return g.dialect.QuoteIdentifier(v)

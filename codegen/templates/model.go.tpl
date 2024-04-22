@@ -1,6 +1,7 @@
 {{- reserveImport "strings" }}
 {{- reserveImport "database/sql/driver" }}
 {{- reserveImport "github.com/si3nloong/sqlgen/sequel" }}
+{{- $omitGetters := .OmitGetters -}}
 {{ range .Models }}
 {{- $hasCustomTabler := .HasTableName -}}
 {{- $hasNotOnlyPK := .HasNotOnlyPK -}}
@@ -54,11 +55,13 @@ func (v {{ $structName }}) Values() []any {
 func (v *{{ $structName }}) Addrs() []any {
 	return {{ `[]any{` }}{{ range $i, $f := .Fields }}{{- if $i }}{{ `, ` }}{{ end }}{{ addrOf "v" $f }}{{ end }}{{- `}` }}
 }
+{{ if not $omitGetters -}}
 {{ range $f := .Fields -}}
 {{- $return := getFieldTypeValue $f -}}
 func (v {{ $structName }}) {{ $return.FuncName }}() (sequel.ColumnValuer[{{ $return.Type }}]) {
 	return sequel.Column{{ typeConstraint $return }}({{ quote (quoteIdentifier $f.ColumnName) }}, v.{{ .GoPath }}, func(vi {{ $return.Type }}) driver.Value { return {{ castAs $f "vi" }} })
 }
+{{ end -}}
 {{ end -}}
 {{ "" }}
 {{ end }}
