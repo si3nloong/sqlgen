@@ -115,7 +115,7 @@ func Upsert[T sequel.KeyValuer[T]](ctx context.Context, sqlConn sequel.DB, data 
 	)
 
 	pkName, idx, _ := model.PK()
-	switch vi := any(model).(type) {
+	switch any(model).(type) {
 	case sequel.AutoIncrKeyer:
 		noOfCols--
 		columns = append(columns[:idx], columns[idx+1:]...)
@@ -130,12 +130,11 @@ func Upsert[T sequel.KeyValuer[T]](ctx context.Context, sqlConn sequel.DB, data 
 		} else {
 			stmt.WriteByte('(')
 		}
-		offset := noOfCols * i
 		for j := 0; j < noOfCols; j++ {
 			if j > 0 {
 				stmt.WriteByte(',')
 			}
-			stmt.WriteString(wrapVar(offset + 1 + j))
+			stmt.WriteString("?")
 		}
 		if idx > -1 {
 			values := data[i].Values()
