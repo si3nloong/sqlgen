@@ -212,7 +212,29 @@ func QueryStmt[T any, Ptr interface {
 
 	switch vi := any(stmt).(type) {
 	case SelectStmt:
-		blr.WriteString("SELECT " + strings.Join(vi.Select, ",") + " FROM " + vi.FromTable)
+		var v T
+		blr.WriteString("SELECT ")
+		if len(vi.Select) > 0 {
+			blr.WriteString(strings.Join(vi.Select, ","))
+		} else {
+			switch vj := any(v).(type) {
+			case sequel.Columner:
+				blr.WriteString(strings.Join(vj.Columns(), ","))
+			default:
+				blr.WriteByte('*')
+			}
+		}
+		blr.WriteString(" FROM ")
+		if vi.FromTable != "" {
+			blr.WriteString(vi.FromTable)
+		} else {
+			switch vj := any(v).(type) {
+			case sequel.Tabler:
+				blr.WriteString(vj.TableName())
+			default:
+				return nil, fmt.Errorf(`missing table name for model %v`, v)
+			}
+		}
 		if vi.Where != nil {
 			blr.WriteString(" WHERE ")
 			vi.Where(blr)
