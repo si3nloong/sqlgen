@@ -110,6 +110,16 @@ func IsNotNull[T any](f sequel.ColumnValuer[T]) sequel.WhereClause {
 	}
 }
 
+func Set[T any](f sequel.ColumnValuer[T], value ...T) sequel.SetClause {
+	return func(stmt sequel.StmtBuilder) {
+		defaultValue := f.Value()
+		if len(value) > 0 {
+			defaultValue = f.Convert(value[0])
+		}
+		stmt.Var(f.ColumnName()+" = ", defaultValue)
+	}
+}
+
 func Asc[T any](f sequel.ColumnValuer[T]) sequel.OrderByClause {
 	return func(sw sequel.StmtWriter) {
 		sw.WriteString(f.ColumnName() + " ASC")

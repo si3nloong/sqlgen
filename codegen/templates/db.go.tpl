@@ -361,7 +361,7 @@ func QueryStmt[T any, Ptr interface {
 
 type UpdateStmt struct {
 	FromTable string
-	Set       []string
+	Set       []sequel.SetClause
 	Where     sequel.WhereClause
 	OrderBy   []sequel.OrderByClause
 	Limit     uint16
@@ -380,15 +380,26 @@ func ExecStmt[T any, Stmt interface {
 	blr := AcquireStmt()
 	defer ReleaseStmt(blr)
 
+	var v T
 	switch vi := any(stmt).(type) {
 	case UpdateStmt:
-		blr.WriteString("UPDATE " + vi.FromTable)
+		if vt, ok := any(v).(sequel.Tabler); ok {
+			blr.WriteString("UPDATE " + vt.TableName())
+		} else {
+			blr.WriteString("UPDATE " + vi.FromTable)
+		}
 		if vi.Where != nil {
 			blr.WriteString(" WHERE ")
 			vi.Where(blr)
 		}
 		if len(vi.Set) > 0 {
 			blr.WriteString(" SET ")
+			for i := range vi.Set {
+				if i > 0 {
+					blr.WriteByte(',')
+				}
+				vi.Set[i](blr)
+			}
 		}
 		if len(vi.OrderBy) > 0 {
 			blr.WriteString(" ORDER BY ")
@@ -405,7 +416,11 @@ func ExecStmt[T any, Stmt interface {
 		blr.WriteByte(';')
 
 	case DeleteStmt:
-		blr.WriteString("DELETE FROM " + vi.FromTable)
+		if vt, ok := any(v).(sequel.Tabler); ok {
+			blr.WriteString("DELETE FROM " + vt.TableName())
+		} else {
+			blr.WriteString("DELETE FROM " + vi.FromTable)
+		}
 		if vi.Where != nil {
 			blr.WriteString(" WHERE ")
 			vi.Where(blr)

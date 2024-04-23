@@ -101,7 +101,7 @@ func Insert[T sequel.TableColumnValuer[T]](ctx context.Context, sqlConn sequel.D
 }
 
 // Upsert is a helper function to upsert multiple records.
-func Upsert[T sequel.KeyValuer[T]](ctx context.Context, sqlConn sequel.DB, data []T, override bool, conflictKey ...string) (sql.Result, error) {
+func Upsert[T sequel.KeyValuer[T]](ctx context.Context, sqlConn sequel.DB, data []T, override bool, conflicts ...string) (sql.Result, error) {
 	n := len(data)
 	if n == 0 {
 		return new(sequel.EmptyResult), nil
@@ -145,15 +145,20 @@ func Upsert[T sequel.KeyValuer[T]](ctx context.Context, sqlConn sequel.DB, data 
 		}
 		stmt.WriteByte(')')
 	}
-	var onKey = pkName
-	if len(conflictKey) > 0 {
-		onKey = conflictKey[0]
+	uniqueDict := make(map[string]struct{})
+	if len(conflicts) > 0 {
+		for i := range conflicts {
+			uniqueDict[conflicts[i]] = struct{}{}
+		}
+		stmt.WriteString(" ON CONFLICT(" + strings.Join(conflicts, ",") + ")")
+	} else {
+		uniqueDict[pkName] = struct{}{}
+		stmt.WriteString(" ON CONFLICT(" + pkName + ")")
 	}
-	stmt.WriteString(" ON CONFLICT(" + onKey + ")")
 	if override {
 		stmt.WriteString(" DO UPDATE SET ")
 		for i := range columns {
-			if columns[i] == pkName || columns[i] == onKey {
+			if _, ok := uniqueDict[columns[i]]; ok {
 				continue
 			}
 			if i < noOfCols-1 {
@@ -166,6 +171,7 @@ func Upsert[T sequel.KeyValuer[T]](ctx context.Context, sqlConn sequel.DB, data 
 	} else {
 		stmt.WriteString(" DO NOTHING;")
 	}
+	clear(uniqueDict)
 	return sqlConn.ExecContext(ctx, stmt.String(), args...)
 }
 
@@ -318,7 +324,7 @@ func QueryStmt[T any, Ptr interface {
 
 type UpdateStmt struct {
 	FromTable string
-	Set       []string
+	Set       []sequel.SetClause
 	Where     sequel.WhereClause
 	OrderBy   []sequel.OrderByClause
 	Limit     uint16
@@ -337,15 +343,26 @@ func ExecStmt[T any, Stmt interface {
 	blr := AcquireStmt()
 	defer ReleaseStmt(blr)
 
+	var v T
 	switch vi := any(stmt).(type) {
 	case UpdateStmt:
-		blr.WriteString("UPDATE " + vi.FromTable)
+		if vt, ok := any(v).(sequel.Tabler); ok {
+			blr.WriteString("UPDATE " + vt.TableName())
+		} else {
+			blr.WriteString("UPDATE " + vi.FromTable)
+		}
 		if vi.Where != nil {
 			blr.WriteString(" WHERE ")
 			vi.Where(blr)
 		}
 		if len(vi.Set) > 0 {
 			blr.WriteString(" SET ")
+			for i := range vi.Set {
+				if i > 0 {
+					blr.WriteByte(',')
+				}
+				vi.Set[i](blr)
+			}
 		}
 		if len(vi.OrderBy) > 0 {
 			blr.WriteString(" ORDER BY ")
@@ -362,7 +379,11 @@ func ExecStmt[T any, Stmt interface {
 		blr.WriteByte(';')
 
 	case DeleteStmt:
-		blr.WriteString("DELETE FROM " + vi.FromTable)
+		if vt, ok := any(v).(sequel.Tabler); ok {
+			blr.WriteString("DELETE FROM " + vt.TableName())
+		} else {
+			blr.WriteString("DELETE FROM " + vi.FromTable)
+		}
 		if vi.Where != nil {
 			blr.WriteString(" WHERE ")
 			vi.Where(blr)
