@@ -168,15 +168,20 @@ func Upsert[T sequel.KeyValuer[T]](ctx context.Context, sqlConn sequel.DB, data 
 		}
 		stmt.WriteByte(')')
 	}
-	var onKey = pkName
-	if len(conflictKey) > 0 {
-		onKey = conflictKey[0]
+	uniqueDict := make(map[string]struct{})
+	if len(conflicts) > 0 {
+		for i := range conflicts {
+			uniqueDict[conflicts[i]] = struct{}{}
+		}
+		stmt.WriteString(" ON CONFLICT(" + strings.Join(conflicts, ",") + ")")
+	} else {
+		uniqueDict[pkName] = struct{}{}
+		stmt.WriteString(" ON CONFLICT(" + pkName + ")")
 	}
-	stmt.WriteString(" ON CONFLICT(" + onKey + ")")
 	if override {
 		stmt.WriteString(" DO UPDATE SET ")
 		for i := range columns {
-			if columns[i] == pkName || columns[i] == onKey {
+			if _, ok := uniqueDict[columns[i]]; ok {
 				continue
 			}
 			if i < noOfCols-1 {
@@ -189,6 +194,7 @@ func Upsert[T sequel.KeyValuer[T]](ctx context.Context, sqlConn sequel.DB, data 
 	} else {
 		stmt.WriteString(" DO NOTHING;")
 	}
+	clear(uniqueDict)
 	return sqlConn.ExecContext(ctx, stmt.String(), args...)
 }
 
