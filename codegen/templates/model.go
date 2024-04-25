@@ -5,15 +5,13 @@ import (
 )
 
 type ModelTmplParams struct {
-	// Models
 	Models      []*Model
 	OmitGetters bool
 }
 
 type PK struct {
 	IsAutoIncr bool
-
-	Field *Field
+	Field      *Field
 }
 
 type Model struct {

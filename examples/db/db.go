@@ -100,6 +100,48 @@ func Insert[T sequel.TableColumnValuer[T]](ctx context.Context, sqlConn sequel.D
 	return sqlConn.ExecContext(ctx, stmt.String(), args...)
 }
 
+func UpsertOne[T sequel.KeyValuer[T], Ptr sequel.KeyValueScanner[T]](ctx context.Context, sqlConn sequel.DB, model Ptr, override bool, conflicts ...string) (sql.Result, error) {
+	var (
+		_, idx, _ = model.PK()
+		args      = model.Values()
+		columns   []string
+	)
+	switch vi := any(model).(type) {
+	case sequel.SingleUpserter:
+		return sqlConn.ExecContext(ctx, vi.UpsertOneStmt(), args...)
+
+	case sequel.AutoIncrKeyer:
+		// If it's an AUTO_INCREMENT primary key
+		// We don't need to pass the value
+		columns = model.Columns()
+		columns = append(columns[:idx], columns[idx+1:]...)
+		args = append(args[:idx], args[idx+1:]...)
+
+	default:
+		columns = model.Columns()
+	}
+
+	var stmt = strpool.AcquireString()
+	defer strpool.ReleaseString(stmt)
+	if !override {
+		stmt.WriteString("INSERT IGNORE INTO " + model.TableName() + " (" + strings.Join(columns, ",") + ") VALUES (" + strings.Repeat(",?", len(columns))[1:] + ");")
+	} else {
+		stmt.WriteString("INSERT INTO " + model.TableName() + " (" + strings.Join(columns, ",") + ") VALUES (" + strings.Repeat(",?", len(columns))[1:] + ") ON DUPLICATE KEY UPDATE ")
+		columns = append(columns[:idx], columns[idx+1:]...)
+		args = append(args[:idx], args[idx+1:]...)
+		noOfCols := len(columns)
+		for i := range columns {
+			if i < noOfCols-1 {
+				stmt.WriteString(columns[i] + " =VALUES(" + columns[i] + "),")
+			} else {
+				stmt.WriteString(columns[i] + " =VALUES(" + columns[i] + ")")
+			}
+		}
+		stmt.WriteByte(';')
+	}
+	return sqlConn.ExecContext(ctx, stmt.String(), args...)
+}
+
 // Upsert is a helper function to upsert multiple records.
 func Upsert[T sequel.KeyValuer[T]](ctx context.Context, sqlConn sequel.DB, data []T, override bool, conflicts ...string) (sql.Result, error) {
 	n := len(data)
@@ -123,7 +165,11 @@ func Upsert[T sequel.KeyValuer[T]](ctx context.Context, sqlConn sequel.DB, data 
 
 	var stmt = strpool.AcquireString()
 	defer strpool.ReleaseString(stmt)
-	stmt.WriteString("INSERT INTO " + model.TableName() + " (" + strings.Join(columns, ",") + ") VALUES ")
+	if override {
+		stmt.WriteString("INSERT INTO " + model.TableName() + " (" + strings.Join(columns, ",") + ") VALUES ")
+	} else {
+		stmt.WriteString("INSERT IGNORE INTO " + model.TableName() + " (" + strings.Join(columns, ",") + ") VALUES ")
+	}
 	for i := range data {
 		if i > 0 {
 			stmt.WriteString(",(")
@@ -145,33 +191,21 @@ func Upsert[T sequel.KeyValuer[T]](ctx context.Context, sqlConn sequel.DB, data 
 		}
 		stmt.WriteByte(')')
 	}
-	uniqueDict := make(map[string]struct{})
-	if len(conflicts) > 0 {
-		for i := range conflicts {
-			uniqueDict[conflicts[i]] = struct{}{}
-		}
-		stmt.WriteString(" ON CONFLICT(" + strings.Join(conflicts, ",") + ")")
-	} else {
-		uniqueDict[pkName] = struct{}{}
-		stmt.WriteString(" ON CONFLICT(" + pkName + ")")
-	}
 	if override {
-		stmt.WriteString(" DO UPDATE SET ")
+		stmt.WriteString(" ON DUPLICATE KEY UPDATE ")
 		for i := range columns {
-			if _, ok := uniqueDict[columns[i]]; ok {
+			// Skip primary key
+			if columns[i] == pkName {
 				continue
 			}
 			if i < noOfCols-1 {
-				stmt.WriteString(columns[i] + " = EXCLUDED." + columns[i] + ",")
+				stmt.WriteString(columns[i] + " =VALUES(" + columns[i] + "),")
 			} else {
-				stmt.WriteString(columns[i] + " = EXCLUDED." + columns[i])
+				stmt.WriteString(columns[i] + " =VALUES(" + columns[i] + ")")
 			}
 		}
-		stmt.WriteByte(';')
-	} else {
-		stmt.WriteString(" DO NOTHING;")
 	}
-	clear(uniqueDict)
+	stmt.WriteByte(';')
 	return sqlConn.ExecContext(ctx, stmt.String(), args...)
 }
 
@@ -181,13 +215,14 @@ func FindByPK[T sequel.KeyValuer[T], Ptr sequel.KeyValueScanner[T]](ctx context.
 	case sequel.KeyFinder:
 		_, _, pk := vi.PK()
 		return sqlConn.QueryRowContext(ctx, vi.FindByPKStmt(), pk).Scan(model.Addrs()...)
-	}
 
-	var (
-		pkName, _, pk = model.PK()
-		columns       = model.Columns()
-	)
-	return sqlConn.QueryRowContext(ctx, "SELECT "+strings.Join(columns, ",")+" FROM "+model.TableName()+" WHERE "+pkName+" = ? LIMIT 1;", pk).Scan(model.Addrs()...)
+	default:
+		var (
+			pkName, _, pk = model.PK()
+			columns       = model.Columns()
+		)
+		return sqlConn.QueryRowContext(ctx, "SELECT "+strings.Join(columns, ",")+" FROM "+model.TableName()+" WHERE "+pkName+" = ? LIMIT 1;", pk).Scan(model.Addrs()...)
+	}
 }
 
 // UpdateByPK is to update single record using primary key.
@@ -376,7 +411,6 @@ func ExecStmt[T any, Stmt interface {
 		if vi.Limit > 0 {
 			blr.WriteString(" LIMIT " + strconv.FormatUint(uint64(vi.Limit), 10))
 		}
-		blr.WriteByte(';')
 
 	case DeleteStmt:
 		if vt, ok := any(v).(sequel.Tabler); ok {
@@ -400,8 +434,8 @@ func ExecStmt[T any, Stmt interface {
 		if vi.Limit > 0 {
 			blr.WriteString(" LIMIT " + strconv.FormatUint(uint64(vi.Limit), 10))
 		}
-		blr.WriteByte(';')
 	}
+	blr.WriteByte(';')
 	return sqlConn.ExecContext(ctx, blr.String(), blr.Args()...)
 }
 

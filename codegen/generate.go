@@ -103,6 +103,7 @@ func renderTemplate[T templates.ModelTmplParams | struct{}](
 
 	impPkg := NewPackage(pkgPath, pkgName)
 	tmpl, err := template.New(tmplName).Funcs(template.FuncMap{
+		"driver":            g.dialect.Driver,
 		"quote":             g.Quote,
 		"quoteVar":          g.QuoteVar,
 		"quoteIdentifier":   g.QuoteIdentifier,
