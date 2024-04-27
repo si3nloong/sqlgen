@@ -105,6 +105,13 @@ func IsNotNull[T any](f sequel.ColumnValuer[T]) sequel.WhereClause {
 	}
 }
 
+func Between[T comparable](f sequel.ColumnValuer[T], from, to T) sequel.WhereClause {
+	return func(stmt sequel.StmtBuilder) {
+		stmt.Var(f.ColumnName()+" BETWEEN ", from)
+		stmt.Var(" AND ", to)
+	}
+}
+
 func Set[T any](f sequel.ColumnValuer[T], value ...T) sequel.SetClause {
 	return func(stmt sequel.StmtBuilder) {
 		defaultValue := f.Value()
