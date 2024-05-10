@@ -43,6 +43,10 @@ type AutoIncrKeyer interface {
 	IsAutoIncr()
 }
 
+type DuplicateKeyer interface {
+	OnDuplicateKey() string
+}
+
 type Tabler interface {
 	TableName() string
 }
@@ -62,16 +66,14 @@ type DB interface {
 }
 
 type Dialect interface {
+	// SQL driver name
 	Driver() string
-	// argument string to escape SQL injection
-	Var(n int) string
-	Wrap(v string) string
-	// character to escape table, column name
+	// Argument string to escape SQL injection
+	QuoteVar(n int) string
+	VarRune() rune
+	// Character to escape table, column name
+	QuoteIdentifier(v string) string
 	QuoteRune() rune
-}
-
-type DialectVar interface {
-	VarRune() string
 }
 
 type Migrator interface {
@@ -82,6 +84,10 @@ type Migrator interface {
 
 type SingleInserter interface {
 	InsertOneStmt() string
+}
+
+type SingleUpserter interface {
+	UpsertOneStmt() string
 }
 
 type KeyFinder interface {

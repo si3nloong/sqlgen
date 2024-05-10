@@ -100,7 +100,7 @@ func Insert[T sequel.TableColumnValuer[T]](ctx context.Context, sqlConn sequel.D
 	return sqlConn.ExecContext(ctx, stmt.String(), args...)
 }
 
-func UpsertOne[T sequel.KeyValuer[T], Ptr sequel.KeyValueScanner[T]](ctx context.Context, sqlConn sequel.DB, model Ptr, override bool, conflicts ...string) (sql.Result, error) {
+func UpsertOne[T sequel.KeyValuer[T], Ptr sequel.KeyValueScanner[T]](ctx context.Context, sqlConn sequel.DB, model Ptr, override bool, omittedFields ...string) (sql.Result, error) {
 	var (
 		_, idx, _ = model.PK()
 		args      = model.Values()
@@ -126,24 +126,31 @@ func UpsertOne[T sequel.KeyValuer[T], Ptr sequel.KeyValueScanner[T]](ctx context
 	if !override {
 		stmt.WriteString("INSERT IGNORE INTO " + model.TableName() + " (" + strings.Join(columns, ",") + ") VALUES (" + strings.Repeat(",?", len(columns))[1:] + ");")
 	} else {
+		dict := make(map[string]struct{})
+		for i := range omittedFields {
+			dict[omittedFields[i]] = struct{}{}
+		}
 		stmt.WriteString("INSERT INTO " + model.TableName() + " (" + strings.Join(columns, ",") + ") VALUES (" + strings.Repeat(",?", len(columns))[1:] + ") ON DUPLICATE KEY UPDATE ")
 		columns = append(columns[:idx], columns[idx+1:]...)
 		args = append(args[:idx], args[idx+1:]...)
 		noOfCols := len(columns)
 		for i := range columns {
+			if _, ok := dict[columns[i]]; ok {
+				continue
+			}
 			if i < noOfCols-1 {
 				stmt.WriteString(columns[i] + " =VALUES(" + columns[i] + "),")
 			} else {
 				stmt.WriteString(columns[i] + " =VALUES(" + columns[i] + ")")
 			}
 		}
-		stmt.WriteByte(';')
+		clear(dict)
 	}
 	return sqlConn.ExecContext(ctx, stmt.String(), args...)
 }
 
 // Upsert is a helper function to upsert multiple records.
-func Upsert[T sequel.KeyValuer[T]](ctx context.Context, sqlConn sequel.DB, data []T, override bool, conflicts ...string) (sql.Result, error) {
+func Upsert[T sequel.KeyValuer[T]](ctx context.Context, sqlConn sequel.DB, data []T, override bool, omittedFields ...string) (sql.Result, error) {
 	n := len(data)
 	if n == 0 {
 		return new(sequel.EmptyResult), nil
@@ -193,9 +200,12 @@ func Upsert[T sequel.KeyValuer[T]](ctx context.Context, sqlConn sequel.DB, data 
 	}
 	if override {
 		stmt.WriteString(" ON DUPLICATE KEY UPDATE ")
+		dict := map[string]struct{}{pkName: {}}
+		for i := range omittedFields {
+			dict[omittedFields[i]] = struct{}{}
+		}
 		for i := range columns {
-			// Skip primary key
-			if columns[i] == pkName {
+			if _, ok := dict[columns[i]]; ok {
 				continue
 			}
 			if i < noOfCols-1 {
@@ -204,6 +214,7 @@ func Upsert[T sequel.KeyValuer[T]](ctx context.Context, sqlConn sequel.DB, data 
 				stmt.WriteString(columns[i] + " =VALUES(" + columns[i] + ")")
 			}
 		}
+		clear(dict)
 	}
 	stmt.WriteByte(';')
 	return sqlConn.ExecContext(ctx, stmt.String(), args...)

@@ -43,6 +43,10 @@ type AutoIncrKeyer interface {
 	IsAutoIncr()
 }
 
+type DuplicateKeyer interface {
+	OnDuplicateKey() string
+}
+
 type Tabler interface {
 	TableName() string
 }

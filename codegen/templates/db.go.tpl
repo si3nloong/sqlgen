@@ -116,9 +116,13 @@ func Insert[T sequel.TableColumnValuer[T]](ctx context.Context, sqlConn sequel.D
 	return sqlConn.ExecContext(ctx, stmt.String(), args...)
 }
 
-func UpsertOne[T sequel.KeyValuer[T], Ptr sequel.KeyValueScanner[T]](ctx context.Context, sqlConn sequel.DB, model Ptr, override bool, conflicts ...string) (sql.Result, error) {
+func UpsertOne[T sequel.KeyValuer[T], Ptr sequel.KeyValueScanner[T]](ctx context.Context, sqlConn sequel.DB, model Ptr, override bool, omittedFields ...string) (sql.Result, error) {
 	var (
+		{{ if eq driver "mysql" -}}
 		_, idx, _ = model.PK()
+		{{ else -}}
+		pkName, idx, _ = model.PK()
+		{{ end -}}
 		args      = model.Values()
 		columns   []string
 	)
@@ -143,18 +147,25 @@ func UpsertOne[T sequel.KeyValuer[T], Ptr sequel.KeyValueScanner[T]](ctx context
 	if !override {
 		stmt.WriteString("INSERT IGNORE INTO " + model.TableName() + " (" + strings.Join(columns, ",") + ") VALUES (" + strings.Repeat(",?", len(columns))[1:] + ");")
 	} else {
+		dict := make(map[string]struct{})
+		for i := range omittedFields {
+			dict[omittedFields[i]] = struct{}{}
+		}
 		stmt.WriteString("INSERT INTO " + model.TableName() + " (" + strings.Join(columns, ",") + ") VALUES (" + strings.Repeat(",?", len(columns))[1:] + ") ON DUPLICATE KEY UPDATE ")
 		columns = append(columns[:idx], columns[idx+1:]...)
 		args = append(args[:idx], args[idx+1:]...)
 		noOfCols := len(columns)
 		for i := range columns {
+			if _, ok := dict[columns[i]]; ok {
+				continue
+			}
 			if i < noOfCols-1 {
 				stmt.WriteString(columns[i] + " =VALUES(" + columns[i] + "),")
 			} else {
 				stmt.WriteString(columns[i] + " =VALUES(" + columns[i] + ")")
 			}
 		}
-		stmt.WriteByte(';')
+		clear(dict)
 	}
 	{{ else -}}
 	noOfCols := len(columns)
@@ -163,26 +174,17 @@ func UpsertOne[T sequel.KeyValuer[T], Ptr sequel.KeyValueScanner[T]](ctx context
 		if j > 0 {
 			stmt.WriteByte(',')
 		}
-		{{ if isStaticVar -}}
-		stmt.WriteString({{ quote varRune }})
-		{{ else -}}
-		stmt.WriteString(wrapVar(offset + 1 + j))
-		{{ end -}}
+		stmt.WriteString(wrapVar(noOfCols + j + 1))
 	}
-	uniqueDict := make(map[string]struct{})
-	if len(conflicts) > 0 {
-		for i := range conflicts {
-			uniqueDict[conflicts[i]] = struct{}{}
-		}
-		stmt.WriteString(" ON CONFLICT(" + strings.Join(conflicts, ",") + ")")
-	} else {
-		uniqueDict[pkName] = struct{}{}
-		stmt.WriteString(" ON CONFLICT(" + pkName + ")")
-	}
+	stmt.WriteString(" ON CONFLICT(" + pkName + ")")
 	if override {
+		dict := map[string]struct{}{pkName: struct{}{}}
+		for i := range omittedFields {
+			dict[omittedFields[i]] = struct{}{}
+		}
 		stmt.WriteString(" DO UPDATE SET ")
 		for i := range columns {
-			if _, ok := uniqueDict[columns[i]]; ok {
+			if _, ok := dict[columns[i]]; ok {
 				continue
 			}
 			if i < noOfCols-1 {
@@ -192,16 +194,16 @@ func UpsertOne[T sequel.KeyValuer[T], Ptr sequel.KeyValueScanner[T]](ctx context
 			}
 		}
 		stmt.WriteByte(';')
+		clear(dict)
 	} else {
 		stmt.WriteString(" DO NOTHING;")
 	}
-	clear(uniqueDict)
 	{{ end -}}
 	return sqlConn.ExecContext(ctx, stmt.String(), args...)
 }
 
 // Upsert is a helper function to upsert multiple records.
-func Upsert[T sequel.KeyValuer[T]](ctx context.Context, sqlConn sequel.DB, data []T, override bool, conflicts ...string) (sql.Result, error) {
+func Upsert[T sequel.KeyValuer[T]](ctx context.Context, sqlConn sequel.DB, data []T, override bool, omittedFields ...string) (sql.Result, error) {
 	n := len(data)
 	if n == 0 {
 		return new(sequel.EmptyResult), nil
@@ -263,9 +265,12 @@ func Upsert[T sequel.KeyValuer[T]](ctx context.Context, sqlConn sequel.DB, data 
 	{{ if eq driver "mysql" -}}
 	if override {
 		stmt.WriteString(" ON DUPLICATE KEY UPDATE ")
+		dict := map[string]struct{}{pkName: {}}
+		for i := range omittedFields {
+			dict[omittedFields[i]] = struct{}{}
+		}
 		for i := range columns {
-			// Skip primary key
-			if columns[i] == pkName {
+			if _, ok := dict[columns[i]]; ok {
 				continue
 			}
 			if i < noOfCols-1 {
@@ -274,23 +279,23 @@ func Upsert[T sequel.KeyValuer[T]](ctx context.Context, sqlConn sequel.DB, data 
 				stmt.WriteString(columns[i] + " =VALUES(" + columns[i] + ")")
 			}
 		}
+		clear(dict)
 	}
 	stmt.WriteByte(';')
 	{{ else -}}
-	uniqueDict := make(map[string]struct{})
-	if len(conflicts) > 0 {
-		for i := range conflicts {
-			uniqueDict[conflicts[i]] = struct{}{}
-		}
-		stmt.WriteString(" ON CONFLICT(" + strings.Join(conflicts, ",") + ")")
+	if dupKey, ok := any(model).(sequel.DuplicateKeyer); ok {
+		stmt.WriteString(" ON CONFLICT(" + dupKey.OnDuplicateKey() + ")")
 	} else {
-		uniqueDict[pkName] = struct{}{}
 		stmt.WriteString(" ON CONFLICT(" + pkName + ")")
 	}
 	if override {
+		dict := map[string]struct{}{pkName: {}}
+		for i := range omittedFields {
+			dict[omittedFields[i]] = struct{}{}
+		}
 		stmt.WriteString(" DO UPDATE SET ")
 		for i := range columns {
-			if _, ok := uniqueDict[columns[i]]; ok {
+			if _, ok := dict[columns[i]]; ok {
 				continue
 			}
 			if i < noOfCols-1 {
@@ -299,11 +304,11 @@ func Upsert[T sequel.KeyValuer[T]](ctx context.Context, sqlConn sequel.DB, data 
 				stmt.WriteString(columns[i] + " = EXCLUDED." + columns[i])
 			}
 		}
+		clear(dict)
 		stmt.WriteByte(';')
 	} else {
 		stmt.WriteString(" DO NOTHING;")
 	}
-	clear(uniqueDict)
 	{{ end -}}
 	return sqlConn.ExecContext(ctx, stmt.String(), args...)
 }
