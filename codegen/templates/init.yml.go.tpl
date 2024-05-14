@@ -26,7 +26,7 @@ omit_getters: {{ .OmitGetters }}
 
 # Optional: to add prefix to getter
 getter:
-  prefix: "Prefix"
+  prefix: {{ .Getter.Prefix }}
 
 # Optional: Where should the generated model code go?
 exec:
