@@ -11,8 +11,8 @@ import (
 func (v B) CreateTableStmt() string {
 	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (date DATE NOT NULL,time VARCHAR(255) NOT NULL);"
 }
-func (B) AlterTableStmt() string {
-	return "ALTER TABLE b MODIFY date DATE NOT NULL,MODIFY time VARCHAR(255) NOT NULL AFTER date;"
+func (v B) AlterTableStmt() string {
+	return "ALTER TABLE " + v.TableName() + " (MODIFY date DATE NOT NULL,MODIFY time VARCHAR(255) NOT NULL AFTER date);"
 }
 func (B) TableName() string {
 	return "b"

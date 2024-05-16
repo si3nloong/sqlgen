@@ -11,8 +11,8 @@ import (
 func (v A) CreateTableStmt() string {
 	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (date DATE NOT NULL,time VARCHAR(255) NOT NULL);"
 }
-func (A) AlterTableStmt() string {
-	return "ALTER TABLE a MODIFY date DATE NOT NULL,MODIFY time VARCHAR(255) NOT NULL AFTER date;"
+func (v A) AlterTableStmt() string {
+	return "ALTER TABLE " + v.TableName() + " (MODIFY date DATE NOT NULL,MODIFY time VARCHAR(255) NOT NULL AFTER date);"
 }
 func (A) InsertVarQuery() string {
 	return "(?,?)"
@@ -36,8 +36,8 @@ func (v A) GetTime() sequel.ColumnValuer[civil.Time] {
 func (v C) CreateTableStmt() string {
 	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (string VARCHAR(255) NOT NULL,valid TINYINT NOT NULL);"
 }
-func (C) AlterTableStmt() string {
-	return "ALTER TABLE c MODIFY string VARCHAR(255) NOT NULL,MODIFY valid TINYINT NOT NULL AFTER string;"
+func (v C) AlterTableStmt() string {
+	return "ALTER TABLE " + v.TableName() + " (MODIFY string VARCHAR(255) NOT NULL,MODIFY valid TINYINT NOT NULL AFTER string);"
 }
 func (C) TableName() string {
 	return "c"

@@ -11,8 +11,8 @@ import (
 func (v Model) CreateTableStmt() string {
 	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (id TINYINT UNSIGNED NOT NULL,text VARCHAR(255) NOT NULL,t DATETIME NOT NULL);"
 }
-func (Model) AlterTableStmt() string {
-	return "ALTER TABLE model MODIFY id TINYINT UNSIGNED NOT NULL,MODIFY text VARCHAR(255) NOT NULL AFTER id,MODIFY t DATETIME NOT NULL AFTER text;"
+func (v Model) AlterTableStmt() string {
+	return "ALTER TABLE " + v.TableName() + " (MODIFY id TINYINT UNSIGNED NOT NULL,MODIFY text VARCHAR(255) NOT NULL AFTER id,MODIFY t DATETIME NOT NULL AFTER text);"
 }
 func (Model) TableName() string {
 	return "model"

@@ -10,8 +10,8 @@ import (
 func (v B) CreateTableStmt() string {
 	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (id BIGINT NOT NULL,value VARCHAR(255) NOT NULL,n VARCHAR(255) NOT NULL);"
 }
-func (B) AlterTableStmt() string {
-	return "ALTER TABLE b MODIFY id BIGINT NOT NULL,MODIFY value VARCHAR(255) NOT NULL AFTER id,MODIFY n VARCHAR(255) NOT NULL AFTER value;"
+func (v B) AlterTableStmt() string {
+	return "ALTER TABLE " + v.TableName() + " (MODIFY id BIGINT NOT NULL,MODIFY value VARCHAR(255) NOT NULL AFTER id,MODIFY n VARCHAR(255) NOT NULL AFTER value);"
 }
 func (B) TableName() string {
 	return "b"

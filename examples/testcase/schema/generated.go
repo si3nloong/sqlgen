@@ -12,8 +12,8 @@ import (
 func (v A) CreateTableStmt() string {
 	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (id VARCHAR(255) NOT NULL,text VARCHAR(255) NOT NULL,created_at DATETIME NOT NULL);"
 }
-func (A) AlterTableStmt() string {
-	return "ALTER TABLE Apple MODIFY id VARCHAR(255) NOT NULL,MODIFY text VARCHAR(255) NOT NULL AFTER id,MODIFY created_at DATETIME NOT NULL AFTER text;"
+func (v A) AlterTableStmt() string {
+	return "ALTER TABLE " + v.TableName() + " (MODIFY id VARCHAR(255) NOT NULL,MODIFY text VARCHAR(255) NOT NULL AFTER id,MODIFY created_at DATETIME NOT NULL AFTER text);"
 }
 func (A) TableName() string {
 	return "Apple"
@@ -46,8 +46,8 @@ func (v A) GetCreatedAt() sequel.ColumnValuer[time.Time] {
 func (v B) CreateTableStmt() string {
 	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (id VARCHAR(255) NOT NULL,created_at DATETIME NOT NULL);"
 }
-func (B) AlterTableStmt() string {
-	return "ALTER TABLE b MODIFY id VARCHAR(255) NOT NULL,MODIFY created_at DATETIME NOT NULL AFTER id;"
+func (v B) AlterTableStmt() string {
+	return "ALTER TABLE " + v.TableName() + " (MODIFY id VARCHAR(255) NOT NULL,MODIFY created_at DATETIME NOT NULL AFTER id);"
 }
 func (B) TableName() string {
 	return "b"
@@ -77,8 +77,8 @@ func (v B) GetCreatedAt() sequel.ColumnValuer[time.Time] {
 func (v C) CreateTableStmt() string {
 	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (id BIGINT NOT NULL,PRIMARY KEY (id));"
 }
-func (C) AlterTableStmt() string {
-	return "ALTER TABLE c MODIFY id BIGINT NOT NULL;"
+func (v C) AlterTableStmt() string {
+	return "ALTER TABLE " + v.TableName() + " (MODIFY id BIGINT NOT NULL);"
 }
 func (C) TableName() string {
 	return "c"
@@ -108,8 +108,8 @@ func (v C) GetID() sequel.ColumnValuer[int64] {
 func (v D) CreateTableStmt() string {
 	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (id VARCHAR(255) NOT NULL,PRIMARY KEY (id));"
 }
-func (D) AlterTableStmt() string {
-	return "ALTER TABLE d MODIFY id VARCHAR(255) NOT NULL;"
+func (v D) AlterTableStmt() string {
+	return "ALTER TABLE " + v.TableName() + " (MODIFY id VARCHAR(255) NOT NULL);"
 }
 func (D) TableName() string {
 	return "d"

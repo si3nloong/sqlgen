@@ -10,8 +10,8 @@ import (
 func (v Model) CreateTableStmt() string {
 	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (name VARCHAR(255) NOT NULL,f TINYINT NOT NULL,id INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,n BIGINT NOT NULL,PRIMARY KEY (id));"
 }
-func (Model) AlterTableStmt() string {
-	return "ALTER TABLE AutoIncrPK MODIFY name VARCHAR(255) NOT NULL,MODIFY f TINYINT NOT NULL AFTER name,MODIFY id INTEGER UNSIGNED NOT NULL AUTO_INCREMENT AFTER f,MODIFY n BIGINT NOT NULL AFTER id;"
+func (v Model) AlterTableStmt() string {
+	return "ALTER TABLE " + v.TableName() + " (MODIFY name VARCHAR(255) NOT NULL,MODIFY f TINYINT NOT NULL AFTER name,MODIFY id INTEGER UNSIGNED NOT NULL AUTO_INCREMENT AFTER f,MODIFY n BIGINT NOT NULL AFTER id);"
 }
 func (Model) TableName() string {
 	return "AutoIncrPK"

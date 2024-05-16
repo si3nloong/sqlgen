@@ -12,8 +12,8 @@ import (
 func (v AliasStruct) CreateTableStmt() string {
 	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (b FLOAT NOT NULL,Id BIGINT NOT NULL,header VARCHAR(255) NOT NULL,raw BLOB,text VARCHAR(255) NOT NULL,null_str VARCHAR(255) NOT NULL,created DATETIME NOT NULL,updated DATETIME NOT NULL,PRIMARY KEY (Id));"
 }
-func (AliasStruct) AlterTableStmt() string {
-	return "ALTER TABLE alias_struct MODIFY b FLOAT NOT NULL,MODIFY Id BIGINT NOT NULL AFTER b,MODIFY header VARCHAR(255) NOT NULL AFTER Id,MODIFY raw BLOB AFTER header,MODIFY text VARCHAR(255) NOT NULL AFTER raw,MODIFY null_str VARCHAR(255) NOT NULL AFTER text,MODIFY created DATETIME NOT NULL AFTER null_str,MODIFY updated DATETIME NOT NULL AFTER created;"
+func (v AliasStruct) AlterTableStmt() string {
+	return "ALTER TABLE " + v.TableName() + " (MODIFY b FLOAT NOT NULL,MODIFY Id BIGINT NOT NULL AFTER b,MODIFY header VARCHAR(255) NOT NULL AFTER Id,MODIFY raw BLOB AFTER header,MODIFY text VARCHAR(255) NOT NULL AFTER raw,MODIFY null_str VARCHAR(255) NOT NULL AFTER text,MODIFY created DATETIME NOT NULL AFTER null_str,MODIFY updated DATETIME NOT NULL AFTER created);"
 }
 func (AliasStruct) TableName() string {
 	return "alias_struct"
@@ -70,8 +70,8 @@ func (v AliasStruct) GetUpdated() sequel.ColumnValuer[time.Time] {
 func (v B) CreateTableStmt() string {
 	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (name VARCHAR(255) NOT NULL);"
 }
-func (B) AlterTableStmt() string {
-	return "ALTER TABLE b MODIFY name VARCHAR(255) NOT NULL;"
+func (v B) AlterTableStmt() string {
+	return "ALTER TABLE " + v.TableName() + " (MODIFY name VARCHAR(255) NOT NULL);"
 }
 func (B) TableName() string {
 	return "b"
@@ -98,8 +98,8 @@ func (v B) GetName() sequel.ColumnValuer[string] {
 func (v C) CreateTableStmt() string {
 	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (id BIGINT NOT NULL);"
 }
-func (C) AlterTableStmt() string {
-	return "ALTER TABLE c MODIFY id BIGINT NOT NULL;"
+func (v C) AlterTableStmt() string {
+	return "ALTER TABLE " + v.TableName() + " (MODIFY id BIGINT NOT NULL);"
 }
 func (C) TableName() string {
 	return "c"

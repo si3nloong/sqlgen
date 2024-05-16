@@ -9,8 +9,8 @@
 func (v {{ $structName }}) CreateTableStmt() string {
 	return {{ createTable "v" . }}
 }
-func ({{ $structName }}) AlterTableStmt() string {
-	return {{ quote (alterTable .) }}
+func (v {{ $structName }}) AlterTableStmt() string {
+	return {{ alterTable "v" . }}
 }
 {{ if not $hasCustomTabler -}}
 func ({{ $structName }}) TableName() string {

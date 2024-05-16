@@ -11,8 +11,8 @@ import (
 func (v Version) CreateTableStmt() string {
 	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (id VARCHAR(36) NOT NULL,PRIMARY KEY (id));"
 }
-func (Version) AlterTableStmt() string {
-	return "ALTER TABLE version MODIFY id VARCHAR(36) NOT NULL;"
+func (v Version) AlterTableStmt() string {
+	return "ALTER TABLE " + v.TableName() + " (MODIFY id VARCHAR(36) NOT NULL);"
 }
 func (Version) TableName() string {
 	return "version"

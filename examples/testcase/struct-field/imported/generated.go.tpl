@@ -12,8 +12,8 @@ import (
 func (v Model) CreateTableStmt() string {
 	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (str VARCHAR(255) NOT NULL,bool VARCHAR(255) NOT NULL,raw_bytes BLOB,int_16 VARCHAR(255) NOT NULL,int_32 VARCHAR(255) NOT NULL,int_64 VARCHAR(255) NOT NULL,time VARCHAR(255) NOT NULL);"
 }
-func (Model) AlterTableStmt() string {
-	return "ALTER TABLE model MODIFY str VARCHAR(255) NOT NULL,MODIFY bool VARCHAR(255) NOT NULL AFTER str,MODIFY raw_bytes BLOB AFTER bool,MODIFY int_16 VARCHAR(255) NOT NULL AFTER raw_bytes,MODIFY int_32 VARCHAR(255) NOT NULL AFTER int_16,MODIFY int_64 VARCHAR(255) NOT NULL AFTER int_32,MODIFY time VARCHAR(255) NOT NULL AFTER int_64;"
+func (v Model) AlterTableStmt() string {
+	return "ALTER TABLE " + v.TableName() + " (MODIFY str VARCHAR(255) NOT NULL,MODIFY bool VARCHAR(255) NOT NULL AFTER str,MODIFY raw_bytes BLOB AFTER bool,MODIFY int_16 VARCHAR(255) NOT NULL AFTER raw_bytes,MODIFY int_32 VARCHAR(255) NOT NULL AFTER int_16,MODIFY int_64 VARCHAR(255) NOT NULL AFTER int_32,MODIFY time VARCHAR(255) NOT NULL AFTER int_64);"
 }
 func (Model) TableName() string {
 	return "model"
@@ -58,8 +58,8 @@ func (v Model) GetTime() sequel.ColumnValuer[sql.NullTime] {
 func (v Some) CreateTableStmt() string {
 	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (id VARCHAR(36) NOT NULL);"
 }
-func (Some) AlterTableStmt() string {
-	return "ALTER TABLE some MODIFY id VARCHAR(36) NOT NULL;"
+func (v Some) AlterTableStmt() string {
+	return "ALTER TABLE " + v.TableName() + " (MODIFY id VARCHAR(36) NOT NULL);"
 }
 func (Some) TableName() string {
 	return "some"

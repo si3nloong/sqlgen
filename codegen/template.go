@@ -90,11 +90,12 @@ func (g *Generator) createTableStmt() func(string, *templates.Model) string {
 	}
 }
 
-func (g *Generator) alterTableStmt() func(*templates.Model) string {
-	return func(model *templates.Model) string {
+func (g *Generator) alterTableStmt() func(string, *templates.Model) string {
+	return func(n string, model *templates.Model) string {
 		buf := strpool.AcquireString()
 		defer strpool.ReleaseString(buf)
-		buf.WriteString("ALTER TABLE " + g.QuoteIdentifier(model.TableName) + " ")
+		buf.WriteString(g.Quote("ALTER TABLE "))
+		buf.WriteString("+ " + n + ".TableName() +" + g.QuoteStringBegin() + " (")
 		for i, f := range model.Fields {
 			if i > 0 {
 				buf.WriteByte(',')
@@ -116,7 +117,7 @@ func (g *Generator) alterTableStmt() func(*templates.Model) string {
 		// if model.PK != nil {
 		// 	buf.WriteString(",MODIFY PRIMARY KEY (" + model.PK.Field.ColumnName + ")")
 		// }
-		buf.WriteByte(';')
+		buf.WriteString(");" + g.QuoteStringEnd())
 		return buf.String()
 	}
 }

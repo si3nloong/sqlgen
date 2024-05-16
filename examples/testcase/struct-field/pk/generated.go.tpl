@@ -11,8 +11,8 @@ import (
 func (v Car) CreateTableStmt() string {
 	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (id BIGINT NOT NULL,no VARCHAR(255) NOT NULL,color INTEGER NOT NULL,manuc_date DATETIME NOT NULL,PRIMARY KEY (id));"
 }
-func (Car) AlterTableStmt() string {
-	return "ALTER TABLE car MODIFY id BIGINT NOT NULL,MODIFY no VARCHAR(255) NOT NULL AFTER id,MODIFY color INTEGER NOT NULL AFTER no,MODIFY manuc_date DATETIME NOT NULL AFTER color;"
+func (v Car) AlterTableStmt() string {
+	return "ALTER TABLE " + v.TableName() + " (MODIFY id BIGINT NOT NULL,MODIFY no VARCHAR(255) NOT NULL AFTER id,MODIFY color INTEGER NOT NULL AFTER no,MODIFY manuc_date DATETIME NOT NULL AFTER color);"
 }
 func (Car) TableName() string {
 	return "car"
@@ -57,8 +57,8 @@ func (v Car) GetManucDate() sequel.ColumnValuer[time.Time] {
 func (v User) CreateTableStmt() string {
 	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (id BIGINT NOT NULL,name VARCHAR(255) NOT NULL,age TINYINT UNSIGNED NOT NULL,email VARCHAR(255) NOT NULL,PRIMARY KEY (id));"
 }
-func (User) AlterTableStmt() string {
-	return "ALTER TABLE user MODIFY id BIGINT NOT NULL,MODIFY name VARCHAR(255) NOT NULL AFTER id,MODIFY age TINYINT UNSIGNED NOT NULL AFTER name,MODIFY email VARCHAR(255) NOT NULL AFTER age;"
+func (v User) AlterTableStmt() string {
+	return "ALTER TABLE " + v.TableName() + " (MODIFY id BIGINT NOT NULL,MODIFY name VARCHAR(255) NOT NULL AFTER id,MODIFY age TINYINT UNSIGNED NOT NULL AFTER name,MODIFY email VARCHAR(255) NOT NULL AFTER age);"
 }
 func (User) TableName() string {
 	return "user"
@@ -103,8 +103,8 @@ func (v User) GetEmail() sequel.ColumnValuer[string] {
 func (v House) CreateTableStmt() string {
 	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (id INTEGER UNSIGNED NOT NULL,no VARCHAR(255) NOT NULL,PRIMARY KEY (id));"
 }
-func (House) AlterTableStmt() string {
-	return "ALTER TABLE house MODIFY id INTEGER UNSIGNED NOT NULL,MODIFY no VARCHAR(255) NOT NULL AFTER id;"
+func (v House) AlterTableStmt() string {
+	return "ALTER TABLE " + v.TableName() + " (MODIFY id INTEGER UNSIGNED NOT NULL,MODIFY no VARCHAR(255) NOT NULL AFTER id);"
 }
 func (House) TableName() string {
 	return "house"

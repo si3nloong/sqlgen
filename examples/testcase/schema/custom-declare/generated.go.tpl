@@ -10,8 +10,8 @@ import (
 func (v A) CreateTableStmt() string {
 	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (name VARCHAR(255) NOT NULL);"
 }
-func (A) AlterTableStmt() string {
-	return "ALTER TABLE a MODIFY name VARCHAR(255) NOT NULL;"
+func (v A) AlterTableStmt() string {
+	return "ALTER TABLE " + v.TableName() + " (MODIFY name VARCHAR(255) NOT NULL);"
 }
 func (A) InsertVarQuery() string {
 	return "(?)"

@@ -10,8 +10,8 @@ import (
 func (v CustomTableName1) CreateTableStmt() string {
 	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (text VARCHAR(255) NOT NULL);"
 }
-func (CustomTableName1) AlterTableStmt() string {
-	return "ALTER TABLE CustomTableName_1 MODIFY text VARCHAR(255) NOT NULL;"
+func (v CustomTableName1) AlterTableStmt() string {
+	return "ALTER TABLE " + v.TableName() + " (MODIFY text VARCHAR(255) NOT NULL);"
 }
 func (CustomTableName1) TableName() string {
 	return "CustomTableName_1"
@@ -38,8 +38,8 @@ func (v CustomTableName1) GetText() sequel.ColumnValuer[string] {
 func (v CustomTableName2) CreateTableStmt() string {
 	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (text VARCHAR(255) NOT NULL);"
 }
-func (CustomTableName2) AlterTableStmt() string {
-	return "ALTER TABLE table_2 MODIFY text VARCHAR(255) NOT NULL;"
+func (v CustomTableName2) AlterTableStmt() string {
+	return "ALTER TABLE " + v.TableName() + " (MODIFY text VARCHAR(255) NOT NULL);"
 }
 func (CustomTableName2) TableName() string {
 	return "table_2"
@@ -66,8 +66,8 @@ func (v CustomTableName2) GetText() sequel.ColumnValuer[string] {
 func (v CustomTableName3) CreateTableStmt() string {
 	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (text VARCHAR(255) NOT NULL);"
 }
-func (CustomTableName3) AlterTableStmt() string {
-	return "ALTER TABLE table_3 MODIFY text VARCHAR(255) NOT NULL;"
+func (v CustomTableName3) AlterTableStmt() string {
+	return "ALTER TABLE " + v.TableName() + " (MODIFY text VARCHAR(255) NOT NULL);"
 }
 func (CustomTableName3) TableName() string {
 	return "table_3"

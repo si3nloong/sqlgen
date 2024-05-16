@@ -13,8 +13,8 @@ import (
 func (v Address) CreateTableStmt() string {
 	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (line_1 VARCHAR(255) NOT NULL,line_2 VARCHAR(255) NOT NULL,city VARCHAR(255) NOT NULL,post_code INTEGER UNSIGNED NOT NULL,state_code VARCHAR(255) NOT NULL,country_code VARCHAR(255) NOT NULL);"
 }
-func (Address) AlterTableStmt() string {
-	return "ALTER TABLE address MODIFY line_1 VARCHAR(255) NOT NULL,MODIFY line_2 VARCHAR(255) NOT NULL AFTER line_1,MODIFY city VARCHAR(255) NOT NULL AFTER line_2,MODIFY post_code INTEGER UNSIGNED NOT NULL AFTER city,MODIFY state_code VARCHAR(255) NOT NULL AFTER post_code,MODIFY country_code VARCHAR(255) NOT NULL AFTER state_code;"
+func (v Address) AlterTableStmt() string {
+	return "ALTER TABLE " + v.TableName() + " (MODIFY line_1 VARCHAR(255) NOT NULL,MODIFY line_2 VARCHAR(255) NOT NULL AFTER line_1,MODIFY city VARCHAR(255) NOT NULL AFTER line_2,MODIFY post_code INTEGER UNSIGNED NOT NULL AFTER city,MODIFY state_code VARCHAR(255) NOT NULL AFTER post_code,MODIFY country_code VARCHAR(255) NOT NULL AFTER state_code);"
 }
 func (Address) TableName() string {
 	return "address"
@@ -56,8 +56,8 @@ func (v Address) GetCountryCode() sequel.ColumnValuer[CountryCode] {
 func (v Customer) CreateTableStmt() string {
 	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (id BIGINT NOT NULL,howOld TINYINT UNSIGNED NOT NULL,name VARCHAR(255) NOT NULL,address JSON NOT NULL,nicknames JSON NOT NULL,status VARCHAR(255) NOT NULL,join_at DATETIME NOT NULL);"
 }
-func (Customer) AlterTableStmt() string {
-	return "ALTER TABLE customer MODIFY id BIGINT NOT NULL,MODIFY howOld TINYINT UNSIGNED NOT NULL AFTER id,MODIFY name VARCHAR(255) NOT NULL AFTER howOld,MODIFY address JSON NOT NULL AFTER name,MODIFY nicknames JSON NOT NULL AFTER address,MODIFY status VARCHAR(255) NOT NULL AFTER nicknames,MODIFY join_at DATETIME NOT NULL AFTER status;"
+func (v Customer) AlterTableStmt() string {
+	return "ALTER TABLE " + v.TableName() + " (MODIFY id BIGINT NOT NULL,MODIFY howOld TINYINT UNSIGNED NOT NULL AFTER id,MODIFY name VARCHAR(255) NOT NULL AFTER howOld,MODIFY address JSON NOT NULL AFTER name,MODIFY nicknames JSON NOT NULL AFTER address,MODIFY status VARCHAR(255) NOT NULL AFTER nicknames,MODIFY join_at DATETIME NOT NULL AFTER status);"
 }
 func (Customer) TableName() string {
 	return "customer"

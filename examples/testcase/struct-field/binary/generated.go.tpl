@@ -12,8 +12,8 @@ import (
 func (v Binary) CreateTableStmt() string {
 	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (id BINARY(16) NOT NULL,str VARCHAR(255) NOT NULL,time DATETIME NOT NULL,PRIMARY KEY (id));"
 }
-func (Binary) AlterTableStmt() string {
-	return "ALTER TABLE binary MODIFY id BINARY(16) NOT NULL,MODIFY str VARCHAR(255) NOT NULL AFTER id,MODIFY time DATETIME NOT NULL AFTER str;"
+func (v Binary) AlterTableStmt() string {
+	return "ALTER TABLE " + v.TableName() + " (MODIFY id BINARY(16) NOT NULL,MODIFY str VARCHAR(255) NOT NULL AFTER id,MODIFY time DATETIME NOT NULL AFTER str);"
 }
 func (Binary) TableName() string {
 	return "binary"
