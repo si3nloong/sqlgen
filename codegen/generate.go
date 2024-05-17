@@ -109,7 +109,7 @@ func renderTemplate[T templates.ModelTmplParams | struct{}](
 		"quoteIdentifier":   g.QuoteIdentifier,
 		"isStaticVar":       g.IsStaticVar,
 		"createTable":       g.createTableStmt(),
-		"alterTable":        g.alterTableStmt(),
+		"alterTable":        g.dialect.AlterTableStmt,
 		"insertOneStmt":     g.insertOneStmt(),
 		"findByPKStmt":      g.findByPKStmt(),
 		"updateByPKStmt":    g.updateByPKStmt(),

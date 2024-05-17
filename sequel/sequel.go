@@ -6,6 +6,8 @@ import (
 	"database/sql/driver"
 	"fmt"
 	"io"
+
+	"github.com/si3nloong/sqlgen/codegen/templates"
 )
 
 // For rename table name
@@ -74,6 +76,8 @@ type Dialect interface {
 	// Character to escape table, column name
 	QuoteIdentifier(v string) string
 	QuoteRune() rune
+
+	AlterTableStmt(n string, model *templates.Model) string
 }
 
 type Migrator interface {
