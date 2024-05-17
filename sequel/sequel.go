@@ -48,6 +48,7 @@ type Dialect interface {
 	QuoteIdentifier(v string) string
 	QuoteRune() rune
 
+	CreateTableStmt(n string, model *templates.Model) string
 	AlterTableStmt(n string, model *templates.Model) string
 }
 

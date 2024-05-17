@@ -108,7 +108,7 @@ func renderTemplate[T templates.ModelTmplParams | struct{}](
 		"quoteVar":          g.QuoteVar,
 		"quoteIdentifier":   g.QuoteIdentifier,
 		"isStaticVar":       g.IsStaticVar,
-		"createTable":       g.createTableStmt(),
+		"createTable":       g.dialect.CreateTableStmt,
 		"alterTable":        g.dialect.AlterTableStmt,
 		"insertOneStmt":     g.insertOneStmt(),
 		"findByPKStmt":      g.findByPKStmt(),

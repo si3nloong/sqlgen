@@ -8,7 +8,7 @@ import (
 	"github.com/si3nloong/sqlgen/codegen/templates"
 )
 
-func (postgresDriver) dataType(f *templates.Field) (dataType string) {
+func dataType(f *templates.Field) (dataType string) {
 	var (
 		ptrs = make([]types.Type, 0)
 		t    = f.Type

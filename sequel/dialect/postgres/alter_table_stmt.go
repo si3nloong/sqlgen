@@ -13,7 +13,7 @@ func (d postgresDriver) AlterTableStmt(n string, model *templates.Model) string 
 		if i > 0 {
 			buf.WriteByte(',')
 		}
-		buf.WriteString("MODIFY " + d.QuoteIdentifier(f.ColumnName) + " " + d.dataType(f))
+		buf.WriteString("MODIFY " + d.QuoteIdentifier(f.ColumnName) + " " + dataType(f))
 		if model.PK.Field == f {
 			buf.WriteString(" PRIMARY KEY")
 		}

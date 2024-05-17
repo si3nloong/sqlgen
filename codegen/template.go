@@ -62,66 +62,6 @@ func addrOf(impPkgs *Package) func(string, *templates.Field) string {
 	}
 }
 
-func (g *Generator) createTableStmt() func(string, *templates.Model) string {
-	return func(n string, model *templates.Model) string {
-		buf := strpool.AcquireString()
-		defer strpool.ReleaseString(buf)
-
-		buf.WriteString(g.Quote("CREATE TABLE IF NOT EXISTS "))
-		buf.WriteString("+ " + n + ".TableName() +" + g.QuoteStringBegin() + " (")
-		for i, f := range model.Fields {
-			if i > 0 {
-				buf.WriteByte(',')
-			}
-			dataType, isNull := inspectDataType(f)
-			buf.WriteString(g.QuoteIdentifier(f.ColumnName) + " " + dataType)
-			if !isNull {
-				buf.WriteString(" NOT NULL")
-			}
-			if model.PK != nil && model.PK.Field == f && model.PK.IsAutoIncr {
-				buf.WriteString(" AUTO_INCREMENT")
-			}
-		}
-		if model.PK != nil {
-			buf.WriteString(",PRIMARY KEY (" + g.QuoteIdentifier(model.PK.Field.ColumnName) + ")")
-		}
-		buf.WriteString(");" + g.QuoteStringEnd())
-		return buf.String()
-	}
-}
-
-func (g *Generator) alterTableStmt() func(string, *templates.Model) string {
-	return func(n string, model *templates.Model) string {
-		buf := strpool.AcquireString()
-		defer strpool.ReleaseString(buf)
-		buf.WriteString(g.Quote("ALTER TABLE "))
-		buf.WriteString("+ " + n + ".TableName() +" + g.QuoteStringBegin() + " (")
-		for i, f := range model.Fields {
-			if i > 0 {
-				buf.WriteByte(',')
-			}
-			buf.WriteString("MODIFY ")
-			dataType, isNull := inspectDataType(f)
-			buf.WriteString(g.QuoteIdentifier(f.ColumnName) + " " + dataType)
-			if !isNull {
-				buf.WriteString(" NOT NULL")
-			}
-			if model.PK != nil && model.PK.Field == f && model.PK.IsAutoIncr {
-				buf.WriteString(" AUTO_INCREMENT")
-			}
-			if i > 0 {
-				// buf.WriteString(" FIRST")
-				buf.WriteString(" AFTER " + g.QuoteIdentifier(model.Fields[i-1].ColumnName))
-			}
-		}
-		// if model.PK != nil {
-		// 	buf.WriteString(",MODIFY PRIMARY KEY (" + model.PK.Field.ColumnName + ")")
-		// }
-		buf.WriteString(");" + g.QuoteStringEnd())
-		return buf.String()
-	}
-}
-
 func (g *Generator) insertOneStmt() func(*templates.Model) string {
 	return func(model *templates.Model) string {
 		buf := strpool.AcquireString()
