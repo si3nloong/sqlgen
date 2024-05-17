@@ -3,15 +3,11 @@ package sequel
 import (
 	"context"
 	"database/sql"
-	"database/sql/driver"
 	"fmt"
 	"io"
 
 	"github.com/si3nloong/sqlgen/codegen/templates"
 )
-
-// For rename table name
-type Table struct{}
 
 type Scanner[T any] interface {
 	*T
@@ -34,31 +30,6 @@ type KeyValuer[T any] interface {
 type KeyValueScanner[T any] interface {
 	KeyValuer[T]
 	Scanner[T]
-}
-
-type Keyer interface {
-	PK() (columnName string, pos int, value driver.Value)
-}
-
-type AutoIncrKeyer interface {
-	Keyer
-	IsAutoIncr()
-}
-
-type DuplicateKeyer interface {
-	OnDuplicateKey() string
-}
-
-type Tabler interface {
-	TableName() string
-}
-
-type Columner interface {
-	Columns() []string
-}
-
-type Valuer interface {
-	Values() []any
 }
 
 type DB interface {
