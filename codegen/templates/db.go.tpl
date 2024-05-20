@@ -597,7 +597,7 @@ func (s *sqlStmt) Var(query string, value any) {
 	{{ if isStaticVar -}}
 	s.WriteString(query+"?")
 	{{ else -}}
-	s.WriteString(wrapVar(s.pos + 1))
+	s.WriteString(query+wrapVar(s.pos))
 	{{ end -}}
 	s.args = append(s.args, value)
 }
