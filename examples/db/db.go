@@ -290,6 +290,7 @@ type SelectStmt struct {
 	FromTable string
 	Where     sequel.WhereClause
 	OrderBy   []sequel.OrderByClause
+	GroupBy   []string
 	Offset    uint64
 	Limit     uint16
 }
@@ -328,6 +329,15 @@ func QueryStmt[T any, Ptr interface {
 		if vi.Where != nil {
 			blr.WriteString(" WHERE ")
 			vi.Where(blr)
+		}
+		if len(vi.GroupBy) > 0 {
+			blr.WriteString(" GROUP BY ")
+			for i := range vi.GroupBy {
+				if i > 0 {
+					blr.WriteByte(',')
+				}
+				blr.WriteString(vi.GroupBy[i])
+			}
 		}
 		if len(vi.OrderBy) > 0 {
 			blr.WriteString(" ORDER BY ")
@@ -463,8 +473,10 @@ func AcquireStmt() sequel.Stmt {
 }
 
 func ReleaseStmt(stmt sequel.Stmt) {
-	stmt.Reset()
-	pool.Put(stmt)
+	if stmt != nil {
+		stmt.Reset()
+		pool.Put(stmt)
+	}
 }
 
 type sqlStmt struct {
