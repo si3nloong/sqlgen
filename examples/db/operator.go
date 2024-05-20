@@ -82,7 +82,7 @@ func LessThan[T comparable](f sequel.ColumnValuer[T], value T) sequel.WhereClaus
 
 func LessThanOrEqual[T comparable](f sequel.ColumnValuer[T], value T) sequel.WhereClause {
 	return func(stmt sequel.StmtBuilder) {
-		stmt.Var(f.ColumnName()+" >= ", f.Convert(value))
+		stmt.Var(f.ColumnName()+" <= ", f.Convert(value))
 	}
 }
 

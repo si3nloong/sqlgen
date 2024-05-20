@@ -63,7 +63,7 @@ func Insert[T sequel.TableColumnValuer[T]](ctx context.Context, sqlConn sequel.D
 	}
 
 	var (
-		model    T
+		model    = data[0]
 		columns  = model.Columns()
 		idx      = -1
 		noOfCols = len(columns)
@@ -210,7 +210,7 @@ func Upsert[T sequel.KeyValuer[T]](ctx context.Context, sqlConn sequel.DB, data 
 	}
 
 	var (
-		model    T
+		model    = data[0]
 		columns  = model.Columns()
 		noOfCols = len(columns)
 		args     = make([]any, 0, noOfCols*len(data))
@@ -402,16 +402,29 @@ type SelectStmt struct {
 	Limit     uint16
 }
 
+type SQLStatement struct {
+	Query	  string
+	Arguments []any
+}
+
 func QueryStmt[T any, Ptr interface {
 	*T
 	sequel.Scanner[T]
-}, Stmt interface{ SelectStmt }](ctx context.Context, sqlConn sequel.DB, stmt Stmt) ([]T, error) {
-	blr := AcquireStmt()
-	defer ReleaseStmt(blr)
+}, Stmt interface{ 
+	SelectStmt | SQLStatement | string
+}](ctx context.Context, sqlConn sequel.DB, stmt Stmt) ([]T, error) {
+	var (
+		rows *sql.Rows
+		err  error
+	)
 
 	switch vi := any(stmt).(type) {
 	case SelectStmt:
-		var v T
+		var (
+			blr = AcquireStmt()
+			v T
+		)
+		defer ReleaseStmt(blr)
 		blr.WriteString("SELECT ")
 		if len(vi.Select) > 0 {
 			blr.WriteString(strings.Join(vi.Select, ","))
@@ -462,14 +475,20 @@ func QueryStmt[T any, Ptr interface {
 			blr.WriteString(" OFFSET " + strconv.FormatUint(vi.Offset, 10))
 		}
 		blr.WriteByte(';')
+		rows, err = sqlConn.QueryContext(ctx, blr.String(), blr.Args()...)
+		ReleaseStmt(blr)
+
+	case SQLStatement:
+		rows, err = sqlConn.QueryContext(ctx, vi.Query, vi.Arguments...)
+
+	case string:
+		rows, err = sqlConn.QueryContext(ctx, vi)
 	}
 
-	rows, err := sqlConn.QueryContext(ctx, blr.String(), blr.Args()...)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	ReleaseStmt(blr)
 
 	var result []T
 	for rows.Next() {
