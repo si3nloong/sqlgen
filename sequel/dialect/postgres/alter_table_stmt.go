@@ -5,7 +5,7 @@ import (
 	"github.com/si3nloong/sqlgen/sequel/strpool"
 )
 
-func (d postgresDriver) AlterTableStmt(n string, model *templates.Model) string {
+func (d *postgresDriver) AlterTableStmt(n string, model *templates.Model) string {
 	buf := strpool.AcquireString()
 	defer strpool.ReleaseString(buf)
 	buf.WriteString("`ALTER TABLE `+ " + n + ".TableName() +` (")
@@ -14,7 +14,7 @@ func (d postgresDriver) AlterTableStmt(n string, model *templates.Model) string 
 			buf.WriteByte(',')
 		}
 		buf.WriteString("MODIFY " + d.QuoteIdentifier(f.ColumnName) + " " + dataType(f))
-		if model.PK.Field == f {
+		if model.PK != nil && model.PK.Field == f {
 			buf.WriteString(" PRIMARY KEY")
 		}
 		if i > 0 {
