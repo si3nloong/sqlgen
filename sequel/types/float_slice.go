@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"strconv"
+	"unsafe"
 
-	"github.com/si3nloong/sqlgen/internal/strfmt"
 	"golang.org/x/exp/constraints"
 )
 
@@ -39,7 +39,7 @@ func (s floatList[T]) Scan(v any) error {
 		)
 		for i := range paths {
 			b = bytes.TrimSpace(paths[i])
-			f64, err := strconv.ParseFloat(strfmt.B2s(b), 64)
+			f64, err := strconv.ParseFloat(unsafe.String(unsafe.SliceData(b), len(b)), 64)
 			if err != nil {
 				return err
 			}

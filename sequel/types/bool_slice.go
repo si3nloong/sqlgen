@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
+	"unsafe"
 
-	"github.com/si3nloong/sqlgen/internal/strfmt"
 	"github.com/si3nloong/sqlgen/sequel/encoding"
 )
 
@@ -56,7 +56,7 @@ func (s boolList[T]) Scan(v any) error {
 		)
 		for i := range paths {
 			b = bytes.TrimSpace(paths[i])
-			flag, err := strconv.ParseBool(strfmt.B2s(b))
+			flag, err := strconv.ParseBool(unsafe.String(unsafe.SliceData(b), len(b)))
 			if err != nil {
 				return err
 			}

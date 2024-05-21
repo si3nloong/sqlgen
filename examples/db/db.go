@@ -377,7 +377,6 @@ func QueryStmt[T any, Ptr interface {
 	case string:
 		rows, err = sqlConn.QueryContext(ctx, vi)
 	}
-
 	if err != nil {
 		return nil, err
 	}
@@ -398,11 +397,11 @@ func QueryStmt[T any, Ptr interface {
 }
 
 type UpdateStmt struct {
-	FromTable string
-	Set       []sequel.SetClause
-	Where     sequel.WhereClause
-	OrderBy   []sequel.OrderByClause
-	Limit     uint16
+	Table   string
+	Set     []sequel.SetClause
+	Where   sequel.WhereClause
+	OrderBy []sequel.OrderByClause
+	Limit   uint16
 }
 
 type DeleteStmt struct {
@@ -424,7 +423,7 @@ func ExecStmt[T any, Stmt interface {
 		if vt, ok := any(v).(sequel.Tabler); ok {
 			blr.WriteString("UPDATE " + vt.TableName())
 		} else {
-			blr.WriteString("UPDATE " + vi.FromTable)
+			blr.WriteString("UPDATE " + vi.Table)
 		}
 		if vi.Where != nil {
 			blr.WriteString(" WHERE ")

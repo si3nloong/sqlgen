@@ -4,9 +4,9 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"time"
+	"unsafe"
 
 	"cloud.google.com/go/civil"
-	"github.com/si3nloong/sqlgen/internal/strfmt"
 )
 
 type localDate struct {
@@ -39,7 +39,7 @@ func (b localDate) Scan(v any) error {
 	var val civil.Date
 	switch vi := v.(type) {
 	case []byte:
-		f, err := civil.ParseDate(strfmt.B2s(vi))
+		f, err := civil.ParseDate(unsafe.String(unsafe.SliceData(vi), len(vi)))
 		if err != nil {
 			return err
 		}
@@ -77,7 +77,7 @@ func (b ptrOfLocalDate) Scan(v any) error {
 	var val civil.Date
 	switch vi := v.(type) {
 	case []byte:
-		f, err := civil.ParseDate(strfmt.B2s(vi))
+		f, err := civil.ParseDate(unsafe.String(unsafe.SliceData(vi), len(vi)))
 		if err != nil {
 			return err
 		}

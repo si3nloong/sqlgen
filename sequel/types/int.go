@@ -4,8 +4,8 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"strconv"
+	"unsafe"
 
-	"github.com/si3nloong/sqlgen/internal/strfmt"
 	"golang.org/x/exp/constraints"
 )
 
@@ -45,7 +45,7 @@ func (i intLike[T]) Scan(v any) error {
 	var val T
 	switch vi := v.(type) {
 	case []byte:
-		m, err := strconv.ParseInt(strfmt.B2s(vi), 10, 64)
+		m, err := strconv.ParseInt(unsafe.String(unsafe.SliceData(vi), len(vi)), 10, 64)
 		if err != nil {
 			return err
 		}

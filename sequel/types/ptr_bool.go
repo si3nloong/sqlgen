@@ -2,8 +2,7 @@ package types
 
 import (
 	"strconv"
-
-	"github.com/si3nloong/sqlgen/internal/strfmt"
+	"unsafe"
 )
 
 type ptrOfBoolLike[T ~bool] struct {
@@ -29,7 +28,7 @@ func (p ptrOfBoolLike[T]) Scan(v any) error {
 
 	switch vi := v.(type) {
 	case []byte:
-		b, err := strconv.ParseBool(strfmt.B2s(vi))
+		b, err := strconv.ParseBool(unsafe.String(unsafe.SliceData(vi), len(vi)))
 		if err != nil {
 			return err
 		}

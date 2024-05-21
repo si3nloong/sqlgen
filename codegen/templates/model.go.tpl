@@ -9,14 +9,11 @@
 func (v {{ $structName }}) CreateTableStmt() string {
 	return {{ createTable "v" . }}
 }
-func (v {{ $structName }}) AlterTableStmt() string {
-	return {{ alterTable "v" . }}
-}
 {{ if not $hasCustomTabler -}}
 func ({{ $structName }}) TableName() string {
 	return {{ quote (quoteIdentifier .TableName) }}
 }
-func (v {{ $structName }}) InsertOneStmt() string {
+func ({{ $structName }}) InsertOneStmt() string {
 	return {{ insertOneStmt . }}
 }
 {{ end -}}
@@ -44,7 +41,7 @@ func (v {{ $structName }}) FindByPKStmt() string {
 }
 {{ end -}}
 {{ if (and (not $hasCustomTabler) ($hasNotOnlyPK)) -}}
-func (v {{ $structName }}) UpdateByPKStmt() string {
+func ({{ $structName }}) UpdateByPKStmt() string {
 	return {{ updateByPKStmt . }}
 }
 {{ end -}}
