@@ -10,15 +10,12 @@ import (
 )
 
 func (v AliasStruct) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (b FLOAT NOT NULL,Id BIGINT NOT NULL,header VARCHAR(255) NOT NULL,raw BLOB,text VARCHAR(255) NOT NULL,null_str VARCHAR(255) NOT NULL,created DATETIME NOT NULL,updated DATETIME NOT NULL,PRIMARY KEY (Id));"
-}
-func (v AliasStruct) AlterTableStmt() string {
-	return "ALTER TABLE " + v.TableName() + " (MODIFY b FLOAT NOT NULL,MODIFY Id BIGINT NOT NULL AFTER b,MODIFY header VARCHAR(255) NOT NULL AFTER Id,MODIFY raw BLOB AFTER header,MODIFY text VARCHAR(255) NOT NULL AFTER raw,MODIFY null_str VARCHAR(255) NOT NULL AFTER text,MODIFY created DATETIME NOT NULL AFTER null_str,MODIFY updated DATETIME NOT NULL AFTER created);"
+	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`b` FLOAT NOT NULL,`Id` BIGINT NOT NULL,`header` VARCHAR(255) NOT NULL,`raw` BLOB NOT NULL,`text` VARCHAR(255) NOT NULL,`null_str` VARCHAR(255) NOT NULL,`created` DATETIME NOT NULL,`updated` DATETIME NOT NULL,PRIMARY KEY (`Id`));"
 }
 func (AliasStruct) TableName() string {
 	return "alias_struct"
 }
-func (v AliasStruct) InsertOneStmt() string {
+func (AliasStruct) InsertOneStmt() string {
 	return "INSERT INTO alias_struct (b,Id,header,raw,text,null_str,created,updated) VALUES (?,?,?,?,?,?,?,?);"
 }
 func (AliasStruct) InsertVarQuery() string {
@@ -33,7 +30,7 @@ func (v AliasStruct) PK() (columnName string, pos int, value driver.Value) {
 func (v AliasStruct) FindByPKStmt() string {
 	return "SELECT b,Id,header,raw,text,null_str,created,updated FROM alias_struct WHERE Id = ? LIMIT 1;"
 }
-func (v AliasStruct) UpdateByPKStmt() string {
+func (AliasStruct) UpdateByPKStmt() string {
 	return "UPDATE alias_struct SET b = ?,header = ?,raw = ?,text = ?,null_str = ?,created = ?,updated = ? WHERE Id = ? LIMIT 1;"
 }
 func (v AliasStruct) Values() []any {
@@ -43,40 +40,37 @@ func (v *AliasStruct) Addrs() []any {
 	return []any{types.Float(&v.B), types.Integer(&v.pk.ID), types.String(&v.Header), types.String(&v.Raw), types.String(&v.Text), (sql.Scanner)(&v.NullStr), (*time.Time)(&v.model.Created), (*time.Time)(&v.model.Updated)}
 }
 func (v AliasStruct) GetB() sequel.ColumnValuer[float64] {
-	return sequel.Column("b", v.B, func(vi float64) driver.Value { return float64(vi) })
+	return sequel.Column("b", v.B, func(val float64) driver.Value { return float64(val) })
 }
 func (v AliasStruct) GetID() sequel.ColumnValuer[int64] {
-	return sequel.Column("Id", v.pk.ID, func(vi int64) driver.Value { return int64(vi) })
+	return sequel.Column("Id", v.pk.ID, func(val int64) driver.Value { return int64(val) })
 }
 func (v AliasStruct) GetHeader() sequel.ColumnValuer[customStr] {
-	return sequel.Column("header", v.Header, func(vi customStr) driver.Value { return string(vi) })
+	return sequel.Column("header", v.Header, func(val customStr) driver.Value { return string(val) })
 }
 func (v AliasStruct) GetRaw() sequel.ColumnValuer[sql.RawBytes] {
-	return sequel.Column("raw", v.Raw, func(vi sql.RawBytes) driver.Value { return string(vi) })
+	return sequel.Column("raw", v.Raw, func(val sql.RawBytes) driver.Value { return string(val) })
 }
 func (v AliasStruct) GetText() sequel.ColumnValuer[customStr] {
-	return sequel.Column("text", v.Text, func(vi customStr) driver.Value { return string(vi) })
+	return sequel.Column("text", v.Text, func(val customStr) driver.Value { return string(val) })
 }
 func (v AliasStruct) GetNullStr() sequel.ColumnValuer[sql.NullString] {
-	return sequel.Column("null_str", v.NullStr, func(vi sql.NullString) driver.Value { return (driver.Valuer)(vi) })
+	return sequel.Column("null_str", v.NullStr, func(val sql.NullString) driver.Value { return (driver.Valuer)(val) })
 }
 func (v AliasStruct) GetCreated() sequel.ColumnValuer[time.Time] {
-	return sequel.Column("created", v.model.Created, func(vi time.Time) driver.Value { return time.Time(vi) })
+	return sequel.Column("created", v.model.Created, func(val time.Time) driver.Value { return time.Time(val) })
 }
 func (v AliasStruct) GetUpdated() sequel.ColumnValuer[time.Time] {
-	return sequel.Column("updated", v.model.Updated, func(vi time.Time) driver.Value { return time.Time(vi) })
+	return sequel.Column("updated", v.model.Updated, func(val time.Time) driver.Value { return time.Time(val) })
 }
 
 func (v B) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (name VARCHAR(255) NOT NULL);"
-}
-func (v B) AlterTableStmt() string {
-	return "ALTER TABLE " + v.TableName() + " (MODIFY name VARCHAR(255) NOT NULL);"
+	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`name` VARCHAR(255) NOT NULL);"
 }
 func (B) TableName() string {
 	return "b"
 }
-func (v B) InsertOneStmt() string {
+func (B) InsertOneStmt() string {
 	return "INSERT INTO b (name) VALUES (?);"
 }
 func (B) InsertVarQuery() string {
@@ -92,19 +86,16 @@ func (v *B) Addrs() []any {
 	return []any{types.String(&v.Name)}
 }
 func (v B) GetName() sequel.ColumnValuer[string] {
-	return sequel.Column("name", v.Name, func(vi string) driver.Value { return string(vi) })
+	return sequel.Column("name", v.Name, func(val string) driver.Value { return string(val) })
 }
 
 func (v C) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (id BIGINT NOT NULL);"
-}
-func (v C) AlterTableStmt() string {
-	return "ALTER TABLE " + v.TableName() + " (MODIFY id BIGINT NOT NULL);"
+	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`id` BIGINT NOT NULL);"
 }
 func (C) TableName() string {
 	return "c"
 }
-func (v C) InsertOneStmt() string {
+func (C) InsertOneStmt() string {
 	return "INSERT INTO c (id) VALUES (?);"
 }
 func (C) InsertVarQuery() string {
@@ -120,5 +111,5 @@ func (v *C) Addrs() []any {
 	return []any{types.Integer(&v.ID)}
 }
 func (v C) GetID() sequel.ColumnValuer[int64] {
-	return sequel.Column("id", v.ID, func(vi int64) driver.Value { return int64(vi) })
+	return sequel.Column("id", v.ID, func(val int64) driver.Value { return int64(val) })
 }

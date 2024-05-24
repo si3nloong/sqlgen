@@ -10,15 +10,12 @@ import (
 )
 
 func (v A) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (id VARCHAR(255) NOT NULL,text VARCHAR(255) NOT NULL,created_at DATETIME NOT NULL);"
-}
-func (v A) AlterTableStmt() string {
-	return "ALTER TABLE " + v.TableName() + " (MODIFY id VARCHAR(255) NOT NULL,MODIFY text VARCHAR(255) NOT NULL AFTER id,MODIFY created_at DATETIME NOT NULL AFTER text);"
+	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`id` VARCHAR(255) NOT NULL,`text` VARCHAR(255) NOT NULL,`created_at` DATETIME NOT NULL);"
 }
 func (A) TableName() string {
 	return "Apple"
 }
-func (v A) InsertOneStmt() string {
+func (A) InsertOneStmt() string {
 	return "INSERT INTO Apple (id,text,created_at) VALUES (?,?,?);"
 }
 func (A) InsertVarQuery() string {
@@ -34,25 +31,22 @@ func (v *A) Addrs() []any {
 	return []any{types.String(&v.ID), types.String(&v.Text), (*time.Time)(&v.CreatedAt)}
 }
 func (v A) GetID() sequel.ColumnValuer[string] {
-	return sequel.Column("id", v.ID, func(vi string) driver.Value { return string(vi) })
+	return sequel.Column("id", v.ID, func(val string) driver.Value { return string(val) })
 }
 func (v A) GetText() sequel.ColumnValuer[LongText] {
-	return sequel.Column("text", v.Text, func(vi LongText) driver.Value { return string(vi) })
+	return sequel.Column("text", v.Text, func(val LongText) driver.Value { return string(val) })
 }
 func (v A) GetCreatedAt() sequel.ColumnValuer[time.Time] {
-	return sequel.Column("created_at", v.CreatedAt, func(vi time.Time) driver.Value { return time.Time(vi) })
+	return sequel.Column("created_at", v.CreatedAt, func(val time.Time) driver.Value { return time.Time(val) })
 }
 
 func (v B) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (id VARCHAR(255) NOT NULL,created_at DATETIME NOT NULL);"
-}
-func (v B) AlterTableStmt() string {
-	return "ALTER TABLE " + v.TableName() + " (MODIFY id VARCHAR(255) NOT NULL,MODIFY created_at DATETIME NOT NULL AFTER id);"
+	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`id` VARCHAR(255) NOT NULL,`created_at` DATETIME NOT NULL);"
 }
 func (B) TableName() string {
 	return "b"
 }
-func (v B) InsertOneStmt() string {
+func (B) InsertOneStmt() string {
 	return "INSERT INTO b (id,created_at) VALUES (?,?);"
 }
 func (B) InsertVarQuery() string {
@@ -68,22 +62,19 @@ func (v *B) Addrs() []any {
 	return []any{types.String(&v.ID), (*time.Time)(&v.CreatedAt)}
 }
 func (v B) GetID() sequel.ColumnValuer[string] {
-	return sequel.Column("id", v.ID, func(vi string) driver.Value { return string(vi) })
+	return sequel.Column("id", v.ID, func(val string) driver.Value { return string(val) })
 }
 func (v B) GetCreatedAt() sequel.ColumnValuer[time.Time] {
-	return sequel.Column("created_at", v.CreatedAt, func(vi time.Time) driver.Value { return time.Time(vi) })
+	return sequel.Column("created_at", v.CreatedAt, func(val time.Time) driver.Value { return time.Time(val) })
 }
 
 func (v C) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (id BIGINT NOT NULL,PRIMARY KEY (id));"
-}
-func (v C) AlterTableStmt() string {
-	return "ALTER TABLE " + v.TableName() + " (MODIFY id BIGINT NOT NULL);"
+	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`id` BIGINT NOT NULL,PRIMARY KEY (`id`));"
 }
 func (C) TableName() string {
 	return "c"
 }
-func (v C) InsertOneStmt() string {
+func (C) InsertOneStmt() string {
 	return "INSERT INTO c (id) VALUES (?);"
 }
 func (C) InsertVarQuery() string {
@@ -102,19 +93,16 @@ func (v *C) Addrs() []any {
 	return []any{types.Integer(&v.ID)}
 }
 func (v C) GetID() sequel.ColumnValuer[int64] {
-	return sequel.Column("id", v.ID, func(vi int64) driver.Value { return int64(vi) })
+	return sequel.Column("id", v.ID, func(val int64) driver.Value { return int64(val) })
 }
 
 func (v D) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (id VARCHAR(255) NOT NULL,PRIMARY KEY (id));"
-}
-func (v D) AlterTableStmt() string {
-	return "ALTER TABLE " + v.TableName() + " (MODIFY id VARCHAR(255) NOT NULL);"
+	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`id` VARCHAR(255) NOT NULL,PRIMARY KEY (`id`));"
 }
 func (D) TableName() string {
 	return "d"
 }
-func (v D) InsertOneStmt() string {
+func (D) InsertOneStmt() string {
 	return "INSERT INTO d (id) VALUES (?);"
 }
 func (D) InsertVarQuery() string {
@@ -133,5 +121,5 @@ func (v *D) Addrs() []any {
 	return []any{(sql.Scanner)(&v.ID)}
 }
 func (v D) GetID() sequel.ColumnValuer[sql.NullString] {
-	return sequel.Column("id", v.ID, func(vi sql.NullString) driver.Value { return (driver.Valuer)(vi) })
+	return sequel.Column("id", v.ID, func(val sql.NullString) driver.Value { return (driver.Valuer)(val) })
 }

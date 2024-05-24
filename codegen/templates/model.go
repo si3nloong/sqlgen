@@ -17,12 +17,17 @@ type PK struct {
 type Model struct {
 	// Go struct name
 	GoName string
+	// Sql database name
+	DatabaseName *string
+
 	// Sql table name
 	TableName string
+
 	// Primary key
 	PK *PK
 	// Sql columns
-	Fields []*Field
+	Fields          []*Field
+	HasDatabaseName bool
 	// Is model implement `Tabler` interface
 	HasTableName bool
 	// Is model implement `Columner` interface

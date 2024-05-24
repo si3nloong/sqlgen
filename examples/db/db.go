@@ -42,8 +42,7 @@ func InsertOne[T sequel.TableColumnValuer[T], Ptr interface {
 	default:
 		columns = model.Columns()
 	}
-
-	return sqlConn.ExecContext(ctx, "INSERT INTO "+model.TableName()+" ("+strings.Join(columns, ",")+") VALUES ("+strings.Repeat(",?", len(columns))[1:]+")", args...)
+	return sqlConn.ExecContext(ctx, "INSERT INTO "+model.TableName()+" ("+strings.Join(columns, ",")+") VALUES ("+strings.Repeat(",?", len(columns))[1:]+");", args...)
 }
 
 // Insert is a helper function to insert multiple records.

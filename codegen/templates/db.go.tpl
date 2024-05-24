@@ -36,7 +36,6 @@ func InsertOne[T sequel.TableColumnValuer[T], Ptr interface {
 	default:
 		columns = model.Columns()
 	}
-
 	{{ if not isStaticVar -}}
 	stmt := strpool.AcquireString()
 	defer strpool.ReleaseString(stmt)
@@ -48,10 +47,19 @@ func InsertOne[T sequel.TableColumnValuer[T], Ptr interface {
 		// argument always started from 1
 		stmt.WriteString(wrapVar(i + 1))
 	}
+	{{- /* postgres */ -}}
+	{{ if eq driver "postgres" }}
+	stmt.WriteString(") RETURNING "+ strings.Join(model.Columns(), ",") +";")
+	if err := sqlConn.QueryRowContext(ctx, stmt.String(), args...).Scan(model.Addrs()...); err != nil {
+		return nil, err
+	}
+	return new(sequel.EmptyResult), nil
+	{{ else }}
 	stmt.WriteString(");")
 	return sqlConn.ExecContext(ctx, stmt.String(), args...)
+	{{ end }}
 	{{ else -}}
-	return sqlConn.ExecContext(ctx, "INSERT INTO "+ model.TableName() +" ("+ strings.Join(columns, ",") +") VALUES ("+ strings.Repeat({{ quote (print "," varRune) }}, len(columns))[1:]+")", args...)
+	return sqlConn.ExecContext(ctx, "INSERT INTO "+ model.TableName() +" ("+ strings.Join(columns, ",") +") VALUES ("+ strings.Repeat({{ quote (print "," varRune) }}, len(columns))[1:]+");", args...)
 	{{ end -}}
 }
 
