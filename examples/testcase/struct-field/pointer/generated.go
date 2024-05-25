@@ -27,7 +27,7 @@ func (Ptr) IsAutoIncr() {}
 func (v Ptr) PK() (columnName string, pos int, value driver.Value) {
 	return "id", 0, int64(v.ID)
 }
-func (v Ptr) FindByPKStmt() string {
+func (Ptr) FindByPKStmt() string {
 	return "SELECT id,str,bytes,bool,int,int_8,int_16,int_32,int_64,uint,uint_8,uint_16,uint_32,uint_64,f_32,f_64,time FROM ptr WHERE id = ? LIMIT 1;"
 }
 func (Ptr) UpdateByPKStmt() string {

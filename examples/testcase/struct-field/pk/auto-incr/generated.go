@@ -26,7 +26,7 @@ func (Model) IsAutoIncr() {}
 func (v Model) PK() (columnName string, pos int, value driver.Value) {
 	return "id", 2, int64(v.ID)
 }
-func (v Model) FindByPKStmt() string {
+func (Model) FindByPKStmt() string {
 	return "SELECT name,f,id,n FROM AutoIncrPK WHERE id = ? LIMIT 1;"
 }
 func (Model) UpdateByPKStmt() string {

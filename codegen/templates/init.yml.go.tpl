@@ -4,36 +4,31 @@ src:
   - {{ . }}
 {{- end }}
 
-# Optional: 
-# Possibly values : `mysql`, `postgres` or `sqlite`
+# Optional: possibly values : `mysql`, `postgres` or `sqlite`
 driver: {{ .Driver }}
 
-# Optional: 
-# Possibly values : `snake_case`, `camelCase` or `PascalCase`
+# Optional: possibly values : `snake_case`, `camelCase` or `PascalCase`
 naming_convention: {{ .NamingConvention }}
 
-# Optional:
-# The struct tag for "sqlgen" to read from. Default is `sql`
+# Optional: the struct tag for "sqlgen" to read from. Default is `sql`
 struct_tag: {{ .Tag }}
 
-# Optional:
-# Whether to omit the quote on table name and column name
+# Optional: whether to omit the quote on table name and column name
 omit_quote_identifier: {{ .OmitQuoteIdentifier }}
 
-# Optional:
-# Whether to omit the getters
+# Optional: whether to omit the getters
 omit_getters: {{ .OmitGetters }}
 
 # Optional: to add prefix to getter
 getter:
   prefix: {{ .Getter.Prefix }}
 
-# Optional: Where should the generated model code go?
+# Optional: where should the generated model code go?
 exec:
   skip_empty: {{ .Exec.SkipEmpty }}
   filename: {{ .Exec.Filename }}
 
-# Optional: Where should the generated database code go?
+# Optional: where should the generated database code go?
 database:
   dir: {{ .Database.Dir }}
   package: {{ .Database.Package }}

@@ -6,8 +6,6 @@
 {{- reserveImport "github.com/si3nloong/sqlgen/sequel" }}
 {{- reserveImport "github.com/si3nloong/sqlgen/sequel/strpool" }}
 
-const _getTableSQL = "SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = {{ quoteVar 1 }} LIMIT 1;"
-
 func InsertOne[T sequel.TableColumnValuer[T], Ptr interface {
 	sequel.TableColumnValuer[T]
 	sequel.Scanner[T]

@@ -26,7 +26,7 @@ func (Car) Columns() []string {
 func (v Car) PK() (columnName string, pos int, value driver.Value) {
 	return "id", 0, (driver.Valuer)(v.ID)
 }
-func (v Car) FindByPKStmt() string {
+func (Car) FindByPKStmt() string {
 	return "SELECT id,no,color,manuc_date FROM car WHERE id = ? LIMIT 1;"
 }
 func (Car) UpdateByPKStmt() string {
@@ -69,7 +69,7 @@ func (User) Columns() []string {
 func (v User) PK() (columnName string, pos int, value driver.Value) {
 	return "id", 0, int64(v.ID)
 }
-func (v User) FindByPKStmt() string {
+func (User) FindByPKStmt() string {
 	return "SELECT id,name,age,email FROM user WHERE id = ? LIMIT 1;"
 }
 func (User) UpdateByPKStmt() string {
@@ -112,7 +112,7 @@ func (House) Columns() []string {
 func (v House) PK() (columnName string, pos int, value driver.Value) {
 	return "id", 0, int64(v.ID)
 }
-func (v House) FindByPKStmt() string {
+func (House) FindByPKStmt() string {
 	return "SELECT id,no FROM house WHERE id = ? LIMIT 1;"
 }
 func (House) UpdateByPKStmt() string {

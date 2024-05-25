@@ -28,7 +28,7 @@ func (User) Columns() []string {
 func (v User) PK() (columnName string, pos int, value driver.Value) {
 	return "id", 0, (driver.Valuer)(v.ID)
 }
-func (v User) FindByPKStmt() string {
+func (User) FindByPKStmt() string {
 	return "SELECT id,birth_date FROM user WHERE id = ? LIMIT 1;"
 }
 func (User) UpdateByPKStmt() string {

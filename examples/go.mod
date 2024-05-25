@@ -5,7 +5,7 @@ go 1.21
 toolchain go1.21.3
 
 require (
-	cloud.google.com/go v0.113.0
+	cloud.google.com/go v0.114.0
 	github.com/go-sql-driver/mysql v1.7.1
 	github.com/gofrs/uuid/v5 v5.0.0
 	github.com/google/uuid v1.6.0
