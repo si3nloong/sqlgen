@@ -48,10 +48,14 @@ type Config struct {
 	NoStrict            bool            `yaml:"no_strict,omitempty"`
 	Exec                ExecConfig      `yaml:"exec"`
 	Getter              GetterConfig    `yaml:"getter"`
+	Migration           MigrationConfig `yaml:"migration"`
 	Database            *DatabaseConfig `yaml:"database"`
 	SourceMap           bool            `yaml:"source_map"`
 	SkipHeader          bool            `yaml:"skip_header"`
 	SkipModTidy         bool            `yaml:"skip_mod_tidy"`
+	Models              map[string]struct {
+		Model []string `yaml:"model"`
+	} `yaml:"models"`
 }
 
 type ExecConfig struct {
@@ -63,6 +67,9 @@ type ExecConfig struct {
 
 type GetterConfig struct {
 	Prefix string `yaml:"prefix"`
+}
+
+type MigrationConfig struct {
 }
 
 type DatabaseConfig struct {

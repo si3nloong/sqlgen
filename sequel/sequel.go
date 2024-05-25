@@ -58,6 +58,11 @@ type Migrator interface {
 	AlterTableStmt() string
 }
 
+type MigratorV2 interface {
+	Up(ctx context.Context, db DB) error
+	Down(ctx context.Context, db DB) error
+}
+
 type SingleInserter interface {
 	InsertOneStmt() string
 }

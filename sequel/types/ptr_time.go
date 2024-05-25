@@ -3,8 +3,7 @@ package types
 import (
 	"regexp"
 	"time"
-
-	"github.com/si3nloong/sqlgen/internal/strfmt"
+	"unsafe"
 )
 
 var (
@@ -36,7 +35,7 @@ func (p ptrOfTime[T]) Scan(v any) error {
 
 	switch vi := v.(type) {
 	case []byte:
-		t, err := parseTime(strfmt.B2s(vi))
+		t, err := parseTime(unsafe.String(unsafe.SliceData(vi), len(vi)))
 		if err != nil {
 			return err
 		}

@@ -5,7 +5,7 @@ import (
 	"github.com/si3nloong/sqlgen/sequel/strpool"
 )
 
-func (d mysqlDriver) AlterTableStmt(n string, model *templates.Model) string {
+func (d *mysqlDriver) AlterTableStmt(n string, model *templates.Model) string {
 	buf := strpool.AcquireString()
 	defer strpool.ReleaseString(buf)
 	buf.WriteString(`"ALTER TABLE "+ ` + n + `.TableName() +" (`)

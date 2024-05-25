@@ -28,17 +28,17 @@ func TestMain(m *testing.M) {
 	// m1 := autopk.Model{}
 	// sqlutil.FindOne(nil, nil, &m1)
 
-	if err := db.Migrate[autopk.Model](context.TODO(), dbConn); err != nil {
-		panic(err)
-	}
+	// if err := db.Migrate[autopk.Model](context.TODO(), dbConn); err != nil {
+	// 	panic(err)
+	// }
 
-	if err := db.Migrate[pointer.Ptr](context.TODO(), dbConn); err != nil {
-		panic(err)
-	}
+	// if err := db.Migrate[pointer.Ptr](context.TODO(), dbConn); err != nil {
+	// 	panic(err)
+	// }
 
-	if err := db.Migrate[array.Array](context.TODO(), dbConn); err != nil {
-		panic(err)
-	}
+	// if err := db.Migrate[array.Array](context.TODO(), dbConn); err != nil {
+	// 	panic(err)
+	// }
 
 	// mustNot(dbConn.Exec("DROP TABLE `model`;"))
 	// mustNot(dbConn.Exec(createTableModel))

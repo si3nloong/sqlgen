@@ -3,8 +3,8 @@ package types
 import (
 	"fmt"
 	"strconv"
+	"unsafe"
 
-	"github.com/si3nloong/sqlgen/internal/strfmt"
 	"golang.org/x/exp/constraints"
 )
 
@@ -31,7 +31,7 @@ func (p ptrOfFloatLike[T]) Scan(v any) error {
 
 	switch vi := v.(type) {
 	case []byte:
-		f, err := strconv.ParseFloat(strfmt.B2s(vi), 64)
+		f, err := strconv.ParseFloat(unsafe.String(unsafe.SliceData(vi), len(vi)), 64)
 		if err != nil {
 			return err
 		}

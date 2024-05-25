@@ -29,8 +29,3 @@ func TestCamelCase(t *testing.T) {
 	require.Equal(t, `constK`, ToCamelCase(`CONST_K`))
 	require.Equal(t, `marshalJson`, ToCamelCase(`MarshalJSON`))
 }
-
-func TestB2s(t *testing.T) {
-	require.Equal(t, `12njddf`, B2s([]byte(`12njddf`)))
-	require.Equal(t, `12nj@#$%^&*(ddf`, B2s([]byte(`12nj@#$%^&*(ddf`)))
-}

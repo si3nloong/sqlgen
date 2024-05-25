@@ -5,7 +5,7 @@ import (
 	"github.com/si3nloong/sqlgen/sequel/strpool"
 )
 
-func (d mysqlDriver) CreateTableStmt(n string, model *templates.Model) string {
+func (d *mysqlDriver) CreateTableStmt(n string, model *templates.Model) string {
 	buf := strpool.AcquireString()
 	defer strpool.ReleaseString(buf)
 

@@ -11,15 +11,12 @@ import (
 )
 
 func (v User) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (id VARCHAR(36) NOT NULL,birth_date DATE NOT NULL,PRIMARY KEY (id));"
-}
-func (v User) AlterTableStmt() string {
-	return "ALTER TABLE " + v.TableName() + " (MODIFY id VARCHAR(36) NOT NULL,MODIFY birth_date DATE NOT NULL AFTER id);"
+	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`id` VARCHAR(36),`birth_date` DATE,PRIMARY KEY (`id`));"
 }
 func (User) TableName() string {
 	return "user"
 }
-func (v User) InsertOneStmt() string {
+func (User) InsertOneStmt() string {
 	return "INSERT INTO user (id,birth_date) VALUES (?,?);"
 }
 func (User) InsertVarQuery() string {
@@ -34,7 +31,7 @@ func (v User) PK() (columnName string, pos int, value driver.Value) {
 func (v User) FindByPKStmt() string {
 	return "SELECT id,birth_date FROM user WHERE id = ? LIMIT 1;"
 }
-func (v User) UpdateByPKStmt() string {
+func (User) UpdateByPKStmt() string {
 	return "UPDATE user SET birth_date = ? WHERE id = ? LIMIT 1;"
 }
 func (v User) Values() []any {
@@ -44,8 +41,8 @@ func (v *User) Addrs() []any {
 	return []any{(sql.Scanner)(&v.ID), types.Date(&v.BirthDate)}
 }
 func (v User) GetID() sequel.ColumnValuer[uuid.UUID] {
-	return sequel.Column("id", v.ID, func(vi uuid.UUID) driver.Value { return (driver.Valuer)(vi) })
+	return sequel.Column("id", v.ID, func(val uuid.UUID) driver.Value { return (driver.Valuer)(val) })
 }
 func (v User) GetBirthDate() sequel.ColumnValuer[civil.Date] {
-	return sequel.Column("birth_date", v.BirthDate, func(vi civil.Date) driver.Value { return types.TextMarshaler(vi) })
+	return sequel.Column("birth_date", v.BirthDate, func(val civil.Date) driver.Value { return types.TextMarshaler(val) })
 }

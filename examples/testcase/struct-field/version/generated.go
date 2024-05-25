@@ -9,15 +9,12 @@ import (
 )
 
 func (v Version) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (id VARCHAR(36) NOT NULL,PRIMARY KEY (id));"
-}
-func (v Version) AlterTableStmt() string {
-	return "ALTER TABLE " + v.TableName() + " (MODIFY id VARCHAR(36) NOT NULL);"
+	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`id` VARCHAR(36),PRIMARY KEY (`id`));"
 }
 func (Version) TableName() string {
 	return "version"
 }
-func (v Version) InsertOneStmt() string {
+func (Version) InsertOneStmt() string {
 	return "INSERT INTO version (id) VALUES (?);"
 }
 func (Version) InsertVarQuery() string {
@@ -36,5 +33,5 @@ func (v *Version) Addrs() []any {
 	return []any{(sql.Scanner)(&v.ID)}
 }
 func (v Version) GetID() sequel.ColumnValuer[uuid.UUID] {
-	return sequel.Column("id", v.ID, func(vi uuid.UUID) driver.Value { return (driver.Valuer)(vi) })
+	return sequel.Column("id", v.ID, func(val uuid.UUID) driver.Value { return (driver.Valuer)(val) })
 }

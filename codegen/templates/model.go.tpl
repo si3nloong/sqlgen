@@ -4,19 +4,22 @@
 {{- $omitGetters := .OmitGetters -}}
 {{ range .Models }}
 {{- $hasCustomTabler := .HasTableName -}}
+{{- $hasCustomDatabaser := .HasDatabaseName -}}
 {{- $hasNotOnlyPK := .HasNotOnlyPK -}}
 {{- $structName := .GoName -}}
 func (v {{ $structName }}) CreateTableStmt() string {
 	return {{ createTable "v" . }}
 }
-func (v {{ $structName }}) AlterTableStmt() string {
-	return {{ alterTable "v" . }}
+{{ if and (not $hasCustomDatabaser) (ne .DatabaseName nil) -}}
+func ({{ $structName }}) DatabaseName() string {
+	return {{ quote (quoteIdentifier .DatabaseName) }}
 }
+{{ end -}}
 {{ if not $hasCustomTabler -}}
 func ({{ $structName }}) TableName() string {
 	return {{ quote (quoteIdentifier .TableName) }}
 }
-func (v {{ $structName }}) InsertOneStmt() string {
+func ({{ $structName }}) InsertOneStmt() string {
 	return {{ insertOneStmt . }}
 }
 {{ end -}}
@@ -39,12 +42,12 @@ func (v {{ $structName }}) PK() (columnName string, pos int, value driver.Value)
 	return {{ quote (quoteIdentifier .PK.Field.ColumnName) }}, {{ .PK.Field.Index }}, {{ castAs .PK.Field }}
 }
 {{ if (and (not $hasCustomTabler) ($hasNotOnlyPK)) -}}
-func (v {{ $structName }}) FindByPKStmt() string {
+func ({{ $structName }}) FindByPKStmt() string {
 	return {{ findByPKStmt . }}
 }
 {{ end -}}
 {{ if (and (not $hasCustomTabler) ($hasNotOnlyPK)) -}}
-func (v {{ $structName }}) UpdateByPKStmt() string {
+func ({{ $structName }}) UpdateByPKStmt() string {
 	return {{ updateByPKStmt . }}
 }
 {{ end -}}
@@ -59,7 +62,7 @@ func (v *{{ $structName }}) Addrs() []any {
 {{ range $f := .Fields -}}
 {{- $return := getFieldTypeValue $f -}}
 func (v {{ $structName }}) {{ $return.FuncName }}() (sequel.ColumnValuer[{{ $return.Type }}]) {
-	return sequel.Column{{ typeConstraint $return }}({{ quote (quoteIdentifier $f.ColumnName) }}, v.{{ .GoPath }}, func(vi {{ $return.Type }}) driver.Value { return {{ castAs $f "vi" }} })
+	return sequel.Column{{ typeConstraint $return }}({{ quote (quoteIdentifier $f.ColumnName) }}, v.{{ .GoPath }}, func(val {{ $return.Type }}) driver.Value { return {{ castAs $f "val" }} })
 }
 {{ end -}}
 {{ end -}}

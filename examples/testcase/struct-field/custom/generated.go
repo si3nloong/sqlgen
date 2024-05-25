@@ -11,15 +11,12 @@ import (
 )
 
 func (v Address) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (line_1 VARCHAR(255) NOT NULL,line_2 VARCHAR(255) NOT NULL,city VARCHAR(255) NOT NULL,post_code INTEGER UNSIGNED NOT NULL,state_code VARCHAR(255) NOT NULL,country_code VARCHAR(255) NOT NULL);"
-}
-func (v Address) AlterTableStmt() string {
-	return "ALTER TABLE " + v.TableName() + " (MODIFY line_1 VARCHAR(255) NOT NULL,MODIFY line_2 VARCHAR(255) NOT NULL AFTER line_1,MODIFY city VARCHAR(255) NOT NULL AFTER line_2,MODIFY post_code INTEGER UNSIGNED NOT NULL AFTER city,MODIFY state_code VARCHAR(255) NOT NULL AFTER post_code,MODIFY country_code VARCHAR(255) NOT NULL AFTER state_code);"
+	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`line_1` VARCHAR(255) NOT NULL,`line_2` VARCHAR(255) NOT NULL,`city` VARCHAR(255) NOT NULL,`post_code` INTEGER NOT NULL,`state_code` VARCHAR(255) NOT NULL,`country_code` VARCHAR(255) NOT NULL);"
 }
 func (Address) TableName() string {
 	return "address"
 }
-func (v Address) InsertOneStmt() string {
+func (Address) InsertOneStmt() string {
 	return "INSERT INTO address (line_1,line_2,city,post_code,state_code,country_code) VALUES (?,?,?,?,?,?);"
 }
 func (Address) InsertVarQuery() string {
@@ -35,34 +32,31 @@ func (v *Address) Addrs() []any {
 	return []any{types.String(&v.Line1), (sql.Scanner)(&v.Line2), types.String(&v.City), types.Integer(&v.PostCode), types.String(&v.StateCode), types.String(&v.CountryCode)}
 }
 func (v Address) GetLine1() sequel.ColumnValuer[string] {
-	return sequel.Column("line_1", v.Line1, func(vi string) driver.Value { return string(vi) })
+	return sequel.Column("line_1", v.Line1, func(val string) driver.Value { return string(val) })
 }
 func (v Address) GetLine2() sequel.ColumnValuer[sql.NullString] {
-	return sequel.Column("line_2", v.Line2, func(vi sql.NullString) driver.Value { return (driver.Valuer)(vi) })
+	return sequel.Column("line_2", v.Line2, func(val sql.NullString) driver.Value { return (driver.Valuer)(val) })
 }
 func (v Address) GetCity() sequel.ColumnValuer[string] {
-	return sequel.Column("city", v.City, func(vi string) driver.Value { return string(vi) })
+	return sequel.Column("city", v.City, func(val string) driver.Value { return string(val) })
 }
 func (v Address) GetPostCode() sequel.ColumnValuer[uint] {
-	return sequel.Column("post_code", v.PostCode, func(vi uint) driver.Value { return int64(vi) })
+	return sequel.Column("post_code", v.PostCode, func(val uint) driver.Value { return int64(val) })
 }
 func (v Address) GetStateCode() sequel.ColumnValuer[StateCode] {
-	return sequel.Column("state_code", v.StateCode, func(vi StateCode) driver.Value { return string(vi) })
+	return sequel.Column("state_code", v.StateCode, func(val StateCode) driver.Value { return string(val) })
 }
 func (v Address) GetCountryCode() sequel.ColumnValuer[CountryCode] {
-	return sequel.Column("country_code", v.CountryCode, func(vi CountryCode) driver.Value { return string(vi) })
+	return sequel.Column("country_code", v.CountryCode, func(val CountryCode) driver.Value { return string(val) })
 }
 
 func (v Customer) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (id BIGINT NOT NULL,howOld TINYINT UNSIGNED NOT NULL,name VARCHAR(255) NOT NULL,address JSON NOT NULL,nicknames JSON NOT NULL,status VARCHAR(255) NOT NULL,join_at DATETIME NOT NULL);"
-}
-func (v Customer) AlterTableStmt() string {
-	return "ALTER TABLE " + v.TableName() + " (MODIFY id BIGINT NOT NULL,MODIFY howOld TINYINT UNSIGNED NOT NULL AFTER id,MODIFY name VARCHAR(255) NOT NULL AFTER howOld,MODIFY address JSON NOT NULL AFTER name,MODIFY nicknames JSON NOT NULL AFTER address,MODIFY status VARCHAR(255) NOT NULL AFTER nicknames,MODIFY join_at DATETIME NOT NULL AFTER status);"
+	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`id` BIGINT NOT NULL,`howOld` TINYINT UNSIGNED NOT NULL,`name` VARCHAR(255) NOT NULL,`address` JSON NOT NULL,`nicknames` JSON NOT NULL,`status` VARCHAR(255) NOT NULL,`join_at` DATETIME NOT NULL);"
 }
 func (Customer) TableName() string {
 	return "customer"
 }
-func (v Customer) InsertOneStmt() string {
+func (Customer) InsertOneStmt() string {
 	return "INSERT INTO customer (id,howOld,name,address,nicknames,status,join_at) VALUES (?,?,?,?,?,?,?);"
 }
 func (Customer) InsertVarQuery() string {
@@ -78,23 +72,23 @@ func (v *Customer) Addrs() []any {
 	return []any{types.Integer(&v.ID), types.Integer(&v.Age), (sql.Scanner)(&v.Name), &v.Address, types.StringList(&v.Nicknames), types.String(&v.Status), (*time.Time)(&v.JoinAt)}
 }
 func (v Customer) GetID() sequel.ColumnValuer[int64] {
-	return sequel.Column("id", v.ID, func(vi int64) driver.Value { return int64(vi) })
+	return sequel.Column("id", v.ID, func(val int64) driver.Value { return int64(val) })
 }
 func (v Customer) GetAge() sequel.ColumnValuer[uint8] {
-	return sequel.Column("howOld", v.Age, func(vi uint8) driver.Value { return int64(vi) })
+	return sequel.Column("howOld", v.Age, func(val uint8) driver.Value { return int64(val) })
 }
 func (v Customer) GetName() sequel.ColumnValuer[longText] {
-	return sequel.Column("name", v.Name, func(vi longText) driver.Value { return (driver.Valuer)(vi) })
+	return sequel.Column("name", v.Name, func(val longText) driver.Value { return (driver.Valuer)(val) })
 }
 func (v Customer) GetAddress() sequel.ColumnValuer[Addresses] {
-	return sequel.Column("address", v.Address, func(vi Addresses) driver.Value { return (driver.Valuer)(vi) })
+	return sequel.Column("address", v.Address, func(val Addresses) driver.Value { return (driver.Valuer)(val) })
 }
 func (v Customer) GetNicknames() sequel.ColumnValuer[[]longText] {
-	return sequel.Column("nicknames", v.Nicknames, func(vi []longText) driver.Value { return encoding.MarshalStringList(vi) })
+	return sequel.Column("nicknames", v.Nicknames, func(val []longText) driver.Value { return encoding.MarshalStringList(val) })
 }
 func (v Customer) GetStatus() sequel.ColumnValuer[string] {
-	return sequel.Column("status", v.Status, func(vi string) driver.Value { return string(vi) })
+	return sequel.Column("status", v.Status, func(val string) driver.Value { return string(val) })
 }
 func (v Customer) GetJoinAt() sequel.ColumnValuer[time.Time] {
-	return sequel.Column("join_at", v.JoinAt, func(vi time.Time) driver.Value { return time.Time(vi) })
+	return sequel.Column("join_at", v.JoinAt, func(val time.Time) driver.Value { return time.Time(val) })
 }

@@ -4,8 +4,7 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"time"
-
-	"github.com/si3nloong/sqlgen/internal/strfmt"
+	"unsafe"
 )
 
 type datetime[T time.Time] struct {
@@ -44,7 +43,7 @@ func (s datetime[T]) Scan(v any) error {
 	var val T
 	switch vi := v.(type) {
 	case []byte:
-		t, err := parseTime(strfmt.B2s(vi))
+		t, err := parseTime(unsafe.String(unsafe.SliceData(vi), len(vi)))
 		if err != nil {
 			return err
 		}

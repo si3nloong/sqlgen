@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"strconv"
+	"unsafe"
 
-	"github.com/si3nloong/sqlgen/internal/strfmt"
 	"golang.org/x/exp/constraints"
 )
 
@@ -26,7 +26,7 @@ func (s uintList[T]) Scan(v any) error {
 		}
 		length := len(vi)
 		if length < 2 || vi[0] != '[' || vi[length-1] != ']' {
-			return fmt.Errorf(`sqlgen: invalid value of %q to unmarshal to []~int`, vi)
+			return fmt.Errorf(`sqlgen: invalid value of %q to unmarshal to []~uint`, vi)
 		}
 		vi = vi[1 : length-1]
 		if len(vi) == 0 {
@@ -39,7 +39,7 @@ func (s uintList[T]) Scan(v any) error {
 		)
 		for i := range paths {
 			b = bytes.TrimSpace(paths[i])
-			u64, err := strconv.ParseUint(strfmt.B2s(b), 10, 64)
+			u64, err := strconv.ParseUint(unsafe.String(unsafe.SliceData(b), len(b)), 10, 64)
 			if err != nil {
 				return err
 			}

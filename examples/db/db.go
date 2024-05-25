@@ -42,8 +42,7 @@ func InsertOne[T sequel.TableColumnValuer[T], Ptr interface {
 	default:
 		columns = model.Columns()
 	}
-
-	return sqlConn.ExecContext(ctx, "INSERT INTO "+model.TableName()+" ("+strings.Join(columns, ",")+") VALUES ("+strings.Repeat(",?", len(columns))[1:]+")", args...)
+	return sqlConn.ExecContext(ctx, "INSERT INTO "+model.TableName()+" ("+strings.Join(columns, ",")+") VALUES ("+strings.Repeat(",?", len(columns))[1:]+");", args...)
 }
 
 // Insert is a helper function to insert multiple records.
@@ -54,7 +53,7 @@ func Insert[T sequel.TableColumnValuer[T]](ctx context.Context, sqlConn sequel.D
 	}
 
 	var (
-		model    T
+		model    = data[0]
 		columns  = model.Columns()
 		idx      = -1
 		noOfCols = len(columns)
@@ -157,7 +156,7 @@ func Upsert[T sequel.KeyValuer[T]](ctx context.Context, sqlConn sequel.DB, data 
 	}
 
 	var (
-		model    T
+		model    = data[0]
 		columns  = model.Columns()
 		noOfCols = len(columns)
 		args     = make([]any, 0, noOfCols*len(data))
@@ -290,20 +289,34 @@ type SelectStmt struct {
 	FromTable string
 	Where     sequel.WhereClause
 	OrderBy   []sequel.OrderByClause
+	GroupBy   []string
 	Offset    uint64
 	Limit     uint16
+}
+
+type SQLStatement struct {
+	Query     string
+	Arguments []any
 }
 
 func QueryStmt[T any, Ptr interface {
 	*T
 	sequel.Scanner[T]
-}, Stmt interface{ SelectStmt }](ctx context.Context, sqlConn sequel.DB, stmt Stmt) ([]T, error) {
-	blr := AcquireStmt()
-	defer ReleaseStmt(blr)
+}, Stmt interface {
+	SelectStmt | SQLStatement | string
+}](ctx context.Context, sqlConn sequel.DB, stmt Stmt) ([]T, error) {
+	var (
+		rows *sql.Rows
+		err  error
+	)
 
 	switch vi := any(stmt).(type) {
 	case SelectStmt:
-		var v T
+		var (
+			blr = AcquireStmt()
+			v   T
+		)
+		defer ReleaseStmt(blr)
 		blr.WriteString("SELECT ")
 		if len(vi.Select) > 0 {
 			blr.WriteString(strings.Join(vi.Select, ","))
@@ -329,6 +342,15 @@ func QueryStmt[T any, Ptr interface {
 			blr.WriteString(" WHERE ")
 			vi.Where(blr)
 		}
+		if len(vi.GroupBy) > 0 {
+			blr.WriteString(" GROUP BY ")
+			for i := range vi.GroupBy {
+				if i > 0 {
+					blr.WriteByte(',')
+				}
+				blr.WriteString(vi.GroupBy[i])
+			}
+		}
 		if len(vi.OrderBy) > 0 {
 			blr.WriteString(" ORDER BY ")
 			for i := range vi.OrderBy {
@@ -345,14 +367,19 @@ func QueryStmt[T any, Ptr interface {
 			blr.WriteString(" OFFSET " + strconv.FormatUint(vi.Offset, 10))
 		}
 		blr.WriteByte(';')
-	}
+		rows, err = sqlConn.QueryContext(ctx, blr.String(), blr.Args()...)
+		ReleaseStmt(blr)
 
-	rows, err := sqlConn.QueryContext(ctx, blr.String(), blr.Args()...)
+	case SQLStatement:
+		rows, err = sqlConn.QueryContext(ctx, vi.Query, vi.Arguments...)
+
+	case string:
+		rows, err = sqlConn.QueryContext(ctx, vi)
+	}
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	ReleaseStmt(blr)
 
 	var result []T
 	for rows.Next() {
@@ -369,11 +396,11 @@ func QueryStmt[T any, Ptr interface {
 }
 
 type UpdateStmt struct {
-	FromTable string
-	Set       []sequel.SetClause
-	Where     sequel.WhereClause
-	OrderBy   []sequel.OrderByClause
-	Limit     uint16
+	Table   string
+	Set     []sequel.SetClause
+	Where   sequel.WhereClause
+	OrderBy []sequel.OrderByClause
+	Limit   uint16
 }
 
 type DeleteStmt struct {
@@ -395,7 +422,7 @@ func ExecStmt[T any, Stmt interface {
 		if vt, ok := any(v).(sequel.Tabler); ok {
 			blr.WriteString("UPDATE " + vt.TableName())
 		} else {
-			blr.WriteString("UPDATE " + vi.FromTable)
+			blr.WriteString("UPDATE " + vi.Table)
 		}
 		if vi.Where != nil {
 			blr.WriteString(" WHERE ")
@@ -463,8 +490,10 @@ func AcquireStmt() sequel.Stmt {
 }
 
 func ReleaseStmt(stmt sequel.Stmt) {
-	stmt.Reset()
-	pool.Put(stmt)
+	if stmt != nil {
+		stmt.Reset()
+		pool.Put(stmt)
+	}
 }
 
 type sqlStmt struct {

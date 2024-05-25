@@ -72,13 +72,13 @@ func Init(cfg *config.Config) error {
 		return err
 	}
 
-	w, err := os.OpenFile(config.DefaultConfigFile, os.O_RDWR|os.O_CREATE|os.O_TRUNC, fileMode)
+	f, err := os.OpenFile(config.DefaultConfigFile, os.O_RDWR|os.O_CREATE|os.O_TRUNC, fileMode)
 	if err != nil {
 		return err
 	}
-	defer w.Close()
+	defer f.Close()
 
-	if err := tmpl.Execute(w, cfg); err != nil {
+	if err := tmpl.Execute(f, cfg); err != nil {
 		return err
 	}
 	return nil
