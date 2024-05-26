@@ -10,7 +10,7 @@ import (
 )
 
 func (v Model) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`str` VARCHAR(255) NOT NULL,`bool` VARCHAR(255) NOT NULL,`raw_bytes` BLOB NOT NULL,`int_16` VARCHAR(255) NOT NULL,`int_32` VARCHAR(255) NOT NULL,`int_64` VARCHAR(255) NOT NULL,`time` VARCHAR(255) NOT NULL);"
+	return "CREATE TABLE IF NOT EXISTS `model` (`str` VARCHAR(255) NOT NULL,`bool` VARCHAR(255) NOT NULL,`raw_bytes` BLOB NOT NULL,`int_16` VARCHAR(255) NOT NULL,`int_32` VARCHAR(255) NOT NULL,`int_64` VARCHAR(255) NOT NULL,`time` VARCHAR(255) NOT NULL);"
 }
 func (Model) TableName() string {
 	return "model"
@@ -53,7 +53,7 @@ func (v Model) GetTime() sequel.ColumnValuer[sql.NullTime] {
 }
 
 func (v Some) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`id` VARCHAR(36));"
+	return "CREATE TABLE IF NOT EXISTS `some` (`id` VARCHAR(36));"
 }
 func (Some) TableName() string {
 	return "some"

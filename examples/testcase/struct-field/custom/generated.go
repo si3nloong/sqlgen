@@ -11,7 +11,7 @@ import (
 )
 
 func (v Address) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`line_1` VARCHAR(255) NOT NULL,`line_2` VARCHAR(255) NOT NULL,`city` VARCHAR(255) NOT NULL,`post_code` INTEGER NOT NULL,`state_code` VARCHAR(255) NOT NULL,`country_code` VARCHAR(255) NOT NULL);"
+	return "CREATE TABLE IF NOT EXISTS `address` (`line_1` VARCHAR(255) NOT NULL,`line_2` VARCHAR(255) NOT NULL,`city` VARCHAR(255) NOT NULL,`post_code` INTEGER NOT NULL,`state_code` VARCHAR(255) NOT NULL,`country_code` VARCHAR(255) NOT NULL);"
 }
 func (Address) TableName() string {
 	return "address"
@@ -51,7 +51,7 @@ func (v Address) GetCountryCode() sequel.ColumnValuer[CountryCode] {
 }
 
 func (v Customer) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`id` BIGINT NOT NULL,`howOld` TINYINT UNSIGNED NOT NULL,`name` VARCHAR(255) NOT NULL,`address` JSON NOT NULL,`nicknames` JSON NOT NULL,`status` VARCHAR(255) NOT NULL,`join_at` DATETIME NOT NULL);"
+	return "CREATE TABLE IF NOT EXISTS `customer` (`id` BIGINT NOT NULL,`howOld` TINYINT UNSIGNED NOT NULL,`name` VARCHAR(255) NOT NULL,`address` JSON NOT NULL,`nicknames` JSON NOT NULL,`status` VARCHAR(255) NOT NULL,`join_at` DATETIME NOT NULL);"
 }
 func (Customer) TableName() string {
 	return "customer"

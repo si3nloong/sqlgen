@@ -10,15 +10,12 @@ import (
 )
 
 func (v User) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (id VARCHAR(36) NOT NULL,name VARCHAR(255) NOT NULL);"
-}
-func (v User) AlterTableStmt() string {
-	return "ALTER TABLE " + v.TableName() + " (MODIFY id VARCHAR(36) NOT NULL,MODIFY name VARCHAR(255) NOT NULL AFTER id);"
+	return "CREATE TABLE IF NOT EXISTS `user` (`id` VARCHAR(36),`name` VARCHAR(255) NOT NULL);"
 }
 func (User) TableName() string {
 	return "user"
 }
-func (v User) InsertOneStmt() string {
+func (User) InsertOneStmt() string {
 	return "INSERT INTO user (id,name) VALUES (?,?);"
 }
 func (User) InsertVarQuery() string {
@@ -34,8 +31,8 @@ func (v *User) Addrs() []any {
 	return []any{(sql.Scanner)(&v.ID), types.String(&v.Name)}
 }
 func (v User) GetID() sequel.ColumnValuer[uuid.UUID] {
-	return sequel.Column("id", v.ID, func(vi uuid.UUID) driver.Value { return (driver.Valuer)(vi) })
+	return sequel.Column("id", v.ID, func(val uuid.UUID) driver.Value { return (driver.Valuer)(val) })
 }
 func (v User) GetName() sequel.ColumnValuer[string] {
-	return sequel.Column("name", v.Name, func(vi string) driver.Value { return string(vi) })
+	return sequel.Column("name", v.Name, func(val string) driver.Value { return string(val) })
 }

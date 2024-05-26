@@ -9,15 +9,12 @@ import (
 )
 
 func (v B) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (date DATE NOT NULL,time VARCHAR(255) NOT NULL);"
-}
-func (v B) AlterTableStmt() string {
-	return "ALTER TABLE " + v.TableName() + " (MODIFY date DATE NOT NULL,MODIFY time VARCHAR(255) NOT NULL AFTER date);"
+	return "CREATE TABLE IF NOT EXISTS `b` (`date` DATE,`time` VARCHAR(255) NOT NULL);"
 }
 func (B) TableName() string {
 	return "b"
 }
-func (v B) InsertOneStmt() string {
+func (B) InsertOneStmt() string {
 	return "INSERT INTO b (date,time) VALUES (?,?);"
 }
 func (B) InsertVarQuery() string {
@@ -33,8 +30,8 @@ func (v *B) Addrs() []any {
 	return []any{types.Date(&v.DateTime.Date), types.TextUnmarshaler(&v.DateTime.Time)}
 }
 func (v B) GetDate() sequel.ColumnValuer[civil.Date] {
-	return sequel.Column("date", v.DateTime.Date, func(vi civil.Date) driver.Value { return types.TextMarshaler(vi) })
+	return sequel.Column("date", v.DateTime.Date, func(val civil.Date) driver.Value { return types.TextMarshaler(val) })
 }
 func (v B) GetTime() sequel.ColumnValuer[civil.Time] {
-	return sequel.Column("time", v.DateTime.Time, func(vi civil.Time) driver.Value { return types.TextMarshaler(vi) })
+	return sequel.Column("time", v.DateTime.Time, func(val civil.Time) driver.Value { return types.TextMarshaler(val) })
 }

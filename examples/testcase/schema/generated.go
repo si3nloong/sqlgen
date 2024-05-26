@@ -10,7 +10,7 @@ import (
 )
 
 func (v A) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`id` VARCHAR(255) NOT NULL,`text` VARCHAR(255) NOT NULL,`created_at` DATETIME NOT NULL);"
+	return "CREATE TABLE IF NOT EXISTS `Apple` (`id` VARCHAR(255) NOT NULL,`text` VARCHAR(255) NOT NULL,`created_at` DATETIME NOT NULL);"
 }
 func (A) TableName() string {
 	return "Apple"
@@ -41,7 +41,7 @@ func (v A) GetCreatedAt() sequel.ColumnValuer[time.Time] {
 }
 
 func (v B) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`id` VARCHAR(255) NOT NULL,`created_at` DATETIME NOT NULL);"
+	return "CREATE TABLE IF NOT EXISTS `b` (`id` VARCHAR(255) NOT NULL,`created_at` DATETIME NOT NULL);"
 }
 func (B) TableName() string {
 	return "b"
@@ -69,7 +69,7 @@ func (v B) GetCreatedAt() sequel.ColumnValuer[time.Time] {
 }
 
 func (v C) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`id` BIGINT NOT NULL,PRIMARY KEY (`id`));"
+	return "CREATE TABLE IF NOT EXISTS `c` (`id` BIGINT NOT NULL,PRIMARY KEY (`id`));"
 }
 func (C) TableName() string {
 	return "c"
@@ -97,7 +97,7 @@ func (v C) GetID() sequel.ColumnValuer[int64] {
 }
 
 func (v D) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`id` VARCHAR(255) NOT NULL,PRIMARY KEY (`id`));"
+	return "CREATE TABLE IF NOT EXISTS `d` (`id` VARCHAR(255) NOT NULL,PRIMARY KEY (`id`));"
 }
 func (D) TableName() string {
 	return "d"

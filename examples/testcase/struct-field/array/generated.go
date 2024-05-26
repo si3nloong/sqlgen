@@ -9,7 +9,7 @@ import (
 )
 
 func (v Array) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,`bool_list` JSON NOT NULL,`str_list` JSON NOT NULL,`custom_str_list` JSON NOT NULL,`int_list` JSON NOT NULL,`int_8_list` JSON NOT NULL,`int_16_list` JSON NOT NULL,`int_32_list` JSON NOT NULL,`int_64_list` JSON NOT NULL,`uint_list` JSON NOT NULL,`uint_8_list` JSON NOT NULL,`uint_16_list` JSON NOT NULL,`uint_32_list` JSON NOT NULL,`uint_64_list` JSON NOT NULL,`f_32_list` JSON NOT NULL,`f_64_list` JSON NOT NULL,PRIMARY KEY (`id`));"
+	return "CREATE TABLE IF NOT EXISTS `array` (`id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,`bool_list` JSON NOT NULL,`str_list` JSON NOT NULL,`custom_str_list` JSON NOT NULL,`int_list` JSON NOT NULL,`int_8_list` JSON NOT NULL,`int_16_list` JSON NOT NULL,`int_32_list` JSON NOT NULL,`int_64_list` JSON NOT NULL,`uint_list` JSON NOT NULL,`uint_8_list` JSON NOT NULL,`uint_16_list` JSON NOT NULL,`uint_32_list` JSON NOT NULL,`uint_64_list` JSON NOT NULL,`f_32_list` JSON NOT NULL,`f_64_list` JSON NOT NULL,PRIMARY KEY (`id`));"
 }
 func (Array) TableName() string {
 	return "array"

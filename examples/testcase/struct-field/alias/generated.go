@@ -10,7 +10,7 @@ import (
 )
 
 func (v AliasStruct) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`b` FLOAT NOT NULL,`Id` BIGINT NOT NULL,`header` VARCHAR(255) NOT NULL,`raw` BLOB NOT NULL,`text` VARCHAR(255) NOT NULL,`null_str` VARCHAR(255) NOT NULL,`created` DATETIME NOT NULL,`updated` DATETIME NOT NULL,PRIMARY KEY (`Id`));"
+	return "CREATE TABLE IF NOT EXISTS `alias_struct` (`b` FLOAT NOT NULL,`Id` BIGINT NOT NULL,`header` VARCHAR(255) NOT NULL,`raw` BLOB NOT NULL,`text` VARCHAR(255) NOT NULL,`null_str` VARCHAR(255) NOT NULL,`created` DATETIME NOT NULL,`updated` DATETIME NOT NULL,PRIMARY KEY (`Id`));"
 }
 func (AliasStruct) TableName() string {
 	return "alias_struct"
@@ -65,7 +65,7 @@ func (v AliasStruct) GetUpdated() sequel.ColumnValuer[time.Time] {
 }
 
 func (v B) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`name` VARCHAR(255) NOT NULL);"
+	return "CREATE TABLE IF NOT EXISTS `b` (`name` VARCHAR(255) NOT NULL);"
 }
 func (B) TableName() string {
 	return "b"
@@ -90,7 +90,7 @@ func (v B) GetName() sequel.ColumnValuer[string] {
 }
 
 func (v C) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`id` BIGINT NOT NULL);"
+	return "CREATE TABLE IF NOT EXISTS `c` (`id` BIGINT NOT NULL);"
 }
 func (C) TableName() string {
 	return "c"

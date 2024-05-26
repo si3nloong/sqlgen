@@ -10,15 +10,12 @@ import (
 )
 
 func (v Binary) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (id BINARY(16) NOT NULL,str VARCHAR(255) NOT NULL,time DATETIME NOT NULL,PRIMARY KEY (id));"
-}
-func (v Binary) AlterTableStmt() string {
-	return "ALTER TABLE " + v.TableName() + " (MODIFY id BINARY(16) NOT NULL,MODIFY str VARCHAR(255) NOT NULL AFTER id,MODIFY time DATETIME NOT NULL AFTER str);"
+	return "CREATE TABLE IF NOT EXISTS `binary` (`id` BINARY(16),`str` VARCHAR(255) NOT NULL,`time` DATETIME NOT NULL,PRIMARY KEY (`id`));"
 }
 func (Binary) TableName() string {
 	return "binary"
 }
-func (v Binary) InsertOneStmt() string {
+func (Binary) InsertOneStmt() string {
 	return "INSERT INTO binary (id,str,time) VALUES (?,?,?);"
 }
 func (Binary) InsertVarQuery() string {
@@ -30,10 +27,10 @@ func (Binary) Columns() []string {
 func (v Binary) PK() (columnName string, pos int, value driver.Value) {
 	return "id", 0, types.BinaryMarshaler(v.ID)
 }
-func (v Binary) FindByPKStmt() string {
+func (Binary) FindByPKStmt() string {
 	return "SELECT id,str,time FROM binary WHERE id = ? LIMIT 1;"
 }
-func (v Binary) UpdateByPKStmt() string {
+func (Binary) UpdateByPKStmt() string {
 	return "UPDATE binary SET str = ?,time = ? WHERE id = ? LIMIT 1;"
 }
 func (v Binary) Values() []any {
@@ -43,11 +40,11 @@ func (v *Binary) Addrs() []any {
 	return []any{types.BinaryUnmarshaler(&v.ID), types.String(&v.Str), (*time.Time)(&v.Time)}
 }
 func (v Binary) GetID() sequel.ColumnValuer[uuid.UUID] {
-	return sequel.Column("id", v.ID, func(vi uuid.UUID) driver.Value { return types.BinaryMarshaler(vi) })
+	return sequel.Column("id", v.ID, func(val uuid.UUID) driver.Value { return types.BinaryMarshaler(val) })
 }
 func (v Binary) GetStr() sequel.ColumnValuer[string] {
-	return sequel.Column("str", v.Str, func(vi string) driver.Value { return string(vi) })
+	return sequel.Column("str", v.Str, func(val string) driver.Value { return string(val) })
 }
 func (v Binary) GetTime() sequel.ColumnValuer[time.Time] {
-	return sequel.Column("time", v.Time, func(vi time.Time) driver.Value { return time.Time(vi) })
+	return sequel.Column("time", v.Time, func(val time.Time) driver.Value { return time.Time(val) })
 }

@@ -8,7 +8,7 @@ import (
 )
 
 func (v Customer) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`name` VARCHAR(255) NOT NULL,`age` TINYINT UNSIGNED NOT NULL,`married` TINYINT NOT NULL);"
+	return "CREATE TABLE IF NOT EXISTS `customer` (`name` VARCHAR(255) NOT NULL,`age` TINYINT UNSIGNED NOT NULL,`married` TINYINT NOT NULL);"
 }
 func (Customer) TableName() string {
 	return "customer"

@@ -11,7 +11,7 @@ import (
 )
 
 func (v User) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`id` VARCHAR(36),`birth_date` DATE,PRIMARY KEY (`id`));"
+	return "CREATE TABLE IF NOT EXISTS `user` (`id` VARCHAR(36),`birth_date` DATE,PRIMARY KEY (`id`));"
 }
 func (User) TableName() string {
 	return "user"

@@ -10,7 +10,7 @@ import (
 )
 
 func (v Binary) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`id` BINARY(16),`str` VARCHAR(255) NOT NULL,`time` DATETIME NOT NULL,PRIMARY KEY (`id`));"
+	return "CREATE TABLE IF NOT EXISTS `binary` (`id` BINARY(16),`str` VARCHAR(255) NOT NULL,`time` DATETIME NOT NULL,PRIMARY KEY (`id`));"
 }
 func (Binary) TableName() string {
 	return "binary"

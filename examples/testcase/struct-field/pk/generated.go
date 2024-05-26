@@ -9,7 +9,7 @@ import (
 )
 
 func (v Car) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`id` BIGINT NOT NULL,`no` VARCHAR(255) NOT NULL,`color` INTEGER NOT NULL,`manuc_date` DATETIME NOT NULL,PRIMARY KEY (`id`));"
+	return "CREATE TABLE IF NOT EXISTS `car` (`id` BIGINT NOT NULL,`no` VARCHAR(255) NOT NULL,`color` INTEGER NOT NULL,`manuc_date` DATETIME NOT NULL,PRIMARY KEY (`id`));"
 }
 func (Car) TableName() string {
 	return "car"
@@ -52,7 +52,7 @@ func (v Car) GetManucDate() sequel.ColumnValuer[time.Time] {
 }
 
 func (v User) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`id` BIGINT NOT NULL,`name` VARCHAR(255) NOT NULL,`age` TINYINT UNSIGNED NOT NULL,`email` VARCHAR(255) NOT NULL,PRIMARY KEY (`id`));"
+	return "CREATE TABLE IF NOT EXISTS `user` (`id` BIGINT NOT NULL,`name` VARCHAR(255) NOT NULL,`age` TINYINT UNSIGNED NOT NULL,`email` VARCHAR(255) NOT NULL,PRIMARY KEY (`id`));"
 }
 func (User) TableName() string {
 	return "user"
@@ -95,7 +95,7 @@ func (v User) GetEmail() sequel.ColumnValuer[string] {
 }
 
 func (v House) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`id` INTEGER NOT NULL,`no` VARCHAR(255) NOT NULL,PRIMARY KEY (`id`));"
+	return "CREATE TABLE IF NOT EXISTS `house` (`id` INTEGER NOT NULL,`no` VARCHAR(255) NOT NULL,PRIMARY KEY (`id`));"
 }
 func (House) TableName() string {
 	return "house"
