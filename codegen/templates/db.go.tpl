@@ -149,7 +149,42 @@ func UpsertOne[T sequel.KeyValuer[T], Ptr sequel.KeyValueScanner[T]](ctx context
 
 	var stmt = strpool.AcquireString()
 	defer strpool.ReleaseString(stmt)
-	{{ if eq driver "mysql" -}}
+	{{ if eq driver "postgres" -}}
+	noOfCols := len(columns)
+	stmt.WriteString("INSERT INTO " + dbName(model) + model.TableName() + " (" + strings.Join(columns, ",") + ") VALUES (")
+	for j := 0; j < noOfCols; j++ {
+		if j > 0 {
+			stmt.WriteByte(',')
+		}
+		stmt.WriteString(wrapVar(noOfCols + j + 1))
+	}
+	stmt.WriteString(") ON CONFLICT(" + pkName + ")")
+	if override {
+		dict := map[string]struct{}{pkName: {}}
+		for i := range omittedFields {
+			dict[omittedFields[i]] = struct{}{}
+		}
+		stmt.WriteString(" DO UPDATE SET ")
+		for i := range columns {
+			if _, ok := dict[columns[i]]; ok {
+				continue
+			}
+			if i < noOfCols-1 {
+				stmt.WriteString(columns[i] + " = EXCLUDED." + columns[i] + ",")
+			} else {
+				stmt.WriteString(columns[i] + " = EXCLUDED." + columns[i])
+			}
+		}
+		clear(dict)
+	} else {
+		stmt.WriteString(" DO NOTHING")
+	}
+	stmt.WriteString(" RETURNING "+ strings.Join(model.Columns(), ",") +";")
+	if err := sqlConn.QueryRowContext(ctx, stmt.String(), args...).Scan(model.Addrs()...); err != nil {
+		return nil, err
+	}
+	return sequel.NewRowsAffectedResult(1), nil
+	{{ else -}}
 	if !override {
 		stmt.WriteString("INSERT IGNORE INTO " + dbName(model) + model.TableName() + " (" + strings.Join(columns, ",") + ") VALUES (" + strings.Repeat(",?", len(columns))[1:] + ");")
 	} else {
@@ -173,46 +208,8 @@ func UpsertOne[T sequel.KeyValuer[T], Ptr sequel.KeyValueScanner[T]](ctx context
 		}
 		clear(dict)
 	}
-	{{ else -}}
-	noOfCols := len(columns)
-	stmt.WriteString("INSERT INTO " + dbName(model) + model.TableName() + " (" + strings.Join(columns, ",") + ") VALUES ")
-	for j := 0; j < noOfCols; j++ {
-		if j > 0 {
-			stmt.WriteByte(',')
-		}
-		stmt.WriteString(wrapVar(noOfCols + j + 1))
-	}
-	stmt.WriteString(" ON CONFLICT(" + pkName + ")")
-	if override {
-		dict := map[string]struct{}{pkName: {}}
-		for i := range omittedFields {
-			dict[omittedFields[i]] = struct{}{}
-		}
-		stmt.WriteString(" DO UPDATE SET ")
-		for i := range columns {
-			if _, ok := dict[columns[i]]; ok {
-				continue
-			}
-			if i < noOfCols-1 {
-				stmt.WriteString(columns[i] + " = EXCLUDED." + columns[i] + ",")
-			} else {
-				stmt.WriteString(columns[i] + " = EXCLUDED." + columns[i])
-			}
-		}
-		clear(dict)
-		{{- /* postgres */ -}}
-		{{ if eq driver "postgres" }}
-		stmt.WriteString(" RETURNING "+ strings.Join(model.Columns(), ",") +";")
-		if err := sqlConn.QueryRowContext(ctx, stmt.String(), args...).Scan(model.Addrs()...); err != nil {
-			return nil, err
-		}
-		return sequel.NewRowsAffectedResult(1), nil
-		{{ end -}}
-	} else {
-		stmt.WriteString(" DO NOTHING;")
-	}
-	{{ end -}}
 	return sqlConn.ExecContext(ctx, stmt.String(), args...)
+	{{ end -}}
 }
 
 // Upsert is a helper function to upsert multiple records.
@@ -275,30 +272,12 @@ func Upsert[T sequel.KeyValuer[T], Ptr sequel.Scanner[T]](ctx context.Context, s
 		}
 		stmt.WriteByte(')')
 	}
-	{{ if eq driver "mysql" -}}
-	if override {
-		stmt.WriteString(" ON DUPLICATE KEY UPDATE ")
-		dict := map[string]struct{}{pkName: {}}
-		for i := range omittedFields {
-			dict[omittedFields[i]] = struct{}{}
-		}
-		for i := range columns {
-			if _, ok := dict[columns[i]]; ok {
-				continue
-			}
-			if i < noOfCols-1 {
-				stmt.WriteString(columns[i] + " =VALUES(" + columns[i] + "),")
-			} else {
-				stmt.WriteString(columns[i] + " =VALUES(" + columns[i] + ")")
-			}
-		}
-		clear(dict)
-	}
-	stmt.WriteByte(';')
-	{{ else -}}
+	{{ if eq driver "postgres" -}}
 	{{- /* postgres */ -}}
-	if dupKey, ok := any(model).(sequel.DuplicateKeyer); ok {
-		stmt.WriteString(" ON CONFLICT(" + strings.Join(dupKey.OnDuplicateKey(), ",") + ")")
+	if v, ok := any(model).(sequel.DuplicateKeyer); ok {
+		keys := v.OnDuplicateKey()
+		omittedFields = append(omittedFields, keys...)
+		stmt.WriteString(" ON CONFLICT(" + strings.Join(keys, ",") + ")")
 	} else {
 		stmt.WriteString(" ON CONFLICT(" + pkName + ")")
 	}
@@ -320,24 +299,45 @@ func Upsert[T sequel.KeyValuer[T], Ptr sequel.Scanner[T]](ctx context.Context, s
 		}
 		clear(dict)
 		stmt.WriteString(" RETURNING " + strings.Join(model.Columns(), ",") + ";")
-		rows, err := sqlConn.QueryContext(ctx, stmt.String(), args...)
-		if err != nil {
-			return nil, err
-		}
-		defer rows.Close()
-		var i int64
-		for rows.Next() {
-			if err := rows.Scan(Ptr(&data[i]).Addrs()...); err != nil {
-				return nil, err
-			}
-			i++
-		}
-		return sequel.NewRowsAffectedResult(i + 1), nil
 	} else {
 		stmt.WriteString(" DO NOTHING;")
 	}
-	{{ end -}}
+	rows, err := sqlConn.QueryContext(ctx, stmt.String(), args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var i int64
+	for rows.Next() {
+		if err := rows.Scan(Ptr(&data[i]).Addrs()...); err != nil {
+			return nil, err
+		}
+		i++
+	}
+	return sequel.NewRowsAffectedResult(i + 1), rows.Close()
+	{{ else -}}
+	if override {
+		stmt.WriteString(" ON DUPLICATE KEY UPDATE ")
+		/* don't update primary key when upsert */
+		dict := map[string]struct{}{pkName: {}}
+		for i := range omittedFields {
+			dict[omittedFields[i]] = struct{}{}
+		}
+		for i := range columns {
+			if _, ok := dict[columns[i]]; ok {
+				continue
+			}
+			if i < noOfCols-1 {
+				stmt.WriteString(columns[i] + " =VALUES(" + columns[i] + "),")
+			} else {
+				stmt.WriteString(columns[i] + " =VALUES(" + columns[i] + ")")
+			}
+		}
+		clear(dict)
+	}
+	stmt.WriteByte(';')
 	return sqlConn.ExecContext(ctx, stmt.String(), args...)
+	{{ end -}}
 }
 
 // FindByPK is to find single record using primary key.
