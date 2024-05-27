@@ -51,11 +51,11 @@ func InsertOne[T sequel.TableColumnValuer[T], Ptr interface {
 	if err := sqlConn.QueryRowContext(ctx, stmt.String(), args...).Scan(model.Addrs()...); err != nil {
 		return nil, err
 	}
-	return new(sequel.EmptyResult), nil
+	return sequel.NewRowsAffectedResult(1), nil
 	{{ else }}
 	stmt.WriteString(");")
 	return sqlConn.ExecContext(ctx, stmt.String(), args...)
-	{{ end }}
+	{{ end -}}
 	{{ else -}}
 	return sqlConn.ExecContext(ctx, "INSERT INTO "+ dbName(model) + model.TableName() +" ("+ strings.Join(columns, ",") +") VALUES ("+ strings.Repeat({{ quote (print "," varRune) }}, len(columns))[1:]+");", args...)
 	{{ end -}}
@@ -199,8 +199,15 @@ func UpsertOne[T sequel.KeyValuer[T], Ptr sequel.KeyValueScanner[T]](ctx context
 				stmt.WriteString(columns[i] + " = EXCLUDED." + columns[i])
 			}
 		}
-		stmt.WriteByte(';')
 		clear(dict)
+		{{- /* postgres */ -}}
+		{{ if eq driver "postgres" }}
+		stmt.WriteString(" RETURNING "+ strings.Join(model.Columns(), ",") +";")
+		if err := sqlConn.QueryRowContext(ctx, stmt.String(), args...).Scan(model.Addrs()...); err != nil {
+			return nil, err
+		}
+		return sequel.NewRowsAffectedResult(1), nil
+		{{ end -}}
 	} else {
 		stmt.WriteString(" DO NOTHING;")
 	}
@@ -209,7 +216,7 @@ func UpsertOne[T sequel.KeyValuer[T], Ptr sequel.KeyValueScanner[T]](ctx context
 }
 
 // Upsert is a helper function to upsert multiple records.
-func Upsert[T sequel.KeyValuer[T]](ctx context.Context, sqlConn sequel.DB, data []T, override bool, omittedFields ...string) (sql.Result, error) {
+func Upsert[T sequel.KeyValuer[T], Ptr sequel.Scanner[T]](ctx context.Context, sqlConn sequel.DB, data []T, override bool, omittedFields ...string) (sql.Result, error) {
 	n := len(data)
 	if n == 0 {
 		return new(sequel.EmptyResult), nil
@@ -289,6 +296,7 @@ func Upsert[T sequel.KeyValuer[T]](ctx context.Context, sqlConn sequel.DB, data 
 	}
 	stmt.WriteByte(';')
 	{{ else -}}
+	{{- /* postgres */ -}}
 	if dupKey, ok := any(model).(sequel.DuplicateKeyer); ok {
 		stmt.WriteString(" ON CONFLICT(" + strings.Join(dupKey.OnDuplicateKey(), ",") + ")")
 	} else {
@@ -311,7 +319,20 @@ func Upsert[T sequel.KeyValuer[T]](ctx context.Context, sqlConn sequel.DB, data 
 			}
 		}
 		clear(dict)
-		stmt.WriteByte(';')
+		stmt.WriteString(" RETURNING " + strings.Join(model.Columns(), ",") + ";")
+		rows, err := sqlConn.QueryContext(ctx, stmt.String(), args...)
+		if err != nil {
+			return nil, err
+		}
+		defer rows.Close()
+		var i int64
+		for rows.Next() {
+			if err := rows.Scan(Ptr(&data[i]).Addrs()...); err != nil {
+				return nil, err
+			}
+			i++
+		}
+		return sequel.NewRowsAffectedResult(i + 1), nil
 	} else {
 		stmt.WriteString(" DO NOTHING;")
 	}
