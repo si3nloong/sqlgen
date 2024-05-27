@@ -14,7 +14,7 @@ func (d *postgresDriver) CreateTableStmt(n string, model *templates.Model) strin
 		if i > 0 {
 			buf.WriteByte(',')
 		}
-		buf.WriteString(d.QuoteIdentifier(f.ColumnName) + " " + dataType(f))
+		buf.WriteString(d.QuoteIdentifier(f.ColumnName) + " " + d.dataType(f))
 		if model.PK != nil && model.PK.Field == f && model.PK.IsAutoIncr {
 			buf.WriteString(" AUTO_INCREMENT")
 		}

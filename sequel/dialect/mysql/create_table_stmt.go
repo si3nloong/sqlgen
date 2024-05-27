@@ -9,7 +9,11 @@ func (d *mysqlDriver) CreateTableStmt(n string, model *templates.Model) string {
 	buf := strpool.AcquireString()
 	defer strpool.ReleaseString(buf)
 
-	buf.WriteString(`"CREATE TABLE IF NOT EXISTS "+ ` + n + `.TableName() +" (`)
+	if model.HasTableName {
+		buf.WriteString(`"CREATE TABLE IF NOT EXISTS "+ ` + n + `.TableName() +" (`)
+	} else {
+		buf.WriteString(`"CREATE TABLE IF NOT EXISTS ` + d.QuoteIdentifier(model.TableName) + ` (`)
+	}
 	for i, f := range model.Fields {
 		if i > 0 {
 			buf.WriteByte(',')

@@ -10,7 +10,7 @@ import (
 )
 
 func (v User) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`id` VARCHAR(36),`name` VARCHAR(255) NOT NULL);"
+	return "CREATE TABLE IF NOT EXISTS `user` (`id` VARCHAR(36),`name` VARCHAR(255) NOT NULL);"
 }
 func (User) TableName() string {
 	return "user"

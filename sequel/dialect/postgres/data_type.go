@@ -8,7 +8,7 @@ import (
 	"github.com/si3nloong/sqlgen/codegen/templates"
 )
 
-func dataType(f *templates.Field) (dataType string) {
+func (d *postgresDriver) dataType(f *templates.Field) (dataType string) {
 	var (
 		ptrs = make([]types.Type, 0)
 		t    = f.Type
@@ -37,11 +37,11 @@ func dataType(f *templates.Field) (dataType string) {
 		case "int64":
 			return "INT8" + notNull(len(ptrs) > 0)
 		case "bool", "uint8", "uint16", "byte":
-			return "INT2" + notNull(len(ptrs) > 0) + " CHECK(" + f.ColumnName + " > 0)"
+			return "INT2" + notNull(len(ptrs) > 0) + " CHECK(" + d.QuoteIdentifier(f.ColumnName) + " > 0)"
 		case "uint32", "uint":
-			return "INT" + notNull(len(ptrs) > 0) + " CHECK(" + f.ColumnName + " > 0)"
+			return "INT" + notNull(len(ptrs) > 0) + " CHECK(" + d.QuoteIdentifier(f.ColumnName) + " > 0)"
 		case "uint64":
-			return "INT8" + notNull(len(ptrs) > 0) + " CHECK(" + f.ColumnName + " > 0)"
+			return "INT8" + notNull(len(ptrs) > 0) + " CHECK(" + d.QuoteIdentifier(f.ColumnName) + " > 0)"
 		case "float32":
 			return "DOUBLE PRECISION" + notNull(len(ptrs) > 0)
 		case "float64":

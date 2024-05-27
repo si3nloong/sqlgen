@@ -8,15 +8,12 @@ import (
 )
 
 func (v Customer) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (name VARCHAR(255) NOT NULL,age TINYINT UNSIGNED NOT NULL,married TINYINT NOT NULL);"
-}
-func (v Customer) AlterTableStmt() string {
-	return "ALTER TABLE " + v.TableName() + " (MODIFY name VARCHAR(255) NOT NULL,MODIFY age TINYINT UNSIGNED NOT NULL AFTER name,MODIFY married TINYINT NOT NULL AFTER age);"
+	return "CREATE TABLE IF NOT EXISTS `customer` (`name` VARCHAR(255) NOT NULL,`age` TINYINT UNSIGNED NOT NULL,`married` TINYINT NOT NULL);"
 }
 func (Customer) TableName() string {
 	return "customer"
 }
-func (v Customer) InsertOneStmt() string {
+func (Customer) InsertOneStmt() string {
 	return "INSERT INTO customer (name,age,married) VALUES (?,?,?);"
 }
 func (Customer) InsertVarQuery() string {
@@ -32,11 +29,11 @@ func (v *Customer) Addrs() []any {
 	return []any{types.String(&v.Name), types.Integer(&v.Age), types.Bool(&v.Married)}
 }
 func (v Customer) GetName() sequel.ColumnValuer[string] {
-	return sequel.Column("name", v.Name, func(vi string) driver.Value { return string(vi) })
+	return sequel.Column("name", v.Name, func(val string) driver.Value { return string(val) })
 }
 func (v Customer) GetAge() sequel.ColumnValuer[uint8] {
-	return sequel.Column("age", v.Age, func(vi uint8) driver.Value { return int64(vi) })
+	return sequel.Column("age", v.Age, func(val uint8) driver.Value { return int64(val) })
 }
 func (v Customer) GetMarried() sequel.ColumnValuer[bool] {
-	return sequel.Column("married", v.Married, func(vi bool) driver.Value { return bool(vi) })
+	return sequel.Column("married", v.Married, func(val bool) driver.Value { return bool(val) })
 }

@@ -8,7 +8,7 @@ import (
 )
 
 func (v CustomTableName1) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`text` VARCHAR(255) NOT NULL);"
+	return "CREATE TABLE IF NOT EXISTS `CustomTableName_1` (`text` VARCHAR(255) NOT NULL);"
 }
 func (CustomTableName1) TableName() string {
 	return "CustomTableName_1"
@@ -33,7 +33,7 @@ func (v CustomTableName1) GetText() sequel.ColumnValuer[string] {
 }
 
 func (v CustomTableName2) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`text` VARCHAR(255) NOT NULL);"
+	return "CREATE TABLE IF NOT EXISTS `table_2` (`text` VARCHAR(255) NOT NULL);"
 }
 func (CustomTableName2) TableName() string {
 	return "table_2"
@@ -58,7 +58,7 @@ func (v CustomTableName2) GetText() sequel.ColumnValuer[string] {
 }
 
 func (v CustomTableName3) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`text` VARCHAR(255) NOT NULL);"
+	return "CREATE TABLE IF NOT EXISTS `table_3` (`text` VARCHAR(255) NOT NULL);"
 }
 func (CustomTableName3) TableName() string {
 	return "table_3"

@@ -26,7 +26,7 @@ func (s uintList[T]) Scan(v any) error {
 		}
 		length := len(vi)
 		if length < 2 || vi[0] != '[' || vi[length-1] != ']' {
-			return fmt.Errorf(`sqlgen: invalid value of %q to unmarshal to []~int`, vi)
+			return fmt.Errorf(`sqlgen: invalid value of %q to unmarshal to []~uint`, vi)
 		}
 		vi = vi[1 : length-1]
 		if len(vi) == 0 {

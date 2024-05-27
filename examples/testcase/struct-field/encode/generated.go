@@ -10,7 +10,7 @@ import (
 )
 
 func (v Model) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`id` TINYINT UNSIGNED NOT NULL,`text` VARCHAR(255) NOT NULL,`t` DATETIME NOT NULL);"
+	return "CREATE TABLE IF NOT EXISTS `model` (`id` TINYINT UNSIGNED NOT NULL,`text` VARCHAR(255) NOT NULL,`t` DATETIME NOT NULL);"
 }
 func (Model) TableName() string {
 	return "model"

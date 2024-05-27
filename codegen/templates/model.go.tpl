@@ -42,7 +42,7 @@ func (v {{ $structName }}) PK() (columnName string, pos int, value driver.Value)
 	return {{ quote (quoteIdentifier .PK.Field.ColumnName) }}, {{ .PK.Field.Index }}, {{ castAs .PK.Field }}
 }
 {{ if (and (not $hasCustomTabler) ($hasNotOnlyPK)) -}}
-func (v {{ $structName }}) FindByPKStmt() string {
+func ({{ $structName }}) FindByPKStmt() string {
 	return {{ findByPKStmt . }}
 }
 {{ end -}}

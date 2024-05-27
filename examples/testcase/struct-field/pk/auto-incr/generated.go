@@ -8,7 +8,7 @@ import (
 )
 
 func (v Model) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`name` VARCHAR(255) NOT NULL,`f` TINYINT NOT NULL,`id` INTEGER NOT NULL AUTO_INCREMENT,`n` BIGINT NOT NULL,PRIMARY KEY (`id`));"
+	return "CREATE TABLE IF NOT EXISTS `AutoIncrPK` (`name` VARCHAR(255) NOT NULL,`f` TINYINT NOT NULL,`id` INTEGER NOT NULL AUTO_INCREMENT,`n` BIGINT NOT NULL,PRIMARY KEY (`id`));"
 }
 func (Model) TableName() string {
 	return "AutoIncrPK"
@@ -26,7 +26,7 @@ func (Model) IsAutoIncr() {}
 func (v Model) PK() (columnName string, pos int, value driver.Value) {
 	return "id", 2, int64(v.ID)
 }
-func (v Model) FindByPKStmt() string {
+func (Model) FindByPKStmt() string {
 	return "SELECT name,f,id,n FROM AutoIncrPK WHERE id = ? LIMIT 1;"
 }
 func (Model) UpdateByPKStmt() string {

@@ -8,7 +8,7 @@ import (
 )
 
 func (v A) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`t` DATETIME NOT NULL);"
+	return "CREATE TABLE IF NOT EXISTS `a` (`t` DATETIME NOT NULL);"
 }
 func (A) TableName() string {
 	return "a"

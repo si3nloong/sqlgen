@@ -8,10 +8,7 @@ import (
 )
 
 func (v Model) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (name VARCHAR(255) NOT NULL);"
-}
-func (v Model) AlterTableStmt() string {
-	return "ALTER TABLE " + v.TableName() + " (MODIFY name VARCHAR(255) NOT NULL);"
+	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`name` VARCHAR(255) NOT NULL);"
 }
 func (Model) InsertVarQuery() string {
 	return "(?)"
@@ -26,14 +23,11 @@ func (v *Model) Addrs() []any {
 	return []any{types.String(&v.Name)}
 }
 func (v Model) GetName() sequel.ColumnValuer[string] {
-	return sequel.Column("name", v.Name, func(vi string) driver.Value { return string(vi) })
+	return sequel.Column("name", v.Name, func(val string) driver.Value { return string(val) })
 }
 
 func (v A) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (id BIGINT NOT NULL,name VARCHAR(255) NOT NULL,PRIMARY KEY (id));"
-}
-func (v A) AlterTableStmt() string {
-	return "ALTER TABLE " + v.TableName() + " (MODIFY id BIGINT NOT NULL,MODIFY name VARCHAR(255) NOT NULL AFTER id);"
+	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`id` BIGINT NOT NULL,`name` VARCHAR(255) NOT NULL,PRIMARY KEY (`id`));"
 }
 func (A) InsertVarQuery() string {
 	return "(?,?)"
@@ -51,8 +45,8 @@ func (v *A) Addrs() []any {
 	return []any{types.Integer(&v.ID), types.String(&v.Name)}
 }
 func (v A) GetID() sequel.ColumnValuer[int64] {
-	return sequel.Column("id", v.ID, func(vi int64) driver.Value { return int64(vi) })
+	return sequel.Column("id", v.ID, func(val int64) driver.Value { return int64(val) })
 }
 func (v A) GetName() sequel.ColumnValuer[string] {
-	return sequel.Column("name", v.Name, func(vi string) driver.Value { return string(vi) })
+	return sequel.Column("name", v.Name, func(val string) driver.Value { return string(val) })
 }

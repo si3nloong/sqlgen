@@ -10,7 +10,7 @@ import (
 )
 
 func (v Binary) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`id` BINARY(16),`str` VARCHAR(255) NOT NULL,`time` DATETIME NOT NULL,PRIMARY KEY (`id`));"
+	return "CREATE TABLE IF NOT EXISTS `binary` (`id` BINARY(16),`str` VARCHAR(255) NOT NULL,`time` DATETIME NOT NULL,PRIMARY KEY (`id`));"
 }
 func (Binary) TableName() string {
 	return "binary"
@@ -27,7 +27,7 @@ func (Binary) Columns() []string {
 func (v Binary) PK() (columnName string, pos int, value driver.Value) {
 	return "id", 0, types.BinaryMarshaler(v.ID)
 }
-func (v Binary) FindByPKStmt() string {
+func (Binary) FindByPKStmt() string {
 	return "SELECT id,str,time FROM binary WHERE id = ? LIMIT 1;"
 }
 func (Binary) UpdateByPKStmt() string {

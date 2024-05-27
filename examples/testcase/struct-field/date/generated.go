@@ -11,7 +11,7 @@ import (
 )
 
 func (v User) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`id` VARCHAR(36),`birth_date` DATE,PRIMARY KEY (`id`));"
+	return "CREATE TABLE IF NOT EXISTS `user` (`id` VARCHAR(36),`birth_date` DATE,PRIMARY KEY (`id`));"
 }
 func (User) TableName() string {
 	return "user"
@@ -28,7 +28,7 @@ func (User) Columns() []string {
 func (v User) PK() (columnName string, pos int, value driver.Value) {
 	return "id", 0, (driver.Valuer)(v.ID)
 }
-func (v User) FindByPKStmt() string {
+func (User) FindByPKStmt() string {
 	return "SELECT id,birth_date FROM user WHERE id = ? LIMIT 1;"
 }
 func (User) UpdateByPKStmt() string {

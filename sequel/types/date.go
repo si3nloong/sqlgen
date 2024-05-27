@@ -10,8 +10,7 @@ import (
 )
 
 type localDate struct {
-	addr       *civil.Date
-	strictType bool
+	addr *civil.Date
 }
 
 var (
@@ -20,12 +19,8 @@ var (
 )
 
 // Date returns a sql.Scanner
-func Date(addr *civil.Date, strict ...bool) localDate {
-	var strictType bool
-	if len(strict) > 0 {
-		strictType = strict[0]
-	}
-	return localDate{addr: addr, strictType: strictType}
+func Date(addr *civil.Date) localDate {
+	return localDate{addr: addr}
 }
 
 func (b localDate) Value() (driver.Value, error) {

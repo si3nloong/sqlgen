@@ -8,17 +8,18 @@ import (
 func (d *postgresDriver) AlterTableStmt(n string, model *templates.Model) string {
 	buf := strpool.AcquireString()
 	defer strpool.ReleaseString(buf)
-	buf.WriteString("`ALTER TABLE `+ " + n + ".TableName() +` (")
+	if model.HasTableName {
+		buf.WriteString("`ALTER TABLE `+ " + n + ".TableName() +` (")
+	} else {
+		buf.WriteString("`ALTER TABLE " + d.QuoteIdentifier(model.TableName) + " (")
+	}
 	for i, f := range model.Fields {
 		if i > 0 {
 			buf.WriteByte(',')
 		}
-		buf.WriteString("MODIFY " + d.QuoteIdentifier(f.ColumnName) + " " + dataType(f))
+		buf.WriteString("MODIFY " + d.QuoteIdentifier(f.ColumnName) + " " + d.dataType(f))
 		if model.PK != nil && model.PK.Field == f {
 			buf.WriteString(" PRIMARY KEY")
-		}
-		if i > 0 {
-			buf.WriteString(" AFTER " + d.QuoteIdentifier(model.Fields[i-1].ColumnName))
 		}
 	}
 	buf.WriteString(");`")

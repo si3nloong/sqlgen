@@ -9,7 +9,7 @@ import (
 )
 
 func (v Version) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`id` VARCHAR(36),PRIMARY KEY (`id`));"
+	return "CREATE TABLE IF NOT EXISTS `version` (`id` VARCHAR(36),PRIMARY KEY (`id`));"
 }
 func (Version) TableName() string {
 	return "version"

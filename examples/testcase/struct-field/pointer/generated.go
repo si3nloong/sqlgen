@@ -9,7 +9,7 @@ import (
 )
 
 func (v Ptr) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`id` BIGINT NOT NULL AUTO_INCREMENT,`str` VARCHAR(255),`bytes` BLOB,`bool` TINYINT,`int` INTEGER,`int_8` TINYINT,`int_16` SMALLINT,`int_32` MEDIUMINT,`int_64` BIGINT,`uint` INTEGER,`uint_8` TINYINT UNSIGNED,`uint_16` SMALLINT UNSIGNED,`uint_32` MEDIUMINT UNSIGNED,`uint_64` BIGINT UNSIGNED,`f_32` FLOAT,`f_64` FLOAT,`time` DATETIME(6),PRIMARY KEY (`id`));"
+	return "CREATE TABLE IF NOT EXISTS `ptr` (`id` BIGINT NOT NULL AUTO_INCREMENT,`str` VARCHAR(255),`bytes` BLOB,`bool` TINYINT,`int` INTEGER,`int_8` TINYINT,`int_16` SMALLINT,`int_32` MEDIUMINT,`int_64` BIGINT,`uint` INTEGER,`uint_8` TINYINT UNSIGNED,`uint_16` SMALLINT UNSIGNED,`uint_32` MEDIUMINT UNSIGNED,`uint_64` BIGINT UNSIGNED,`f_32` FLOAT,`f_64` FLOAT,`time` DATETIME(6),PRIMARY KEY (`id`));"
 }
 func (Ptr) TableName() string {
 	return "ptr"
@@ -27,7 +27,7 @@ func (Ptr) IsAutoIncr() {}
 func (v Ptr) PK() (columnName string, pos int, value driver.Value) {
 	return "id", 0, int64(v.ID)
 }
-func (v Ptr) FindByPKStmt() string {
+func (Ptr) FindByPKStmt() string {
 	return "SELECT id,str,bytes,bool,int,int_8,int_16,int_32,int_64,uint,uint_8,uint_16,uint_32,uint_64,f_32,f_64,time FROM ptr WHERE id = ? LIMIT 1;"
 }
 func (Ptr) UpdateByPKStmt() string {

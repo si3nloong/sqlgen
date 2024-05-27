@@ -9,15 +9,12 @@ import (
 )
 
 func (v B) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (id BIGINT NOT NULL,name VARCHAR(255) NOT NULL,z TINYINT NOT NULL,created DATETIME NOT NULL,ok TINYINT NOT NULL);"
-}
-func (v B) AlterTableStmt() string {
-	return "ALTER TABLE " + v.TableName() + " (MODIFY id BIGINT NOT NULL,MODIFY name VARCHAR(255) NOT NULL AFTER id,MODIFY z TINYINT NOT NULL AFTER name,MODIFY created DATETIME NOT NULL AFTER z,MODIFY ok TINYINT NOT NULL AFTER created);"
+	return "CREATE TABLE IF NOT EXISTS `b` (`id` BIGINT NOT NULL,`name` VARCHAR(255) NOT NULL,`z` TINYINT NOT NULL,`created` DATETIME NOT NULL,`ok` TINYINT NOT NULL);"
 }
 func (B) TableName() string {
 	return "b"
 }
-func (v B) InsertOneStmt() string {
+func (B) InsertOneStmt() string {
 	return "INSERT INTO b (id,name,z,created,ok) VALUES (?,?,?,?,?);"
 }
 func (B) InsertVarQuery() string {
@@ -33,17 +30,17 @@ func (v *B) Addrs() []any {
 	return []any{types.Integer(&v.a.ID), types.String(&v.a.Name), types.Bool(&v.a.Z), (*time.Time)(&v.ts.Created), types.Bool(&v.ts.OK)}
 }
 func (v B) GetID() sequel.ColumnValuer[int64] {
-	return sequel.Column("id", v.a.ID, func(vi int64) driver.Value { return int64(vi) })
+	return sequel.Column("id", v.a.ID, func(val int64) driver.Value { return int64(val) })
 }
 func (v B) GetName() sequel.ColumnValuer[string] {
-	return sequel.Column("name", v.a.Name, func(vi string) driver.Value { return string(vi) })
+	return sequel.Column("name", v.a.Name, func(val string) driver.Value { return string(val) })
 }
 func (v B) GetZ() sequel.ColumnValuer[bool] {
-	return sequel.Column("z", v.a.Z, func(vi bool) driver.Value { return bool(vi) })
+	return sequel.Column("z", v.a.Z, func(val bool) driver.Value { return bool(val) })
 }
 func (v B) GetCreated() sequel.ColumnValuer[time.Time] {
-	return sequel.Column("created", v.ts.Created, func(vi time.Time) driver.Value { return time.Time(vi) })
+	return sequel.Column("created", v.ts.Created, func(val time.Time) driver.Value { return time.Time(val) })
 }
 func (v B) GetOK() sequel.ColumnValuer[bool] {
-	return sequel.Column("ok", v.ts.OK, func(vi bool) driver.Value { return bool(vi) })
+	return sequel.Column("ok", v.ts.OK, func(val bool) driver.Value { return bool(val) })
 }

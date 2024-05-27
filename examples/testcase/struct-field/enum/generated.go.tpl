@@ -8,15 +8,12 @@ import (
 )
 
 func (v Custom) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (text VARCHAR(255) NOT NULL,e INTEGER NOT NULL,num SMALLINT UNSIGNED NOT NULL);"
-}
-func (v Custom) AlterTableStmt() string {
-	return "ALTER TABLE " + v.TableName() + " (MODIFY text VARCHAR(255) NOT NULL,MODIFY e INTEGER NOT NULL AFTER text,MODIFY num SMALLINT UNSIGNED NOT NULL AFTER e);"
+	return "CREATE TABLE IF NOT EXISTS `custom` (`text` VARCHAR(255) NOT NULL,`e` INTEGER NOT NULL,`num` SMALLINT UNSIGNED NOT NULL);"
 }
 func (Custom) TableName() string {
 	return "custom"
 }
-func (v Custom) InsertOneStmt() string {
+func (Custom) InsertOneStmt() string {
 	return "INSERT INTO custom (text,e,num) VALUES (?,?,?);"
 }
 func (Custom) InsertVarQuery() string {
@@ -32,11 +29,11 @@ func (v *Custom) Addrs() []any {
 	return []any{types.String(&v.Str), types.Integer(&v.Enum), types.Integer(&v.Num)}
 }
 func (v Custom) GetStr() sequel.ColumnValuer[longText] {
-	return sequel.Column("text", v.Str, func(vi longText) driver.Value { return string(vi) })
+	return sequel.Column("text", v.Str, func(val longText) driver.Value { return string(val) })
 }
 func (v Custom) GetEnum() sequel.ColumnValuer[Enum] {
-	return sequel.Column("e", v.Enum, func(vi Enum) driver.Value { return int64(vi) })
+	return sequel.Column("e", v.Enum, func(val Enum) driver.Value { return int64(val) })
 }
 func (v Custom) GetNum() sequel.ColumnValuer[uint16] {
-	return sequel.Column("num", v.Num, func(vi uint16) driver.Value { return int64(vi) })
+	return sequel.Column("num", v.Num, func(val uint16) driver.Value { return int64(val) })
 }
