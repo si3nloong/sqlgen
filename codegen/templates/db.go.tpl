@@ -156,7 +156,7 @@ func UpsertOne[T sequel.KeyValuer[T], Ptr sequel.KeyValueScanner[T]](ctx context
 		if j > 0 {
 			stmt.WriteByte(',')
 		}
-		stmt.WriteString(wrapVar(noOfCols + j + 1))
+		stmt.WriteString(wrapVar(j + 1))
 	}
 	stmt.WriteString(") ON CONFLICT(" + pkName + ")")
 	if override {
