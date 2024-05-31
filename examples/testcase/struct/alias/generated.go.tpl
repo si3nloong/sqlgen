@@ -9,7 +9,7 @@ import (
 )
 
 func (v A) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`date` DATE,`time` VARCHAR(255) NOT NULL);"
+	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`date` DATE NOT NULL,`time` VARCHAR(255) NOT NULL);"
 }
 func (A) InsertVarQuery() string {
 	return "(?,?)"

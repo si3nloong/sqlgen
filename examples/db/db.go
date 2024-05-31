@@ -160,43 +160,63 @@ func Upsert[T sequel.KeyValuer[T], Ptr sequel.Scanner[T]](ctx context.Context, s
 		args     = make([]any, 0, noOfCols*len(data))
 	)
 
-	pkName, idx, _ := model.PK()
-	switch any(model).(type) {
-	case sequel.AutoIncrKeyer:
-		noOfCols--
-		columns = append(columns[:idx], columns[idx+1:]...)
-	}
-
+	pkName, pkIdx, _ := model.PK()
 	var stmt = strpool.AcquireString()
 	defer strpool.ReleaseString(stmt)
-	if override {
-		stmt.WriteString("INSERT INTO " + dbName(model) + model.TableName() + " (" + strings.Join(columns, ",") + ") VALUES ")
-	} else {
-		stmt.WriteString("INSERT IGNORE INTO " + dbName(model) + model.TableName() + " (" + strings.Join(columns, ",") + ") VALUES ")
-	}
-	for i := range data {
-		if i > 0 {
-			stmt.WriteString(",(")
+
+	switch any(model).(type) {
+	// Auto increment shouldn't include primary key
+	case sequel.AutoIncrKeyer:
+		noOfCols--
+		columns = append(columns[:pkIdx], columns[pkIdx+1:]...)
+		if override {
+			stmt.WriteString("INSERT INTO " + dbName(model) + model.TableName() + " (" + strings.Join(columns, ",") + ") VALUES ")
 		} else {
-			stmt.WriteByte('(')
+			stmt.WriteString("INSERT IGNORE INTO " + dbName(model) + model.TableName() + " (" + strings.Join(columns, ",") + ") VALUES ")
 		}
-		for j := 0; j < noOfCols; j++ {
-			if j > 0 {
-				stmt.WriteByte(',')
+		for i := range data {
+			if i > 0 {
+				stmt.WriteString(",(")
+			} else {
+				stmt.WriteByte('(')
 			}
-			stmt.WriteString("?")
-		}
-		if idx > -1 {
+			for j := 0; j < noOfCols; j++ {
+				if j > 0 {
+					stmt.WriteByte(',')
+				}
+				stmt.WriteString("?")
+			}
 			values := data[i].Values()
-			values = append(values[:idx], values[idx+1:]...)
+			values = append(values[:pkIdx], values[pkIdx+1:]...)
 			args = append(args, values...)
-		} else {
-			args = append(args, data[i].Values()...)
+			stmt.WriteByte(')')
 		}
-		stmt.WriteByte(')')
+
+	default:
+		if override {
+			stmt.WriteString("INSERT INTO " + dbName(model) + model.TableName() + " (" + strings.Join(columns, ",") + ") VALUES ")
+		} else {
+			stmt.WriteString("INSERT IGNORE INTO " + dbName(model) + model.TableName() + " (" + strings.Join(columns, ",") + ") VALUES ")
+		}
+		for i := range data {
+			if i > 0 {
+				stmt.WriteString(",(")
+			} else {
+				stmt.WriteByte('(')
+			}
+			for j := 0; j < noOfCols; j++ {
+				if j > 0 {
+					stmt.WriteByte(',')
+				}
+				stmt.WriteString("?")
+			}
+			args = append(args, data[i].Values()...)
+			stmt.WriteByte(')')
+		}
 	}
 	if override {
 		stmt.WriteString(" ON DUPLICATE KEY UPDATE ")
+		/* don't update primary key when we do upsert */
 		dict := map[string]struct{}{pkName: {}}
 		for i := range omittedFields {
 			dict[omittedFields[i]] = struct{}{}

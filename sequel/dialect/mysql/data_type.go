@@ -53,7 +53,7 @@ func dataType(f *templates.Field) (dataType string) {
 		case "float64":
 			return "FLOAT" + notNull(len(ptrs) > 0)
 		case "cloud.google.com/go/civil.Date":
-			return "DATE"
+			return "DATE" + notNull(len(ptrs) > 0)
 		case "time.Time":
 			var size int
 			if f.Size > 0 && f.Size < 7 {
