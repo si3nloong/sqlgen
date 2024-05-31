@@ -156,9 +156,15 @@ func UpsertOne[T sequel.KeyValuer[T], Ptr sequel.KeyValueScanner[T]](ctx context
 		if j > 0 {
 			stmt.WriteByte(',')
 		}
-		stmt.WriteString(wrapVar(noOfCols + j + 1))
+		stmt.WriteString(wrapVar(j + 1))
 	}
-	stmt.WriteString(") ON CONFLICT(" + pkName + ")")
+	if v, ok := any(model).(sequel.DuplicateKeyer); ok {
+		keys := v.OnDuplicateKey()
+		omittedFields = append(omittedFields, keys...)
+		stmt.WriteString(") ON CONFLICT(" + strings.Join(keys, ",") + ")")
+	} else {
+		stmt.WriteString(") ON CONFLICT(" + pkName + ")")
+	}
 	if override {
 		dict := map[string]struct{}{pkName: {}}
 		for i := range omittedFields {
