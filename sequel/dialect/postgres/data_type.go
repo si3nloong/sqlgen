@@ -39,11 +39,11 @@ func (d *postgresDriver) dataType(f *templates.Field) (dataType string) {
 		case "bool":
 			return "BOOL" + notNull(len(ptrs) > 0)
 		case "uint8", "uint16", "byte":
-			return "INT2" + notNull(len(ptrs) > 0) + " CHECK(" + d.QuoteIdentifier(f.ColumnName) + " > 0)"
+			return "INT2" + notNull(len(ptrs) > 0) + " CHECK(" + d.QuoteIdentifier(f.ColumnName) + " >= 0)"
 		case "uint32", "uint":
-			return "INT" + notNull(len(ptrs) > 0) + " CHECK(" + d.QuoteIdentifier(f.ColumnName) + " > 0)"
+			return "INT" + notNull(len(ptrs) > 0) + " CHECK(" + d.QuoteIdentifier(f.ColumnName) + " >= 0)"
 		case "uint64":
-			return "INT8" + notNull(len(ptrs) > 0) + " CHECK(" + d.QuoteIdentifier(f.ColumnName) + " > 0)"
+			return "INT8" + notNull(len(ptrs) > 0) + " CHECK(" + d.QuoteIdentifier(f.ColumnName) + " >= 0)"
 		case "float32":
 			return "DOUBLE PRECISION" + notNull(len(ptrs) > 0)
 		case "float64":
