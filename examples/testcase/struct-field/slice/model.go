@@ -1,8 +1,8 @@
-package array
+package slice
 
 type customStr string
 
-type Array struct {
+type Slice struct {
 	ID            uint64 `sql:",pk,auto_increment"`
 	BoolList      []bool
 	StrList       []string

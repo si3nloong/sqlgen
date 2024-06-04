@@ -46,6 +46,7 @@ var (
 )
 
 func Execute() {
+	log.SetPrefix("sqlgen:")
 	rootCmd.AddCommand(initCmd)
 	rootCmd.AddCommand(genCmd)
 	rootCmd.AddCommand(versionCmd)

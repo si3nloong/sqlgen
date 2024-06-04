@@ -15,9 +15,9 @@ import (
 
 	"github.com/jaswdr/faker"
 	"github.com/si3nloong/sqlgen/examples/db"
-	"github.com/si3nloong/sqlgen/examples/testcase/struct-field/array"
 	autopk "github.com/si3nloong/sqlgen/examples/testcase/struct-field/pk/auto-incr"
 	"github.com/si3nloong/sqlgen/examples/testcase/struct-field/pointer"
+	"github.com/si3nloong/sqlgen/examples/testcase/struct-field/slice"
 )
 
 func TestMain(m *testing.M) {
@@ -74,7 +74,7 @@ func TestInsert(t *testing.T) {
 	// })
 
 	t.Run("Insert with array", func(t *testing.T) {
-		r1 := array.Array{}
+		r1 := slice.Slice{}
 		r1.StrList = []string{"a", "b", "c"}
 		r1.CustomStrList = append(r1.CustomStrList, "x", "y", "z")
 		r1.BoolList = append(r1.BoolList, true, false, true, false, true)
@@ -84,13 +84,13 @@ func TestInsert(t *testing.T) {
 		r1.F32List = append(r1.F32List, -88.114, 188.123, -1.0538)
 		r1.F64List = append(r1.F64List, -88.114, 188.123, -1.0538)
 
-		inputs := []array.Array{r1}
+		inputs := []slice.Slice{r1}
 		result, err := db.Insert(context.TODO(), dbConn, inputs)
 		require.NoError(t, err)
 		lastID := mustValue(result.LastInsertId())
 		require.NotEmpty(t, lastID)
 
-		ptr := array.Array{}
+		ptr := slice.Slice{}
 		ptr.ID = uint64(lastID)
 		mustNoError(db.FindByPK(ctx, dbConn, &ptr))
 	})

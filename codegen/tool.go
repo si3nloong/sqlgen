@@ -29,6 +29,9 @@ loop:
 		case *types.Slice:
 			typeStr += "[]"
 			prev = v.Elem()
+		case *types.Array:
+			typeStr += "[]"
+			prev = v.Elem()
 		default:
 			break loop
 		}
