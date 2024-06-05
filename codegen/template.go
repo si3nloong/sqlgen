@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/samber/lo"
 	"github.com/si3nloong/sqlgen/codegen/templates"
 	"github.com/si3nloong/sqlgen/sequel/strpool"
 )
@@ -67,13 +68,11 @@ func (g *Generator) insertOneStmt() func(*templates.Model) string {
 		buf := strpool.AcquireString()
 		defer strpool.ReleaseString(buf)
 		buf.WriteString("INSERT INTO " + g.QuoteIdentifier(model.TableName) + " (")
-		var fields []*templates.Field
-		if model.PK != nil && model.PK.IsAutoIncr {
-			for i := range model.Fields {
-				if model.Fields[i] != model.PK.Field {
-					fields = append(fields, model.Fields[i])
-				}
-			}
+		fields := make([]*templates.Field, 0)
+		if model.IsAutoIncr {
+			fields = lo.Filter(model.Fields, func(f *templates.Field, _ int) bool {
+				return f != model.Keys[0]
+			})
 		} else {
 			fields = append(fields, model.Fields...)
 		}
@@ -107,8 +106,13 @@ func (g *Generator) findByPKStmt() func(*templates.Model) string {
 			buf.WriteString(g.QuoteIdentifier(model.Fields[i].ColumnName))
 		}
 		buf.WriteString(" FROM " + g.QuoteIdentifier(model.TableName) + " WHERE ")
-		buf.WriteString(g.QuoteIdentifier(model.PK.Field.ColumnName))
-		buf.WriteString(" = " + g.QuoteVar(1) + " LIMIT 1;")
+		for i, k := range model.Keys {
+			if i > 0 {
+				buf.WriteString(" AND ")
+			}
+			buf.WriteString(g.QuoteIdentifier(k.ColumnName) + " = " + g.QuoteVar(i+1))
+		}
+		buf.WriteString(" LIMIT 1;")
 		return g.Quote(buf.String())
 	}
 }
@@ -119,19 +123,24 @@ func (g *Generator) updateByPKStmt() func(*templates.Model) string {
 		defer strpool.ReleaseString(buf)
 		buf.WriteString("UPDATE " + g.QuoteIdentifier(model.TableName) + " SET ")
 		var pos int
-		for i := range model.Fields {
-			if model.PK != nil && model.PK.Field == model.Fields[i] {
+		for _, f := range model.Fields {
+			if lo.Contains(model.Keys, f) {
 				continue
 			}
 			if pos > 0 {
 				buf.WriteByte(',')
 			}
 			pos++
-			buf.WriteString(g.QuoteIdentifier(model.Fields[i].ColumnName) + " = " + g.QuoteVar(pos))
+			buf.WriteString(g.QuoteIdentifier(f.ColumnName) + " = " + g.QuoteVar(pos))
 		}
 		buf.WriteString(" WHERE ")
-		buf.WriteString(g.QuoteIdentifier(model.PK.Field.ColumnName))
-		buf.WriteString(" = " + g.QuoteVar(pos+1) + " LIMIT 1;")
+		for i, k := range model.Keys {
+			if i > 0 {
+				buf.WriteString(" AND ")
+			}
+			buf.WriteString(g.QuoteIdentifier(k.ColumnName) + " = " + g.QuoteVar(pos+i+1))
+		}
+		buf.WriteString(" LIMIT 1;")
 		return g.Quote(buf.String())
 	}
 }
@@ -141,7 +150,7 @@ func (g *Generator) varStmt() func(*templates.Model) string {
 		blr := strpool.AcquireString()
 		defer strpool.ReleaseString(blr)
 		noOfCols := len(model.Fields)
-		if model.PK != nil && model.PK.IsAutoIncr {
+		if len(model.Keys) > 0 && model.IsAutoIncr {
 			noOfCols--
 		}
 		blr.WriteByte('(')

@@ -25,8 +25,8 @@ func (User) InsertVarQuery() string {
 func (User) Columns() []string {
 	return []string{"id", "birth_date"}
 }
-func (v User) PK() (columnName string, pos int, value driver.Value) {
-	return "id", 0, (driver.Valuer)(v.ID)
+func (v User) PK() ([]string, []int, []any) {
+	return []string{"id"}, []int{0}, []any{(driver.Valuer)(v.ID)}
 }
 func (User) FindByPKStmt() string {
 	return "SELECT id,birth_date FROM user WHERE id = ? LIMIT 1;"

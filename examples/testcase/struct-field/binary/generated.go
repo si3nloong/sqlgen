@@ -24,8 +24,8 @@ func (Binary) InsertVarQuery() string {
 func (Binary) Columns() []string {
 	return []string{"id", "str", "time"}
 }
-func (v Binary) PK() (columnName string, pos int, value driver.Value) {
-	return "id", 0, types.BinaryMarshaler(v.ID)
+func (v Binary) PK() ([]string, []int, []any) {
+	return []string{"id"}, []int{0}, []any{types.BinaryMarshaler(v.ID)}
 }
 func (Binary) FindByPKStmt() string {
 	return "SELECT id,str,time FROM binary WHERE id = ? LIMIT 1;"

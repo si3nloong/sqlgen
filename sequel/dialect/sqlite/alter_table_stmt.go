@@ -14,7 +14,7 @@ func (d sqliteDriver) AlterTableStmt(n string, model *templates.Model) string {
 			buf.WriteByte(',')
 		}
 		buf.WriteString("MODIFY " + d.QuoteIdentifier(f.ColumnName) + " " + dataType(f))
-		if model.PK != nil && model.PK.Field == f && model.PK.IsAutoIncr {
+		if model.IsAutoIncr && f == model.Keys[0] {
 			buf.WriteString(" AUTO_INCREMENT")
 		}
 		if i > 0 {

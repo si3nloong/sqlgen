@@ -23,8 +23,8 @@ func (Car) InsertVarQuery() string {
 func (Car) Columns() []string {
 	return []string{"id", "no", "color", "manuc_date"}
 }
-func (v Car) PK() (columnName string, pos int, value driver.Value) {
-	return "id", 0, (driver.Valuer)(v.ID)
+func (v Car) PK() ([]string, []int, []any) {
+	return []string{"id"}, []int{0}, []any{(driver.Valuer)(v.ID)}
 }
 func (Car) FindByPKStmt() string {
 	return "SELECT id,no,color,manuc_date FROM car WHERE id = ? LIMIT 1;"
@@ -66,8 +66,8 @@ func (User) InsertVarQuery() string {
 func (User) Columns() []string {
 	return []string{"id", "name", "age", "email"}
 }
-func (v User) PK() (columnName string, pos int, value driver.Value) {
-	return "id", 0, int64(v.ID)
+func (v User) PK() ([]string, []int, []any) {
+	return []string{"id"}, []int{0}, []any{int64(v.ID)}
 }
 func (User) FindByPKStmt() string {
 	return "SELECT id,name,age,email FROM user WHERE id = ? LIMIT 1;"
@@ -109,8 +109,8 @@ func (House) InsertVarQuery() string {
 func (House) Columns() []string {
 	return []string{"id", "no"}
 }
-func (v House) PK() (columnName string, pos int, value driver.Value) {
-	return "id", 0, int64(v.ID)
+func (v House) PK() ([]string, []int, []any) {
+	return []string{"id"}, []int{0}, []any{int64(v.ID)}
 }
 func (House) FindByPKStmt() string {
 	return "SELECT id,no FROM house WHERE id = ? LIMIT 1;"

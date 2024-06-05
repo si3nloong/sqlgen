@@ -18,9 +18,16 @@ func (d *postgresDriver) AlterTableStmt(n string, model *templates.Model) string
 			buf.WriteByte(',')
 		}
 		buf.WriteString("MODIFY " + d.QuoteIdentifier(f.ColumnName) + " " + d.dataType(f))
-		if model.PK != nil && model.PK.Field == f {
-			buf.WriteString(" PRIMARY KEY")
+	}
+	if len(model.Keys) > 0 {
+		buf.WriteString(",PRIMARY KEY (")
+		for i, k := range model.Keys {
+			if i > 0 {
+				buf.WriteByte(',')
+			}
+			buf.WriteString(d.QuoteIdentifier(k.ColumnName))
 		}
+		buf.WriteByte(')')
 	}
 	buf.WriteString(");`")
 	return buf.String()

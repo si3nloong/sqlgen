@@ -34,19 +34,22 @@ func ({{ $structName }}) Columns() []string {
 	return {{ "[]string{" }}{{- range $i, $f := .Fields }}{{- if $i }}{{ ", " }}{{ end }}{{ quote (quoteIdentifier $f.ColumnName) }}{{ end }}{{- "}" }}
 }
 {{ end -}}
-{{ if ne .PK nil -}}
-{{ if .PK.IsAutoIncr -}}
+{{ if ne .Keys nil -}}
+{{- /* If it has auto increment key */ -}}
+{{ if .IsAutoIncr -}}
 func ({{ $structName }}) IsAutoIncr() {}
 {{ end -}}
-func (v {{ $structName }}) PK() (columnName string, pos int, value driver.Value) {
-	return {{ quote (quoteIdentifier .PK.Field.ColumnName) }}, {{ .PK.Field.Index }}, {{ castAs .PK.Field }}
+func (v {{ $structName }}) PK() ([]string, []int, []any) {
+	return {{ `[]string{` }}{{ range $i, $f := .Keys }}{{- if $i }}{{ ", " }}{{ end }}{{ quote (quoteIdentifier $f.ColumnName) }}{{ end }}{{- `},` }}{{ `[]int{` }}{{ range $i, $f := .Keys }}{{- if $i }}{{ ", " }}{{ end }}{{ $f.Index }}{{ end }}{{- `},` }}{{ `[]any{` }}{{ range $i, $f := .Keys }}{{- if $i }}{{ ", " }}{{ end }}{{ castAs $f }}{{ end }}{{- `}` }}
 }
 {{ if (and (not $hasCustomTabler) ($hasNotOnlyPK)) -}}
+{{- /* If it has static table and columns other than key */ -}}
 func ({{ $structName }}) FindByPKStmt() string {
 	return {{ findByPKStmt . }}
 }
 {{ end -}}
 {{ if (and (not $hasCustomTabler) ($hasNotOnlyPK)) -}}
+{{- /* If it has static table and columns other than key */ -}}
 func ({{ $structName }}) UpdateByPKStmt() string {
 	return {{ updateByPKStmt . }}
 }

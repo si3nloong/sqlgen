@@ -35,8 +35,8 @@ func (A) InsertVarQuery() string {
 func (A) Columns() []string {
 	return []string{"id", "name"}
 }
-func (v A) PK() (columnName string, pos int, value driver.Value) {
-	return "id", 0, int64(v.ID)
+func (v A) PK() ([]string, []int, []any) {
+	return []string{"id"}, []int{0}, []any{int64(v.ID)}
 }
 func (v A) Values() []any {
 	return []any{int64(v.ID), string(v.Name)}

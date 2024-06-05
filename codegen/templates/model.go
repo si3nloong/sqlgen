@@ -2,6 +2,8 @@ package templates
 
 import (
 	"go/types"
+
+	"github.com/samber/lo"
 )
 
 type ModelTmplParams struct {
@@ -23,8 +25,9 @@ type Model struct {
 	// Sql table name
 	TableName string
 
-	// Primary key
-	PK *PK
+	IsAutoIncr bool
+
+	Keys []*Field
 	// Sql columns
 	Fields          []*Field
 	HasDatabaseName bool
@@ -38,7 +41,7 @@ type Model struct {
 
 func (m Model) HasNotOnlyPK() bool {
 	for i := range m.Fields {
-		if m.PK != nil && m.Fields[i] != m.PK.Field {
+		if !lo.Contains(m.Keys, m.Fields[i]) {
 			return true
 		}
 	}

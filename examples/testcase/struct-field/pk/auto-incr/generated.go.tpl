@@ -23,8 +23,8 @@ func (Model) Columns() []string {
 	return []string{"name", "f", "id", "n"}
 }
 func (Model) IsAutoIncr() {}
-func (v Model) PK() (columnName string, pos int, value driver.Value) {
-	return "id", 2, int64(v.ID)
+func (v Model) PK() ([]string, []int, []any) {
+	return []string{"id"}, []int{2}, []any{int64(v.ID)}
 }
 func (Model) FindByPKStmt() string {
 	return "SELECT name,f,id,n FROM AutoIncrPK WHERE id = ? LIMIT 1;"

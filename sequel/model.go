@@ -1,7 +1,5 @@
 package sequel
 
-import "database/sql/driver"
-
 // For rename table name
 type Table struct{}
 
@@ -22,7 +20,7 @@ type Valuer interface {
 }
 
 type Keyer interface {
-	PK() (columnName string, pos int, value driver.Value)
+	PK() ([]string, []int, []any)
 }
 
 type AutoIncrKeyer interface {

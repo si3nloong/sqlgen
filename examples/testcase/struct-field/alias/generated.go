@@ -24,8 +24,8 @@ func (AliasStruct) InsertVarQuery() string {
 func (AliasStruct) Columns() []string {
 	return []string{"b", "Id", "header", "raw", "text", "null_str", "created", "updated"}
 }
-func (v AliasStruct) PK() (columnName string, pos int, value driver.Value) {
-	return "Id", 1, int64(v.pk.ID)
+func (v AliasStruct) PK() ([]string, []int, []any) {
+	return []string{"Id"}, []int{1}, []any{int64(v.pk.ID)}
 }
 func (AliasStruct) FindByPKStmt() string {
 	return "SELECT b,Id,header,raw,text,null_str,created,updated FROM alias_struct WHERE Id = ? LIMIT 1;"

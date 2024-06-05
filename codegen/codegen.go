@@ -584,7 +584,7 @@ func parseGoPackage(
 					if n == "-" {
 						continue
 					} else if n != "" {
-						if !gen.config.NoStrict && !nameRegex.MatchString(n) {
+						if !nameRegex.MatchString(n) {
 							return fmt.Errorf(`sqlgen: invalid column name %q in struct %q`, n, s.name)
 						}
 						tf.ColumnName = n
@@ -644,14 +644,12 @@ func parseGoPackage(
 				index++
 
 				if _, ok := tag.Lookup(TagOptionPK, TagOptionPKAlias, TagOptionAutoIncrement); ok {
-					if !gen.config.NoStrict && model.PK != nil {
-						return fmt.Errorf(`sqlgen: a model can only allow one primary key, else it will get overriden`)
-					}
-
 					// Check auto increment
-					pk := templates.PK{Field: tf}
-					_, pk.IsAutoIncr = tag.Lookup(TagOptionAutoIncrement)
-					model.PK = &pk
+					_, model.IsAutoIncr = tag.Lookup(TagOptionAutoIncrement)
+					if model.IsAutoIncr && len(model.Keys) > 0 {
+						return fmt.Errorf(`sqlgen: you cannot have a composite key if you already have auto increment key`)
+					}
+					model.Keys = append(model.Keys, tf)
 				}
 
 				if !gen.config.NoStrict {
