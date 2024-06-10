@@ -1,7 +1,7 @@
 package sequel
 
 // For rename table name
-type Table struct{}
+type Table struct{ Name string }
 
 type DatabaseNamer interface {
 	DatabaseName() string
@@ -20,12 +20,22 @@ type Valuer interface {
 }
 
 type Keyer interface {
-	PK() ([]string, []int, []any)
+	HasPK()
+}
+
+type PrimaryKeyer interface {
+	Keyer
+	PK() (string, int, any)
 }
 
 type AutoIncrKeyer interface {
+	PrimaryKeyer
+	AutoIncr()
+}
+
+type CompositeKeyer interface {
 	Keyer
-	IsAutoIncr()
+	CompositeKey() ([]string, []int, []any)
 }
 
 type DuplicateKeyer interface {

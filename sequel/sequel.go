@@ -81,6 +81,11 @@ type KeyUpdater interface {
 	UpdateByPKStmt() string
 }
 
+type KeyDeleter interface {
+	Keyer
+	DeleteByPKStmt() string
+}
+
 type Inserter interface {
 	Columner
 	InsertVarQuery() string

@@ -647,7 +647,7 @@ func parseGoPackage(
 					// Check auto increment
 					_, model.IsAutoIncr = tag.Lookup(TagOptionAutoIncrement)
 					if model.IsAutoIncr && len(model.Keys) > 0 {
-						return fmt.Errorf(`sqlgen: you cannot have a composite key if you already have auto increment key`)
+						return fmt.Errorf(`sqlgen: you cannot have a composite key if you define auto increment key`)
 					}
 					model.Keys = append(model.Keys, tf)
 				}
