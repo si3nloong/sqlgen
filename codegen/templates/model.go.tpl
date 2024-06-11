@@ -35,6 +35,9 @@ func ({{ $structName }}) Columns() []string {
 }
 {{ end -}}
 {{ if ne .Keys nil -}}
+func ({{ $structName }}) HasPK() {}
+{{ end -}}
+{{ if ne .Keys nil -}}
 {{- /* If it has auto increment key */ -}}
 {{ if .IsAutoIncr -}}
 func ({{ $structName }}) IsAutoIncr() {}

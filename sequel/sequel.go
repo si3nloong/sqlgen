@@ -67,10 +67,6 @@ type SingleInserter interface {
 	InsertOneStmt() string
 }
 
-type SingleUpserter interface {
-	UpsertOneStmt() string
-}
-
 type KeyFinder interface {
 	Keyer
 	FindByPKStmt() string

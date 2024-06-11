@@ -25,6 +25,7 @@ func (User) InsertVarQuery() string {
 func (User) Columns() []string {
 	return []string{"id", "birth_date"}
 }
+func (User) HasPK() {}
 func (v User) PK() ([]string, []int, []any) {
 	return []string{"id"}, []int{0}, []any{(driver.Valuer)(v.ID)}
 }

@@ -1,8 +1,9 @@
-package db
+package mysqldb
 
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -12,41 +13,56 @@ import (
 	"github.com/si3nloong/sqlgen/sequel/strpool"
 )
 
+type autoIncrKeyInserter interface {
+	sequel.AutoIncrKeyer
+	sequel.SingleInserter
+}
+
+type primaryKeyInserter interface {
+	sequel.PrimaryKeyer
+	sequel.SingleInserter
+}
+
 func InsertOne[T sequel.TableColumnValuer[T], Ptr interface {
 	sequel.TableColumnValuer[T]
 	sequel.Scanner[T]
 }](ctx context.Context, sqlConn sequel.DB, model Ptr) (sql.Result, error) {
-	var (
-		args    = model.Values()
-		columns []string
-	)
-	switch vi := any(model).(type) {
-	case sequel.SingleInserter:
-		switch vk := vi.(type) {
-		case sequel.AutoIncrKeyer:
-			_, idx, _ := vk.PK()
-			args = append(args[:idx], args[idx+1:]...)
+	switch v := any(model).(type) {
+	case autoIncrKeyInserter:
+		_, idx, _ := v.PK()
+		values := model.Values()
+		values = append(values[:idx], values[idx+1:]...)
+		result, err := sqlConn.ExecContext(ctx, v.InsertOneStmt(), values...)
+		if err != nil {
+			return nil, err
 		}
-		return sqlConn.ExecContext(ctx, vi.InsertOneStmt(), args...)
-
-	case sequel.AutoIncrKeyer:
-		// If it's an AUTO_INCREMENT primary key
-		// We don't need to pass the value
-		_, idx, _ := vi.PK()
-		columns = model.Columns()
-		columns = append(columns[:idx], columns[idx+1:]...)
-		args = append(args[:idx], args[idx+1:]...)
-
+		i64, err := result.LastInsertId()
+		if err != nil {
+			return nil, err
+		}
+		switch v := model.Addrs()[idx].(type) {
+		case *int64:
+			*v = i64
+		case sql.Scanner:
+			if err := v.Scan(i64); err != nil {
+				return nil, err
+			}
+		default:
+			return nil, errors.New(`sqlgen: invalid auto increment data type`)
+		}
+		return result, nil
+	case primaryKeyInserter:
+		return sqlConn.ExecContext(ctx, v.InsertOneStmt(), model.Values()...)
 	default:
-		columns = model.Columns()
+		columns, values := model.Columns(), model.Values()
+		return sqlConn.ExecContext(ctx, "INSERT INTO "+dbName(model)+model.TableName()+" ("+strings.Join(columns, ",")+") VALUES ("+strings.Repeat(",?", len(columns))[1:]+");", values...)
 	}
-	return sqlConn.ExecContext(ctx, "INSERT INTO "+dbName(model)+model.TableName()+" ("+strings.Join(columns, ",")+") VALUES ("+strings.Repeat(",?", len(columns))[1:]+");", args...)
 }
 
 // Insert is a helper function to insert multiple records.
 func Insert[T sequel.TableColumnValuer[T]](ctx context.Context, sqlConn sequel.DB, data []T) (sql.Result, error) {
-	n := len(data)
-	if n == 0 {
+	noOfData := len(data)
+	if noOfData == 0 {
 		return new(sequel.EmptyResult), nil
 	}
 
@@ -98,58 +114,95 @@ func Insert[T sequel.TableColumnValuer[T]](ctx context.Context, sqlConn sequel.D
 }
 
 func UpsertOne[T sequel.KeyValuer[T], Ptr sequel.KeyValueScanner[T]](ctx context.Context, sqlConn sequel.DB, model Ptr, override bool, omittedFields ...string) (sql.Result, error) {
-	var (
-		_, idx, _ = model.PK()
-		args      = model.Values()
-		columns   []string
-	)
-	switch vi := any(model).(type) {
-	case sequel.SingleUpserter:
-		return sqlConn.ExecContext(ctx, vi.UpsertOneStmt(), args...)
-
-	case sequel.AutoIncrKeyer:
-		// If it's an AUTO_INCREMENT primary key
-		// We don't need to pass the value
-		columns = model.Columns()
-		columns = append(columns[:idx], columns[idx+1:]...)
-		args = append(args[:idx], args[idx+1:]...)
-
+	switch v := any(model).(type) {
+	case sequel.PrimaryKeyer:
+		pkName, idx, _ := v.PK()
+		columns := model.Columns()
+		stmt := strpool.AcquireString()
+		defer strpool.ReleaseString(stmt)
+		if !override {
+			stmt.WriteString("INSERT IGNORE INTO " + dbName(model) + model.TableName() + " (" + strings.Join(columns, ",") + ") VALUES (" + strings.Repeat(",?", len(columns))[1:] + ");")
+		} else {
+			omitDict := map[string]struct{}{pkName: {}}
+			for i := range omittedFields {
+				omitDict[omittedFields[i]] = struct{}{}
+			}
+			noOfCols := len(columns)
+			stmt.WriteString("INSERT INTO " + dbName(model) + model.TableName() + " (" + strings.Join(columns, ",") + ") VALUES (" + strings.Repeat(",?", noOfCols)[1:] + ") ON DUPLICATE KEY UPDATE ")
+			for i := range columns {
+				if _, ok := omitDict[columns[i]]; ok {
+					continue
+				}
+				if i < noOfCols-1 {
+					stmt.WriteString(columns[i] + " =VALUES(" + columns[i] + "),")
+				} else {
+					stmt.WriteString(columns[i] + " =VALUES(" + columns[i] + ")")
+				}
+			}
+			clear(omitDict)
+		}
+		if _, ok := any(model).(sequel.AutoIncrKeyer); ok {
+			result, err := sqlConn.ExecContext(ctx, stmt.String(), model.Values()...)
+			if err != nil {
+				return nil, err
+			}
+			i64, err := result.LastInsertId()
+			if err != nil {
+				return nil, err
+			}
+			switch v := model.Addrs()[idx].(type) {
+			case *int64:
+				*v = i64
+			case sql.Scanner:
+				if err := v.Scan(i64); err != nil {
+					return nil, err
+				}
+			default:
+				return nil, errors.New(`sqlgen: invalid auto increment data type`)
+			}
+			return result, nil
+		}
+		return sqlConn.ExecContext(ctx, stmt.String(), model.Values()...)
+	case sequel.CompositeKeyer:
+		names, idxs, _ := v.CompositeKey()
+		columns := model.Columns()
+		stmt := strpool.AcquireString()
+		defer strpool.ReleaseString(stmt)
+		if !override {
+			stmt.WriteString("INSERT IGNORE INTO " + dbName(model) + model.TableName() + " (" + strings.Join(columns, ",") + ") VALUES (" + strings.Repeat(",?", len(columns))[1:] + ");")
+		} else {
+			dict := make(map[string]struct{})
+			for i := range append(names, omittedFields...) {
+				dict[omittedFields[i]] = struct{}{}
+			}
+			noOfCols := len(columns)
+			stmt.WriteString("INSERT INTO " + dbName(model) + model.TableName() + " (" + strings.Join(columns, ",") + ") VALUES (" + strings.Repeat(",?", noOfCols)[1:] + ") ON DUPLICATE KEY UPDATE ")
+			// Exclude composite key, don't update it
+			for i := len(idxs) - 1; i >= 0; i-- {
+				columns = append(columns[:idxs[i]], columns[idxs[i]+1:]...)
+			}
+			for i := range columns {
+				if _, ok := dict[columns[i]]; ok {
+					continue
+				}
+				if i < noOfCols-1 {
+					stmt.WriteString(columns[i] + " =VALUES(" + columns[i] + "),")
+				} else {
+					stmt.WriteString(columns[i] + " =VALUES(" + columns[i] + ")")
+				}
+			}
+			clear(dict)
+		}
+		return sqlConn.ExecContext(ctx, stmt.String(), model.Values()...)
 	default:
-		columns = model.Columns()
+		panic("unreachable")
 	}
-
-	var stmt = strpool.AcquireString()
-	defer strpool.ReleaseString(stmt)
-	if !override {
-		stmt.WriteString("INSERT IGNORE INTO " + dbName(model) + model.TableName() + " (" + strings.Join(columns, ",") + ") VALUES (" + strings.Repeat(",?", len(columns))[1:] + ");")
-	} else {
-		dict := make(map[string]struct{})
-		for i := range omittedFields {
-			dict[omittedFields[i]] = struct{}{}
-		}
-		stmt.WriteString("INSERT INTO " + dbName(model) + model.TableName() + " (" + strings.Join(columns, ",") + ") VALUES (" + strings.Repeat(",?", len(columns))[1:] + ") ON DUPLICATE KEY UPDATE ")
-		columns = append(columns[:idx], columns[idx+1:]...)
-		args = append(args[:idx], args[idx+1:]...)
-		noOfCols := len(columns)
-		for i := range columns {
-			if _, ok := dict[columns[i]]; ok {
-				continue
-			}
-			if i < noOfCols-1 {
-				stmt.WriteString(columns[i] + " =VALUES(" + columns[i] + "),")
-			} else {
-				stmt.WriteString(columns[i] + " =VALUES(" + columns[i] + ")")
-			}
-		}
-		clear(dict)
-	}
-	return sqlConn.ExecContext(ctx, stmt.String(), args...)
 }
 
 // Upsert is a helper function to upsert multiple records.
 func Upsert[T sequel.KeyValuer[T], Ptr sequel.Scanner[T]](ctx context.Context, sqlConn sequel.DB, data []T, override bool, omittedFields ...string) (sql.Result, error) {
-	n := len(data)
-	if n == 0 {
+	noOfData := len(data)
+	if noOfData == 0 {
 		return new(sequel.EmptyResult), nil
 	}
 
@@ -157,72 +210,80 @@ func Upsert[T sequel.KeyValuer[T], Ptr sequel.Scanner[T]](ctx context.Context, s
 		model    = data[0]
 		columns  = model.Columns()
 		noOfCols = len(columns)
-		args     = make([]any, 0, noOfCols*len(data))
+		args     = make([]any, 0, noOfCols*noOfData)
 	)
 
-	pkName, pkIdx, _ := model.PK()
 	var stmt = strpool.AcquireString()
 	defer strpool.ReleaseString(stmt)
-
-	switch any(model).(type) {
-	// Auto increment shouldn't include primary key
+	switch v := any(model).(type) {
 	case sequel.AutoIncrKeyer:
-		noOfCols--
-		columns = append(columns[:pkIdx], columns[pkIdx+1:]...)
+		pkName, idx, _ := v.PK()
+		omittedFields = append(omittedFields, pkName)
+		// Don't include auto increment primary key on INSERT
+		columns = append(columns[:idx], columns[idx+1:]...)
 		if override {
 			stmt.WriteString("INSERT INTO " + dbName(model) + model.TableName() + " (" + strings.Join(columns, ",") + ") VALUES ")
 		} else {
 			stmt.WriteString("INSERT IGNORE INTO " + dbName(model) + model.TableName() + " (" + strings.Join(columns, ",") + ") VALUES ")
 		}
-		for i := range data {
-			if i > 0 {
-				stmt.WriteString(",(")
-			} else {
-				stmt.WriteByte('(')
-			}
-			for j := 0; j < noOfCols; j++ {
-				if j > 0 {
-					stmt.WriteByte(',')
-				}
-				stmt.WriteString("?")
-			}
+		placeholder := ",(" + strings.Repeat(",?", noOfCols)[1:] + ")"
+		for i := 0; i < noOfData; i++ {
 			values := data[i].Values()
-			values = append(values[:pkIdx], values[pkIdx+1:]...)
+			values = append(values[:idx], values[idx+1:]...)
 			args = append(args, values...)
-			stmt.WriteByte(')')
+			if i > 0 {
+				stmt.WriteString(placeholder)
+			} else {
+				stmt.WriteString(placeholder[1:])
+			}
 		}
-
-	default:
+	case sequel.PrimaryKeyer:
+		pkName, _, _ := v.PK()
+		omittedFields = append(omittedFields, pkName)
 		if override {
 			stmt.WriteString("INSERT INTO " + dbName(model) + model.TableName() + " (" + strings.Join(columns, ",") + ") VALUES ")
 		} else {
 			stmt.WriteString("INSERT IGNORE INTO " + dbName(model) + model.TableName() + " (" + strings.Join(columns, ",") + ") VALUES ")
 		}
-		for i := range data {
-			if i > 0 {
-				stmt.WriteString(",(")
-			} else {
-				stmt.WriteByte('(')
-			}
-			for j := 0; j < noOfCols; j++ {
-				if j > 0 {
-					stmt.WriteByte(',')
-				}
-				stmt.WriteString("?")
-			}
+		placeholder := ",(" + strings.Repeat(",?", noOfCols)[1:] + ")"
+		for i := 0; i < noOfData; i++ {
 			args = append(args, data[i].Values()...)
-			stmt.WriteByte(')')
+			if i > 0 {
+				stmt.WriteString(placeholder)
+			} else {
+				stmt.WriteString(placeholder[1:])
+			}
+		}
+	case sequel.CompositeKeyer:
+		if override {
+			stmt.WriteString("INSERT INTO " + dbName(model) + model.TableName() + " (" + strings.Join(columns, ",") + ") VALUES ")
+		} else {
+			stmt.WriteString("INSERT IGNORE INTO " + dbName(model) + model.TableName() + " (" + strings.Join(columns, ",") + ") VALUES ")
+		}
+		placeholder := ",(" + strings.Repeat(",?", noOfCols)[1:] + ")"
+		for i := 0; i < noOfData; i++ {
+			args = append(args, data[i].Values()...)
+			if i > 0 {
+				stmt.WriteString(placeholder)
+			} else {
+				stmt.WriteString(placeholder[1:])
+			}
+		}
+		_, idxs, _ := v.CompositeKey()
+		// Exclude primary key, don't update it
+		for i := len(idxs) - 1; i >= 0; i-- {
+			columns = append(columns[:idxs[i]], columns[idxs[i]+1:]...)
 		}
 	}
 	if override {
 		stmt.WriteString(" ON DUPLICATE KEY UPDATE ")
 		/* don't update primary key when we do upsert */
-		dict := map[string]struct{}{pkName: {}}
+		omitDict := map[string]struct{}{}
 		for i := range omittedFields {
-			dict[omittedFields[i]] = struct{}{}
+			omitDict[omittedFields[i]] = struct{}{}
 		}
 		for i := range columns {
-			if _, ok := dict[columns[i]]; ok {
+			if _, ok := omitDict[columns[i]]; ok {
 				continue
 			}
 			if i < noOfCols-1 {
@@ -231,50 +292,80 @@ func Upsert[T sequel.KeyValuer[T], Ptr sequel.Scanner[T]](ctx context.Context, s
 				stmt.WriteString(columns[i] + " =VALUES(" + columns[i] + ")")
 			}
 		}
-		clear(dict)
+		clear(omitDict)
 	}
 	stmt.WriteByte(';')
 	return sqlConn.ExecContext(ctx, stmt.String(), args...)
 }
 
+type primaryKeyFinder interface {
+	sequel.PrimaryKeyer
+	sequel.KeyFinder
+}
+
 // FindByPK is to find single record using primary key.
 func FindByPK[T sequel.KeyValuer[T], Ptr sequel.KeyValueScanner[T]](ctx context.Context, sqlConn sequel.DB, model Ptr) error {
-	switch vi := any(model).(type) {
-	case sequel.KeyFinder:
-		_, _, pk := vi.PK()
-		return sqlConn.QueryRowContext(ctx, vi.FindByPKStmt(), pk).Scan(model.Addrs()...)
-
-	default:
-		var (
-			pkName, _, pk = model.PK()
-			columns       = model.Columns()
-		)
+	switch v := any(model).(type) {
+	case primaryKeyFinder:
+		_, _, pk := v.PK()
+		return sqlConn.QueryRowContext(ctx, v.FindByPKStmt(), pk).Scan(model.Addrs()...)
+	case sequel.PrimaryKeyer:
+		columns := model.Columns()
+		pkName, _, pk := v.PK()
 		return sqlConn.QueryRowContext(ctx, "SELECT "+strings.Join(columns, ",")+" FROM "+dbName(model)+model.TableName()+" WHERE "+pkName+" = ? LIMIT 1;", pk).Scan(model.Addrs()...)
+	case sequel.CompositeKeyer:
+		columns := model.Columns()
+		names, _, keys := v.CompositeKey()
+		return sqlConn.QueryRowContext(ctx, "SELECT "+strings.Join(columns, ",")+" FROM "+dbName(model)+model.TableName()+" WHERE "+strings.Join(names, " = ? AND ")+" = ? LIMIT 1;", keys...).Scan(model.Addrs()...)
+	default:
+		panic("unreachable")
 	}
+}
+
+type primaryKeyUpdater interface {
+	sequel.PrimaryKeyer
+	sequel.KeyUpdater
 }
 
 // UpdateByPK is to update single record using primary key.
 func UpdateByPK[T sequel.KeyValuer[T]](ctx context.Context, sqlConn sequel.DB, model T) (sql.Result, error) {
-	var (
-		pkName, idx, pk = model.PK()
-		columns, values = model.Columns(), model.Values()
-	)
-	switch vi := any(model).(type) {
-	case sequel.KeyUpdater:
-		values = append(values[:idx], append(values[idx+1:], pk)...)
-		return sqlConn.ExecContext(ctx, vi.UpdateByPKStmt(), values...)
-
-	default:
-		columns = append(columns[:idx], columns[idx+1:]...)
-		values = append(values[:idx], values[idx+1:]...)
+	switch v := any(model).(type) {
+	case primaryKeyUpdater:
+		_, pkIdx, pk := v.PK()
+		values := model.Values()
+		values = append(values[:pkIdx], append(values[pkIdx+1:], pk)...)
+		return sqlConn.ExecContext(ctx, v.UpdateByPKStmt(), values...)
+	case sequel.PrimaryKeyer:
+		pkName, pkIdx, pk := v.PK()
+		values := model.Values()
+		columns := model.Columns()
+		values = append(values[:pkIdx], append(values[pkIdx+1:], pk)...)
 		return sqlConn.ExecContext(ctx, "UPDATE "+dbName(model)+model.TableName()+" SET "+strings.Join(columns, " = ?,")+" = ? WHERE "+pkName+" = ?;", append(values, pk)...)
+	default:
+		panic("unreachable")
 	}
+}
+
+type primaryKeyDeleter interface {
+	sequel.PrimaryKeyer
+	sequel.KeyDeleter
 }
 
 // DeleteByPK is to update single record using primary key.
 func DeleteByPK[T sequel.KeyValuer[T]](ctx context.Context, sqlConn sequel.DB, model T) (sql.Result, error) {
-	pkName, _, pk := model.PK()
-	return sqlConn.ExecContext(ctx, "DELETE FROM "+dbName(model)+model.TableName()+" WHERE "+pkName+" = ?;", pk)
+	switch v := any(model).(type) {
+	case primaryKeyDeleter:
+		_, _, pk := v.PK()
+		return sqlConn.ExecContext(ctx, v.DeleteByPKStmt(), pk)
+	case sequel.PrimaryKeyer:
+		pkName, _, pk := v.PK()
+		return sqlConn.ExecContext(ctx, "DELETE FROM "+dbName(model)+model.TableName()+" WHERE "+pkName+" = ?;", pk)
+	case sequel.CompositeKeyer:
+		names, _, keys := v.CompositeKey()
+		return sqlConn.ExecContext(ctx, "DELETE FROM "+dbName(model)+model.TableName()+" WHERE "+strings.Join(names, " = ? AND ")+" = ?;", keys...)
+	default:
+		panic("unreachable")
+	}
 }
 
 type SelectStmt struct {

@@ -83,6 +83,7 @@ func (C) InsertVarQuery() string {
 func (C) Columns() []string {
 	return []string{"id"}
 }
+func (C) HasPK() {}
 func (v C) PK() ([]string, []int, []any) {
 	return []string{"id"}, []int{0}, []any{int64(v.ID)}
 }
@@ -111,6 +112,7 @@ func (D) InsertVarQuery() string {
 func (D) Columns() []string {
 	return []string{"id"}
 }
+func (D) HasPK() {}
 func (v D) PK() ([]string, []int, []any) {
 	return []string{"id"}, []int{0}, []any{(driver.Valuer)(v.ID)}
 }

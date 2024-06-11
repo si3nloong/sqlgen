@@ -23,6 +23,7 @@ func (Array) InsertVarQuery() string {
 func (Array) Columns() []string {
 	return []string{"id", "bool_list", "str_list", "custom_str_list", "int_list", "int_8_list", "int_16_list", "int_32_list", "int_64_list", "uint_list", "uint_8_list", "uint_16_list", "uint_32_list", "uint_64_list", "f_32_list", "f_64_list"}
 }
+func (Array) HasPK()      {}
 func (Array) IsAutoIncr() {}
 func (v Array) PK() ([]string, []int, []any) {
 	return []string{"id"}, []int{0}, []any{int64(v.ID)}

@@ -35,6 +35,7 @@ func (A) InsertVarQuery() string {
 func (A) Columns() []string {
 	return []string{"id", "name"}
 }
+func (A) HasPK() {}
 func (v A) PK() ([]string, []int, []any) {
 	return []string{"id"}, []int{0}, []any{int64(v.ID)}
 }

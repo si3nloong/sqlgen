@@ -1,7 +1,7 @@
 package sequel
 
 // For rename table name
-type Table struct{ Name string }
+type Table struct{}
 
 type DatabaseNamer interface {
 	DatabaseName() string

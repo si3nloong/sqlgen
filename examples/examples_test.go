@@ -14,7 +14,7 @@ import (
 	_ "github.com/si3nloong/sqlgen/sequel/dialect/postgres"
 
 	"github.com/jaswdr/faker"
-	"github.com/si3nloong/sqlgen/examples/db"
+	mysqldb "github.com/si3nloong/sqlgen/examples/db/mysql"
 	"github.com/si3nloong/sqlgen/examples/testcase/struct-field/array"
 	autopk "github.com/si3nloong/sqlgen/examples/testcase/struct-field/pk/auto-incr"
 	"github.com/si3nloong/sqlgen/examples/testcase/struct-field/pointer"
@@ -28,15 +28,15 @@ func TestMain(m *testing.M) {
 	// m1 := autopk.Model{}
 	// sqlutil.FindOne(nil, nil, &m1)
 
-	// if err := db.Migrate[autopk.Model](context.TODO(), dbConn); err != nil {
+	// if err := mysqldb.Migrate[autopk.Model](context.TODO(), dbConn); err != nil {
 	// 	panic(err)
 	// }
 
-	// if err := db.Migrate[pointer.Ptr](context.TODO(), dbConn); err != nil {
+	// if err := mysqldb.Migrate[pointer.Ptr](context.TODO(), dbConn); err != nil {
 	// 	panic(err)
 	// }
 
-	// if err := db.Migrate[array.Array](context.TODO(), dbConn); err != nil {
+	// if err := mysqldb.Migrate[array.Array](context.TODO(), dbConn); err != nil {
 	// 	panic(err)
 	// }
 
@@ -67,7 +67,7 @@ func TestInsert(t *testing.T) {
 	// 	data.L3PtrCustomStr = ptrOf(ptrOf(ptrOf(cStr)))
 	// 	data.L7PtrStr = ptrOf(ptrOf(ptrOf(ptrOf(ptrOf(ptrOf(ptrOf(str)))))))
 	// 	inputs := []doubleptr.DoublePtr{data}
-	// 	result, err := db.Insert(context.TODO(), dbConn, inputs)
+	// 	result, err := mysqldb.Insert(context.TODO(), dbConn, inputs)
 	// 	require.NoError(t, err)
 	// 	lastID := mustValue(result.LastInsertId())
 	// 	require.NotEmpty(t, lastID)
@@ -85,19 +85,19 @@ func TestInsert(t *testing.T) {
 		r1.F64List = append(r1.F64List, -88.114, 188.123, -1.0538)
 
 		inputs := []array.Array{r1}
-		result, err := db.Insert(context.TODO(), dbConn, inputs)
+		result, err := mysqldb.Insert(context.TODO(), dbConn, inputs)
 		require.NoError(t, err)
 		lastID := mustValue(result.LastInsertId())
 		require.NotEmpty(t, lastID)
 
 		ptr := array.Array{}
 		ptr.ID = uint64(lastID)
-		mustNoError(db.FindByPK(ctx, dbConn, &ptr))
+		mustNoError(mysqldb.FindByPK(ctx, dbConn, &ptr))
 	})
 
 	t.Run("Insert with all nil values", func(t *testing.T) {
 		inputs := []pointer.Ptr{{}, {}}
-		result, err := db.Insert(ctx, dbConn, inputs)
+		result, err := mysqldb.Insert(ctx, dbConn, inputs)
 		require.NoError(t, err)
 		lastID := mustValue(result.LastInsertId())
 		require.NotEmpty(t, lastID)
@@ -124,7 +124,7 @@ func TestInsert(t *testing.T) {
 			{Str: &str, Bool: &flag, Time: &dt, F32: &f32, F64: &f64, Uint: &u, Uint8: &u8, Uint16: &u16, Uint32: &u32, Uint64: &u64, Int: &i, Int8: &i8, Int16: &i16, Int32: &i32, Int64: &i64},
 			{Str: &str, Bool: &flag, Time: &dt, F32: &f32, F64: &f64, Uint: &u, Uint8: &u8, Uint16: &u16, Uint32: &u32, Uint64: &u64, Int: &i, Int8: &i8, Int16: &i16, Int32: &i32, Int64: &i64},
 		}
-		result, err := db.Insert(ctx, dbConn, inputs)
+		result, err := mysqldb.Insert(ctx, dbConn, inputs)
 		require.NoError(t, err)
 		lastID := mustValue(result.LastInsertId())
 		require.NoError(t, err)
@@ -133,7 +133,7 @@ func TestInsert(t *testing.T) {
 
 		ptr := pointer.Ptr{}
 		ptr.ID = lastID
-		mustNoError(db.FindByPK(ctx, dbConn, &ptr))
+		mustNoError(mysqldb.FindByPK(ctx, dbConn, &ptr))
 		require.Equal(t, str, *ptr.Str)
 		require.Equal(t, dt.Format(time.DateOnly), (*ptr.Time).Format(time.DateOnly))
 		require.True(t, *ptr.Bool)
@@ -150,10 +150,10 @@ func TestInsert(t *testing.T) {
 		require.NotZero(t, *ptr.F32)
 		require.NotZero(t, *ptr.F64)
 
-		ptrs, err := db.QueryStmt[pointer.Ptr](ctx, dbConn, db.SelectStmt{
+		ptrs, err := mysqldb.QueryStmt[pointer.Ptr](ctx, dbConn, mysqldb.SelectStmt{
 			Select:    ptr.Columns(),
 			FromTable: ptr.TableName(),
-			Where:     db.Equal(ptr.GetInt(), &i),
+			Where:     mysqldb.Equal(ptr.GetInt(), &i),
 			Limit:     3,
 		})
 		_ = ptrs
@@ -167,7 +167,7 @@ func TestUpdateOne(t *testing.T) {
 	)
 
 	data := autopk.Model{}
-	result, err := db.InsertOne(ctx, dbConn, &data)
+	result, err := mysqldb.InsertOne(ctx, dbConn, &data)
 	if err != nil {
 		panic(err)
 	}
@@ -177,7 +177,7 @@ func TestUpdateOne(t *testing.T) {
 	newData.ID = uint(i64)
 	newData.Name = autopk.LongText(`Updated Text`)
 
-	if _, err := db.UpdateByPK(ctx, dbConn, newData); err != nil {
+	if _, err := mysqldb.UpdateByPK(ctx, dbConn, newData); err != nil {
 		panic(err)
 	}
 }

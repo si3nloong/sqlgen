@@ -1,10 +1,16 @@
-{{- reserveImport "context" }}
-{{- reserveImport "database/sql" }}
-{{- reserveImport "strings" }}
-{{- reserveImport "strconv" }}
-{{- reserveImport "sync" }}
-{{- reserveImport "github.com/si3nloong/sqlgen/sequel" }}
-{{- reserveImport "github.com/si3nloong/sqlgen/sequel/strpool" }}
+package postgresdb
+
+import (
+	"context"
+	"database/sql"
+	"fmt"
+	"strconv"
+	"strings"
+	"sync"
+
+	"github.com/si3nloong/sqlgen/sequel"
+	"github.com/si3nloong/sqlgen/sequel/strpool"
+)
 
 type autoIncrKeyInserter interface {
 	sequel.AutoIncrKeyer
@@ -15,8 +21,7 @@ type primaryKeyInserter interface {
 	sequel.PrimaryKeyer
 	sequel.SingleInserter
 }
-{{ if eq driver "postgres" -}}
-{{- /* postgres */ -}}
+
 func InsertOne[T sequel.TableColumnValuer[T], Ptr interface {
 	sequel.TableColumnValuer[T]
 	sequel.Scanner[T]
@@ -36,53 +41,16 @@ func InsertOne[T sequel.TableColumnValuer[T], Ptr interface {
 		stmt.WriteString("INSERT INTO " + dbName(model) + model.TableName() + " (" + strings.Join(columns, ",") + ") VALUES (")
 		for i := range values {
 			if i > 0 {
-				stmt.WriteString(","+wrapVar(i + 1))
+				stmt.WriteString("," + wrapVar(i+1))
 			} else {
 				// argument always started from 1
 				stmt.WriteString(wrapVar(i + 1))
 			}
 		}
-		stmt.WriteString(") RETURNING "+ strings.Join(columns, ",") +";")
+		stmt.WriteString(") RETURNING " + strings.Join(columns, ",") + ";")
 		return sqlConn.QueryRowContext(ctx, stmt.String(), values...).Scan(model.Addrs()...)
 	}
-}	
-{{ else }}
-func InsertOne[T sequel.TableColumnValuer[T], Ptr interface {
-	sequel.TableColumnValuer[T]
-	sequel.Scanner[T]
-}](ctx context.Context, sqlConn sequel.DB, model Ptr) (sql.Result, error) {
-	switch v := any(model).(type) {
-	case autoIncrKeyInserter:
-		_, idx, _ := v.PK()
-		values := model.Values()
-		values = append(values[:idx], values[idx+1:]...)
-		result, err := sqlConn.ExecContext(ctx, v.InsertOneStmt(), values...)
-		if err != nil {
-			return nil, err
-		}
-		i64, err := result.LastInsertId()
-		if err != nil {
-			return nil, err
-		}
-		switch v := model.Addrs()[idx].(type) {
-		case *int64:
-			*v = i64
-		case sql.Scanner:
-			if err := v.Scan(i64); err != nil {
-				return nil, err
-			}
-		default:
-			return nil, errors.New(`sqlgen: invalid auto increment data type`)
-		}
-		return result, nil
-	case primaryKeyInserter:
-		return sqlConn.ExecContext(ctx, v.InsertOneStmt(), model.Values()...)
-	default:
-		columns, values := model.Columns(), model.Values()
-		return sqlConn.ExecContext(ctx, "INSERT INTO "+dbName(model)+model.TableName()+" ("+strings.Join(columns, ",")+") VALUES ("+strings.Repeat(",?", len(columns))[1:]+");", values...)
-	}
 }
-{{ end }}
 
 // Insert is a helper function to insert multiple records.
 func Insert[T sequel.TableColumnValuer[T]](ctx context.Context, sqlConn sequel.DB, data []T) (sql.Result, error) {
@@ -119,18 +87,12 @@ func Insert[T sequel.TableColumnValuer[T]](ctx context.Context, sqlConn sequel.D
 		} else {
 			stmt.WriteByte('(')
 		}
-		{{ if not isStaticVar -}}
 		offset := noOfCols * i
-		{{ end -}}
 		for j := 0; j < noOfCols; j++ {
 			if j > 0 {
 				stmt.WriteByte(',')
 			}
-			{{ if isStaticVar -}}
-			stmt.WriteString({{ quote varRune }})
-			{{ else -}}
 			stmt.WriteString(wrapVar(offset + 1 + j))
-			{{ end -}}
 		}
 		if idx > -1 {
 			values := data[i].Values()
@@ -145,11 +107,9 @@ func Insert[T sequel.TableColumnValuer[T]](ctx context.Context, sqlConn sequel.D
 	return sqlConn.ExecContext(ctx, stmt.String(), args...)
 }
 
-{{ if eq driver "postgres" -}}
-{{- /* postgres */ -}}
 type UpsertOptions struct {
-	override		bool
-	omitFields		[]string
+	override        bool
+	omitFields      []string
 	onDuplicateKeys []string
 }
 type UpsertOption func(*UpsertOptions)
@@ -231,93 +191,6 @@ func UpsertOne[T sequel.KeyValuer[T], Ptr sequel.KeyValueScanner[T]](ctx context
 	}
 	return nil
 }
-{{ else }}
-func UpsertOne[T sequel.KeyValuer[T], Ptr sequel.KeyValueScanner[T]](ctx context.Context, sqlConn sequel.DB, model Ptr, override bool, omittedFields ...string) (sql.Result, error) {
-	switch v := any(model).(type) {
-	case sequel.PrimaryKeyer:
-		pkName, idx, _ := v.PK()
-		columns := model.Columns()
-		stmt := strpool.AcquireString()
-		defer strpool.ReleaseString(stmt)
-		if !override {
-			stmt.WriteString("INSERT IGNORE INTO " + dbName(model) + model.TableName() + " (" + strings.Join(columns, ",") + ") VALUES (" + strings.Repeat(",?", len(columns))[1:] + ");")
-		} else {
-			omitDict := map[string]struct{}{pkName: {}}
-			for i := range omittedFields {
-				omitDict[omittedFields[i]] = struct{}{}
-			}
-			noOfCols := len(columns)
-			stmt.WriteString("INSERT INTO " + dbName(model) + model.TableName() + " (" + strings.Join(columns, ",") + ") VALUES (" + strings.Repeat(",?", noOfCols)[1:] + ") ON DUPLICATE KEY UPDATE ")
-			for i := range columns {
-				if _, ok := omitDict[columns[i]]; ok {
-					continue
-				}
-				if i < noOfCols-1 {
-					stmt.WriteString(columns[i] + " =VALUES(" + columns[i] + "),")
-				} else {
-					stmt.WriteString(columns[i] + " =VALUES(" + columns[i] + ")")
-				}
-			}
-			clear(omitDict)
-		}
-		if _, ok := any(model).(sequel.AutoIncrKeyer); ok {
-			result, err := sqlConn.ExecContext(ctx, stmt.String(), model.Values()...)
-			if err != nil {
-				return nil, err
-			}
-			i64, err := result.LastInsertId()
-			if err != nil {
-				return nil, err
-			}
-			switch v := model.Addrs()[idx].(type) {
-			case *int64:
-				*v = i64
-			case sql.Scanner:
-				if err := v.Scan(i64); err != nil {
-					return nil, err
-				}
-			default:
-				return nil, errors.New(`sqlgen: invalid auto increment data type`)
-			}
-			return result, nil
-		}
-		return sqlConn.ExecContext(ctx, stmt.String(), model.Values()...)
-	case sequel.CompositeKeyer:
-		names, idxs, _ := v.CompositeKey()
-		columns := model.Columns()
-		stmt := strpool.AcquireString()
-		defer strpool.ReleaseString(stmt)
-		if !override {
-			stmt.WriteString("INSERT IGNORE INTO " + dbName(model) + model.TableName() + " (" + strings.Join(columns, ",") + ") VALUES (" + strings.Repeat(",?", len(columns))[1:] + ");")
-		} else {
-			dict := make(map[string]struct{})
-			for i := range append(names, omittedFields...) {
-				dict[omittedFields[i]] = struct{}{}
-			}
-			noOfCols := len(columns)
-			stmt.WriteString("INSERT INTO " + dbName(model) + model.TableName() + " (" + strings.Join(columns, ",") + ") VALUES (" + strings.Repeat(",?", noOfCols)[1:] + ") ON DUPLICATE KEY UPDATE ")
-			// Exclude composite key, don't update it
-			for i := len(idxs) - 1; i >= 0; i-- {
-				columns = append(columns[:idxs[i]], columns[idxs[i]+1:]...)
-			}
-			for i := range columns {
-				if _, ok := dict[columns[i]]; ok {
-					continue
-				}
-				if i < noOfCols-1 {
-					stmt.WriteString(columns[i] + " =VALUES(" + columns[i] + "),")
-				} else {
-					stmt.WriteString(columns[i] + " =VALUES(" + columns[i] + ")")
-				}
-			}
-			clear(dict)
-		}
-		return sqlConn.ExecContext(ctx, stmt.String(), model.Values()...)
-	default:
-		panic("unreachable")
-	}
-}
-{{ end }}
 
 // Upsert is a helper function to upsert multiple records.
 func Upsert[T sequel.KeyValuer[T], Ptr sequel.Scanner[T]](ctx context.Context, sqlConn sequel.DB, data []T, override bool, omittedFields ...string) (sql.Result, error) {
@@ -432,27 +305,23 @@ func FindByPK[T sequel.KeyValuer[T], Ptr sequel.KeyValueScanner[T]](ctx context.
 	case sequel.PrimaryKeyer:
 		columns := model.Columns()
 		pkName, _, pk := v.PK()
-		return sqlConn.QueryRowContext(ctx, "SELECT "+strings.Join(columns, ",")+" FROM "+dbName(model)+model.TableName()+" WHERE "+pkName+" = {{ quoteVar 1 }} LIMIT 1;", pk).Scan(model.Addrs()...)
+		return sqlConn.QueryRowContext(ctx, "SELECT "+strings.Join(columns, ",")+" FROM "+dbName(model)+model.TableName()+" WHERE "+pkName+" = $1 LIMIT 1;", pk).Scan(model.Addrs()...)
 	case sequel.CompositeKeyer:
 		columns := model.Columns()
 		names, _, keys := v.CompositeKey()
-		{{ if isStaticVar -}}
-		return sqlConn.QueryRowContext(ctx, "SELECT "+strings.Join(columns, ",")+" FROM "+dbName(model)+model.TableName()+" WHERE "+strings.Join(names, " = {{ quoteVar 1 }} AND ")+" = {{ quoteVar 1 }} LIMIT 1;", keys...).Scan(model.Addrs()...)
-		{{ else -}}
 		stmt := strpool.AcquireString()
 		defer strpool.ReleaseString(stmt)
-		stmt.WriteString("SELECT "+strings.Join(columns, ",")+" FROM "+dbName(model)+model.TableName()+" WHERE ")
+		stmt.WriteString("SELECT " + strings.Join(columns, ",") + " FROM " + dbName(model) + model.TableName() + " WHERE ")
 		max := len(names)
 		for i := 1; i <= max; i++ {
 			if i > 1 {
-				stmt.WriteString(" AND "+ names[i]+" = "+ wrapVar(i))
+				stmt.WriteString(" AND " + names[i] + " = " + wrapVar(i))
 			} else {
-				stmt.WriteString(names[i]+" = "+ wrapVar(i))
+				stmt.WriteString(names[i] + " = " + wrapVar(i))
 			}
 		}
 		stmt.WriteString(" LIMIT 1;")
 		return sqlConn.QueryRowContext(ctx, stmt.String(), keys...).Scan(model.Addrs()...)
-		{{ end -}}
 	default:
 		panic("unreachable")
 	}
@@ -476,21 +345,17 @@ func UpdateByPK[T sequel.KeyValuer[T]](ctx context.Context, sqlConn sequel.DB, m
 		values := model.Values()
 		columns := model.Columns()
 		values = append(values[:pkIdx], append(values[pkIdx+1:], pk)...)
-		{{ if isStaticVar -}}
-		return sqlConn.ExecContext(ctx, "UPDATE "+dbName(model)+model.TableName()+" SET "+strings.Join(columns, " = {{ quoteVar 1 }},")+" = {{ quoteVar 1 }} WHERE "+pkName+" = {{ quoteVar 1 }};", append(values, pk)...)
-		{{ else -}}
 		stmt := strpool.AcquireString()
 		defer strpool.ReleaseString(stmt)
-		stmt.WriteString("UPDATE "+dbName(model)+model.TableName()+" SET ")
+		stmt.WriteString("UPDATE " + dbName(model) + model.TableName() + " SET ")
 		for idx := range columns {
 			if idx > 0 {
 				stmt.WriteByte(',')
 			}
-			stmt.WriteString(columns[idx] +" = "+ wrapVar(idx + 1))
+			stmt.WriteString(columns[idx] + " = " + wrapVar(idx+1))
 		}
-		stmt.WriteString(" WHERE "+ pkName +" = "+ wrapVar(len(columns) + 2)+ ";")
+		stmt.WriteString(" WHERE " + pkName + " = " + wrapVar(len(columns)+2) + ";")
 		return sqlConn.ExecContext(ctx, stmt.String(), append(values, pk)...)
-		{{ end -}}
 	default:
 		panic("unreachable")
 	}
@@ -509,26 +374,22 @@ func DeleteByPK[T sequel.KeyValuer[T]](ctx context.Context, sqlConn sequel.DB, m
 		return sqlConn.ExecContext(ctx, v.DeleteByPKStmt(), pk)
 	case sequel.PrimaryKeyer:
 		pkName, _, pk := v.PK()
-		return sqlConn.ExecContext(ctx, "DELETE FROM "+dbName(model)+model.TableName()+" WHERE "+pkName+" = {{ quoteVar 1 }};", pk)
+		return sqlConn.ExecContext(ctx, "DELETE FROM "+dbName(model)+model.TableName()+" WHERE "+pkName+" = $1;", pk)
 	case sequel.CompositeKeyer:
 		names, _, keys := v.CompositeKey()
-		{{ if isStaticVar -}}
-		return sqlConn.ExecContext(ctx, "DELETE FROM "+dbName(model)+model.TableName()+" WHERE "+strings.Join(names, " = ? AND ")+" = ?;", keys...)
-		{{ else -}}
 		stmt := strpool.AcquireString()
 		defer strpool.ReleaseString(stmt)
-		stmt.WriteString("DELETE FROM "+dbName(model)+model.TableName()+" WHERE ")
+		stmt.WriteString("DELETE FROM " + dbName(model) + model.TableName() + " WHERE ")
 		max := len(names)
 		for i := 1; i <= max; i++ {
 			if i == 1 {
-				stmt.WriteString(names[i]+" = "+ wrapVar(i))
+				stmt.WriteString(names[i] + " = " + wrapVar(i))
 			} else {
-				stmt.WriteString(" AND "+ names[i]+" = "+ wrapVar(i))
+				stmt.WriteString(" AND " + names[i] + " = " + wrapVar(i))
 			}
 		}
 		stmt.WriteByte(';')
 		return sqlConn.ExecContext(ctx, stmt.String(), keys...)
-		{{ end -}}
 	default:
 		panic("unreachable")
 	}
@@ -539,20 +400,20 @@ type SelectStmt struct {
 	FromTable string
 	Where     sequel.WhereClause
 	OrderBy   []sequel.OrderByClause
-	GroupBy	  []string
-	Offset	  uint64
+	GroupBy   []string
+	Offset    uint64
 	Limit     uint16
 }
 
 type SQLStatement struct {
-	Query	  string
+	Query     string
 	Arguments []any
 }
 
 func QueryStmt[T any, Ptr interface {
 	*T
 	sequel.Scanner[T]
-}, Stmt interface{ 
+}, Stmt interface {
 	SelectStmt | SQLStatement
 }](ctx context.Context, sqlConn sequel.DB, stmt Stmt) ([]T, error) {
 	var (
@@ -564,7 +425,7 @@ func QueryStmt[T any, Ptr interface {
 	case SelectStmt:
 		var (
 			blr = AcquireStmt()
-			v T
+			v   T
 		)
 		defer ReleaseStmt(blr)
 		blr.WriteString("SELECT ")
@@ -643,11 +504,11 @@ func QueryStmt[T any, Ptr interface {
 }
 
 type UpdateStmt struct {
-	Table	string
-	Set		[]sequel.SetClause
-	Where	sequel.WhereClause
+	Table   string
+	Set     []sequel.SetClause
+	Where   sequel.WhereClause
 	OrderBy []sequel.OrderByClause
-	Limit	uint16
+	Limit   uint16
 }
 
 type DeleteStmt struct {
@@ -751,20 +612,13 @@ type sqlStmt struct {
 
 func (s *sqlStmt) Var(query string, value any) {
 	s.pos++
-	{{ if isStaticVar -}}
-	s.WriteString(query+"?")
-	{{ else -}}
-	s.WriteString(query+wrapVar(s.pos))
-	{{ end -}}
+	s.WriteString(query + wrapVar(s.pos))
 	s.args = append(s.args, value)
 }
 
 func (s *sqlStmt) Vars(query string, values []any) {
 	s.WriteString(query)
 	noOfLen := len(values)
-	{{ if isStaticVar -}}
-	s.WriteString("(" + strings.Repeat(",?", noOfLen)[1:] + ")")
-	{{ else -}}
 	s.WriteByte('(')
 	i := s.pos
 	s.pos += noOfLen
@@ -772,7 +626,6 @@ func (s *sqlStmt) Vars(query string, values []any) {
 		s.WriteString(wrapVar(i + 1))
 	}
 	s.WriteByte(')')
-	{{ end -}}
 	s.args = append(s.args, values...)
 }
 
@@ -793,8 +646,6 @@ func dbName(model any) string {
 	return ""
 }
 
-{{ if not isStaticVar -}}
 func wrapVar(i int) string {
-	return {{ quote varRune }}+ strconv.Itoa(i)
+	return `$` + strconv.Itoa(i)
 }
-{{ end }}

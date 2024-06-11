@@ -22,6 +22,7 @@ func (Model) InsertVarQuery() string {
 func (Model) Columns() []string {
 	return []string{"name", "f", "id", "n"}
 }
+func (Model) HasPK()      {}
 func (Model) IsAutoIncr() {}
 func (v Model) PK() ([]string, []int, []any) {
 	return []string{"id"}, []int{2}, []any{int64(v.ID)}

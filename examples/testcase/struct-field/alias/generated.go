@@ -24,6 +24,7 @@ func (AliasStruct) InsertVarQuery() string {
 func (AliasStruct) Columns() []string {
 	return []string{"b", "Id", "header", "raw", "text", "null_str", "created", "updated"}
 }
+func (AliasStruct) HasPK() {}
 func (v AliasStruct) PK() ([]string, []int, []any) {
 	return []string{"Id"}, []int{1}, []any{int64(v.pk.ID)}
 }

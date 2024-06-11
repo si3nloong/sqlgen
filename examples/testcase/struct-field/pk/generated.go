@@ -23,6 +23,7 @@ func (Car) InsertVarQuery() string {
 func (Car) Columns() []string {
 	return []string{"id", "no", "color", "manuc_date"}
 }
+func (Car) HasPK() {}
 func (v Car) PK() ([]string, []int, []any) {
 	return []string{"id"}, []int{0}, []any{(driver.Valuer)(v.ID)}
 }
@@ -66,6 +67,7 @@ func (User) InsertVarQuery() string {
 func (User) Columns() []string {
 	return []string{"id", "name", "age", "email"}
 }
+func (User) HasPK() {}
 func (v User) PK() ([]string, []int, []any) {
 	return []string{"id"}, []int{0}, []any{int64(v.ID)}
 }
@@ -109,6 +111,7 @@ func (House) InsertVarQuery() string {
 func (House) Columns() []string {
 	return []string{"id", "no"}
 }
+func (House) HasPK() {}
 func (v House) PK() ([]string, []int, []any) {
 	return []string{"id"}, []int{0}, []any{int64(v.ID)}
 }

@@ -1,4 +1,4 @@
-package db
+package mysqldb
 
 import (
 	"github.com/si3nloong/sqlgen/sequel"

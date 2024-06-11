@@ -24,6 +24,7 @@ func (Binary) InsertVarQuery() string {
 func (Binary) Columns() []string {
 	return []string{"id", "str", "time"}
 }
+func (Binary) HasPK() {}
 func (v Binary) PK() ([]string, []int, []any) {
 	return []string{"id"}, []int{0}, []any{types.BinaryMarshaler(v.ID)}
 }
