@@ -23,14 +23,14 @@ type Keyer interface {
 	HasPK()
 }
 
-type PrimaryKeyer interface {
-	Keyer
-	PK() (string, int, any)
-}
-
 type AutoIncrKeyer interface {
 	PrimaryKeyer
 	IsAutoIncr()
+}
+
+type PrimaryKeyer interface {
+	Keyer
+	PK() (string, int, any)
 }
 
 type CompositeKeyer interface {
