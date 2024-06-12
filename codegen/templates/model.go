@@ -39,6 +39,10 @@ type Model struct {
 	// HasRow bool
 }
 
+func (m Model) IsCompositeKey() bool {
+	return len(m.Keys) > 1
+}
+
 func (m Model) HasNotOnlyPK() bool {
 	for i := range m.Fields {
 		if !lo.Contains(m.Keys, m.Fields[i]) {

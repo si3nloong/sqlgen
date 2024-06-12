@@ -25,8 +25,8 @@ func (Binary) Columns() []string {
 	return []string{"id", "str", "time"}
 }
 func (Binary) HasPK() {}
-func (v Binary) PK() ([]string, []int, []any) {
-	return []string{"id"}, []int{0}, []any{types.BinaryMarshaler(v.ID)}
+func (v Binary) PK() (string, int, any) {
+	return "id", 0, types.BinaryMarshaler(v.ID)
 }
 func (Binary) FindByPKStmt() string {
 	return "SELECT id,str,time FROM binary WHERE id = ? LIMIT 1;"

@@ -22,23 +22,24 @@ import (
 
 func TestMain(m *testing.M) {
 	// openSqlConn("mysql")
+	ctx := context.Background()
 	dbConn = mustValue(openSqlConn("mysql"))
 	defer dbConn.Close()
 
 	// m1 := autopk.Model{}
 	// sqlutil.FindOne(nil, nil, &m1)
 
-	// if err := mysqldb.Migrate[autopk.Model](context.TODO(), dbConn); err != nil {
-	// 	panic(err)
-	// }
+	if _, err := dbConn.ExecContext(ctx, autopk.Model{}.CreateTableStmt()); err != nil {
+		panic(err)
+	}
 
-	// if err := mysqldb.Migrate[pointer.Ptr](context.TODO(), dbConn); err != nil {
-	// 	panic(err)
-	// }
+	if _, err := dbConn.ExecContext(ctx, pointer.Ptr{}.CreateTableStmt()); err != nil {
+		panic(err)
+	}
 
-	// if err := mysqldb.Migrate[array.Array](context.TODO(), dbConn); err != nil {
-	// 	panic(err)
-	// }
+	if _, err := dbConn.ExecContext(ctx, array.Array{}.CreateTableStmt()); err != nil {
+		panic(err)
+	}
 
 	// mustNot(dbConn.Exec("DROP TABLE `model`;"))
 	// mustNot(dbConn.Exec(createTableModel))

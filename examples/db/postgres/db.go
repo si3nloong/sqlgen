@@ -38,7 +38,8 @@ func InsertOne[T sequel.TableColumnValuer[T], Ptr interface {
 		columns, values := model.Columns(), model.Values()
 		stmt := strpool.AcquireString()
 		defer strpool.ReleaseString(stmt)
-		stmt.WriteString("INSERT INTO " + dbName(model) + model.TableName() + " (" + strings.Join(columns, ",") + ") VALUES (")
+		cols := strings.Join(columns, ",")
+		stmt.WriteString("INSERT INTO " + dbName(model) + model.TableName() + " (" + cols + ") VALUES (")
 		for i := range values {
 			if i > 0 {
 				stmt.WriteString("," + wrapVar(i+1))
@@ -47,64 +48,105 @@ func InsertOne[T sequel.TableColumnValuer[T], Ptr interface {
 				stmt.WriteString(wrapVar(i + 1))
 			}
 		}
-		stmt.WriteString(") RETURNING " + strings.Join(columns, ",") + ";")
+		stmt.WriteString(") RETURNING " + cols + ";")
 		return sqlConn.QueryRowContext(ctx, stmt.String(), values...).Scan(model.Addrs()...)
 	}
 }
 
 // Insert is a helper function to insert multiple records.
-func Insert[T sequel.TableColumnValuer[T]](ctx context.Context, sqlConn sequel.DB, data []T) (sql.Result, error) {
+func Insert[T sequel.TableColumnValuer[T], Ptr sequel.Scanner[T]](ctx context.Context, sqlConn sequel.DB, data []T) (sql.Result, error) {
 	noOfData := len(data)
 	if noOfData == 0 {
 		return new(sequel.EmptyResult), nil
 	}
 
 	var (
-		model    = data[0]
-		columns  = model.Columns()
-		idx      = -1
-		noOfCols = len(columns)
-		args     = make([]any, 0, noOfCols*len(data))
+		model   = data[0]
+		columns = model.Columns()
+		stmt    = strpool.AcquireString()
 	)
-
-	switch vi := any(model).(type) {
-	case sequel.Inserter:
-		query := strings.Repeat(vi.InsertVarQuery()+",", len(data))
-		return sqlConn.ExecContext(ctx, "INSERT INTO "+dbName(model)+model.TableName()+" ("+strings.Join(columns, ",")+") VALUES "+query[:len(query)-1]+";", args...)
-
-	case sequel.AutoIncrKeyer:
-		_, idx, _ = vi.PK()
-		noOfCols--
-		columns = append(columns[:idx], columns[idx+1:]...)
-	}
-
-	var stmt = strpool.AcquireString()
 	defer strpool.ReleaseString(stmt)
-	stmt.WriteString("INSERT INTO " + dbName(model) + model.TableName() + " (" + strings.Join(columns, ",") + ") VALUES ")
-	for i := range data {
-		if i > 0 {
-			stmt.WriteString(",(")
-		} else {
-			stmt.WriteByte('(')
-		}
-		offset := noOfCols * i
-		for j := 0; j < noOfCols; j++ {
-			if j > 0 {
-				stmt.WriteByte(',')
+
+	switch v := any(model).(type) {
+	case sequel.AutoIncrKeyer:
+		_, idx, _ := v.PK()
+		columns = append(columns[:idx], columns[idx+1:]...)
+		noOfCols := len(columns)
+		cols := strings.Join(columns, ",")
+		args := make([]any, 0, noOfCols*noOfData)
+		stmt.WriteString("INSERT INTO " + dbName(model) + model.TableName() + " (" + cols + ") VALUES ")
+		var offset int
+		for i := range data {
+			if i > 0 {
+				stmt.WriteString(",(")
+			} else {
+				stmt.WriteByte('(')
 			}
-			stmt.WriteString(wrapVar(offset + 1 + j))
-		}
-		if idx > -1 {
+			offset = noOfCols * i
+			for j := 0; j < noOfCols; j++ {
+				if j > 0 {
+					stmt.WriteString("," + wrapVar(offset+1+j))
+				} else {
+					stmt.WriteString(wrapVar(offset + 1 + j))
+				}
+			}
+			stmt.WriteByte(')')
 			values := data[i].Values()
 			values = append(values[:idx], values[idx+1:]...)
 			args = append(args, values...)
-		} else {
+		}
+		stmt.WriteString(" RETURNING " + cols + ";")
+		rows, err := sqlConn.QueryContext(ctx, stmt.String(), args...)
+		if err != nil {
+			return nil, err
+		}
+		defer rows.Close()
+		var i int64
+		for rows.Next() {
+			if err := rows.Scan(Ptr(&data[i]).Addrs()...); err != nil {
+				return nil, err
+			}
+			i++
+		}
+		return sequel.NewRowsAffectedResult(i), rows.Close()
+	default:
+		noOfCols := len(columns)
+		cols := strings.Join(columns, ",")
+		args := make([]any, 0, noOfCols*noOfData)
+		stmt.WriteString("INSERT INTO " + dbName(model) + model.TableName() + " (" + cols + ") VALUES ")
+		var offset int
+		for i := range data {
+			if i > 0 {
+				stmt.WriteString(",(")
+			} else {
+				stmt.WriteByte('(')
+			}
+			offset = noOfCols * i
+			for j := 0; j < noOfCols; j++ {
+				if j > 0 {
+					stmt.WriteString("," + wrapVar(offset+1+j))
+				} else {
+					stmt.WriteString(wrapVar(offset + 1 + j))
+				}
+			}
+			stmt.WriteByte(')')
 			args = append(args, data[i].Values()...)
 		}
-		stmt.WriteByte(')')
+		stmt.WriteString(" RETURNING " + cols + ";")
+		rows, err := sqlConn.QueryContext(ctx, stmt.String(), args...)
+		if err != nil {
+			return nil, err
+		}
+		defer rows.Close()
+		var i int64
+		for rows.Next() {
+			if err := rows.Scan(Ptr(&data[i]).Addrs()...); err != nil {
+				return nil, err
+			}
+			i++
+		}
+		return sequel.NewRowsAffectedResult(i), rows.Close()
 	}
-	stmt.WriteByte(';')
-	return sqlConn.ExecContext(ctx, stmt.String(), args...)
 }
 
 type UpsertOptions struct {
@@ -221,14 +263,14 @@ func Upsert[T sequel.KeyValuer[T], Ptr sequel.Scanner[T]](ctx context.Context, s
 		}
 		placeholder := ",(" + strings.Repeat(",?", noOfCols)[1:] + ")"
 		for i := 0; i < noOfData; i++ {
-			values := data[i].Values()
-			values = append(values[:idx], values[idx+1:]...)
-			args = append(args, values...)
 			if i > 0 {
 				stmt.WriteString(placeholder)
 			} else {
 				stmt.WriteString(placeholder[1:])
 			}
+			values := data[i].Values()
+			values = append(values[:idx], values[idx+1:]...)
+			args = append(args, values...)
 		}
 	case sequel.PrimaryKeyer:
 		pkName, _, _ := v.PK()
@@ -240,12 +282,12 @@ func Upsert[T sequel.KeyValuer[T], Ptr sequel.Scanner[T]](ctx context.Context, s
 		}
 		placeholder := ",(" + strings.Repeat(",?", noOfCols)[1:] + ")"
 		for i := 0; i < noOfData; i++ {
-			args = append(args, data[i].Values()...)
 			if i > 0 {
 				stmt.WriteString(placeholder)
 			} else {
 				stmt.WriteString(placeholder[1:])
 			}
+			args = append(args, data[i].Values()...)
 		}
 	case sequel.CompositeKeyer:
 		if override {
@@ -255,12 +297,12 @@ func Upsert[T sequel.KeyValuer[T], Ptr sequel.Scanner[T]](ctx context.Context, s
 		}
 		placeholder := ",(" + strings.Repeat(",?", noOfCols)[1:] + ")"
 		for i := 0; i < noOfData; i++ {
-			args = append(args, data[i].Values()...)
 			if i > 0 {
 				stmt.WriteString(placeholder)
 			} else {
 				stmt.WriteString(placeholder[1:])
 			}
+			args = append(args, data[i].Values()...)
 		}
 		_, idxs, _ := v.CompositeKey()
 		// Exclude primary key, don't update it
@@ -270,7 +312,7 @@ func Upsert[T sequel.KeyValuer[T], Ptr sequel.Scanner[T]](ctx context.Context, s
 	}
 	if override {
 		stmt.WriteString(" ON DUPLICATE KEY UPDATE ")
-		/* don't update primary key when we do upsert */
+		// Don't update primary key when we do upsert
 		omitDict := map[string]struct{}{}
 		for i := range omittedFields {
 			omitDict[omittedFields[i]] = struct{}{}

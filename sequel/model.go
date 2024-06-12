@@ -30,15 +30,10 @@ type PrimaryKeyer interface {
 
 type AutoIncrKeyer interface {
 	PrimaryKeyer
-	AutoIncr()
+	IsAutoIncr()
 }
 
 type CompositeKeyer interface {
 	Keyer
 	CompositeKey() ([]string, []int, []any)
-}
-
-type DuplicateKeyer interface {
-	// Allow to support composite key, this only applicable in postgres
-	OnDuplicateKey() []string
 }

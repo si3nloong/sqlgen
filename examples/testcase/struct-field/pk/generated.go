@@ -24,8 +24,8 @@ func (Car) Columns() []string {
 	return []string{"id", "no", "color", "manuc_date"}
 }
 func (Car) HasPK() {}
-func (v Car) PK() ([]string, []int, []any) {
-	return []string{"id"}, []int{0}, []any{(driver.Valuer)(v.ID)}
+func (v Car) PK() (string, int, any) {
+	return "id", 0, (driver.Valuer)(v.ID)
 }
 func (Car) FindByPKStmt() string {
 	return "SELECT id,no,color,manuc_date FROM car WHERE id = ? LIMIT 1;"
@@ -68,8 +68,8 @@ func (User) Columns() []string {
 	return []string{"id", "name", "age", "email"}
 }
 func (User) HasPK() {}
-func (v User) PK() ([]string, []int, []any) {
-	return []string{"id"}, []int{0}, []any{int64(v.ID)}
+func (v User) PK() (string, int, any) {
+	return "id", 0, int64(v.ID)
 }
 func (User) FindByPKStmt() string {
 	return "SELECT id,name,age,email FROM user WHERE id = ? LIMIT 1;"
@@ -112,8 +112,8 @@ func (House) Columns() []string {
 	return []string{"id", "no"}
 }
 func (House) HasPK() {}
-func (v House) PK() ([]string, []int, []any) {
-	return []string{"id"}, []int{0}, []any{int64(v.ID)}
+func (v House) PK() (string, int, any) {
+	return "id", 0, int64(v.ID)
 }
 func (House) FindByPKStmt() string {
 	return "SELECT id,no FROM house WHERE id = ? LIMIT 1;"

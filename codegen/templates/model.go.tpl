@@ -42,9 +42,15 @@ func ({{ $structName }}) HasPK() {}
 {{ if .IsAutoIncr -}}
 func ({{ $structName }}) IsAutoIncr() {}
 {{ end -}}
-func (v {{ $structName }}) PK() ([]string, []int, []any) {
+{{ if .IsCompositeKey -}}
+func (v {{ $structName }}) CompositeKey() ([]string, []int, []any) {
 	return {{ `[]string{` }}{{ range $i, $f := .Keys }}{{- if $i }}{{ ", " }}{{ end }}{{ quote (quoteIdentifier $f.ColumnName) }}{{ end }}{{- `},` }}{{ `[]int{` }}{{ range $i, $f := .Keys }}{{- if $i }}{{ ", " }}{{ end }}{{ $f.Index }}{{ end }}{{- `},` }}{{ `[]any{` }}{{ range $i, $f := .Keys }}{{- if $i }}{{ ", " }}{{ end }}{{ castAs $f }}{{ end }}{{- `}` }}
 }
+{{ else -}}
+func (v {{ $structName }}) PK() (string, int, any) {
+	return {{ quote (quoteIdentifier (index .Keys 0).ColumnName) }}{{ ", " }}{{ (index .Keys 0).Index }}{{ ", " }}{{ castAs (index .Keys 0) }}
+}
+{{ end -}}
 {{ if (and (not $hasCustomTabler) ($hasNotOnlyPK)) -}}
 {{- /* If it has static table and columns other than key */ -}}
 func ({{ $structName }}) FindByPKStmt() string {

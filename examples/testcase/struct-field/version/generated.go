@@ -24,8 +24,8 @@ func (Version) Columns() []string {
 	return []string{"id"}
 }
 func (Version) HasPK() {}
-func (v Version) PK() ([]string, []int, []any) {
-	return []string{"id"}, []int{0}, []any{(driver.Valuer)(v.ID)}
+func (v Version) PK() (string, int, any) {
+	return "id", 0, (driver.Valuer)(v.ID)
 }
 func (v Version) Values() []any {
 	return []any{(driver.Valuer)(v.ID)}

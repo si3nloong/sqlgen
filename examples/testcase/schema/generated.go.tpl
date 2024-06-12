@@ -84,8 +84,8 @@ func (C) Columns() []string {
 	return []string{"id"}
 }
 func (C) HasPK() {}
-func (v C) PK() ([]string, []int, []any) {
-	return []string{"id"}, []int{0}, []any{int64(v.ID)}
+func (v C) PK() (string, int, any) {
+	return "id", 0, int64(v.ID)
 }
 func (v C) Values() []any {
 	return []any{int64(v.ID)}
@@ -113,8 +113,8 @@ func (D) Columns() []string {
 	return []string{"id"}
 }
 func (D) HasPK() {}
-func (v D) PK() ([]string, []int, []any) {
-	return []string{"id"}, []int{0}, []any{(driver.Valuer)(v.ID)}
+func (v D) PK() (string, int, any) {
+	return "id", 0, (driver.Valuer)(v.ID)
 }
 func (v D) Values() []any {
 	return []any{(driver.Valuer)(v.ID)}

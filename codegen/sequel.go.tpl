@@ -1,21 +1,10 @@
 package sequel
 
-import "database/sql/driver"
-
 // For rename table name
 type Table struct{}
 
-type Keyer interface {
-	PK() (columnName string, pos int, value driver.Value)
-}
-
-type AutoIncrKeyer interface {
-	Keyer
-	IsAutoIncr()
-}
-
-type DuplicateKeyer interface {
-	OnDuplicateKey() string
+type DatabaseNamer interface {
+	DatabaseName() string
 }
 
 type Tabler interface {
@@ -28,4 +17,23 @@ type Columner interface {
 
 type Valuer interface {
 	Values() []any
+}
+
+type Keyer interface {
+	HasPK()
+}
+
+type PrimaryKeyer interface {
+	Keyer
+	PK() (string, int, any)
+}
+
+type AutoIncrKeyer interface {
+	PrimaryKeyer
+	IsAutoIncr()
+}
+
+type CompositeKeyer interface {
+	Keyer
+	CompositeKey() ([]string, []int, []any)
 }
