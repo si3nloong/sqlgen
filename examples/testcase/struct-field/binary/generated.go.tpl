@@ -24,7 +24,8 @@ func (Binary) InsertVarQuery() string {
 func (Binary) Columns() []string {
 	return []string{"id", "str", "time"}
 }
-func (v Binary) PK() (columnName string, pos int, value driver.Value) {
+func (Binary) HasPK() {}
+func (v Binary) PK() (string, int, any) {
 	return "id", 0, types.BinaryMarshaler(v.ID)
 }
 func (Binary) FindByPKStmt() string {

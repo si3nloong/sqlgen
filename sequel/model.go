@@ -1,7 +1,5 @@
 package sequel
 
-import "database/sql/driver"
-
 // For rename table name
 type Table struct{}
 
@@ -22,15 +20,20 @@ type Valuer interface {
 }
 
 type Keyer interface {
-	PK() (columnName string, pos int, value driver.Value)
+	HasPK()
 }
 
 type AutoIncrKeyer interface {
-	Keyer
+	PrimaryKeyer
 	IsAutoIncr()
 }
 
-type DuplicateKeyer interface {
-	// Allow to support composite key, this only applicable in postgres
-	OnDuplicateKey() []string
+type PrimaryKeyer interface {
+	Keyer
+	PK() (string, int, any)
+}
+
+type CompositeKeyer interface {
+	Keyer
+	CompositeKey() ([]string, []int, []any)
 }

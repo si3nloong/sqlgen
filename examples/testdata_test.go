@@ -18,9 +18,25 @@ func TestAll(t *testing.T) {
 	const rootDir = "./testcase"
 
 	if err := codegen.Generate(&config.Config{
+		Source:     []string{},
+		SkipHeader: true,
+		Driver:     config.Postgres,
+		Database: &config.DatabaseConfig{
+			Package: "postgresdb",
+			Dir:     "./db/postgres",
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := codegen.Generate(&config.Config{
 		Source:              []string{rootDir + "/**/*.go", rootDir + "/db/*"},
 		SkipHeader:          true,
 		OmitQuoteIdentifier: true,
+		Database: &config.DatabaseConfig{
+			Package: "mysqldb",
+			Dir:     "./db/mysql",
+		},
 		Exec: config.ExecConfig{
 			SkipEmpty: false,
 		},

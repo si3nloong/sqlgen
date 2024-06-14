@@ -23,7 +23,8 @@ func (Version) InsertVarQuery() string {
 func (Version) Columns() []string {
 	return []string{"id"}
 }
-func (v Version) PK() (columnName string, pos int, value driver.Value) {
+func (Version) HasPK() {}
+func (v Version) PK() (string, int, any) {
 	return "id", 0, (driver.Valuer)(v.ID)
 }
 func (v Version) Values() []any {
