@@ -39,7 +39,7 @@ func InsertOne[T sequel.TableColumnValuer[T], Ptr interface {
 		stmt := strpool.AcquireString()
 		defer strpool.ReleaseString(stmt)
 		cols := strings.Join(columns, ",")
-		stmt.WriteString("INSERT INTO " + dbName(model) + model.TableName() + " (" + cols + ") VALUES (")
+		stmt.WriteString("INSERT INTO " + DbTable(model) + " (" + cols + ") VALUES (")
 		for i := range values {
 			if i > 0 {
 				stmt.WriteString("," + wrapVar(i+1))
@@ -74,7 +74,7 @@ func Insert[T sequel.TableColumnValuer[T], Ptr sequel.Scanner[T]](ctx context.Co
 		noOfCols := len(columns)
 		cols := strings.Join(columns, ",")
 		args := make([]any, 0, noOfCols*noOfData)
-		stmt.WriteString("INSERT INTO " + dbName(model) + model.TableName() + " (" + cols + ") VALUES ")
+		stmt.WriteString("INSERT INTO " + DbTable(model) + " (" + cols + ") VALUES ")
 		var offset int
 		for i := range data {
 			if i > 0 {
@@ -113,7 +113,7 @@ func Insert[T sequel.TableColumnValuer[T], Ptr sequel.Scanner[T]](ctx context.Co
 		noOfCols := len(columns)
 		cols := strings.Join(columns, ",")
 		args := make([]any, 0, noOfCols*noOfData)
-		stmt.WriteString("INSERT INTO " + dbName(model) + model.TableName() + " (" + cols + ") VALUES ")
+		stmt.WriteString("INSERT INTO " + DbTable(model) + " (" + cols + ") VALUES ")
 		var offset int
 		for i := range data {
 			if i > 0 {
@@ -185,7 +185,7 @@ func UpsertOne[T sequel.KeyValuer[T], Ptr sequel.KeyValueScanner[T]](ctx context
 		stmt := strpool.AcquireString()
 		noOfCols := len(columns)
 		defer strpool.ReleaseString(stmt)
-		stmt.WriteString("INSERT INTO " + dbName(model) + model.TableName() + " (" + strings.Join(columns, ",") + ") VALUES (")
+		stmt.WriteString("INSERT INTO " + DbTable(model) + " (" + strings.Join(columns, ",") + ") VALUES (")
 		for i := 0; i < noOfCols; i++ {
 			if i > 0 {
 				stmt.WriteString("," + wrapVar(i))
@@ -257,9 +257,9 @@ func Upsert[T sequel.KeyValuer[T], Ptr sequel.Scanner[T]](ctx context.Context, s
 		// Don't include auto increment primary key on INSERT
 		columns = append(columns[:idx], columns[idx+1:]...)
 		if override {
-			stmt.WriteString("INSERT INTO " + dbName(model) + model.TableName() + " (" + strings.Join(columns, ",") + ") VALUES ")
+			stmt.WriteString("INSERT INTO " + DbTable(model) + " (" + strings.Join(columns, ",") + ") VALUES ")
 		} else {
-			stmt.WriteString("INSERT IGNORE INTO " + dbName(model) + model.TableName() + " (" + strings.Join(columns, ",") + ") VALUES ")
+			stmt.WriteString("INSERT IGNORE INTO " + DbTable(model) + " (" + strings.Join(columns, ",") + ") VALUES ")
 		}
 		placeholder := ",(" + strings.Repeat(",?", noOfCols)[1:] + ")"
 		for i := 0; i < noOfData; i++ {
@@ -276,9 +276,9 @@ func Upsert[T sequel.KeyValuer[T], Ptr sequel.Scanner[T]](ctx context.Context, s
 		pkName, _, _ := v.PK()
 		omittedFields = append(omittedFields, pkName)
 		if override {
-			stmt.WriteString("INSERT INTO " + dbName(model) + model.TableName() + " (" + strings.Join(columns, ",") + ") VALUES ")
+			stmt.WriteString("INSERT INTO " + DbTable(model) + " (" + strings.Join(columns, ",") + ") VALUES ")
 		} else {
-			stmt.WriteString("INSERT IGNORE INTO " + dbName(model) + model.TableName() + " (" + strings.Join(columns, ",") + ") VALUES ")
+			stmt.WriteString("INSERT IGNORE INTO " + DbTable(model) + " (" + strings.Join(columns, ",") + ") VALUES ")
 		}
 		placeholder := ",(" + strings.Repeat(",?", noOfCols)[1:] + ")"
 		for i := 0; i < noOfData; i++ {
@@ -291,9 +291,9 @@ func Upsert[T sequel.KeyValuer[T], Ptr sequel.Scanner[T]](ctx context.Context, s
 		}
 	case sequel.CompositeKeyer:
 		if override {
-			stmt.WriteString("INSERT INTO " + dbName(model) + model.TableName() + " (" + strings.Join(columns, ",") + ") VALUES ")
+			stmt.WriteString("INSERT INTO " + DbTable(model) + " (" + strings.Join(columns, ",") + ") VALUES ")
 		} else {
-			stmt.WriteString("INSERT IGNORE INTO " + dbName(model) + model.TableName() + " (" + strings.Join(columns, ",") + ") VALUES ")
+			stmt.WriteString("INSERT IGNORE INTO " + DbTable(model) + " (" + strings.Join(columns, ",") + ") VALUES ")
 		}
 		placeholder := ",(" + strings.Repeat(",?", noOfCols)[1:] + ")"
 		for i := 0; i < noOfData; i++ {
@@ -347,13 +347,13 @@ func FindByPK[T sequel.KeyValuer[T], Ptr sequel.KeyValueScanner[T]](ctx context.
 	case sequel.PrimaryKeyer:
 		columns := model.Columns()
 		pkName, _, pk := v.PK()
-		return sqlConn.QueryRowContext(ctx, "SELECT "+strings.Join(columns, ",")+" FROM "+dbName(model)+model.TableName()+" WHERE "+pkName+" = $1 LIMIT 1;", pk).Scan(model.Addrs()...)
+		return sqlConn.QueryRowContext(ctx, "SELECT "+strings.Join(columns, ",")+" FROM "+DbTable(model)+" WHERE "+pkName+" = $1 LIMIT 1;", pk).Scan(model.Addrs()...)
 	case sequel.CompositeKeyer:
 		columns := model.Columns()
 		names, _, keys := v.CompositeKey()
 		stmt := strpool.AcquireString()
 		defer strpool.ReleaseString(stmt)
-		stmt.WriteString("SELECT " + strings.Join(columns, ",") + " FROM " + dbName(model) + model.TableName() + " WHERE ")
+		stmt.WriteString("SELECT " + strings.Join(columns, ",") + " FROM " + DbTable(model) + " WHERE ")
 		max := len(names)
 		for i := 1; i <= max; i++ {
 			if i > 1 {
@@ -389,7 +389,7 @@ func UpdateByPK[T sequel.KeyValuer[T]](ctx context.Context, sqlConn sequel.DB, m
 		values = append(values[:pkIdx], append(values[pkIdx+1:], pk)...)
 		stmt := strpool.AcquireString()
 		defer strpool.ReleaseString(stmt)
-		stmt.WriteString("UPDATE " + dbName(model) + model.TableName() + " SET ")
+		stmt.WriteString("UPDATE " + DbTable(model) + " SET ")
 		for idx := range columns {
 			if idx > 0 {
 				stmt.WriteByte(',')
@@ -416,12 +416,12 @@ func DeleteByPK[T sequel.KeyValuer[T]](ctx context.Context, sqlConn sequel.DB, m
 		return sqlConn.ExecContext(ctx, v.DeleteByPKStmt(), pk)
 	case sequel.PrimaryKeyer:
 		pkName, _, pk := v.PK()
-		return sqlConn.ExecContext(ctx, "DELETE FROM "+dbName(model)+model.TableName()+" WHERE "+pkName+" = $1;", pk)
+		return sqlConn.ExecContext(ctx, "DELETE FROM "+DbTable(model)+" WHERE "+pkName+" = $1;", pk)
 	case sequel.CompositeKeyer:
 		names, _, keys := v.CompositeKey()
 		stmt := strpool.AcquireString()
 		defer strpool.ReleaseString(stmt)
-		stmt.WriteString("DELETE FROM " + dbName(model) + model.TableName() + " WHERE ")
+		stmt.WriteString("DELETE FROM " + DbTable(model) + " WHERE ")
 		max := len(names)
 		for i := 1; i <= max; i++ {
 			if i == 1 {
@@ -486,7 +486,7 @@ func QueryStmt[T any, Ptr interface {
 		} else {
 			switch vj := any(v).(type) {
 			case sequel.Tabler:
-				blr.WriteString(" FROM " + dbName(v) + vj.TableName())
+				blr.WriteString(" FROM " + DbTable(vj))
 			default:
 				return nil, fmt.Errorf("missing table name for model %T", v)
 			}
@@ -570,7 +570,7 @@ func ExecStmt[T any, Stmt interface {
 	switch vi := any(stmt).(type) {
 	case UpdateStmt:
 		if vt, ok := any(v).(sequel.Tabler); ok {
-			blr.WriteString("UPDATE " + dbName(v) + vt.TableName())
+			blr.WriteString("UPDATE " + DbTable(vt))
 		} else {
 			blr.WriteString("UPDATE " + dbName(v) + vi.Table)
 		}
@@ -602,7 +602,7 @@ func ExecStmt[T any, Stmt interface {
 
 	case DeleteStmt:
 		if vt, ok := any(v).(sequel.Tabler); ok {
-			blr.WriteString("DELETE FROM " + dbName(v) + vt.TableName())
+			blr.WriteString("DELETE FROM " + DbTable(vt))
 		} else {
 			blr.WriteString("DELETE FROM " + dbName(v) + vi.FromTable)
 		}
@@ -679,6 +679,13 @@ func (s *sqlStmt) Reset() {
 	s.args = nil
 	s.pos = 0
 	s.Builder.Reset()
+}
+
+func DbTable[T sequel.Tabler](model T) string {
+	if v, ok := any(model).(sequel.DatabaseNamer); ok {
+		return v.DatabaseName() + "." + model.TableName()
+	}
+	return model.TableName()
 }
 
 func dbName(model any) string {

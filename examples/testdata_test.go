@@ -30,6 +30,18 @@ func TestAll(t *testing.T) {
 	}
 
 	if err := codegen.Generate(&config.Config{
+		Source:     []string{},
+		SkipHeader: true,
+		Driver:     config.Sqlite,
+		Database: &config.DatabaseConfig{
+			Package: "sqlite",
+			Dir:     "./db/sqlite",
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := codegen.Generate(&config.Config{
 		Source:              []string{rootDir + "/**/*.go", rootDir + "/db/*"},
 		SkipHeader:          true,
 		OmitQuoteIdentifier: true,
