@@ -30,7 +30,9 @@ func dataType(f *templates.Field) (dataType string) {
 		switch t.String() {
 		case "rune":
 			return "CHAR(1)" + notNull(len(ptrs) > 0)
-		case "bool", "int8":
+		case "bool":
+			return "BOOL" + notNull(len(ptrs) > 0)
+		case "int8":
 			return "TINYINT" + notNull(len(ptrs) > 0)
 		case "int16":
 			return "SMALLINT" + notNull(len(ptrs) > 0)
