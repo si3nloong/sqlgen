@@ -608,14 +608,14 @@ func (s *sqlStmt) Reset() {
 }
 
 func DbTable[T sequel.Tabler](model T) string {
-	if v, ok := any(model).(sequel.DatabaseNamer); ok {
+	if v, ok := any(model).(sequel.Databaser); ok {
 		return v.DatabaseName() + "." + model.TableName()
 	}
 	return model.TableName()
 }
 
 func dbName(model any) string {
-	if v, ok := model.(sequel.DatabaseNamer); ok {
+	if v, ok := model.(sequel.Databaser); ok {
 		return v.DatabaseName() + "."
 	}
 	return ""

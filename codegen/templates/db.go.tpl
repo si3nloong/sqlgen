@@ -240,10 +240,13 @@ func Insert[T sequel.TableColumnValuer[T]](ctx context.Context, sqlConn sequel.D
 
 {{ if eq driver "postgres" -}}
 {{- /* postgres */ -}}
+type duplicateKeyer interface {
+	DuplicateKeys() []string
+}
 type upsertOpts struct {
-	doNothing       bool
-	omitFields      []string
-	onDuplicateKeys []string
+	doNothing     bool
+	omitFields    []string
+	duplicateKeys []string
 }
 type UpsertOption func(*upsertOpts)
 
@@ -261,7 +264,7 @@ func WithOmitFields(fields []string) UpsertOption {
 
 func WithDuplicateKeys(keys []string) UpsertOption {
 	return func(opt *upsertOpts) {
-		opt.onDuplicateKeys = keys
+		opt.duplicateKeys = keys
 	}
 }
 
@@ -271,39 +274,54 @@ func UpsertOne[T sequel.KeyValuer[T], Ptr sequel.KeyValueScanner[T]](ctx context
 		opts[i](&opt)
 	}
 
-	stmt := strpool.AcquireString()
+	var (
+		stmt     = strpool.AcquireString()
+		columns  = model.Columns()
+		noOfCols = len(columns)
+		values   = model.Values()
+	)
 	defer strpool.ReleaseString(stmt)
-	columns := model.Columns()
-	noOfCols := len(columns)
 
 	switch v := any(model).(type) {
 	case sequel.AutoIncrKeyer:
-		_, idx, _ := v.PK()
+		pkName, idx, _ := v.PK()
+		opt.omitFields = append(opt.omitFields, pkName)
+		columns = append(columns[:idx], columns[idx+1:]...)
+		noOfCols = len(columns)
+		values = append(values[:idx], values[idx+1:]...)
 		// Don't include auto increment primary key on INSERT
-		stmt.WriteString("INSERT INTO " + dbName(model) + model.TableName() + " (" + strings.Join(append(columns[:idx], columns[idx+1:]...), ",") + ") VALUES (")
-	case sequel.Keyer:
-		stmt.WriteString("INSERT INTO " + dbName(model) + model.TableName() + " (" + strings.Join(columns, ",") + ") VALUES (")
+		stmt.WriteString("INSERT INTO " + DbTable(model) + " (" + strings.Join(columns, ",") + ") VALUES (")
+	case sequel.PrimaryKeyer:
+		pkName, _, _ := v.PK()
+		opt.omitFields = append(opt.omitFields, pkName)
+		stmt.WriteString("INSERT INTO " + DbTable(model) + " (" + strings.Join(columns, ",") + ") VALUES (")
+	case sequel.CompositeKeyer:
+		keyNames, _, _ := v.CompositeKey()
+		opt.omitFields = append(opt.omitFields, keyNames...)
+		stmt.WriteString("INSERT INTO " + DbTable(model) + " (" + strings.Join(columns, ",") + ") VALUES (")
 	default:
 		panic("unreachable")
 	}
-	for i := 0; i < noOfCols; i++ {
-		if i > 0 {
+	for i := 1; i <= noOfCols; i++ {
+		if i > 1 {
 			stmt.WriteString("," + wrapVar(i))
 		} else {
 			stmt.WriteString(wrapVar(i))
 		}
 	}
-	if len(opt.onDuplicateKeys) > 0 {
-		stmt.WriteString(") ON CONFLICT(" + strings.Join(opt.onDuplicateKeys, ",") + ")")
+	if len(opt.duplicateKeys) > 0 {
+		stmt.WriteString(") ON CONFLICT(" + strings.Join(opt.duplicateKeys, ",") + ")")
 	} else {
 		switch vi := any(model).(type) {
+		case duplicateKeyer:
+			keys := vi.DuplicateKeys()
+			opt.omitFields = append(opt.omitFields, keys...)
+			stmt.WriteString(") ON CONFLICT(" + strings.Join(keys, ",") + ")")
 		case sequel.PrimaryKeyer:
 			pkName, _, _ := vi.PK()
-			opt.omitFields = append(opt.omitFields, pkName)
 			stmt.WriteString(") ON CONFLICT(" + pkName + ")")
 		case sequel.CompositeKeyer:
 			names, _, _ := vi.CompositeKey()
-			opt.omitFields = append(opt.omitFields, names...)
 			stmt.WriteString(") ON CONFLICT(" + strings.Join(names, ",") + ")")
 		default:
 			panic("unreachable")
@@ -330,8 +348,8 @@ func UpsertOne[T sequel.KeyValuer[T], Ptr sequel.KeyValueScanner[T]](ctx context
 		}
 		clear(omitDict)
 	}
-	stmt.WriteString(" RETURNING " + strings.Join(columns, ",") + ";")
-	return sqlConn.QueryRowContext(ctx, stmt.String(), model.Values()...).Scan(model.Addrs()...)
+	stmt.WriteString(" RETURNING " + strings.Join(model.Columns(), ",") + ";")
+	return sqlConn.QueryRowContext(ctx, stmt.String(), values...).Scan(model.Addrs()...)
 }
 
 // Upsert is a helper function to upsert multiple records.
@@ -357,9 +375,12 @@ func Upsert[T sequel.KeyValuer[T], Ptr sequel.Scanner[T]](ctx context.Context, s
 	defer strpool.ReleaseString(stmt)
 	switch v := any(model).(type) {
 	case sequel.AutoIncrKeyer:
-		_, idx, _ := v.PK()
+		pkName, idx, _ := v.PK()
+		opt.omitFields = append(opt.omitFields, pkName)
+		columns = append(columns[:idx], columns[idx+1:]...)
+		noOfCols = len(columns)
 		// Don't include auto increment primary key on INSERT
-		stmt.WriteString("INSERT INTO " + dbName(model) + model.TableName() + " (" + strings.Join(append(columns[:idx], columns[idx+1:]...), ",") + ") VALUES ")
+		stmt.WriteString("INSERT INTO " + DbTable(model) + " (" + strings.Join(columns, ",") + ") VALUES ")
 		for i := 0; i < noOfData; i++ {
 			if i > 0 {
 				stmt.WriteByte(',')
@@ -377,8 +398,31 @@ func Upsert[T sequel.KeyValuer[T], Ptr sequel.Scanner[T]](ctx context.Context, s
 			values = append(values[:idx], values[idx+1:]...)
 			args = append(args, values...)
 		}
-	case sequel.Keyer:
-		stmt.WriteString("INSERT INTO " + dbName(model) + model.TableName() + " (" + strings.Join(columns, ",") + ") VALUES ")
+		columns = model.Columns()
+		noOfCols = len(columns)
+	case sequel.PrimaryKeyer:
+		pkName, _, _ := v.PK()
+		opt.omitFields = append(opt.omitFields, pkName)
+		stmt.WriteString("INSERT INTO " + DbTable(model) + " (" + strings.Join(columns, ",") + ") VALUES ")
+		for i := 0; i < noOfData; i++ {
+			if i > 0 {
+				stmt.WriteByte(',')
+			}
+			stmt.WriteByte('(')
+			for j := 1; j <= noOfCols; j++ {
+				if j > 1 {
+					stmt.WriteString("," + wrapVar((i*noOfCols)+j))
+				} else {
+					stmt.WriteString(wrapVar((i * noOfCols) + j))
+				}
+			}
+			stmt.WriteByte(')')
+			args = append(args, data[i].Values()...)
+		}
+	case sequel.CompositeKeyer:
+		keyNames, _, _ := v.CompositeKey()
+		opt.omitFields = append(opt.omitFields, keyNames...)
+		stmt.WriteString("INSERT INTO " + DbTable(model) + " (" + strings.Join(columns, ",") + ") VALUES ")
 		for i := 0; i < noOfData; i++ {
 			if i > 0 {
 				stmt.WriteByte(',')
@@ -397,13 +441,16 @@ func Upsert[T sequel.KeyValuer[T], Ptr sequel.Scanner[T]](ctx context.Context, s
 	default:
 		panic("unreachable")
 	}
-	if len(opt.onDuplicateKeys) > 0 {
-		stmt.WriteString(" ON CONFLICT(" + strings.Join(opt.onDuplicateKeys, ",") + ")")
+	if len(opt.duplicateKeys) > 0 {
+		stmt.WriteString(" ON CONFLICT(" + strings.Join(opt.duplicateKeys, ",") + ")")
 	} else {
 		switch vi := any(model).(type) {
+		case duplicateKeyer:
+			keys := vi.DuplicateKeys()
+			opt.omitFields = append(opt.omitFields, keys...)
+			stmt.WriteString(" ON CONFLICT(" + strings.Join(keys, ",") + ")")
 		case sequel.PrimaryKeyer:
 			pkName, _, _ := vi.PK()
-			opt.omitFields = append(opt.omitFields, pkName)
 			stmt.WriteString(" ON CONFLICT(" + pkName + ")")
 		case sequel.CompositeKeyer:
 			names, _, _ := vi.CompositeKey()
@@ -411,7 +458,6 @@ func Upsert[T sequel.KeyValuer[T], Ptr sequel.Scanner[T]](ctx context.Context, s
 			// for i := len(idxs) - 1; i >= 0; i-- {
 			// 	columns = append(columns[:idxs[i]], columns[idxs[i]+1:]...)
 			// }
-			opt.omitFields = append(opt.omitFields, names...)
 			stmt.WriteString(" ON CONFLICT(" + strings.Join(names, ",") + ")")
 		default:
 			panic("unreachable")
@@ -437,8 +483,20 @@ func Upsert[T sequel.KeyValuer[T], Ptr sequel.Scanner[T]](ctx context.Context, s
 		}
 		clear(omitDict)
 	}
-	stmt.WriteString(" RETURNING " + strings.Join(columns, ",") + ";")
-	return sqlConn.ExecContext(ctx, stmt.String(), args...)
+	stmt.WriteString(" RETURNING " + strings.Join(model.Columns(), ",") + ";")
+	rows, err := sqlConn.QueryContext(ctx, stmt.String(), args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var i int64
+	for rows.Next() {
+		if err := rows.Scan(Ptr(&data[i]).Addrs()...); err != nil {
+			return nil, err
+		}
+		i++
+	}
+	return sequel.NewRowsAffectedResult(i), rows.Close()
 }
 {{ else }}
 func UpsertOne[T sequel.KeyValuer[T], Ptr sequel.KeyValueScanner[T]](ctx context.Context, sqlConn sequel.DB, model Ptr, override bool, omittedFields ...string) (sql.Result, error) {
@@ -997,14 +1055,14 @@ func (s *sqlStmt) Reset() {
 }
 
 func DbTable[T sequel.Tabler](model T) string {
-	if v, ok := any(model).(sequel.DatabaseNamer); ok {
+	if v, ok := any(model).(sequel.Databaser); ok {
 		return v.DatabaseName() + "." + model.TableName()
 	}
 	return model.TableName()
 }
 
 func dbName(model any) string {
-	if v, ok := model.(sequel.DatabaseNamer); ok {
+	if v, ok := model.(sequel.Databaser); ok {
 		return v.DatabaseName() + "."
 	}
 	return ""
