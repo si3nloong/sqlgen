@@ -282,14 +282,15 @@ func Upsert[T sequel.KeyValuer[T], Ptr sequel.Scanner[T]](ctx context.Context, s
 		for i := range omittedFields {
 			omitDict[omittedFields[i]] = struct{}{}
 		}
+		noOfCols = len(columns)
 		for i := range columns {
 			if _, ok := omitDict[columns[i]]; ok {
 				continue
 			}
 			if i < noOfCols-1 {
-				stmt.WriteString(columns[i] + " =VALUES(" + columns[i] + "),")
+				stmt.WriteString(columns[i] + "=VALUES(" + columns[i] + "),")
 			} else {
-				stmt.WriteString(columns[i] + " =VALUES(" + columns[i] + ")")
+				stmt.WriteString(columns[i] + "=VALUES(" + columns[i] + ")")
 			}
 		}
 		clear(omitDict)
@@ -607,14 +608,14 @@ func (s *sqlStmt) Reset() {
 }
 
 func DbTable[T sequel.Tabler](model T) string {
-	if v, ok := any(model).(sequel.DatabaseNamer); ok {
+	if v, ok := any(model).(sequel.Databaser); ok {
 		return v.DatabaseName() + "." + model.TableName()
 	}
 	return model.TableName()
 }
 
 func dbName(model any) string {
-	if v, ok := model.(sequel.DatabaseNamer); ok {
+	if v, ok := model.(sequel.Databaser); ok {
 		return v.DatabaseName() + "."
 	}
 	return ""

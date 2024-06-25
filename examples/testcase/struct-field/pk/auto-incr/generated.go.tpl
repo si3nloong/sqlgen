@@ -8,7 +8,7 @@ import (
 )
 
 func (v Model) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS `AutoIncrPK` (`name` VARCHAR(255) NOT NULL,`f` TINYINT NOT NULL,`id` INTEGER NOT NULL AUTO_INCREMENT,`n` BIGINT NOT NULL,PRIMARY KEY (`id`));"
+	return "CREATE TABLE IF NOT EXISTS `AutoIncrPK` (`name` VARCHAR(255) NOT NULL,`f` BOOL NOT NULL,`id` INTEGER NOT NULL AUTO_INCREMENT,`n` BIGINT NOT NULL,PRIMARY KEY (`id`));"
 }
 func (Model) TableName() string {
 	return "AutoIncrPK"

@@ -10,7 +10,7 @@ import (
 )
 
 func (v Composite) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS `composite` (`flag` TINYINT NOT NULL,`col_1` VARCHAR(255) NOT NULL,`col_2` VARCHAR(36),PRIMARY KEY (`col_1`,`col_2`));"
+	return "CREATE TABLE IF NOT EXISTS `composite` (`flag` BOOL NOT NULL,`col_1` VARCHAR(255) NOT NULL,`col_2` VARCHAR(36),PRIMARY KEY (`col_1`,`col_2`));"
 }
 func (Composite) TableName() string {
 	return "composite"

@@ -26,7 +26,7 @@ func (v B) Values() []any {
 	return []any{int64(v.ID), (driver.Valuer)(v.Value), string(v.N)}
 }
 func (v *B) Addrs() []any {
-	return []any{types.Integer(&v.ID), &v.Value, types.String(&v.N)}
+	return []any{types.Integer(&v.ID), types.JSONUnmarshaler(&v.Value), types.String(&v.N)}
 }
 func (v B) GetID() sequel.ColumnValuer[int64] {
 	return sequel.Column("id", v.ID, func(val int64) driver.Value { return int64(val) })
