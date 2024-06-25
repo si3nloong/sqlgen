@@ -69,7 +69,7 @@ func (v Customer) Values() []any {
 	return []any{int64(v.ID), int64(v.Age), (driver.Valuer)(v.Name), (driver.Valuer)(v.Address), encoding.MarshalStringList(v.Nicknames), string(v.Status), time.Time(v.JoinAt)}
 }
 func (v *Customer) Addrs() []any {
-	return []any{types.Integer(&v.ID), types.Integer(&v.Age), (sql.Scanner)(&v.Name), &v.Address, types.StringList(&v.Nicknames), types.String(&v.Status), (*time.Time)(&v.JoinAt)}
+	return []any{types.Integer(&v.ID), types.Integer(&v.Age), (sql.Scanner)(&v.Name), types.JSONUnmarshaler(&v.Address), types.StringList(&v.Nicknames), types.String(&v.Status), (*time.Time)(&v.JoinAt)}
 }
 func (v Customer) GetID() sequel.ColumnValuer[int64] {
 	return sequel.Column("id", v.ID, func(val int64) driver.Value { return int64(val) })

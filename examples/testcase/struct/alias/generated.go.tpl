@@ -31,7 +31,7 @@ func (v A) GetTime() sequel.ColumnValuer[civil.Time] {
 }
 
 func (v C) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS `c` (`string` VARCHAR(255) NOT NULL,`valid` TINYINT NOT NULL);"
+	return "CREATE TABLE IF NOT EXISTS `c` (`string` VARCHAR(255) NOT NULL,`valid` BOOL NOT NULL);"
 }
 func (C) TableName() string {
 	return "c"
