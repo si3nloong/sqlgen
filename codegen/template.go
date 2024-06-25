@@ -1,7 +1,6 @@
 package codegen
 
 import (
-	"fmt"
 	"go/types"
 	"path/filepath"
 	"strings"
@@ -40,8 +39,10 @@ func castAs(impPkgs *Package) func(*templates.Field, ...string) string {
 			return typ.Encoder.Format(impPkgs, name)
 		} else if f.IsTextMarshaler {
 			return Expr("github.com/si3nloong/sqlgen/sequel/types.TextMarshaler(%s)").Format(impPkgs, name)
+		} else {
+			return Expr("github.com/si3nloong/sqlgen/sequel/types.JSONMarshaler(%s)").Format(impPkgs, name)
 		}
-		return name
+		// return name
 	}
 }
 
@@ -58,8 +59,9 @@ func addrOf(impPkgs *Package) func(string, *templates.Field) string {
 			return typ.Decoder.Format(impPkgs, name)
 		} else if f.IsTextUnmarshaler {
 			return Expr("github.com/si3nloong/sqlgen/sequel/types.TextUnmarshaler(%s)").Format(impPkgs, name)
+		} else {
+			return Expr("github.com/si3nloong/sqlgen/sequel/types.JSONUnmarshaler(%s)").Format(impPkgs, name)
 		}
-		return name
 	}
 }
 
@@ -198,89 +200,4 @@ func getFieldTypeValue(impPkgs *Package, prefix string) func(*templates.Field) F
 			Value:    "v." + f.GoName,
 		}
 	}
-}
-
-func inspectDataType(f *templates.Field) (dataType string, null bool) {
-	var (
-		ptrs = make([]types.Type, 0)
-		t    = f.Type
-		prev types.Type
-	)
-	for t != nil {
-		switch v := t.(type) {
-		case *types.Pointer:
-			prev = v.Elem()
-			ptrs = append(ptrs, v)
-		case *types.Basic:
-			prev = t.Underlying()
-		case *types.Named:
-			prev = t.Underlying()
-		default:
-			break
-		}
-
-		switch t.String() {
-		case "rune":
-			return "CHAR(1)", len(ptrs) > 0
-		case "bool":
-			return "TINYINT", len(ptrs) > 0
-		case "int8":
-			return "TINYINT", len(ptrs) > 0
-		case "int16":
-			return "SMALLINT", len(ptrs) > 0
-		case "int32":
-			return "MEDIUMINT", len(ptrs) > 0
-		case "int64":
-			return "BIGINT", len(ptrs) > 0
-		case "int":
-			return "INTEGER", len(ptrs) > 0
-		case "uint8":
-			return "TINYINT UNSIGNED", len(ptrs) > 0
-		case "uint16":
-			return "SMALLINT UNSIGNED", len(ptrs) > 0
-		case "uint32":
-			return "MEDIUMINT UNSIGNED", len(ptrs) > 0
-		case "uint64":
-			return "BIGINT UNSIGNED", len(ptrs) > 0
-		case "uint":
-			return "INTEGER UNSIGNED", len(ptrs) > 0
-		case "float32":
-			return "FLOAT", len(ptrs) > 0
-		case "float64":
-			return "FLOAT", len(ptrs) > 0
-		case "cloud.google.com/go/civil.Date":
-			return "DATE", len(ptrs) > 0
-		case "time.Time":
-			var size int
-			if f.Size > 0 && f.Size < 7 {
-				size = f.Size
-			}
-			if size > 0 {
-				return fmt.Sprintf("DATETIME(%d)", size), len(ptrs) > 0
-			}
-			return "DATETIME", len(ptrs) > 0
-		case "string":
-			size := 255
-			if f.Size > 0 {
-				size = f.Size
-			}
-			return fmt.Sprintf("VARCHAR(%d)", size), len(ptrs) > 0
-		case "[]byte":
-			return "BLOB", true
-		case "[16]byte":
-			if f.IsBinary {
-				return "BINARY(16)", len(ptrs) > 0
-			}
-			return "VARCHAR(36)", len(ptrs) > 0
-		default:
-			if strings.HasPrefix(t.String(), "[]") {
-				return "JSON", len(ptrs) > 0
-			}
-		}
-		if prev == t {
-			break
-		}
-		t = prev
-	}
-	return "VARCHAR(255)", len(ptrs) > 0
 }
