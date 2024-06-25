@@ -1,6 +1,7 @@
 package mysql
 
 import (
+	"database/sql"
 	"fmt"
 	"go/types"
 	"strings"
@@ -64,13 +65,13 @@ func dataType(f *templates.Field) (dataType string) {
 			if size > 0 {
 				return fmt.Sprintf("DATETIME(%d)", size) + notNull(len(ptrs) > 0)
 			}
-			return "DATETIME" + notNull(len(ptrs) > 0)
+			return "DATETIME" + notNullDefault(ptrs, sql.RawBytes(`NOW()`))
 		case "string":
 			size := 255
 			if f.Size > 0 {
 				size = f.Size
 			}
-			return fmt.Sprintf("VARCHAR(%d)", size) + notNull(len(ptrs) > 0)
+			return fmt.Sprintf("VARCHAR(%d)", size) + notNullDefault(ptrs)
 		case "[]byte":
 			return "BLOB" + notNull(len(ptrs) > 0)
 		case "[16]byte":
@@ -101,4 +102,15 @@ func notNull(isNull bool) string {
 		return ""
 	}
 	return " NOT NULL"
+}
+
+func notNullDefault(ptrs []types.Type, defaultValue ...any) string {
+	if len(ptrs) > 0 {
+		return ""
+	}
+	str := " NOT NULL"
+	if len(defaultValue) > 0 {
+		str += fmt.Sprintf(" DEFAULT %v", defaultValue[0])
+	}
+	return str
 }
