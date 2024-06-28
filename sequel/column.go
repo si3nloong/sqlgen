@@ -10,6 +10,15 @@ type ColumnValuer[T any] interface {
 	Value() driver.Value
 }
 
+type SQLFunc func(placeholder string) string
+
+type SQLColumnValuer[T any] interface {
+	ColumnName() string
+	Convert(T) driver.Value
+	Value() driver.Value
+	SQLValue(placeholder string) string
+}
+
 type column[T any] struct {
 	colName string
 	convert ConvertFunc[T]
@@ -30,4 +39,22 @@ func (c column[T]) Value() driver.Value {
 
 func Column[T any](columnName string, value T, convert ConvertFunc[T]) ColumnValuer[T] {
 	return column[T]{colName: columnName, v: convert(value), convert: convert}
+}
+
+type sqlCol[T any] struct {
+	column[T]
+	sqlValuer SQLFunc
+}
+
+func (c sqlCol[T]) SQLValue(placeholder string) string {
+	return c.sqlValuer(placeholder)
+}
+
+func SQLColumn[T any](columnName string, value T, sqlValue SQLFunc, convert ConvertFunc[T]) SQLColumnValuer[T] {
+	c := sqlCol[T]{}
+	c.colName = columnName
+	c.v = convert(value)
+	c.convert = convert
+	c.sqlValuer = sqlValue
+	return c
 }

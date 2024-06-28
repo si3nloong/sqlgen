@@ -15,31 +15,31 @@ import (
 
 	"github.com/jaswdr/faker"
 	mysqldb "github.com/si3nloong/sqlgen/examples/db/mysql"
-	"github.com/si3nloong/sqlgen/examples/testcase/struct-field/array"
 	autopk "github.com/si3nloong/sqlgen/examples/testcase/struct-field/pk/auto-incr"
 	"github.com/si3nloong/sqlgen/examples/testcase/struct-field/pointer"
+	"github.com/si3nloong/sqlgen/examples/testcase/struct-field/slice"
 )
 
 func TestMain(m *testing.M) {
 	// openSqlConn("mysql")
-	ctx := context.Background()
+	// ctx := context.Background()
 	dbConn = mustValue(openSqlConn("mysql"))
 	defer dbConn.Close()
 
 	// m1 := autopk.Model{}
 	// sqlutil.FindOne(nil, nil, &m1)
 
-	if _, err := dbConn.ExecContext(ctx, autopk.Model{}.CreateTableStmt()); err != nil {
-		panic(err)
-	}
+	// if _, err := dbConn.ExecContext(ctx, autopk.Model{}.CreateTableStmt()); err != nil {
+	// 	panic(err)
+	// }
 
-	if _, err := dbConn.ExecContext(ctx, pointer.Ptr{}.CreateTableStmt()); err != nil {
-		panic(err)
-	}
+	// if _, err := dbConn.ExecContext(ctx, pointer.Ptr{}.CreateTableStmt()); err != nil {
+	// 	panic(err)
+	// }
 
-	if _, err := dbConn.ExecContext(ctx, array.Array{}.CreateTableStmt()); err != nil {
-		panic(err)
-	}
+	// if _, err := dbConn.ExecContext(ctx, array.Array{}.CreateTableStmt()); err != nil {
+	// 	panic(err)
+	// }
 
 	// mustNot(dbConn.Exec("DROP TABLE `model`;"))
 	// mustNot(dbConn.Exec(createTableModel))
@@ -75,7 +75,7 @@ func TestInsert(t *testing.T) {
 	// })
 
 	t.Run("Insert with array", func(t *testing.T) {
-		r1 := array.Array{}
+		r1 := slice.Slice{}
 		r1.StrList = []string{"a", "b", "c"}
 		r1.CustomStrList = append(r1.CustomStrList, "x", "y", "z")
 		r1.BoolList = append(r1.BoolList, true, false, true, false, true)
@@ -85,13 +85,13 @@ func TestInsert(t *testing.T) {
 		r1.F32List = append(r1.F32List, -88.114, 188.123, -1.0538)
 		r1.F64List = append(r1.F64List, -88.114, 188.123, -1.0538)
 
-		inputs := []array.Array{r1}
+		inputs := []slice.Slice{r1}
 		result, err := mysqldb.Insert(context.TODO(), dbConn, inputs)
 		require.NoError(t, err)
 		lastID := mustValue(result.LastInsertId())
 		require.NotEmpty(t, lastID)
 
-		ptr := array.Array{}
+		ptr := slice.Slice{}
 		ptr.ID = uint64(lastID)
 		mustNoError(mysqldb.FindByPK(ctx, dbConn, &ptr))
 	})
@@ -152,7 +152,7 @@ func TestInsert(t *testing.T) {
 		require.NotZero(t, *ptr.F64)
 
 		ptrs, err := mysqldb.QueryStmt[pointer.Ptr](ctx, dbConn, mysqldb.SelectStmt{
-			Select:    ptr.Columns(),
+			Select:    ptr.ColumnNames(),
 			FromTable: ptr.TableName(),
 			Where:     mysqldb.Equal(ptr.GetInt(), &i),
 			Limit:     3,

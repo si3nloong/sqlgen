@@ -18,21 +18,15 @@ type autoIncrKeyInserter interface {
 	sequel.SingleInserter
 }
 
-type primaryKeyInserter interface {
-	sequel.PrimaryKeyer
-	sequel.SingleInserter
-}
-
 func InsertOne[T sequel.TableColumnValuer[T], Ptr interface {
 	sequel.TableColumnValuer[T]
-	sequel.Scanner[T]
+	sequel.PtrScanner[T]
 }](ctx context.Context, sqlConn sequel.DB, model Ptr) (sql.Result, error) {
 	switch v := any(model).(type) {
 	case autoIncrKeyInserter:
 		_, idx, _ := v.PK()
-		values := model.Values()
-		values = append(values[:idx], values[idx+1:]...)
-		result, err := sqlConn.ExecContext(ctx, v.InsertOneStmt(), values...)
+		query, args := v.InsertOneStmt()
+		result, err := sqlConn.ExecContext(ctx, query, args...)
 		if err != nil {
 			return nil, err
 		}
@@ -51,10 +45,11 @@ func InsertOne[T sequel.TableColumnValuer[T], Ptr interface {
 			return nil, errors.New(`sqlgen: invalid auto increment data type`)
 		}
 		return result, nil
-	case primaryKeyInserter:
-		return sqlConn.ExecContext(ctx, v.InsertOneStmt(), model.Values()...)
+	case sequel.SingleInserter:
+		query, args := v.InsertOneStmt()
+		return sqlConn.ExecContext(ctx, query, args...)
 	default:
-		columns, values := model.Columns(), model.Values()
+		columns, values := model.ColumnNames(), model.Values()
 		return sqlConn.ExecContext(ctx, "INSERT INTO "+DbTable(model)+" ("+strings.Join(columns, ",")+") VALUES ("+strings.Repeat(",?", len(columns))[1:]+");", values...)
 	}
 }
@@ -68,7 +63,7 @@ func Insert[T sequel.TableColumnValuer[T]](ctx context.Context, sqlConn sequel.D
 
 	var (
 		model   = data[0]
-		columns = model.Columns()
+		columns = model.ColumnNames()
 		stmt    = strpool.AcquireString()
 	)
 	defer strpool.ReleaseString(stmt)
@@ -117,7 +112,7 @@ func UpsertOne[T sequel.KeyValuer[T], Ptr sequel.KeyValueScanner[T]](ctx context
 	switch v := any(model).(type) {
 	case sequel.PrimaryKeyer:
 		pkName, idx, _ := v.PK()
-		columns := model.Columns()
+		columns := model.ColumnNames()
 		stmt := strpool.AcquireString()
 		defer strpool.ReleaseString(stmt)
 		if !override {
@@ -165,7 +160,7 @@ func UpsertOne[T sequel.KeyValuer[T], Ptr sequel.KeyValueScanner[T]](ctx context
 		return sqlConn.ExecContext(ctx, stmt.String(), model.Values()...)
 	case sequel.CompositeKeyer:
 		names, idxs, _ := v.CompositeKey()
-		columns := model.Columns()
+		columns := model.ColumnNames()
 		stmt := strpool.AcquireString()
 		defer strpool.ReleaseString(stmt)
 		if !override {
@@ -200,7 +195,7 @@ func UpsertOne[T sequel.KeyValuer[T], Ptr sequel.KeyValueScanner[T]](ctx context
 }
 
 // Upsert is a helper function to upsert multiple records.
-func Upsert[T sequel.KeyValuer[T], Ptr sequel.Scanner[T]](ctx context.Context, sqlConn sequel.DB, data []T, override bool, omittedFields ...string) (sql.Result, error) {
+func Upsert[T sequel.KeyValuer[T], Ptr sequel.PtrScanner[T]](ctx context.Context, sqlConn sequel.DB, data []T, override bool, omittedFields ...string) (sql.Result, error) {
 	noOfData := len(data)
 	if noOfData == 0 {
 		return new(sequel.EmptyResult), nil
@@ -208,7 +203,7 @@ func Upsert[T sequel.KeyValuer[T], Ptr sequel.Scanner[T]](ctx context.Context, s
 
 	var (
 		model    = data[0]
-		columns  = model.Columns()
+		columns  = model.ColumnNames()
 		noOfCols = len(columns)
 		args     = make([]any, 0, noOfCols*noOfData)
 	)
@@ -308,14 +303,14 @@ type primaryKeyFinder interface {
 func FindByPK[T sequel.KeyValuer[T], Ptr sequel.KeyValueScanner[T]](ctx context.Context, sqlConn sequel.DB, model Ptr) error {
 	switch v := any(model).(type) {
 	case primaryKeyFinder:
-		_, _, pk := v.PK()
-		return sqlConn.QueryRowContext(ctx, v.FindByPKStmt(), pk).Scan(model.Addrs()...)
+		query, args := v.FindByPKStmt()
+		return sqlConn.QueryRowContext(ctx, query, args...).Scan(model.Addrs()...)
 	case sequel.PrimaryKeyer:
-		columns := model.Columns()
+		columns := Columns(model)
 		pkName, _, pk := v.PK()
 		return sqlConn.QueryRowContext(ctx, "SELECT "+strings.Join(columns, ",")+" FROM "+DbTable(model)+" WHERE "+pkName+" = ? LIMIT 1;", pk).Scan(model.Addrs()...)
 	case sequel.CompositeKeyer:
-		columns := model.Columns()
+		columns := Columns(model)
 		names, _, keys := v.CompositeKey()
 		return sqlConn.QueryRowContext(ctx, "SELECT "+strings.Join(columns, ",")+" FROM "+DbTable(model)+" WHERE "+strings.Join(names, " = ? AND ")+" = ? LIMIT 1;", keys...).Scan(model.Addrs()...)
 	default:
@@ -323,23 +318,17 @@ func FindByPK[T sequel.KeyValuer[T], Ptr sequel.KeyValueScanner[T]](ctx context.
 	}
 }
 
-type primaryKeyUpdater interface {
-	sequel.PrimaryKeyer
-	sequel.KeyUpdater
-}
-
 // UpdateByPK is to update single record using primary key.
 func UpdateByPK[T sequel.KeyValuer[T]](ctx context.Context, sqlConn sequel.DB, model T) (sql.Result, error) {
 	switch v := any(model).(type) {
-	case primaryKeyUpdater:
-		_, pkIdx, pk := v.PK()
-		values := model.Values()
-		values = append(values[:pkIdx], append(values[pkIdx+1:], pk)...)
-		return sqlConn.ExecContext(ctx, v.UpdateByPKStmt(), values...)
+	case sequel.KeyUpdater:
+		query, args := v.UpdateByPKStmt()
+		return sqlConn.ExecContext(ctx, query, args...)
 	case sequel.PrimaryKeyer:
 		pkName, pkIdx, pk := v.PK()
+		columns := model.ColumnNames()
+		columns = append(columns[:pkIdx], columns[pkIdx+1:]...)
 		values := model.Values()
-		columns := model.Columns()
 		values = append(values[:pkIdx], append(values[pkIdx+1:], pk)...)
 		return sqlConn.ExecContext(ctx, "UPDATE "+DbTable(model)+" SET "+strings.Join(columns, " = ?,")+" = ? WHERE "+pkName+" = ?;", append(values, pk)...)
 	default:
@@ -347,17 +336,12 @@ func UpdateByPK[T sequel.KeyValuer[T]](ctx context.Context, sqlConn sequel.DB, m
 	}
 }
 
-type primaryKeyDeleter interface {
-	sequel.PrimaryKeyer
-	sequel.KeyDeleter
-}
-
 // DeleteByPK is to update single record using primary key.
 func DeleteByPK[T sequel.KeyValuer[T]](ctx context.Context, sqlConn sequel.DB, model T) (sql.Result, error) {
 	switch v := any(model).(type) {
-	case primaryKeyDeleter:
-		_, _, pk := v.PK()
-		return sqlConn.ExecContext(ctx, v.DeleteByPKStmt(), pk)
+	case sequel.KeyDeleter:
+		query, args := v.DeleteByPKStmt()
+		return sqlConn.ExecContext(ctx, query, args...)
 	case sequel.PrimaryKeyer:
 		pkName, _, pk := v.PK()
 		return sqlConn.ExecContext(ctx, "DELETE FROM "+DbTable(model)+" WHERE "+pkName+" = ?;", pk)
@@ -384,10 +368,7 @@ type SQLStatement struct {
 	Arguments []any
 }
 
-func QueryStmt[T any, Ptr interface {
-	*T
-	sequel.Scanner[T]
-}, Stmt interface {
+func QueryStmt[T any, Ptr sequel.PtrScanner[T], Stmt interface {
 	SelectStmt | SQLStatement
 }](ctx context.Context, sqlConn sequel.DB, stmt Stmt) ([]T, error) {
 	var (
@@ -408,7 +389,7 @@ func QueryStmt[T any, Ptr interface {
 		} else {
 			switch vj := any(v).(type) {
 			case sequel.Columner:
-				blr.WriteString(strings.Join(vj.Columns(), ","))
+				blr.WriteString(strings.Join(Columns(vj), ","))
 			default:
 				blr.WriteByte('*')
 			}
@@ -619,4 +600,11 @@ func dbName(model any) string {
 		return v.DatabaseName() + "."
 	}
 	return ""
+}
+
+func Columns[T sequel.Columner](model T) []string {
+	if v, ok := any(model).(sequel.SQLColumner); ok {
+		return v.SQLColumns()
+	}
+	return model.ColumnNames()
 }

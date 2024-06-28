@@ -4,33 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"io"
-
-	"github.com/si3nloong/sqlgen/codegen/templates"
+	"go/types"
 )
-
-type Scanner[T any] interface {
-	*T
-	Addrs() []any
-}
-
-type TableColumnValuer[T any] interface {
-	Tabler
-	Columner
-	Valuer
-}
-
-type KeyValuer[T any] interface {
-	Keyer
-	Tabler
-	Columner
-	Valuer
-}
-
-type KeyValueScanner[T any] interface {
-	KeyValuer[T]
-	Scanner[T]
-}
 
 type DB interface {
 	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
@@ -48,8 +23,30 @@ type Dialect interface {
 	QuoteIdentifier(v string) string
 	QuoteRune() rune
 
-	CreateTableStmt(n string, model *templates.Model) string
-	AlterTableStmt(n string, model *templates.Model) string
+	CreateTableStmt(n string, model TableSchema) string
+}
+
+type TableSchema interface {
+	GoName() string
+	DatabaseName() string
+	TableName() string
+	AutoIncrKey() (ColumnSchema, bool)
+	Implements(*types.Interface) (wrongType bool)
+	Keys() []ColumnSchema
+	Columns() []ColumnSchema
+}
+
+type ColumnSchema interface {
+	GoName() string
+	GoPath() string
+	// GoTag() reflect.StructTag
+	ColumnName() string
+	ColumnPos() int
+	Type() types.Type
+	SQLValuer() SQLFunc
+	SQLScanner() SQLFunc
+	// ActualType() string
+	Implements(*types.Interface) (wrongType bool)
 }
 
 type Migrator interface {
@@ -63,50 +60,9 @@ type MigratorV2 interface {
 	Down(ctx context.Context, db DB) error
 }
 
-type SingleInserter interface {
-	InsertOneStmt() string
-}
-
-type KeyFinder interface {
-	Keyer
-	FindByPKStmt() string
-}
-
-type KeyUpdater interface {
-	Keyer
-	UpdateByPKStmt() string
-}
-
-type KeyDeleter interface {
-	Keyer
-	DeleteByPKStmt() string
-}
-
-type Inserter interface {
-	Columner
-	InsertVarQuery() string
-}
-
-type StmtWriter interface {
-	io.StringWriter
-	io.ByteWriter
-}
-
-type StmtBuilder interface {
-	StmtWriter
-	Var(query string, v any)
-	Vars(query string, v []any)
-}
-
 type Stmt interface {
 	StmtBuilder
 	fmt.Stringer
 	Args() []any
 	Reset()
 }
-
-type (
-	WhereClause   func(StmtBuilder)
-	SetClause     func(StmtBuilder)
-	OrderByClause func(StmtWriter)
-)

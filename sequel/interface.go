@@ -20,7 +20,11 @@ type Tabler interface {
 }
 
 type Columner interface {
-	Columns() []string
+	ColumnNames() []string
+}
+
+type SQLColumner interface {
+	SQLColumns() []string
 }
 
 type Valuer interface {
