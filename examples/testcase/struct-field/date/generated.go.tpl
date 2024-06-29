@@ -32,10 +32,10 @@ func (User) InsertPlaceholders(row int) string {
 func (v User) InsertOneStmt() (string, []any) {
 	return "INSERT INTO `user` (`id`,`birth_date`) VALUES (?,?);", v.Values()
 }
-func (v User) FindByPKStmt() (string, []any) {
+func (v User) FindOneByPKStmt() (string, []any) {
 	return "SELECT `id`,`birth_date` FROM `user` WHERE `id` = ? LIMIT 1;", []any{(driver.Valuer)(v.ID)}
 }
-func (v User) UpdateByPKStmt() (string, []any) {
+func (v User) UpdateOneByPKStmt() (string, []any) {
 	return "UPDATE `user` SET `birth_date` = ? WHERE `id` = ? LIMIT 1;", []any{types.TextMarshaler(v.BirthDate), (driver.Valuer)(v.ID)}
 }
 func (v User) GetID() sequel.ColumnValuer[uuid.UUID] {

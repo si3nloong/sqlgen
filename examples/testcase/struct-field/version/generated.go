@@ -30,7 +30,7 @@ func (Version) InsertPlaceholders(row int) string {
 func (v Version) InsertOneStmt() (string, []any) {
 	return "INSERT INTO `version` (`id`) VALUES (?);", v.Values()
 }
-func (v Version) FindByPKStmt() (string, []any) {
+func (v Version) FindOneByPKStmt() (string, []any) {
 	return "SELECT `id` FROM `version` WHERE `id` = ? LIMIT 1;", []any{(driver.Valuer)(v.ID)}
 }
 func (v Version) GetID() sequel.ColumnValuer[uuid.UUID] {

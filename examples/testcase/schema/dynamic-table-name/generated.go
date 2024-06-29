@@ -45,10 +45,10 @@ func (A) InsertPlaceholders(row int) string {
 func (v A) InsertOneStmt() (string, []any) {
 	return "INSERT INTO `a` (`id`,`name`) VALUES (?,?);", v.Values()
 }
-func (v A) FindByPKStmt() (string, []any) {
+func (v A) FindOneByPKStmt() (string, []any) {
 	return "SELECT `id`,`name` FROM `a` WHERE `id` = ? LIMIT 1;", []any{int64(v.ID)}
 }
-func (v A) UpdateByPKStmt() (string, []any) {
+func (v A) UpdateOneByPKStmt() (string, []any) {
 	return "UPDATE `a` SET `name` = ? WHERE `id` = ? LIMIT 1;", []any{string(v.Name), int64(v.ID)}
 }
 func (v A) GetID() sequel.ColumnValuer[int64] {

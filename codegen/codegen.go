@@ -36,9 +36,10 @@ var (
 		`\`, `[\\/]`,
 		`/`, `[\\/]`,
 	)
-	nameRegex    = regexp.MustCompile(`(?i)^[a-z]+[a-z0-9\_]*$`)
-	codegenRegex = regexp.MustCompile(`^// Code generated .* DO NOT EDIT\.$`)
-	go121        = lo.Must1(semver.NewConstraint(">= 1.2.1"))
+	nameRegex     = regexp.MustCompile(`(?i)^[a-z]+[a-z0-9\_]*$`)
+	codegenRegex  = regexp.MustCompile(`^// Code generated .* DO NOT EDIT\.$`)
+	go121         = lo.Must1(semver.NewConstraint(">= 1.2.1"))
+	sqlFuncRegexp = regexp.MustCompile(`(?i)\s*(\w+\()(\w+\s*\,\s*)?(\{\})(\s*\,\s*\w+)?(\))\s*`)
 )
 
 const fileMode = 0o755
@@ -98,6 +99,115 @@ func (t tagOpts) Lookup(key tagOption, keys ...tagOption) (string, bool) {
 		}
 	}
 	return "", false
+}
+
+type tableInfo struct {
+	goName      string
+	dbName      string
+	tableName   string
+	t           types.Type
+	autoIncrKey sequel.ColumnSchema
+	keys        []sequel.ColumnSchema
+	columns     []sequel.ColumnSchema
+}
+
+// Mean table has only pk
+func (b tableInfo) hasNoColsExceptPK() bool {
+	return len(b.keys) == len(b.columns)
+}
+
+func (b tableInfo) GoName() string {
+	return b.goName
+}
+
+func (b tableInfo) DatabaseName() string {
+	return b.dbName
+}
+
+func (b tableInfo) TableName() string {
+	return b.tableName
+}
+
+func (b tableInfo) AutoIncrKey() (sequel.ColumnSchema, bool) {
+	return b.autoIncrKey, b.autoIncrKey != nil
+}
+
+func (b tableInfo) Keys() []sequel.ColumnSchema {
+	return b.keys
+}
+
+func (b tableInfo) Columns() []sequel.ColumnSchema {
+	return nil
+}
+
+func (b tableInfo) Implements(T *types.Interface) (*types.Func, bool) {
+	return types.MissingMethod(b.t, T, true)
+}
+
+func (b tableInfo) PtrImplements(T *types.Interface) (*types.Func, bool) {
+	return types.MissingMethod(types.NewPointer(b.t), T, true)
+}
+
+type columnInfo struct {
+	goName  string
+	goPath  string
+	colName string
+	colPos  int
+	t       types.Type
+	tag     tagOpts
+	model   *config.Model
+	size    int
+}
+
+var (
+	_ (sequel.ColumnSchema) = (*columnInfo)(nil)
+)
+
+func (i columnInfo) SQLValuer() sequel.SQLFunc {
+	if i.model == nil {
+		return nil
+	}
+	return func(placeholder string) string {
+		return strings.Replace(i.model.SQLValuer, "{placeholder}", placeholder, 1)
+	}
+}
+
+func (i columnInfo) SQLScanner() sequel.SQLFunc {
+	if i.model == nil {
+		return nil
+	}
+	return func(column string) string {
+		return strings.Replace(i.model.SQLScanner, "{column}", column, 1)
+	}
+}
+
+func (i columnInfo) GoName() string {
+	return i.goName
+}
+
+func (i columnInfo) GoPath() string {
+	return i.goPath
+}
+
+func (i columnInfo) Type() types.Type {
+	return i.t
+}
+
+func (i columnInfo) Size() int {
+	return i.size
+}
+
+func (i columnInfo) ColumnName() string {
+	return i.colName
+}
+
+func (i columnInfo) ColumnPos() int {
+	return i.colPos
+}
+
+func (i *columnInfo) Implements(T *types.Interface) (wrongType bool) {
+	_, wrongType = types.MissingMethod(i.t, T, true)
+	return
 }
 
 func Generate(c *config.Config) error {
@@ -630,7 +740,8 @@ func parseGoPackage(
 			}
 
 			clear(nameDict)
-			table.dbName = gen.QuoteIdentifier(table.dbName)
+			// FIXME: we should allow database name to declare
+			// table.dbName = gen.QuoteIdentifier(table.dbName)
 			table.tableName = gen.QuoteIdentifier(table.tableName)
 
 			// If the model doesn't consist any field,

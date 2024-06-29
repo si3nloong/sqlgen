@@ -4,15 +4,8 @@ import (
 	"database/sql/driver"
 
 	"github.com/si3nloong/sqlgen/sequel"
-	"github.com/si3nloong/sqlgen/sequel/types"
 )
 
-func (v A) Values() []any {
-	return []any{string(v.Name)}
-}
-func (v *A) Addrs() []any {
-	return []any{types.String(&v.Name)}
-}
 func (A) InsertPlaceholders(row int) string {
 	return "(?)"
 }

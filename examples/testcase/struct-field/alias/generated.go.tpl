@@ -31,10 +31,10 @@ func (AliasStruct) InsertPlaceholders(row int) string {
 func (v AliasStruct) InsertOneStmt() (string, []any) {
 	return "INSERT INTO `alias_struct` (`b`,`Id`,`header`,`raw`,`text`,`null_str`,`created`,`updated`) VALUES (?,?,?,?,?,?,?,?);", v.Values()
 }
-func (v AliasStruct) FindByPKStmt() (string, []any) {
+func (v AliasStruct) FindOneByPKStmt() (string, []any) {
 	return "SELECT `b`,`Id`,`header`,`raw`,`text`,`null_str`,`created`,`updated` FROM `alias_struct` WHERE `Id` = ? LIMIT 1;", []any{int64(v.pk.ID)}
 }
-func (v AliasStruct) UpdateByPKStmt() (string, []any) {
+func (v AliasStruct) UpdateOneByPKStmt() (string, []any) {
 	return "UPDATE `alias_struct` SET `b` = ?,`header` = ?,`raw` = ?,`text` = ?,`null_str` = ?,`created` = ?,`updated` = ? WHERE `Id` = ? LIMIT 1;", []any{float64(v.B), string(v.Header), string(v.Raw), string(v.Text), (driver.Valuer)(v.NullStr), time.Time(v.model.Created), time.Time(v.model.Updated), int64(v.pk.ID)}
 }
 func (v AliasStruct) GetB() sequel.ColumnValuer[float64] {

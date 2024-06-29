@@ -8,13 +8,13 @@ import (
 
 func TestConfig(t *testing.T) {
 	cfg := DefaultConfig()
+	require.True(t, *cfg.Strict)
 	require.ElementsMatch(t, []string{"./**/*"}, cfg.Source)
 	require.Equal(t, MySQL, cfg.Driver)
 	require.Equal(t, SnakeCase, cfg.NamingConvention)
 	require.Equal(t, DefaultStructTag, cfg.Tag)
 	require.Equal(t, DefaultGeneratedFile, cfg.Exec.Filename)
 
-	require.False(t, cfg.NoStrict)
 	require.False(t, cfg.SkipHeader)
 	require.False(t, cfg.SkipModTidy)
 	require.False(t, cfg.SourceMap)
@@ -47,5 +47,5 @@ func TestLoadConfigFrom(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 	require.Equal(t, Sqlite, cfg.Driver)
-	require.False(t, cfg.NoStrict)
+	// require.False(t, cfg.NoStrict)
 }

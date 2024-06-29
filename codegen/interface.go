@@ -17,7 +17,7 @@ var (
 	goSqlValuer, goSqlScanner,
 
 	// sqlgen interface
-	sqlDatabaser, sqlTabler, sqlColumner, sqlValuer, sqlScanner,
+	sqlDatabaser, sqlTabler, sqlColumner, sqlQueryColumner, sqlValuer, sqlScanner,
 	binaryMarshaler, binaryUnmarshaler,
 	textMarshaler, textUnmarshaler *types.Interface
 
@@ -60,6 +60,7 @@ func init() {
 	sqlDatabaser = pkg.Scope().Lookup("Databaser").Type().Underlying().(*types.Interface)
 	sqlTabler = pkg.Scope().Lookup("Tabler").Type().Underlying().(*types.Interface)
 	sqlColumner = pkg.Scope().Lookup("Columner").Type().Underlying().(*types.Interface)
+	sqlQueryColumner = pkg.Scope().Lookup("SQLColumner").Type().Underlying().(*types.Interface)
 	sqlValuer = pkg.Scope().Lookup("Valuer").Type().Underlying().(*types.Interface)
 	sqlScanner = pkg.Scope().Lookup("Scanner").Type().Underlying().(*types.Interface)
 }

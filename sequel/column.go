@@ -2,23 +2,6 @@ package sequel
 
 import "database/sql/driver"
 
-type ConvertFunc[T any] func(T) driver.Value
-
-type ColumnValuer[T any] interface {
-	ColumnName() string
-	Convert(T) driver.Value
-	Value() driver.Value
-}
-
-type SQLFunc func(placeholder string) string
-
-type SQLColumnValuer[T any] interface {
-	ColumnName() string
-	Convert(T) driver.Value
-	Value() driver.Value
-	SQLValue(placeholder string) string
-}
-
 type column[T any] struct {
 	colName string
 	convert ConvertFunc[T]

@@ -408,7 +408,7 @@ type primaryKeyFinder interface {
 func FindByPK[T sequel.KeyValuer[T], Ptr sequel.KeyValueScanner[T]](ctx context.Context, sqlConn sequel.DB, model Ptr) error {
 	switch v := any(model).(type) {
 	case primaryKeyFinder:
-		query, args := v.FindByPKStmt()
+		query, args := v.FindOneByPKStmt()
 		return sqlConn.QueryRowContext(ctx, query, args...).Scan(model.Addrs()...)
 	case sequel.PrimaryKeyer:
 		columns := Columns(model)
@@ -439,7 +439,7 @@ func FindByPK[T sequel.KeyValuer[T], Ptr sequel.KeyValueScanner[T]](ctx context.
 func UpdateByPK[T sequel.KeyValuer[T]](ctx context.Context, sqlConn sequel.DB, model T) (sql.Result, error) {
 	switch v := any(model).(type) {
 	case sequel.KeyUpdater:
-		query, args := v.UpdateByPKStmt()
+		query, args := v.UpdateOneByPKStmt()
 		return sqlConn.ExecContext(ctx, query, args...)
 	case sequel.PrimaryKeyer:
 		pkName, pkIdx, pk := v.PK()
@@ -467,7 +467,7 @@ func UpdateByPK[T sequel.KeyValuer[T]](ctx context.Context, sqlConn sequel.DB, m
 func DeleteByPK[T sequel.KeyValuer[T]](ctx context.Context, sqlConn sequel.DB, model T) (sql.Result, error) {
 	switch v := any(model).(type) {
 	case sequel.KeyDeleter:
-		query, args := v.DeleteByPKStmt()
+		query, args := v.DeleteOneByPKStmt()
 		return sqlConn.ExecContext(ctx, query, args...)
 	case sequel.PrimaryKeyer:
 		pkName, _, pk := v.PK()

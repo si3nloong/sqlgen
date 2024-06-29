@@ -18,8 +18,7 @@ func TestAll(t *testing.T) {
 	const rootDir = "./testcase"
 
 	if err := codegen.Generate(&config.Config{
-		Source: []string{rootDir + "/**/*.go", rootDir + "/db/*"},
-		// Source:     []string{rootDir + "/struct-field/custom/*.go"},
+		Source:     []string{rootDir + "/**/*.go"},
 		SkipHeader: true,
 		Database: &config.DatabaseConfig{
 			Package: "mysqldb",

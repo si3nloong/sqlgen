@@ -31,10 +31,10 @@ func (Ptr) InsertPlaceholders(row int) string {
 func (v Ptr) InsertOneStmt() (string, []any) {
 	return "INSERT INTO `ptr` (`str`,`bytes`,`bool`,`int`,`int_8`,`int_16`,`int_32`,`int_64`,`uint`,`uint_8`,`uint_16`,`uint_32`,`uint_64`,`f_32`,`f_64`,`time`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);", []any{types.String(v.Str), types.String(v.Bytes), types.Bool(v.Bool), types.Integer(v.Int), types.Integer(v.Int8), types.Integer(v.Int16), types.Integer(v.Int32), types.Integer(v.Int64), types.Integer(v.Uint), types.Integer(v.Uint8), types.Integer(v.Uint16), types.Integer(v.Uint32), types.Integer(v.Uint64), types.Float(v.F32), types.Float(v.F64), types.Time(v.Time)}
 }
-func (v Ptr) FindByPKStmt() (string, []any) {
+func (v Ptr) FindOneByPKStmt() (string, []any) {
 	return "SELECT `id`,`str`,`bytes`,`bool`,`int`,`int_8`,`int_16`,`int_32`,`int_64`,`uint`,`uint_8`,`uint_16`,`uint_32`,`uint_64`,`f_32`,`f_64`,`time` FROM `ptr` WHERE `id` = ? LIMIT 1;", []any{int64(v.ID)}
 }
-func (v Ptr) UpdateByPKStmt() (string, []any) {
+func (v Ptr) UpdateOneByPKStmt() (string, []any) {
 	return "UPDATE `ptr` SET `str` = ?,`bytes` = ?,`bool` = ?,`int` = ?,`int_8` = ?,`int_16` = ?,`int_32` = ?,`int_64` = ?,`uint` = ?,`uint_8` = ?,`uint_16` = ?,`uint_32` = ?,`uint_64` = ?,`f_32` = ?,`f_64` = ?,`time` = ? WHERE `id` = ? LIMIT 1;", []any{types.String(v.Str), types.String(v.Bytes), types.Bool(v.Bool), types.Integer(v.Int), types.Integer(v.Int8), types.Integer(v.Int16), types.Integer(v.Int32), types.Integer(v.Int64), types.Integer(v.Uint), types.Integer(v.Uint8), types.Integer(v.Uint16), types.Integer(v.Uint32), types.Integer(v.Uint64), types.Float(v.F32), types.Float(v.F64), types.Time(v.Time), int64(v.ID)}
 }
 func (v Ptr) GetID() sequel.ColumnValuer[int64] {

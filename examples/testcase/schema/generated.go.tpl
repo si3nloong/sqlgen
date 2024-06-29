@@ -84,7 +84,7 @@ func (C) InsertPlaceholders(row int) string {
 func (v C) InsertOneStmt() (string, []any) {
 	return "INSERT INTO `c` (`id`) VALUES (?);", v.Values()
 }
-func (v C) FindByPKStmt() (string, []any) {
+func (v C) FindOneByPKStmt() (string, []any) {
 	return "SELECT `id` FROM `c` WHERE `id` = ? LIMIT 1;", []any{int64(v.ID)}
 }
 func (v C) GetID() sequel.ColumnValuer[int64] {
@@ -113,7 +113,7 @@ func (D) InsertPlaceholders(row int) string {
 func (v D) InsertOneStmt() (string, []any) {
 	return "INSERT INTO `d` (`id`) VALUES (?);", v.Values()
 }
-func (v D) FindByPKStmt() (string, []any) {
+func (v D) FindOneByPKStmt() (string, []any) {
 	return "SELECT `id` FROM `d` WHERE `id` = ? LIMIT 1;", []any{(driver.Valuer)(v.ID)}
 }
 func (v D) GetID() sequel.ColumnValuer[sql.NullString] {

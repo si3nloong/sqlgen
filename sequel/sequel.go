@@ -3,8 +3,13 @@ package sequel
 import (
 	"context"
 	"database/sql"
-	"fmt"
+	"database/sql/driver"
 	"go/types"
+)
+
+type (
+	ConvertFunc[T any] func(T) driver.Value
+	SQLFunc            func(placeholder string) string
 )
 
 type DB interface {
@@ -49,20 +54,21 @@ type ColumnSchema interface {
 	Implements(*types.Interface) (wrongType bool)
 }
 
+type ColumnValuer[T any] interface {
+	ColumnName() string
+	Convert(T) driver.Value
+	Value() driver.Value
+}
+
+type SQLColumnValuer[T any] interface {
+	ColumnName() string
+	Convert(T) driver.Value
+	Value() driver.Value
+	SQLValue(placeholder string) string
+}
+
 type Migrator interface {
-	Tabler
-	CreateTableStmt() string
-	AlterTableStmt() string
-}
-
-type MigratorV2 interface {
-	Up(ctx context.Context, db DB) error
-	Down(ctx context.Context, db DB) error
-}
-
-type Stmt interface {
-	StmtBuilder
-	fmt.Stringer
-	Args() []any
-	Reset()
+	// [0] is column name
+	// [1] is column data type
+	Schemas() [][2]string
 }

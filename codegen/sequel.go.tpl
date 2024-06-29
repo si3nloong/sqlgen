@@ -1,6 +1,9 @@
 package sequel
 
-import "io"
+import (
+	"fmt"
+	"io"
+)
 
 // For rename table name
 type Table struct{}
@@ -20,7 +23,11 @@ type Tabler interface {
 }
 
 type Columner interface {
-	Columns() []string
+	ColumnNames() []string
+}
+
+type SQLColumner interface {
+	SQLColumns() []string
 }
 
 type Valuer interface {
@@ -57,17 +64,17 @@ type AutoIncrKeyer interface {
 
 type KeyFinder interface {
 	Keyer
-	FindByPKStmt() (string, []any)
+	FindOneByPKStmt() (string, []any)
 }
 
 type KeyUpdater interface {
 	Keyer
-	UpdateByPKStmt() (string, []any)
+	UpdateOneByPKStmt() (string, []any)
 }
 
 type KeyDeleter interface {
 	Keyer
-	DeleteByPKStmt() (string, []any)
+	DeleteOneByPKStmt() (string, []any)
 }
 
 type SingleInserter interface {
@@ -100,6 +107,13 @@ type KeyValueScanner[T any] interface {
 type StmtWriter interface {
 	io.StringWriter
 	io.ByteWriter
+}
+
+type Stmt interface {
+	StmtBuilder
+	fmt.Stringer
+	Args() []any
+	Reset()
 }
 
 type StmtBuilder interface {

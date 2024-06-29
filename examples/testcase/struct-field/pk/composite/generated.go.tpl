@@ -31,10 +31,10 @@ func (Composite) InsertPlaceholders(row int) string {
 func (v Composite) InsertOneStmt() (string, []any) {
 	return "INSERT INTO `composite` (`flag`,`col_1`,`col_2`,`col_3`) VALUES (?,?,?,?);", v.Values()
 }
-func (v Composite) FindByPKStmt() (string, []any) {
+func (v Composite) FindOneByPKStmt() (string, []any) {
 	return "SELECT `flag`,`col_1`,`col_2`,`col_3` FROM `composite` WHERE `col_1` = ? AND `col_3` = ? LIMIT 1;", []any{string(v.Col1), (driver.Valuer)(v.Col3)}
 }
-func (v Composite) UpdateByPKStmt() (string, []any) {
+func (v Composite) UpdateOneByPKStmt() (string, []any) {
 	return "UPDATE `composite` SET `flag` = ?,`col_2` = ? WHERE `col_1` = ? AND `col_3` = ? LIMIT 1;", []any{bool(v.Flag), bool(v.Col2), string(v.Col1), (driver.Valuer)(v.Col3)}
 }
 func (v Composite) GetFlag() sequel.ColumnValuer[bool] {

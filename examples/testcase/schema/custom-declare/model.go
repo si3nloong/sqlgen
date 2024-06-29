@@ -1,5 +1,7 @@
 package customdeclare
 
+import "github.com/si3nloong/sqlgen/sequel/types"
+
 type A struct {
 	Name string
 }
@@ -10,6 +12,16 @@ func (A) TableName() string {
 }
 
 // Codegen will not override the custom declaration even if it has error
-func (A) Columns() []string {
+func (A) ColumnNames() []string {
 	return []string{`a`, "b", "b"}
+}
+
+// Codegen will not override the custom declaration even if it has error
+func (v A) Values() []any {
+	return []any{string(v.Name)}
+}
+
+// Codegen will not override the custom declaration even if it has error
+func (v *A) Addrs() []any {
+	return []any{types.String(&v.Name)}
 }

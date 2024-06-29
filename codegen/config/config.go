@@ -45,10 +45,10 @@ type Config struct {
 	// Whether to quote the table name and column name
 	OmitQuoteIdentifier bool              `yaml:"omit_quote_identifier,omitempty"`
 	OmitGetters         bool              `yaml:"omit_getters,omitempty"`
-	NoStrict            bool              `yaml:"no_strict,omitempty"`
+	Strict              *bool             `yaml:"strict,omitempty"`
 	Exec                ExecConfig        `yaml:"exec"`
 	Getter              GetterConfig      `yaml:"getter"`
-	Migration           MigrationConfig   `yaml:"migration"`
+	Migration           *MigrationConfig  `yaml:"migration"`
 	Database            *DatabaseConfig   `yaml:"database"`
 	SourceMap           bool              `yaml:"source_map"`
 	SkipHeader          bool              `yaml:"skip_header"`
@@ -89,10 +89,6 @@ type DatabaseOperatorConfig struct {
 	Package  string `yaml:"package"`
 	Dir      string `yaml:"dir"`
 	Filename string `yaml:"filename"`
-}
-
-func (c Config) IsStrict() bool {
-	return !c.NoStrict
 }
 
 func (c *Config) init() {

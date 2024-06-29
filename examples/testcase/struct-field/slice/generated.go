@@ -31,10 +31,10 @@ func (Slice) InsertPlaceholders(row int) string {
 func (v Slice) InsertOneStmt() (string, []any) {
 	return "INSERT INTO `slice` (`bool_list`,`str_list`,`custom_str_list`,`int_list`,`int_8_list`,`int_16_list`,`int_32_list`,`int_64_list`,`uint_list`,`uint_8_list`,`uint_16_list`,`uint_32_list`,`uint_64_list`,`f_32_list`,`f_64_list`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);", []any{encoding.MarshalBoolList(v.BoolList), encoding.MarshalStringList(v.StrList), encoding.MarshalStringList(v.CustomStrList), encoding.MarshalSignedIntList(v.IntList), encoding.MarshalSignedIntList(v.Int8List), encoding.MarshalSignedIntList(v.Int16List), encoding.MarshalSignedIntList(v.Int32List), encoding.MarshalSignedIntList(v.Int64List), encoding.MarshalUnsignedIntList(v.UintList), encoding.MarshalUnsignedIntList(v.Uint8List), encoding.MarshalUnsignedIntList(v.Uint16List), encoding.MarshalUnsignedIntList(v.Uint32List), encoding.MarshalUnsignedIntList(v.Uint64List), encoding.MarshalFloatList(v.F32List), encoding.MarshalFloatList(v.F64List)}
 }
-func (v Slice) FindByPKStmt() (string, []any) {
+func (v Slice) FindOneByPKStmt() (string, []any) {
 	return "SELECT `id`,`bool_list`,`str_list`,`custom_str_list`,`int_list`,`int_8_list`,`int_16_list`,`int_32_list`,`int_64_list`,`uint_list`,`uint_8_list`,`uint_16_list`,`uint_32_list`,`uint_64_list`,`f_32_list`,`f_64_list` FROM `slice` WHERE `id` = ? LIMIT 1;", []any{int64(v.ID)}
 }
-func (v Slice) UpdateByPKStmt() (string, []any) {
+func (v Slice) UpdateOneByPKStmt() (string, []any) {
 	return "UPDATE `slice` SET `bool_list` = ?,`str_list` = ?,`custom_str_list` = ?,`int_list` = ?,`int_8_list` = ?,`int_16_list` = ?,`int_32_list` = ?,`int_64_list` = ?,`uint_list` = ?,`uint_8_list` = ?,`uint_16_list` = ?,`uint_32_list` = ?,`uint_64_list` = ?,`f_32_list` = ?,`f_64_list` = ? WHERE `id` = ? LIMIT 1;", []any{encoding.MarshalBoolList(v.BoolList), encoding.MarshalStringList(v.StrList), encoding.MarshalStringList(v.CustomStrList), encoding.MarshalSignedIntList(v.IntList), encoding.MarshalSignedIntList(v.Int8List), encoding.MarshalSignedIntList(v.Int16List), encoding.MarshalSignedIntList(v.Int32List), encoding.MarshalSignedIntList(v.Int64List), encoding.MarshalUnsignedIntList(v.UintList), encoding.MarshalUnsignedIntList(v.Uint8List), encoding.MarshalUnsignedIntList(v.Uint16List), encoding.MarshalUnsignedIntList(v.Uint32List), encoding.MarshalUnsignedIntList(v.Uint64List), encoding.MarshalFloatList(v.F32List), encoding.MarshalFloatList(v.F64List), int64(v.ID)}
 }
 func (v Slice) GetID() sequel.ColumnValuer[uint64] {

@@ -30,10 +30,10 @@ func (Car) InsertPlaceholders(row int) string {
 func (v Car) InsertOneStmt() (string, []any) {
 	return "INSERT INTO `car` (`id`,`no`,`color`,`manuc_date`) VALUES (?,?,?,?);", v.Values()
 }
-func (v Car) FindByPKStmt() (string, []any) {
+func (v Car) FindOneByPKStmt() (string, []any) {
 	return "SELECT `id`,`no`,`color`,`manuc_date` FROM `car` WHERE `id` = ? LIMIT 1;", []any{(driver.Valuer)(v.ID)}
 }
-func (v Car) UpdateByPKStmt() (string, []any) {
+func (v Car) UpdateOneByPKStmt() (string, []any) {
 	return "UPDATE `car` SET `no` = ?,`color` = ?,`manuc_date` = ? WHERE `id` = ? LIMIT 1;", []any{string(v.No), int64(v.Color), time.Time(v.ManucDate), (driver.Valuer)(v.ID)}
 }
 func (v Car) GetID() sequel.ColumnValuer[PK] {
@@ -71,10 +71,10 @@ func (User) InsertPlaceholders(row int) string {
 func (v User) InsertOneStmt() (string, []any) {
 	return "INSERT INTO `user` (`id`,`name`,`age`,`email`) VALUES (?,?,?,?);", v.Values()
 }
-func (v User) FindByPKStmt() (string, []any) {
+func (v User) FindOneByPKStmt() (string, []any) {
 	return "SELECT `id`,`name`,`age`,`email` FROM `user` WHERE `id` = ? LIMIT 1;", []any{int64(v.ID)}
 }
-func (v User) UpdateByPKStmt() (string, []any) {
+func (v User) UpdateOneByPKStmt() (string, []any) {
 	return "UPDATE `user` SET `name` = ?,`age` = ?,`email` = ? WHERE `id` = ? LIMIT 1;", []any{string(v.Name), int64(v.Age), string(v.Email), int64(v.ID)}
 }
 func (v User) GetID() sequel.ColumnValuer[int64] {
@@ -112,10 +112,10 @@ func (House) InsertPlaceholders(row int) string {
 func (v House) InsertOneStmt() (string, []any) {
 	return "INSERT INTO `house` (`id`,`no`) VALUES (?,?);", v.Values()
 }
-func (v House) FindByPKStmt() (string, []any) {
+func (v House) FindOneByPKStmt() (string, []any) {
 	return "SELECT `id`,`no` FROM `house` WHERE `id` = ? LIMIT 1;", []any{int64(v.ID)}
 }
-func (v House) UpdateByPKStmt() (string, []any) {
+func (v House) UpdateOneByPKStmt() (string, []any) {
 	return "UPDATE `house` SET `no` = ? WHERE `id` = ? LIMIT 1;", []any{string(v.No), int64(v.ID)}
 }
 func (v House) GetID() sequel.ColumnValuer[uint] {

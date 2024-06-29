@@ -30,10 +30,10 @@ func (Model) InsertPlaceholders(row int) string {
 func (v Model) InsertOneStmt() (string, []any) {
 	return "INSERT INTO `AutoIncrPK` (`name`,`f`,`n`) VALUES (?,?,?);", []any{string(v.Name), bool(v.F), int64(v.N)}
 }
-func (v Model) FindByPKStmt() (string, []any) {
+func (v Model) FindOneByPKStmt() (string, []any) {
 	return "SELECT `name`,`f`,`id`,`n` FROM `AutoIncrPK` WHERE `id` = ? LIMIT 1;", []any{int64(v.ID)}
 }
-func (v Model) UpdateByPKStmt() (string, []any) {
+func (v Model) UpdateOneByPKStmt() (string, []any) {
 	return "UPDATE `AutoIncrPK` SET `name` = ?,`f` = ?,`n` = ? WHERE `id` = ? LIMIT 1;", []any{string(v.Name), bool(v.F), int64(v.N), int64(v.ID)}
 }
 func (v Model) GetName() sequel.ColumnValuer[LongText] {

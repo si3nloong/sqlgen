@@ -32,10 +32,10 @@ func (Binary) InsertPlaceholders(row int) string {
 func (v Binary) InsertOneStmt() (string, []any) {
 	return "INSERT INTO `binary` (`id`,`str`,`time`) VALUES (?,?,?);", v.Values()
 }
-func (v Binary) FindByPKStmt() (string, []any) {
+func (v Binary) FindOneByPKStmt() (string, []any) {
 	return "SELECT `id`,`str`,`time` FROM `binary` WHERE `id` = ? LIMIT 1;", []any{(driver.Valuer)(v.ID)}
 }
-func (v Binary) UpdateByPKStmt() (string, []any) {
+func (v Binary) UpdateOneByPKStmt() (string, []any) {
 	return "UPDATE `binary` SET `str` = ?,`time` = ? WHERE `id` = ? LIMIT 1;", []any{string(v.Str), time.Time(v.Time), (driver.Valuer)(v.ID)}
 }
 func (v Binary) GetID() sequel.ColumnValuer[uuid.UUID] {

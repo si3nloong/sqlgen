@@ -7,7 +7,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strconv"
 	"strings"
 	"unsafe"
@@ -21,106 +20,13 @@ import (
 	"golang.org/x/tools/imports"
 )
 
-var (
-	sqlFuncRegexp = regexp.MustCompile(`(?i)\s*(\w+\()(\w+\s*\,\s*)?(\{\})(\s*\,\s*\w+)?(\))\s*`)
-)
-
-type tableInfo struct {
-	goName      string
-	dbName      string
-	tableName   string
-	t           types.Type
-	autoIncrKey sequel.ColumnSchema
-	keys        []sequel.ColumnSchema
-	columns     []sequel.ColumnSchema
-}
-
-// Mean table has only pk
-func (b tableInfo) hasNoColsExceptPK() bool {
-	return len(b.keys) == len(b.columns)
-}
-
-func (b tableInfo) GoName() string {
-	return b.goName
-}
-func (b tableInfo) DatabaseName() string {
-	return b.dbName
-}
-func (b tableInfo) TableName() string {
-	return b.tableName
-}
-func (b tableInfo) AutoIncrKey() (sequel.ColumnSchema, bool) {
-	return b.autoIncrKey, b.autoIncrKey != nil
-}
-func (b tableInfo) Keys() []sequel.ColumnSchema {
-	return b.keys
-}
-func (b tableInfo) Columns() []sequel.ColumnSchema {
-	return nil
-}
-func (b tableInfo) Implements(T *types.Interface) (wrongType bool) {
-	types.MissingMethod(b.t, T, true)
-	return
-}
-
-type columnInfo struct {
-	goName  string
-	goPath  string
-	colName string
-	colPos  int
-	t       types.Type
-	tag     tagOpts
-	model   *config.Model
-}
-
-var (
-	_ (sequel.ColumnSchema) = (*columnInfo)(nil)
-)
-
-func (i columnInfo) SQLValuer() sequel.SQLFunc {
-	if i.model == nil {
-		return nil
-	}
-	return func(placeholder string) string {
-		return strings.Replace(i.model.SQLValuer, "{placeholder}", placeholder, 1)
-	}
-}
-
-func (i columnInfo) SQLScanner() sequel.SQLFunc {
-	if i.model == nil {
-		return nil
-	}
-	return func(column string) string {
-		return strings.Replace(i.model.SQLScanner, "{column}", column, 1)
-	}
-}
-
-func (i columnInfo) GoName() string {
-	return i.goName
-}
-func (i columnInfo) GoPath() string {
-	return i.goPath
-}
-func (i columnInfo) Type() types.Type {
-	return i.t
-}
-func (i columnInfo) ColumnName() string {
-	return i.colName
-}
-func (i columnInfo) ColumnPos() int {
-	return i.colPos
-}
-func (i *columnInfo) Implements(T *types.Interface) (wrongType bool) {
-	types.MissingMethod(i.t, T, true)
-	return
-}
-
 type Generator struct {
 	*bytes.Buffer
 	config    *config.Config
 	dialect   sequel.Dialect
 	quoteRune rune
 	staticVar bool
+	errs      []error
 }
 
 func newGenerator(cfg *config.Config, dialect sequel.Dialect) *Generator {
@@ -138,6 +44,15 @@ func newGenerator(cfg *config.Config, dialect sequel.Dialect) *Generator {
 	gen.dialect = dialect
 	gen.staticVar = dialect.QuoteVar(1) == dialect.QuoteVar(0)
 	return gen
+}
+
+func (g *Generator) LogError(err error) {
+	// When it's strict mode, the program will stop once
+	// it encounter any error
+	if g.config.Strict != nil && *g.config.Strict {
+		panic(err)
+	}
+	g.errs = append(g.errs, err)
 }
 
 func (g *Generator) L(str ...any) error {
@@ -166,8 +81,6 @@ func (g *Generator) QuoteIdentifier(str string) string {
 }
 
 func (g *Generator) generate(pkg *packages.Package, dstDir string, typeInferred bool, schemas []*tableInfo) error {
-	// rename := g.config.RenameFunc()
-
 	importPkgs := NewPackage(pkg.PkgPath, pkg.Name)
 	importPkgs.Import(types.NewPackage("strings", ""))
 	importPkgs.Import(types.NewPackage("strconv", ""))
@@ -177,22 +90,25 @@ func (g *Generator) generate(pkg *packages.Package, dstDir string, typeInferred 
 	for len(schemas) > 0 {
 		t := schemas[0]
 
-		if isImplemented(t.t, sqlDatabaser) {
-			return fmt.Errorf(`sqlgen: struct %q has implements %q but wrong footprint`, sqlDatabaser, t.goName)
-		} else {
-			// g.L("func (" + t.goName + ") DatabaseName() string {")
-			// g.L(`return ` + strconv.Quote(t.goName))
-			// g.L("}")
-		}
-		// if t.Implements(sqlTabler) {
-		// 	return fmt.Errorf(`sqlgen: struct %q has implements %q but wrong footprint`, sqlTabler, t.goName)
-		// } else
 		g.L()
 
-		if !isImplemented(t.t, sqlTabler) {
+		if method, wrongType := t.Implements(sqlDatabaser); wrongType {
+			g.LogError(fmt.Errorf(`sqlgen: struct %q has function "DatabaseName" but wrong footprint`, t.goName))
+		} else if method != nil && !wrongType && t.dbName != "" {
+			g.L("func (" + t.goName + ") DatabaseName() string {")
+			g.L(`return ` + g.Quote(t.dbName))
+			g.L("}")
+		}
+
+		// Build the "TableName" function which return the table name
+		if method, wrongType := t.Implements(sqlTabler); wrongType {
+			g.LogError(fmt.Errorf(`sqlgen: struct %q has function "TableName" but wrong footprint`, t.goName))
+		} else if method != nil && !wrongType {
 			g.L("func (" + t.goName + ") TableName() string {")
 			g.L(`return ` + g.Quote(t.tableName))
 			g.L("}")
+		} else {
+			// TODO: we need to do something when table name is declare by user
 		}
 
 		if len(t.keys) > 0 {
@@ -211,7 +127,10 @@ func (g *Generator) generate(pkg *packages.Package, dstDir string, typeInferred 
 			}
 		}
 
-		if !isImplemented(t.t, sqlColumner) {
+		// Build the "ColumnNames" function which return the column names
+		if method, wrongType := t.Implements(sqlColumner); wrongType {
+			g.LogError(fmt.Errorf(`sqlgen: struct %q has function "ColumnNames" but wrong footprint`, t.goName))
+		} else if method != nil && !wrongType {
 			g.L("func (" + t.goName + ") ColumnNames() []string {")
 			g.WriteString("return []string{")
 			for i, f := range t.columns {
@@ -223,29 +142,43 @@ func (g *Generator) generate(pkg *packages.Package, dstDir string, typeInferred 
 			g.WriteString("}\n")
 			g.L("}")
 		}
-		if _, ok := lo.Find(t.columns, func(f sequel.ColumnSchema) bool {
-			return f.SQLScanner() != nil
-		}); ok {
-			g.L("func (" + t.goName + ") SQLColumns() []string {")
-			g.WriteString("return []string{")
-			for i, f := range t.columns {
-				if i > 0 {
-					g.WriteByte(',')
+
+		// Build the "SQLColumns" function which return the column SQL query
+		if method, wrongType := t.Implements(sqlQueryColumner); wrongType {
+			g.LogError(fmt.Errorf(`sqlgen: struct %q has function "SQLColumns" but wrong footprint`, t.goName))
+		} else if method != nil && !wrongType {
+			if _, ok := lo.Find(t.columns, func(f sequel.ColumnSchema) bool {
+				return f.SQLScanner() != nil
+			}); ok {
+				g.L("func (" + t.goName + ") SQLColumns() []string {")
+				g.WriteString("return []string{")
+				for i, f := range t.columns {
+					if i > 0 {
+						g.WriteByte(',')
+					}
+					if sqlScanner := f.SQLScanner(); sqlScanner != nil {
+						matches := sqlFuncRegexp.FindStringSubmatch(sqlScanner("{}"))
+						g.WriteString(g.Quote(matches[1] + matches[2] + f.ColumnName() + matches[4] + matches[5]))
+					} else {
+						g.WriteString(g.Quote(f.ColumnName()))
+					}
 				}
-				if sqlScanner := f.SQLScanner(); sqlScanner != nil {
-					matches := sqlFuncRegexp.FindStringSubmatch(sqlScanner("{}"))
-					g.WriteString(g.Quote(matches[1] + matches[2] + f.ColumnName() + matches[4] + matches[5]))
-				} else {
-					g.WriteString(g.Quote(f.ColumnName()))
-				}
+				g.WriteString("}\n")
+				g.L("}")
 			}
-			g.WriteString("}\n")
-			g.L("}")
 		}
-		if !isImplemented(t.t, sqlValuer) {
+
+		// Build the "Values" function which return the column values
+		if method, wrongType := t.Implements(sqlValuer); wrongType {
+			g.LogError(fmt.Errorf(`sqlgen: struct %q has function "Values" but wrong footprint`, t.goName))
+		} else if method != nil && !wrongType {
 			g.buildValuer(importPkgs, t)
 		}
-		if !isImplemented(types.NewPointer(t.t), sqlScanner) {
+
+		// Build the "Addrs" function which return the column addressable values
+		if method, wrongType := t.PtrImplements(sqlScanner); wrongType {
+			g.LogError(fmt.Errorf(`sqlgen: struct %q has function "Addrs" but wrong footprint`, t.goName))
+		} else if method != nil && !wrongType {
 			g.buildScanner(importPkgs, t)
 		}
 
@@ -263,9 +196,9 @@ func (g *Generator) generate(pkg *packages.Package, dstDir string, typeInferred 
 				}
 				if sqlValuer := f.SQLValuer(); sqlValuer != nil {
 					matches := sqlFuncRegexp.FindStringSubmatch(sqlValuer("{}"))
-					g.WriteString(fmt.Sprintf("%q + strconv.Itoa((row * noOfColumn) + %d) +%q", matches[1]+string(g.dialect.VarRune()), f.ColumnPos(), matches[5]))
+					g.WriteString(fmt.Sprintf("%q + strconv.Itoa((row * noOfColumn) + %d) +%q", matches[1]+string(g.dialect.VarRune()), f.ColumnPos()+1, matches[5]))
 				} else {
-					g.WriteString(fmt.Sprintf(`%q+ strconv.Itoa((row * noOfColumn) + %d)`, string(g.dialect.VarRune()), f.ColumnPos()))
+					g.WriteString(fmt.Sprintf(`%q+ strconv.Itoa((row * noOfColumn) + %d)`, string(g.dialect.VarRune()), f.ColumnPos()+1))
 				}
 			}
 			g.WriteString(`+")"` + "\n")
@@ -292,7 +225,7 @@ func (g *Generator) generate(pkg *packages.Package, dstDir string, typeInferred 
 				}
 				if sqlValuer := f.SQLValuer(); sqlValuer != nil {
 					matches := sqlFuncRegexp.FindStringSubmatch(sqlValuer("{}"))
-					// g.WriteString(fmt.Sprintf("%q + strconv.Itoa((row * noOfColumn) + %d) +%q", matches[1]+string(g.dialect.VarRune()), f.ColumnPos(), matches[5]))
+
 					g.L("func (v "+t.goName+") ", g.config.Getter.Prefix+f.GoName(), "() sequel.SQLColumnValuer[", typeStr, "] {")
 					g.L(`return sequel.SQLColumn`+specificType+`(`, g.Quote(f.ColumnName()), `, v.`, f.GoPath()+",", fmt.Sprintf(`func(placeholder string) string { return %q+ placeholder + %q}`, matches[1]+matches[2], matches[4]+matches[5]), `, func(val `, typeStr, `) driver.Value { return `, g.valuer(importPkgs, "val", f.Type()), ` })`)
 					g.L("}")
@@ -315,12 +248,14 @@ func (g *Generator) generate(pkg *packages.Package, dstDir string, typeInferred 
 	}
 	g.L("package " + pkg.Name)
 	g.L()
+
 	if len(importPkgs.imports) > 0 {
 		g.L("import (")
 		for _, pkg := range importPkgs.imports {
 			if filepath.Base(pkg.Path()) == pkg.Name() {
 				g.L(strconv.Quote(pkg.Path()))
 			} else {
+				// If the import is alias import path
 				g.L(pkg.Name() + " " + strconv.Quote(pkg.Path()))
 			}
 		}
@@ -333,8 +268,10 @@ func (g *Generator) generate(pkg *packages.Package, dstDir string, typeInferred 
 	if err != nil {
 		return err
 	}
+
 	g.Reset()
 	g.Write(formatted)
+
 	// fset := token.NewFileSet()
 	// fileAST, err := parser.ParseFile(fset, "", g.Bytes(), parser.ParseComments|parser.AllErrors)
 	// if err != nil {
@@ -356,6 +293,7 @@ func (g *Generator) generate(pkg *packages.Package, dstDir string, typeInferred 
 	}
 	defer f.Close()
 
+	// Copy the buffer to the output file
 	if _, err := io.Copy(f, g); err != nil {
 		return err
 	}
@@ -470,7 +408,7 @@ func (g *Generator) buildFindByPK(importPkgs *Package, table *tableInfo) {
 		buf.WriteString(f.ColumnName() + " = " + g.dialect.QuoteVar(i+1))
 	}
 	buf.WriteString(" LIMIT 1;")
-	g.L("func (v " + table.goName + ") FindByPKStmt() (string, []any) {")
+	g.L("func (v " + table.goName + ") FindOneByPKStmt() (string, []any) {")
 	g.WriteString("return " + g.Quote(buf.String()) + ", []any{")
 	strpool.ReleaseString(buf)
 	for i, f := range table.keys {
@@ -504,9 +442,9 @@ func (g *Generator) buildInsertOne(importPkgs *Package, table *tableInfo) {
 		if sqlValuer := f.SQLValuer(); sqlValuer != nil {
 			matches := sqlFuncRegexp.FindStringSubmatch(sqlValuer("{}"))
 			// g.WriteString(fmt.Sprintf("%q + strconv.Itoa((row * noOfColumn) + %d) +%q", matches[1]+string(g.dialect.VarRune()), f.ColumnPos(), matches[5]))
-			buf.WriteString(matches[1] + matches[2] + g.dialect.QuoteVar(f.ColumnPos()) + matches[4] + matches[5])
+			buf.WriteString(matches[1] + matches[2] + g.dialect.QuoteVar(f.ColumnPos()+1) + matches[4] + matches[5])
 		} else {
-			buf.WriteString(g.dialect.QuoteVar(f.ColumnPos()))
+			buf.WriteString(g.dialect.QuoteVar(f.ColumnPos() + 1))
 		}
 	}
 	buf.WriteByte(')')
@@ -559,17 +497,8 @@ func (g *Generator) buildUpdateByPK(importPkgs *Package, table *tableInfo) {
 		}
 		buf.WriteString(k.ColumnName() + " = " + g.dialect.QuoteVar(i+len(columns)+1))
 	}
-	// if g.config.Driver == config.Postgres {
-	// 	buf.WriteString(" RETURNING ")
-	// 	for i, f := range table.columns {
-	// 		if i > 0 {
-	// 			buf.WriteByte(',')
-	// 		}
-	// 		buf.WriteString(f.ColumnName())
-	// 	}
-	// }
 	buf.WriteString(" LIMIT 1;")
-	g.L("func (v " + table.goName + ") UpdateByPKStmt() (string, []any) {")
+	g.L("func (v " + table.goName + ") UpdateOneByPKStmt() (string, []any) {")
 	g.WriteString("return " + g.Quote(buf.String()) + ", []any{")
 	strpool.ReleaseString(buf)
 	for i, f := range append(columns, table.keys...) {
