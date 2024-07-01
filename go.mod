@@ -7,7 +7,7 @@ require (
 	github.com/AlecAivazis/survey/v2 v2.3.7
 	github.com/Masterminds/semver/v3 v3.2.1
 	github.com/fsnotify/fsnotify v1.7.0
-	github.com/samber/lo v1.42.0
+	github.com/samber/lo v1.44.0
 	github.com/spf13/cobra v1.8.1
 	github.com/stretchr/testify v1.9.0
 	golang.org/x/exp v0.0.0-20230321023759-10a507213a29
