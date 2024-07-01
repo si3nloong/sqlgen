@@ -37,7 +37,6 @@ func renderTemplate(
 	tmplName string,
 	pkgPath string,
 	pkgName string,
-	getter string,
 	dstDir string,
 	dstFilename string,
 ) error {

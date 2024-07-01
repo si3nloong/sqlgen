@@ -6,6 +6,9 @@ import (
 	"github.com/si3nloong/sqlgen/sequel"
 )
 
+func (A) Schemas() sequel.TableDefinition {
+	return sequel.TableDefinition{}
+}
 func (A) InsertPlaceholders(row int) string {
 	return "(?)"
 }

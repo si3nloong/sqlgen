@@ -9,6 +9,9 @@ import (
 	"github.com/si3nloong/sqlgen/sequel/types"
 )
 
+func (AliasStruct) Schemas() sequel.TableDefinition {
+	return sequel.TableDefinition{}
+}
 func (AliasStruct) TableName() string {
 	return "`alias_struct`"
 }
@@ -62,6 +65,9 @@ func (v AliasStruct) GetUpdated() sequel.ColumnValuer[time.Time] {
 	return sequel.Column("`updated`", v.model.Updated, func(val time.Time) driver.Value { return time.Time(val) })
 }
 
+func (B) Schemas() sequel.TableDefinition {
+	return sequel.TableDefinition{}
+}
 func (B) TableName() string {
 	return "`b`"
 }
@@ -84,6 +90,9 @@ func (v B) GetName() sequel.ColumnValuer[string] {
 	return sequel.Column("`name`", v.Name, func(val string) driver.Value { return string(val) })
 }
 
+func (C) Schemas() sequel.TableDefinition {
+	return sequel.TableDefinition{}
+}
 func (C) TableName() string {
 	return "`c`"
 }

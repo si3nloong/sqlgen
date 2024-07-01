@@ -9,6 +9,9 @@ import (
 	"github.com/si3nloong/sqlgen/sequel/types"
 )
 
+func (Composite) Schemas() sequel.TableDefinition {
+	return sequel.TableDefinition{}
+}
 func (Composite) TableName() string {
 	return "`composite`"
 }

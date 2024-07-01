@@ -9,6 +9,9 @@ import (
 	"github.com/si3nloong/sqlgen/sequel/types"
 )
 
+func (User) Schemas() sequel.TableDefinition {
+	return sequel.TableDefinition{}
+}
 func (User) TableName() string {
 	return "`user`"
 }

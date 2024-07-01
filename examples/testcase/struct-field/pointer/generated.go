@@ -8,6 +8,9 @@ import (
 	"github.com/si3nloong/sqlgen/sequel/types"
 )
 
+func (Ptr) Schemas() sequel.TableDefinition {
+	return sequel.TableDefinition{}
+}
 func (Ptr) TableName() string {
 	return "`ptr`"
 }

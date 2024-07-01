@@ -26,14 +26,14 @@ func Column[T any](columnName string, value T, convert ConvertFunc[T]) ColumnVal
 
 type sqlCol[T any] struct {
 	column[T]
-	sqlValuer SQLFunc
+	sqlValuer QueryFunc
 }
 
 func (c sqlCol[T]) SQLValue(placeholder string) string {
 	return c.sqlValuer(placeholder)
 }
 
-func SQLColumn[T any](columnName string, value T, sqlValue SQLFunc, convert ConvertFunc[T]) SQLColumnValuer[T] {
+func SQLColumn[T any](columnName string, value T, sqlValue QueryFunc, convert ConvertFunc[T]) SQLColumnValuer[T] {
 	c := sqlCol[T]{}
 	c.colName = columnName
 	c.v = convert(value)

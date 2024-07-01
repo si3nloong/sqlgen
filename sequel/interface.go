@@ -82,11 +82,11 @@ type SingleInserter interface {
 }
 
 type Inserter interface {
-	Columner
+	TableColumnValuer
 	InsertPlaceholders(row int) string
 }
 
-type TableColumnValuer[T any] interface {
+type TableColumnValuer interface {
 	Tabler
 	Columner
 	Valuer
@@ -118,6 +118,6 @@ type Stmt interface {
 
 type StmtBuilder interface {
 	StmtWriter
-	Var(query string, v any)
-	Vars(query string, v []any)
+	Var(v any) string
+	Vars(vals []any) string
 }

@@ -136,8 +136,12 @@ func (b tableInfo) Keys() []sequel.ColumnSchema {
 	return b.keys
 }
 
-func (b tableInfo) Columns() []sequel.ColumnSchema {
+func (b tableInfo) Indexes() []sequel.IndexSchema {
 	return nil
+}
+
+func (b tableInfo) Columns() []sequel.ColumnSchema {
+	return b.columns
 }
 
 func (b tableInfo) Implements(T *types.Interface) (*types.Func, bool) {
@@ -163,7 +167,7 @@ var (
 	_ (sequel.ColumnSchema) = (*columnInfo)(nil)
 )
 
-func (i columnInfo) SQLValuer() sequel.SQLFunc {
+func (i columnInfo) SQLValuer() sequel.QueryFunc {
 	if i.model == nil {
 		return nil
 	}
@@ -172,7 +176,7 @@ func (i columnInfo) SQLValuer() sequel.SQLFunc {
 	}
 }
 
-func (i columnInfo) SQLScanner() sequel.SQLFunc {
+func (i columnInfo) SQLScanner() sequel.QueryFunc {
 	if i.model == nil {
 		return nil
 	}
@@ -326,7 +330,6 @@ func Generate(c *config.Config) error {
 			// true,
 			"",
 			cfg.Database.Package,
-			cfg.Getter.Prefix,
 			cfg.Database.Dir,
 			cfg.Database.Filename,
 		); err != nil {
@@ -341,7 +344,6 @@ func Generate(c *config.Config) error {
 			"operator.go.tpl",
 			"",
 			cfg.Database.Operator.Package,
-			cfg.Getter.Prefix,
 			cfg.Database.Operator.Dir,
 			cfg.Database.Operator.Filename,
 		); err != nil {

@@ -8,6 +8,9 @@ import (
 	"github.com/si3nloong/sqlgen/sequel/types"
 )
 
+func (A) Schemas() sequel.TableDefinition {
+	return sequel.TableDefinition{}
+}
 func (A) ColumnNames() []string {
 	return []string{"`date`", "`time`"}
 }
@@ -30,6 +33,9 @@ func (v A) GetTime() sequel.ColumnValuer[civil.Time] {
 	return sequel.Column("`time`", v.Time, func(val civil.Time) driver.Value { return types.TextMarshaler(val) })
 }
 
+func (C) Schemas() sequel.TableDefinition {
+	return sequel.TableDefinition{}
+}
 func (C) TableName() string {
 	return "`c`"
 }

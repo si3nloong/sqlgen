@@ -10,6 +10,9 @@ import (
 	"github.com/si3nloong/sqlgen/sequel/types"
 )
 
+func (Binary) Schemas() sequel.TableDefinition {
+	return sequel.TableDefinition{}
+}
 func (Binary) TableName() string {
 	return "`binary`"
 }

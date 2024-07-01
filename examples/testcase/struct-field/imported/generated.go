@@ -9,6 +9,9 @@ import (
 	"github.com/si3nloong/sqlgen/sequel/types"
 )
 
+func (Model) Schemas() sequel.TableDefinition {
+	return sequel.TableDefinition{}
+}
 func (Model) TableName() string {
 	return "`model`"
 }
@@ -49,6 +52,9 @@ func (v Model) GetTime() sequel.ColumnValuer[sql.NullTime] {
 	return sequel.Column("`time`", v.Time, func(val sql.NullTime) driver.Value { return (driver.Valuer)(val) })
 }
 
+func (Some) Schemas() sequel.TableDefinition {
+	return sequel.TableDefinition{}
+}
 func (Some) TableName() string {
 	return "`some`"
 }

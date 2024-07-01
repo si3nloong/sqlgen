@@ -8,15 +8,16 @@ import (
 	"strings"
 	"unsafe"
 
-	"github.com/si3nloong/sqlgen/codegen/templates"
+	"github.com/si3nloong/sqlgen/sequel"
 )
 
-func (d *postgresDriver) dataType(f *templates.Field) (dataType string) {
+func dataType(f sequel.ColumnSchema) (dataType string) {
 	var (
 		ptrs = make([]types.Type, 0)
-		t    = f.Type
+		t    = f.Type()
 		prev types.Type
 	)
+
 	for t != nil {
 		switch v := t.(type) {
 		case *types.Pointer:
@@ -42,30 +43,33 @@ func (d *postgresDriver) dataType(f *templates.Field) (dataType string) {
 		case "bool":
 			return "BOOL" + notNullDefault(ptrs, false)
 		case "uint8", "uint16", "byte":
-			return "INT2" + notNullDefault(ptrs, 0) + " CHECK(" + d.QuoteIdentifier(f.ColumnName) + " >= 0)"
+			return "INT2" + notNullDefault(ptrs, 0) + " CHECK(" + f.ColumnName() + " >= 0)"
 		case "uint32", "uint":
-			return "INT" + notNullDefault(ptrs, 0) + " CHECK(" + d.QuoteIdentifier(f.ColumnName) + " >= 0)"
+			return "INT" + notNullDefault(ptrs, 0) + " CHECK(" + f.ColumnName() + " >= 0)"
 		case "uint64":
-			return "INT8" + notNullDefault(ptrs, 0) + " CHECK(" + d.QuoteIdentifier(f.ColumnName) + " >= 0)"
+			return "INT8" + notNullDefault(ptrs, 0) + " CHECK(" + f.ColumnName() + " >= 0)"
 		case "float32":
 			return "DOUBLE PRECISION" + notNullDefault(ptrs, 0.0)
 		case "float64":
 			return "DOUBLE PRECISION" + notNullDefault(ptrs, 0.0)
+		case "cloud.google.com/go/civil.Time":
+			return "TIME" + notNullDefault(ptrs, sql.RawBytes(`CURRENT_TIME`))
 		case "cloud.google.com/go/civil.Date":
 			return "DATE" + notNullDefault(ptrs, sql.RawBytes(`CURRENT_DATE`))
-		case "time.Time":
-			var size int
-			if f.Size > 0 && f.Size < 7 {
-				size = f.Size
-			}
-			if size > 0 {
+		case "cloud.google.com/go/civil.DateTime":
+			if size := f.Size(); size > 0 {
 				return fmt.Sprintf("TIMESTAMP(%d)", size) + notNullDefault(ptrs, sql.RawBytes(`NOW()`))
 			}
 			return "TIMESTAMP" + notNullDefault(ptrs, sql.RawBytes(`NOW()`))
+		case "time.Time":
+			if size := f.Size(); size > 0 {
+				return fmt.Sprintf("TIMESTAMP(%d) WITH TIME ZONE", size) + notNullDefault(ptrs, sql.RawBytes(`NOW()`))
+			}
+			return "TIMESTAMP WITH TIME ZONE" + notNullDefault(ptrs, sql.RawBytes(`NOW()`))
 		case "string":
 			size := 255
-			if f.Size > 0 {
-				size = f.Size
+			if v := f.Size(); v > 0 {
+				size = v
 			}
 			return fmt.Sprintf("VARCHAR(%d)", size) + notNullDefault(ptrs, "")
 		case "[]rune":
@@ -73,17 +77,17 @@ func (d *postgresDriver) dataType(f *templates.Field) (dataType string) {
 		case "[]byte":
 			return "BYTEA" + notNullDefault(ptrs)
 		case "[16]byte":
-			if f.IsBinary {
-				return "BIT(16)"
-			}
+			// if f.IsBinary {
+			// 	return "BIT(16)"
+			// }
 			return "VARBIT(36)"
 		case "encoding/json.RawMessage":
 			return "VARBIT" + notNullDefault(ptrs)
 		default:
 			if strings.HasPrefix(t.String(), "[]") {
-				if f.IsBinary {
-					return "JSONB" + notNullDefault(ptrs)
-				}
+				// if f.IsBinary {
+				// 	return "JSONB" + notNullDefault(ptrs)
+				// }
 				return "JSON" + notNullDefault(ptrs)
 			}
 		}

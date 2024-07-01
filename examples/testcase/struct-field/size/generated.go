@@ -8,6 +8,9 @@ import (
 	"github.com/si3nloong/sqlgen/sequel/types"
 )
 
+func (Size) Schemas() sequel.TableDefinition {
+	return sequel.TableDefinition{}
+}
 func (Size) TableName() string {
 	return "`size`"
 }

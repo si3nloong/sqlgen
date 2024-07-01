@@ -9,7 +9,7 @@ import (
 
 type (
 	ConvertFunc[T any] func(T) driver.Value
-	SQLFunc            func(placeholder string) string
+	QueryFunc          func(placeholder string) string
 )
 
 type DB interface {
@@ -28,7 +28,7 @@ type Dialect interface {
 	QuoteIdentifier(v string) string
 	QuoteRune() rune
 
-	CreateTableStmt(n string, model TableSchema) string
+	TableSchemas(model TableSchema) TableDefinition
 }
 
 type TableSchema interface {
@@ -36,9 +36,10 @@ type TableSchema interface {
 	DatabaseName() string
 	TableName() string
 	AutoIncrKey() (ColumnSchema, bool)
-	Implements(*types.Interface) (wrongType bool)
 	Keys() []ColumnSchema
 	Columns() []ColumnSchema
+	Indexes() []IndexSchema
+	Implements(*types.Interface) (*types.Func, bool)
 }
 
 type ColumnSchema interface {
@@ -47,11 +48,16 @@ type ColumnSchema interface {
 	// GoTag() reflect.StructTag
 	ColumnName() string
 	ColumnPos() int
+	Size() int
 	Type() types.Type
-	SQLValuer() SQLFunc
-	SQLScanner() SQLFunc
-	// ActualType() string
-	Implements(*types.Interface) (wrongType bool)
+	SQLValuer() QueryFunc
+	SQLScanner() QueryFunc
+}
+
+type IndexSchema interface {
+	Name() string
+	Type() string
+	ColumnNames() []string
 }
 
 type ColumnValuer[T any] interface {
@@ -68,7 +74,5 @@ type SQLColumnValuer[T any] interface {
 }
 
 type Migrator interface {
-	// [0] is column name
-	// [1] is column data type
-	Schemas() [][2]string
+	Schemas() TableDefinition
 }

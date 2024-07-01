@@ -8,6 +8,9 @@ import (
 	"github.com/si3nloong/sqlgen/sequel/types"
 )
 
+func (Car) Schemas() sequel.TableDefinition {
+	return sequel.TableDefinition{}
+}
 func (Car) TableName() string {
 	return "`car`"
 }
@@ -49,6 +52,9 @@ func (v Car) GetManucDate() sequel.ColumnValuer[time.Time] {
 	return sequel.Column("`manuc_date`", v.ManucDate, func(val time.Time) driver.Value { return time.Time(val) })
 }
 
+func (User) Schemas() sequel.TableDefinition {
+	return sequel.TableDefinition{}
+}
 func (User) TableName() string {
 	return "`user`"
 }
@@ -90,6 +96,9 @@ func (v User) GetEmail() sequel.ColumnValuer[string] {
 	return sequel.Column("`email`", v.Email, func(val string) driver.Value { return string(val) })
 }
 
+func (House) Schemas() sequel.TableDefinition {
+	return sequel.TableDefinition{}
+}
 func (House) TableName() string {
 	return "`house`"
 }

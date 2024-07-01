@@ -7,6 +7,9 @@ import (
 	"github.com/si3nloong/sqlgen/sequel/types"
 )
 
+func (Customer) Schemas() sequel.TableDefinition {
+	return sequel.TableDefinition{}
+}
 func (Customer) TableName() string {
 	return "`customer`"
 }

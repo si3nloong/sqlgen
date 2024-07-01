@@ -12,6 +12,9 @@ import (
 	"github.com/si3nloong/sqlgen/sequel/types"
 )
 
+func (Address) Schemas() sequel.TableDefinition {
+	return sequel.TableDefinition{}
+}
 func (Address) TableName() string {
 	return "`address`"
 }
@@ -55,6 +58,9 @@ func (v Address) GetCountryCode() sequel.ColumnValuer[CountryCode] {
 	return sequel.Column("`country_code`", v.CountryCode, func(val CountryCode) driver.Value { return string(val) })
 }
 
+func (Customer) Schemas() sequel.TableDefinition {
+	return sequel.TableDefinition{}
+}
 func (Customer) TableName() string {
 	return "`customer`"
 }

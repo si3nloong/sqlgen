@@ -8,6 +8,9 @@ import (
 	"github.com/si3nloong/sqlgen/sequel"
 )
 
+func (Version) Schemas() sequel.TableDefinition {
+	return sequel.TableDefinition{}
+}
 func (Version) TableName() string {
 	return "`version`"
 }

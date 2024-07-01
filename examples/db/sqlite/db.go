@@ -13,13 +13,8 @@ import (
 	"github.com/si3nloong/sqlgen/sequel/strpool"
 )
 
-type autoIncrKeyInserter interface {
-	sequel.AutoIncrKeyer
-	sequel.SingleInserter
-}
-
-func InsertOne[T sequel.TableColumnValuer[T], Ptr interface {
-	sequel.TableColumnValuer[T]
+func InsertOne[T sequel.TableColumnValuer, Ptr interface {
+	sequel.TableColumnValuer
 	sequel.PtrScanner[T]
 }](ctx context.Context, sqlConn sequel.DB, model Ptr) (sql.Result, error) {
 	switch v := any(model).(type) {
@@ -55,7 +50,7 @@ func InsertOne[T sequel.TableColumnValuer[T], Ptr interface {
 }
 
 // Insert is a helper function to insert multiple records.
-func Insert[T sequel.TableColumnValuer[T]](ctx context.Context, sqlConn sequel.DB, data []T) (sql.Result, error) {
+func Insert[T sequel.TableColumnValuer](ctx context.Context, sqlConn sequel.DB, data []T) (sql.Result, error) {
 	noOfData := len(data)
 	if noOfData == 0 {
 		return new(sequel.EmptyResult), nil
@@ -565,17 +560,20 @@ type sqlStmt struct {
 	args []any
 }
 
-func (s *sqlStmt) Var(query string, value any) {
+var (
+	_ sequel.Stmt = (*sqlStmt)(nil)
+)
+
+func (s *sqlStmt) Var(value any) string {
 	s.pos++
-	s.WriteString(query + "?")
 	s.args = append(s.args, value)
+	return "?"
 }
 
-func (s *sqlStmt) Vars(query string, values []any) {
-	s.WriteString(query)
+func (s *sqlStmt) Vars(values []any) string {
 	noOfLen := len(values)
-	s.WriteString("(" + strings.Repeat(",?", noOfLen)[1:] + ")")
 	s.args = append(s.args, values...)
+	return "(" + strings.Repeat(",?", noOfLen)[1:] + ")"
 }
 
 func (s sqlStmt) Args() []any {
@@ -595,16 +593,16 @@ func DbTable[T sequel.Tabler](model T) string {
 	return model.TableName()
 }
 
-func dbName(model any) string {
-	if v, ok := model.(sequel.Databaser); ok {
-		return v.DatabaseName() + "."
-	}
-	return ""
-}
-
 func Columns[T sequel.Columner](model T) []string {
 	if v, ok := any(model).(sequel.SQLColumner); ok {
 		return v.SQLColumns()
 	}
 	return model.ColumnNames()
+}
+
+func dbName(model any) string {
+	if v, ok := model.(sequel.Databaser); ok {
+		return v.DatabaseName() + "."
+	}
+	return ""
 }

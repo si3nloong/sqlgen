@@ -7,6 +7,9 @@ import (
 	"github.com/si3nloong/sqlgen/sequel/types"
 )
 
+func (Model) Schemas() sequel.TableDefinition {
+	return sequel.TableDefinition{}
+}
 func (Model) TableName() string {
 	return "`AutoIncrPK`"
 }

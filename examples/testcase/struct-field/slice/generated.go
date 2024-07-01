@@ -8,6 +8,9 @@ import (
 	"github.com/si3nloong/sqlgen/sequel/types"
 )
 
+func (Slice) Schemas() sequel.TableDefinition {
+	return sequel.TableDefinition{}
+}
 func (Slice) TableName() string {
 	return "`slice`"
 }
