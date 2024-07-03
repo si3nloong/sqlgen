@@ -28,51 +28,35 @@ type Dialect interface {
 	QuoteIdentifier(v string) string
 	QuoteRune() rune
 
-	TableSchemas(model TableSchema) TableDefinition
+	TableSchemas(model GoTableSchema) TableSchema
 }
 
-type TableSchema interface {
+type GoTableSchema interface {
 	GoName() string
 	DatabaseName() string
 	TableName() string
-	AutoIncrKey() (ColumnSchema, bool)
-	Keys() []ColumnSchema
-	Columns() []ColumnSchema
-	Indexes() []IndexSchema
+	AutoIncrKey() (GoColumnSchema, bool)
+	Keys() []string
+	Columns() []string
+	// Key(i int) GoColumnSchema
+	Column(i int) GoColumnSchema
+	Index(i int) GoIndexSchema
 	Implements(*types.Interface) (*types.Func, bool)
 }
 
-type ColumnSchema interface {
+type GoColumnSchema interface {
 	GoName() string
 	GoPath() string
 	// GoTag() reflect.StructTag
 	ColumnName() string
 	ColumnPos() int
-	Size() int
+	Size() int64
 	Type() types.Type
 	SQLValuer() QueryFunc
 	SQLScanner() QueryFunc
 }
 
-type IndexSchema interface {
-	Name() string
+type GoIndexSchema interface {
+	Columns() []string
 	Type() string
-	ColumnNames() []string
-}
-
-type ColumnValuer[T any] interface {
-	ColumnName() string
-	Convert(T) driver.Value
-	Value() driver.Value
-}
-
-type SQLColumnValuer[T any] interface {
-	ColumnName() string
-	Convert(T) driver.Value
-	Value() driver.Value
-	SQLValue(placeholder string) string
-}
-
-type Migrator interface {
-	Schemas() TableDefinition
 }

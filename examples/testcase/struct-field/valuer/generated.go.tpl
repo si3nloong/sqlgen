@@ -7,6 +7,15 @@ import (
 	"github.com/si3nloong/sqlgen/sequel/types"
 )
 
+func (B) Schemas() sequel.TableDefinition {
+	return sequel.TableDefinition{
+		Columns: []sequel.ColumnDefinition{
+			{Name: "`id`", Definition: "`id` BIGINT NOT NULL DEFAULT 0"},
+			{Name: "`value`", Definition: "`value` VARCHAR(255) NOT NULL"},
+			{Name: "`n`", Definition: "`n` VARCHAR(255) NOT NULL DEFAULT ''"},
+		},
+	}
+}
 func (B) TableName() string {
 	return "`b`"
 }

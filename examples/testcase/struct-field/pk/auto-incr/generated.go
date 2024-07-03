@@ -8,7 +8,18 @@ import (
 )
 
 func (Model) Schemas() sequel.TableDefinition {
-	return sequel.TableDefinition{}
+	return sequel.TableDefinition{
+		PK: &sequel.PrimaryKeyDefinition{
+			Columns:    []string{"`id`"},
+			Definition: "PRIMARY KEY (`id`)",
+		},
+		Columns: []sequel.ColumnDefinition{
+			{Name: "`name`", Definition: "`name` VARCHAR(255) NOT NULL DEFAULT ''"},
+			{Name: "`f`", Definition: "`f` BOOL NOT NULL DEFAULT false"},
+			{Name: "`id`", Definition: "`id` INTEGER NOT NULL DEFAULT 0"},
+			{Name: "`n`", Definition: "`n` BIGINT NOT NULL DEFAULT 0"},
+		},
+	}
 }
 func (Model) TableName() string {
 	return "`AutoIncrPK`"

@@ -1,37 +1,21 @@
 package mysql
 
 import (
-	"fmt"
-	"strings"
-
-	"github.com/samber/lo"
 	"github.com/si3nloong/sqlgen/sequel"
 )
 
-func (s *mysqlDriver) TableSchemas(table sequel.TableSchema) sequel.TableDefinition {
-	def := sequel.TableDefinition{}
-	for _, col := range table.Columns() {
-		if k, ok := table.AutoIncrKey(); ok && k == col {
-			def.Columns = append(def.Columns, sequel.ColumnDefinition{
-				Definition: dataType(col) + " AUTO_INCREMENT",
-			})
-		} else {
-			def.Columns = append(def.Columns, sequel.ColumnDefinition{
-				Definition: dataType(col),
-			})
-		}
+func (s *mysqlDriver) TableSchemas(table sequel.GoTableSchema) sequel.TableSchema {
+	schema := new(tableDefinition)
+	schema.keys = append(schema.keys, table.Keys()...)
+	for i := range table.Columns() {
+		col := table.Column(i)
+		column := columnDefinition{}
+		column.name = col.ColumnName()
+		column.length = col.Size()
+		column.dataType = dataType(col)
+		// column.nullable =
+		column.comment = ""
+		schema.cols = append(schema.cols, &column)
 	}
-	if keys := table.Keys(); len(keys) > 0 {
-		keyCols := lo.Map(keys, func(v sequel.ColumnSchema, _ int) string {
-			return v.ColumnName()
-		})
-		def.PK.Columns = append(def.PK.Columns, keyCols...)
-		def.PK.Definition = fmt.Sprintf("PRIMARY KEY (%s)", strings.Join(keyCols, ","))
-	}
-	if idxs := table.Indexes(); len(idxs) > 0 {
-		def.Indexes = append(def.Indexes, sequel.IndexDefinition{
-			Definition: "",
-		})
-	}
-	return def
+	return schema
 }

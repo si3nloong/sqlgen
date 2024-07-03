@@ -12,6 +12,11 @@ import (
 	"github.com/si3nloong/sqlgen/sequel/strpool"
 )
 
+type autoIncrKeyInserter interface {
+	sequel.AutoIncrKeyer
+	sequel.PrimaryKeyer
+}
+
 func InsertOne[T sequel.TableColumnValuer, Ptr interface {
 	sequel.TableColumnValuer
 	sequel.PtrScanner[T]

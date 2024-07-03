@@ -44,21 +44,19 @@ var (
 
 const fileMode = 0o755
 
-type tagOption string
-
 const (
-	TagOptionAutoIncrement tagOption = "auto_increment"
-	TagOptionBinary        tagOption = "binary"
-	TagOptionPKAlias       tagOption = "pk"
-	TagOptionPK            tagOption = "primary_key"
-	TagOptionFKAlias       tagOption = "fk"
-	TagOptionFK            tagOption = "foreign_key"
-	TagOptionUnsigned      tagOption = "unsigned"
-	TagOptionSize          tagOption = "size"
-	TagOptionDataType      tagOption = "data_type"
-	TagOptionEncode        tagOption = "encode"
-	TagOptionDecode        tagOption = "decode"
-	TagOptionUnique        tagOption = "unique"
+	TagOptionAutoIncrement = "auto_increment"
+	TagOptionBinary        = "binary"
+	TagOptionPKAlias       = "pk"
+	TagOptionPK            = "primary_key"
+	TagOptionFKAlias       = "fk"
+	TagOptionFK            = "foreign_key"
+	TagOptionUnsigned      = "unsigned"
+	TagOptionSize          = "size"
+	TagOptionDataType      = "data_type"
+	TagOptionEncode        = "encode"
+	TagOptionDecode        = "decode"
+	TagOptionUnique        = "unique"
 )
 
 var (
@@ -91,10 +89,10 @@ type structField struct {
 
 type tagOpts map[string]string
 
-func (t tagOpts) Lookup(key tagOption, keys ...tagOption) (string, bool) {
+func (t tagOpts) Lookup(key string, keys ...string) (string, bool) {
 	keys = append(keys, key)
 	for k, val := range t {
-		if lo.IndexOf(keys, tagOption(k)) >= 0 {
+		if lo.IndexOf(keys, k) >= 0 {
 			return val, true
 		}
 	}
@@ -106,50 +104,59 @@ type tableInfo struct {
 	dbName      string
 	tableName   string
 	t           types.Type
-	autoIncrKey sequel.ColumnSchema
-	keys        []sequel.ColumnSchema
-	columns     []sequel.ColumnSchema
+	autoIncrKey *columnInfo
+	keys        []*columnInfo
+	columns     []*columnInfo
+	indexes     []*indexInfo
+}
+
+func (b *tableInfo) GoName() string {
+	return b.goName
+}
+
+func (b *tableInfo) DatabaseName() string {
+	return b.dbName
+}
+
+func (b *tableInfo) TableName() string {
+	return b.tableName
+}
+
+func (b *tableInfo) AutoIncrKey() (sequel.GoColumnSchema, bool) {
+	return b.autoIncrKey, b.autoIncrKey != nil
+}
+
+func (b *tableInfo) Keys() []string {
+	return lo.Map(b.keys, func(c *columnInfo, _ int) string {
+		return c.colName
+	})
+}
+
+func (b *tableInfo) Columns() []string {
+	return lo.Map(b.columns, func(c *columnInfo, _ int) string {
+		return c.colName
+	})
+}
+
+func (b *tableInfo) Implements(T *types.Interface) (*types.Func, bool) {
+	return types.MissingMethod(b.t, T, true)
+}
+
+func (b *tableInfo) PtrImplements(T *types.Interface) (*types.Func, bool) {
+	return types.MissingMethod(types.NewPointer(b.t), T, true)
+}
+
+func (b *tableInfo) Column(i int) sequel.GoColumnSchema {
+	return b.columns[i]
+}
+
+func (b *tableInfo) Index(i int) sequel.GoIndexSchema {
+	return b.indexes[i]
 }
 
 // Mean table has only pk
 func (b tableInfo) hasNoColsExceptPK() bool {
 	return len(b.keys) == len(b.columns)
-}
-
-func (b tableInfo) GoName() string {
-	return b.goName
-}
-
-func (b tableInfo) DatabaseName() string {
-	return b.dbName
-}
-
-func (b tableInfo) TableName() string {
-	return b.tableName
-}
-
-func (b tableInfo) AutoIncrKey() (sequel.ColumnSchema, bool) {
-	return b.autoIncrKey, b.autoIncrKey != nil
-}
-
-func (b tableInfo) Keys() []sequel.ColumnSchema {
-	return b.keys
-}
-
-func (b tableInfo) Indexes() []sequel.IndexSchema {
-	return nil
-}
-
-func (b tableInfo) Columns() []sequel.ColumnSchema {
-	return b.columns
-}
-
-func (b tableInfo) Implements(T *types.Interface) (*types.Func, bool) {
-	return types.MissingMethod(b.t, T, true)
-}
-
-func (b tableInfo) PtrImplements(T *types.Interface) (*types.Func, bool) {
-	return types.MissingMethod(types.NewPointer(b.t), T, true)
 }
 
 type columnInfo struct {
@@ -160,11 +167,11 @@ type columnInfo struct {
 	t       types.Type
 	tag     tagOpts
 	model   *config.Model
-	size    int
+	size    int64
 }
 
 var (
-	_ (sequel.ColumnSchema) = (*columnInfo)(nil)
+	_ (sequel.GoColumnSchema) = (*columnInfo)(nil)
 )
 
 func (i columnInfo) SQLValuer() sequel.QueryFunc {
@@ -185,33 +192,46 @@ func (i columnInfo) SQLScanner() sequel.QueryFunc {
 	}
 }
 
-func (i columnInfo) GoName() string {
-	return i.goName
+func (c *columnInfo) GoName() string {
+	return c.goName
 }
 
-func (i columnInfo) GoPath() string {
-	return i.goPath
+func (c *columnInfo) GoPath() string {
+	return c.goPath
 }
 
-func (i columnInfo) Type() types.Type {
-	return i.t
+func (c *columnInfo) Type() types.Type {
+	return c.t
 }
 
-func (i columnInfo) Size() int {
-	return i.size
+func (c *columnInfo) Size() int64 {
+	return c.size
 }
 
-func (i columnInfo) ColumnName() string {
-	return i.colName
+func (c *columnInfo) ColumnName() string {
+	return c.colName
 }
 
-func (i columnInfo) ColumnPos() int {
-	return i.colPos
+func (c *columnInfo) ColumnPos() int {
+	return c.colPos
 }
 
-func (i *columnInfo) Implements(T *types.Interface) (wrongType bool) {
-	_, wrongType = types.MissingMethod(i.t, T, true)
+func (c *columnInfo) Implements(T *types.Interface) (wrongType bool) {
+	_, wrongType = types.MissingMethod(c.t, T, true)
 	return
+}
+
+type indexInfo struct {
+	columns   []string
+	indexType string
+}
+
+func (i indexInfo) Columns() []string {
+	return i.columns
+}
+
+func (i indexInfo) Type() string {
+	return i.indexType
 }
 
 func Generate(c *config.Config) error {

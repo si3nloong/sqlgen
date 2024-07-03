@@ -81,6 +81,7 @@ func (g *Generator) QuoteIdentifier(str string) string {
 }
 
 func (g *Generator) generate(pkg *packages.Package, dstDir string, typeInferred bool, schemas []*tableInfo) error {
+	defer g.Reset()
 	importPkgs := NewPackage(pkg.PkgPath, pkg.Name)
 	importPkgs.Import(types.NewPackage("strings", ""))
 	importPkgs.Import(types.NewPackage("strconv", ""))
@@ -91,6 +92,7 @@ func (g *Generator) generate(pkg *packages.Package, dstDir string, typeInferred 
 		t := schemas[0]
 
 		g.L()
+		g.buildSchemas(t)
 
 		if method, wrongType := t.Implements(sqlDatabaser); wrongType {
 			g.LogError(fmt.Errorf(`sqlgen: struct %q has function "DatabaseName" but wrong footprint`, t.goName))
@@ -147,8 +149,8 @@ func (g *Generator) generate(pkg *packages.Package, dstDir string, typeInferred 
 		if method, wrongType := t.Implements(sqlQueryColumner); wrongType {
 			g.LogError(fmt.Errorf(`sqlgen: struct %q has function "SQLColumns" but wrong footprint`, t.goName))
 		} else if method != nil && !wrongType {
-			if _, ok := lo.Find(t.columns, func(f sequel.ColumnSchema) bool {
-				return f.SQLScanner() != nil
+			if _, ok := lo.Find(t.columns, func(col *columnInfo) bool {
+				return col.SQLScanner() != nil
 			}); ok {
 				g.L("func (" + t.goName + ") SQLColumns() []string {")
 				g.WriteString("return []string{")
@@ -300,6 +302,45 @@ func (g *Generator) generate(pkg *packages.Package, dstDir string, typeInferred 
 	return f.Close()
 }
 
+func (g *Generator) buildSchemas(table *tableInfo) {
+	schema := g.dialect.TableSchemas(table)
+
+	g.L("func (" + table.goName + ") Schemas() sequel.TableDefinition {")
+	g.L("return sequel.TableDefinition{")
+	if pk, ok := schema.PK(); ok {
+		g.L("PK: &sequel.PrimaryKeyDefinition{")
+		g.WriteString("Columns: []string{")
+		columns := pk.Columns()
+		for i := range columns {
+			if i > 0 {
+				g.WriteByte(',')
+			}
+			g.WriteString(g.Quote(columns[i]))
+		}
+		g.WriteString("},\n")
+		g.L("Definition:", g.Quote(pk.Definition()), ",")
+		g.L("},")
+	}
+	if cols := schema.Columns(); len(cols) > 0 {
+		g.L("Columns: []sequel.ColumnDefinition{")
+		for i := range cols {
+			col := schema.Column(i)
+			g.L("{Name:", g.Quote(col.Name()), ", Definition:", g.Quote(col.Definition()), "},")
+		}
+		g.L("},")
+	}
+	if idxs := schema.Indexes(); len(idxs) > 0 {
+		g.L("Indexes: []sequel.IndexDefinition{")
+		for i := range idxs {
+			idx := schema.Index(i)
+			g.L("{Name:", g.Quote(idx.Name()), ",Definition:", g.Quote(idx.Definition()), "},")
+		}
+		g.L("},")
+	}
+	g.L("}")
+	g.L("}")
+}
+
 func (g *Generator) buildCompositeKeys(importPkgs *Package, table *tableInfo) {
 	g.L("func (v " + table.goName + ") CompositeKey() ([]string, []int, []any) {")
 	g.WriteString("return []string{")
@@ -423,8 +464,8 @@ func (g *Generator) buildFindByPK(importPkgs *Package, table *tableInfo) {
 
 func (g *Generator) buildInsertOne(importPkgs *Package, table *tableInfo) {
 	// Filter out auto increment key
-	columns := lo.Filter(table.columns, func(v sequel.ColumnSchema, _ int) bool {
-		return v != table.autoIncrKey
+	columns := lo.Filter(table.columns, func(col *columnInfo, _ int) bool {
+		return col != table.autoIncrKey
 	})
 	buf := strpool.AcquireString()
 	buf.WriteString("INSERT INTO " + table.tableName + " (")
@@ -481,8 +522,8 @@ func (g *Generator) buildInsertOne(importPkgs *Package, table *tableInfo) {
 func (g *Generator) buildUpdateByPK(importPkgs *Package, table *tableInfo) {
 	buf := strpool.AcquireString()
 	buf.WriteString("UPDATE " + (table.tableName) + " SET ")
-	columns := lo.Filter(table.columns, func(v sequel.ColumnSchema, _ int) bool {
-		return !lo.Contains(table.keys, v)
+	columns := lo.Filter(table.columns, func(col *columnInfo, _ int) bool {
+		return !lo.Contains(table.keys, col)
 	})
 	for i, f := range columns {
 		if i > 0 {

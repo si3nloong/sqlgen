@@ -8,6 +8,17 @@ import (
 	"github.com/si3nloong/sqlgen/sequel"
 )
 
+func (Version) Schemas() sequel.TableDefinition {
+	return sequel.TableDefinition{
+		PK: &sequel.PrimaryKeyDefinition{
+			Columns:    []string{"`id`"},
+			Definition: "PRIMARY KEY (`id`)",
+		},
+		Columns: []sequel.ColumnDefinition{
+			{Name: "`id`", Definition: "`id` VARCHAR(36) NOT NULL DEFAULT UUID()"},
+		},
+	}
+}
 func (Version) TableName() string {
 	return "`version`"
 }

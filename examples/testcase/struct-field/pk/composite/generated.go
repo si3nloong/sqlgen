@@ -10,7 +10,18 @@ import (
 )
 
 func (Composite) Schemas() sequel.TableDefinition {
-	return sequel.TableDefinition{}
+	return sequel.TableDefinition{
+		PK: &sequel.PrimaryKeyDefinition{
+			Columns:    []string{"`col_1`", "`col_3`"},
+			Definition: "PRIMARY KEY (`col_1`,`col_3`)",
+		},
+		Columns: []sequel.ColumnDefinition{
+			{Name: "`flag`", Definition: "`flag` BOOL NOT NULL DEFAULT false"},
+			{Name: "`col_1`", Definition: "`col_1` VARCHAR(255) NOT NULL DEFAULT ''"},
+			{Name: "`col_2`", Definition: "`col_2` BOOL NOT NULL DEFAULT false"},
+			{Name: "`col_3`", Definition: "`col_3` VARCHAR(36) NOT NULL DEFAULT UUID()"},
+		},
+	}
 }
 func (Composite) TableName() string {
 	return "`composite`"

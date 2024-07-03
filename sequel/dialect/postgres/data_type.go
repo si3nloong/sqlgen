@@ -11,7 +11,7 @@ import (
 	"github.com/si3nloong/sqlgen/sequel"
 )
 
-func dataType(f sequel.ColumnSchema) (dataType string) {
+func dataType(f sequel.GoColumnSchema) (dataType string) {
 	var (
 		ptrs = make([]types.Type, 0)
 		t    = f.Type()
@@ -67,7 +67,7 @@ func dataType(f sequel.ColumnSchema) (dataType string) {
 			}
 			return "TIMESTAMP WITH TIME ZONE" + notNullDefault(ptrs, sql.RawBytes(`NOW()`))
 		case "string":
-			size := 255
+			size := int64(255)
 			if v := f.Size(); v > 0 {
 				size = v
 			}
