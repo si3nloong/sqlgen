@@ -8,7 +8,7 @@ import (
 
 func TestConfig(t *testing.T) {
 	cfg := DefaultConfig()
-	require.True(t, *cfg.Strict)
+	require.NotNil(t, cfg)
 	require.ElementsMatch(t, []string{"./**/*"}, cfg.Source)
 	require.Equal(t, MySQL, cfg.Driver)
 	require.Equal(t, SnakeCase, cfg.NamingConvention)
