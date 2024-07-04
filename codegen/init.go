@@ -1,6 +1,7 @@
 package codegen
 
 import (
+	"bytes"
 	"go/types"
 	"log/slog"
 	"os"
@@ -40,11 +41,9 @@ func renderTemplate(
 	dstDir string,
 	dstFilename string,
 ) error {
-	w, blr := strpool.AcquireString(), strpool.AcquireString()
-	defer func() {
-		strpool.ReleaseString(w)
-		strpool.ReleaseString(blr)
-	}()
+	w := new(bytes.Buffer)
+	blr := strpool.AcquireString()
+	defer strpool.ReleaseString(blr)
 
 	impPkg := NewPackage(pkgPath, pkgName)
 	tmpl, err := template.New(tmplName).Funcs(template.FuncMap{
@@ -86,6 +85,7 @@ func renderTemplate(
 		w.WriteString(")\n")
 	}
 	w.WriteString(blr.String())
+	strpool.ReleaseString(blr)
 
 	// log.Println(w.String())
 	os.MkdirAll(dstDir, fileMode)
@@ -94,11 +94,10 @@ func renderTemplate(
 	// if err != nil {
 	// 	return err
 	// }
-	formatted, err := imports.Process(fileDest, []byte(w.String()), &imports.Options{Comments: true})
+	formatted, err := imports.Process(fileDest, w.Bytes(), &imports.Options{Comments: true})
 	if err != nil {
 		return err
 	}
-	blr.Reset()
 	w.Reset()
 
 	slog.Info("Creating " + fileDest)
