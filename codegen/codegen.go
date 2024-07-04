@@ -259,10 +259,8 @@ func (i indexInfo) Type() string {
 func Generate(c *config.Config) error {
 	cfg := config.DefaultConfig()
 	if c != nil {
-		cfg = c
+		cfg = cfg.Merge(c)
 	}
-
-	cfg.Init()
 
 	dialect, ok := sequel.GetDialect(string(cfg.Driver))
 	if !ok {
