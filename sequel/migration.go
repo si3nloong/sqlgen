@@ -18,7 +18,7 @@ type TableColumn interface {
 	Length() int64
 	DataType() string
 	Nullable() bool
-	// Default() any
+	Default() any
 	Comment() string
 	Definition() string
 }

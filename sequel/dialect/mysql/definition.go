@@ -3,6 +3,7 @@ package mysql
 import (
 	"crypto/md5"
 	"encoding/hex"
+	"strconv"
 	"strings"
 	"unsafe"
 
@@ -64,11 +65,13 @@ func (k keyDefinition) Definition() string {
 }
 
 type columnDefinition struct {
-	name     string
-	length   int64
-	dataType string
-	nullable bool
-	comment  string
+	name         string
+	length       int64
+	dataType     string
+	nullable     bool
+	defaultValue any
+	comment      string
+	extra        string
 }
 
 func (c *columnDefinition) Name() string {
@@ -80,11 +83,15 @@ func (c *columnDefinition) Length() int64 {
 }
 
 func (c *columnDefinition) DataType() string {
-	return c.name
+	return c.dataType
 }
 
 func (c *columnDefinition) Nullable() bool {
 	return c.nullable
+}
+
+func (c *columnDefinition) Default() any {
+	return c.defaultValue
 }
 
 func (c *columnDefinition) Comment() string {
@@ -92,7 +99,25 @@ func (c *columnDefinition) Comment() string {
 }
 
 func (c *columnDefinition) Definition() string {
-	return c.name + " " + c.dataType
+	str := c.name + " " + c.columnType()
+	if !c.nullable {
+		str += " NOT NULL"
+	}
+	if c.defaultValue != nil {
+		str += " DEFAULT " + format(c.defaultValue)
+	}
+	if c.extra != "" {
+		str += " " + c.extra
+	}
+	return str
+}
+
+func (c *columnDefinition) columnType() string {
+	str := c.dataType
+	if c.length > 0 {
+		str += "(" + strconv.FormatInt(c.length, 10) + ")"
+	}
+	return str
 }
 
 type indexDefinition struct {

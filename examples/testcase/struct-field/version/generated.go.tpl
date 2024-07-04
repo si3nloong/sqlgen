@@ -15,7 +15,7 @@ func (Version) Schemas() sequel.TableDefinition {
 			Definition: "PRIMARY KEY (`id`)",
 		},
 		Columns: []sequel.ColumnDefinition{
-			{Name: "`id`", Definition: "`id` VARCHAR(36) NOT NULL DEFAULT UUID()"},
+			{Name: "`id`", Definition: "`id` VARCHAR(36) NOT NULL"},
 		},
 	}
 }

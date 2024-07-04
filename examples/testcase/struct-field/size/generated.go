@@ -9,7 +9,13 @@ import (
 )
 
 func (Size) Schemas() sequel.TableDefinition {
-	return sequel.TableDefinition{}
+	return sequel.TableDefinition{
+		Columns: []sequel.ColumnDefinition{
+			{Name: "`str`", Definition: "`str` VARCHAR(25) NOT NULL DEFAULT ''"},
+			{Name: "`timestamp`", Definition: "`timestamp` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)"},
+			{Name: "`time`", Definition: "`time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP"},
+		},
+	}
 }
 func (Size) TableName() string {
 	return "`size`"

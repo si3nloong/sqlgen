@@ -8,7 +8,11 @@ import (
 )
 
 func (A) Schemas() sequel.TableDefinition {
-	return sequel.TableDefinition{}
+	return sequel.TableDefinition{
+		Columns: []sequel.ColumnDefinition{
+			{Name: "`t`", Definition: "`t` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP"},
+		},
+	}
 }
 func (A) TableName() string {
 	return "`a`"

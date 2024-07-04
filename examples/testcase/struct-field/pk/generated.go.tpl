@@ -8,6 +8,20 @@ import (
 	"github.com/si3nloong/sqlgen/sequel/types"
 )
 
+func (Car) Schemas() sequel.TableDefinition {
+	return sequel.TableDefinition{
+		PK: &sequel.PrimaryKeyDefinition{
+			Columns:    []string{"`id`"},
+			Definition: "PRIMARY KEY (`id`)",
+		},
+		Columns: []sequel.ColumnDefinition{
+			{Name: "`id`", Definition: "`id` BIGINT NOT NULL"},
+			{Name: "`no`", Definition: "`no` VARCHAR(255) NOT NULL DEFAULT ''"},
+			{Name: "`color`", Definition: "`color` INTEGER NOT NULL DEFAULT 0"},
+			{Name: "`manuc_date`", Definition: "`manuc_date` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP"},
+		},
+	}
+}
 func (Car) TableName() string {
 	return "`car`"
 }
@@ -49,6 +63,20 @@ func (v Car) GetManucDate() sequel.ColumnValuer[time.Time] {
 	return sequel.Column("`manuc_date`", v.ManucDate, func(val time.Time) driver.Value { return time.Time(val) })
 }
 
+func (User) Schemas() sequel.TableDefinition {
+	return sequel.TableDefinition{
+		PK: &sequel.PrimaryKeyDefinition{
+			Columns:    []string{"`id`"},
+			Definition: "PRIMARY KEY (`id`)",
+		},
+		Columns: []sequel.ColumnDefinition{
+			{Name: "`id`", Definition: "`id` BIGINT NOT NULL"},
+			{Name: "`name`", Definition: "`name` VARCHAR(255) NOT NULL DEFAULT ''"},
+			{Name: "`age`", Definition: "`age` TINYINT UNSIGNED NOT NULL DEFAULT 0"},
+			{Name: "`email`", Definition: "`email` VARCHAR(255) NOT NULL DEFAULT ''"},
+		},
+	}
+}
 func (User) TableName() string {
 	return "`user`"
 }
@@ -90,6 +118,18 @@ func (v User) GetEmail() sequel.ColumnValuer[string] {
 	return sequel.Column("`email`", v.Email, func(val string) driver.Value { return string(val) })
 }
 
+func (House) Schemas() sequel.TableDefinition {
+	return sequel.TableDefinition{
+		PK: &sequel.PrimaryKeyDefinition{
+			Columns:    []string{"`id`"},
+			Definition: "PRIMARY KEY (`id`)",
+		},
+		Columns: []sequel.ColumnDefinition{
+			{Name: "`id`", Definition: "`id` INTEGER UNSIGNED NOT NULL"},
+			{Name: "`no`", Definition: "`no` VARCHAR(255) NOT NULL DEFAULT ''"},
+		},
+	}
+}
 func (House) TableName() string {
 	return "`house`"
 }

@@ -8,6 +8,28 @@ import (
 	"github.com/si3nloong/sqlgen/sequel/types"
 )
 
+func (Primitive) Schemas() sequel.TableDefinition {
+	return sequel.TableDefinition{
+		Columns: []sequel.ColumnDefinition{
+			{Name: "`str`", Definition: "`str` VARCHAR(255) NOT NULL DEFAULT ''"},
+			{Name: "`bytes`", Definition: "`bytes` BLOB NOT NULL"},
+			{Name: "`bool`", Definition: "`bool` BOOL NOT NULL DEFAULT false"},
+			{Name: "`int`", Definition: "`int` INTEGER NOT NULL DEFAULT 0"},
+			{Name: "`int_8`", Definition: "`int_8` TINYINT NOT NULL DEFAULT 0"},
+			{Name: "`int_16`", Definition: "`int_16` SMALLINT NOT NULL DEFAULT 0"},
+			{Name: "`int_32`", Definition: "`int_32` MEDIUMINT NOT NULL DEFAULT 0"},
+			{Name: "`int_64`", Definition: "`int_64` BIGINT NOT NULL DEFAULT 0"},
+			{Name: "`uint`", Definition: "`uint` INTEGER UNSIGNED NOT NULL DEFAULT 0"},
+			{Name: "`uint_8`", Definition: "`uint_8` TINYINT UNSIGNED NOT NULL DEFAULT 0"},
+			{Name: "`uint_16`", Definition: "`uint_16` SMALLINT UNSIGNED NOT NULL DEFAULT 0"},
+			{Name: "`uint_32`", Definition: "`uint_32` MEDIUMINT UNSIGNED NOT NULL DEFAULT 0"},
+			{Name: "`uint_64`", Definition: "`uint_64` BIGINT UNSIGNED NOT NULL DEFAULT 0"},
+			{Name: "`f_32`", Definition: "`f_32` FLOAT NOT NULL DEFAULT 0"},
+			{Name: "`f_64`", Definition: "`f_64` FLOAT NOT NULL DEFAULT 0"},
+			{Name: "`time`", Definition: "`time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP"},
+		},
+	}
+}
 func (Primitive) TableName() string {
 	return "`primitive`"
 }

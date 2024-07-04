@@ -17,6 +17,8 @@ import (
 	"strings"
 	"syscall"
 
+	"strconv"
+
 	"github.com/Masterminds/semver/v3"
 	"github.com/samber/lo"
 	"github.com/si3nloong/sqlgen/codegen/config"
@@ -160,37 +162,20 @@ func (b tableInfo) hasNoColsExceptPK() bool {
 }
 
 type columnInfo struct {
-	goName  string
-	goPath  string
-	colName string
-	colPos  int
-	t       types.Type
-	tag     tagOpts
-	model   *config.Model
-	size    int64
+	goName   string
+	goPath   string
+	colName  string
+	colPos   int
+	t        types.Type
+	autoIncr bool
+	tag      tagOpts
+	model    *config.Model
+	size     int64
 }
 
 var (
 	_ (sequel.GoColumnSchema) = (*columnInfo)(nil)
 )
-
-func (i columnInfo) SQLValuer() sequel.QueryFunc {
-	if i.model == nil {
-		return nil
-	}
-	return func(placeholder string) string {
-		return strings.Replace(i.model.SQLValuer, "{placeholder}", placeholder, 1)
-	}
-}
-
-func (i columnInfo) SQLScanner() sequel.QueryFunc {
-	if i.model == nil {
-		return nil
-	}
-	return func(column string) string {
-		return strings.Replace(i.model.SQLScanner, "{column}", column, 1)
-	}
-}
 
 func (c *columnInfo) GoName() string {
 	return c.goName
@@ -208,6 +193,10 @@ func (c *columnInfo) Size() int64 {
 	return c.size
 }
 
+func (c *columnInfo) AutoIncr() bool {
+	return c.autoIncr
+}
+
 func (c *columnInfo) ColumnName() string {
 	return c.colName
 }
@@ -219,6 +208,24 @@ func (c *columnInfo) ColumnPos() int {
 func (c *columnInfo) Implements(T *types.Interface) (wrongType bool) {
 	_, wrongType = types.MissingMethod(c.t, T, true)
 	return
+}
+
+func (i columnInfo) SQLValuer() sequel.QueryFunc {
+	if i.model == nil {
+		return nil
+	}
+	return func(placeholder string) string {
+		return strings.Replace(i.model.SQLValuer, "{placeholder}", placeholder, 1)
+	}
+}
+
+func (i columnInfo) SQLScanner() sequel.QueryFunc {
+	if i.model == nil {
+		return nil
+	}
+	return func(column string) string {
+		return strings.Replace(i.model.SQLScanner, "{column}", column, 1)
+	}
 }
 
 type indexInfo struct {
@@ -741,6 +748,13 @@ func parseGoPackage(
 					return fmt.Errorf("sqlgen: struct %q has duplicate key %q in %s", s.name, column.colName, dir)
 				}
 
+				if v, ok := column.tag.Lookup(TagOptionSize); ok {
+					column.size, err = strconv.ParseInt(v, 10, 64)
+					if err != nil {
+						return fmt.Errorf(`sqlgen: %w`, err)
+					}
+				}
+
 				if _, ok := column.tag.Lookup(TagOptionPK, TagOptionPKAlias, TagOptionAutoIncrement); ok {
 					// Check auto increment
 					_, autoIncr := column.tag.Lookup(TagOptionAutoIncrement)
@@ -749,6 +763,7 @@ func parseGoPackage(
 							return fmt.Errorf(`sqlgen: you cannot have a composite key if you define auto increment key`)
 						}
 						table.autoIncrKey = column
+						column.autoIncr = true
 					}
 					table.keys = append(table.keys, column)
 				}

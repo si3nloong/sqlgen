@@ -10,6 +10,19 @@ import (
 	"github.com/si3nloong/sqlgen/sequel/types"
 )
 
+func (Binary) Schemas() sequel.TableDefinition {
+	return sequel.TableDefinition{
+		PK: &sequel.PrimaryKeyDefinition{
+			Columns:    []string{"`id`"},
+			Definition: "PRIMARY KEY (`id`)",
+		},
+		Columns: []sequel.ColumnDefinition{
+			{Name: "`id`", Definition: "`id` VARCHAR(36) NOT NULL"},
+			{Name: "`str`", Definition: "`str` VARCHAR(255) NOT NULL DEFAULT ''"},
+			{Name: "`time`", Definition: "`time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP"},
+		},
+	}
+}
 func (Binary) TableName() string {
 	return "`binary`"
 }

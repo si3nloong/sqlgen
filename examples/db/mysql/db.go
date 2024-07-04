@@ -15,7 +15,7 @@ import (
 
 type autoIncrKeyInserter interface {
 	sequel.AutoIncrKeyer
-	sequel.PrimaryKeyer
+	sequel.SingleInserter
 }
 
 func InsertOne[T sequel.TableColumnValuer, Ptr interface {
@@ -108,7 +108,7 @@ func Insert[T sequel.TableColumnValuer](ctx context.Context, sqlConn sequel.DB, 
 	}
 }
 
-func UpsertOne[T sequel.KeyValuer[T], Ptr sequel.KeyValueScanner[T]](ctx context.Context, sqlConn sequel.DB, model Ptr, override bool, omittedFields ...string) (sql.Result, error) {
+func UpsertOne[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Context, sqlConn sequel.DB, model Ptr, override bool, omittedFields ...string) (sql.Result, error) {
 	switch v := any(model).(type) {
 	case sequel.PrimaryKeyer:
 		pkName, idx, _ := v.PK()
@@ -195,7 +195,7 @@ func UpsertOne[T sequel.KeyValuer[T], Ptr sequel.KeyValueScanner[T]](ctx context
 }
 
 // Upsert is a helper function to upsert multiple records.
-func Upsert[T sequel.KeyValuer[T], Ptr sequel.PtrScanner[T]](ctx context.Context, sqlConn sequel.DB, data []T, override bool, omittedFields ...string) (sql.Result, error) {
+func Upsert[T sequel.KeyValuer, Ptr sequel.PtrScanner[T]](ctx context.Context, sqlConn sequel.DB, data []T, override bool, omittedFields ...string) (sql.Result, error) {
 	noOfData := len(data)
 	if noOfData == 0 {
 		return new(sequel.EmptyResult), nil
@@ -300,7 +300,7 @@ type primaryKeyFinder interface {
 }
 
 // FindByPK is to find single record using primary key.
-func FindByPK[T sequel.KeyValuer[T], Ptr sequel.KeyValueScanner[T]](ctx context.Context, sqlConn sequel.DB, model Ptr) error {
+func FindByPK[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Context, sqlConn sequel.DB, model Ptr) error {
 	switch v := any(model).(type) {
 	case primaryKeyFinder:
 		query, args := v.FindOneByPKStmt()
@@ -319,7 +319,7 @@ func FindByPK[T sequel.KeyValuer[T], Ptr sequel.KeyValueScanner[T]](ctx context.
 }
 
 // UpdateByPK is to update single record using primary key.
-func UpdateByPK[T sequel.KeyValuer[T]](ctx context.Context, sqlConn sequel.DB, model T) (sql.Result, error) {
+func UpdateByPK[T sequel.KeyValuer](ctx context.Context, sqlConn sequel.DB, model T) (sql.Result, error) {
 	switch v := any(model).(type) {
 	case sequel.KeyUpdater:
 		query, args := v.UpdateOneByPKStmt()
@@ -337,7 +337,7 @@ func UpdateByPK[T sequel.KeyValuer[T]](ctx context.Context, sqlConn sequel.DB, m
 }
 
 // DeleteByPK is to update single record using primary key.
-func DeleteByPK[T sequel.KeyValuer[T]](ctx context.Context, sqlConn sequel.DB, model T) (sql.Result, error) {
+func DeleteByPK[T sequel.KeyValuer](ctx context.Context, sqlConn sequel.DB, model T) (sql.Result, error) {
 	switch v := any(model).(type) {
 	case sequel.KeyDeleter:
 		query, args := v.DeleteOneByPKStmt()

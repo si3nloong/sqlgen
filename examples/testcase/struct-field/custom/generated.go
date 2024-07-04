@@ -13,7 +13,17 @@ import (
 )
 
 func (Address) Schemas() sequel.TableDefinition {
-	return sequel.TableDefinition{}
+	return sequel.TableDefinition{
+		Columns: []sequel.ColumnDefinition{
+			{Name: "`line_1`", Definition: "`line_1` VARCHAR(255) NOT NULL DEFAULT ''"},
+			{Name: "`line_2`", Definition: "`line_2` VARCHAR(255) DEFAULT ''"},
+			{Name: "`city`", Definition: "`city` VARCHAR(255) NOT NULL DEFAULT ''"},
+			{Name: "`post_code`", Definition: "`post_code` INTEGER UNSIGNED NOT NULL DEFAULT 0"},
+			{Name: "`state_code`", Definition: "`state_code` VARCHAR(255) NOT NULL DEFAULT ''"},
+			{Name: "`geo_point`", Definition: "`geo_point` VARCHAR(255) NOT NULL"},
+			{Name: "`country_code`", Definition: "`country_code` VARCHAR(255) NOT NULL DEFAULT ''"},
+		},
+	}
 }
 func (Address) TableName() string {
 	return "`address`"
@@ -59,7 +69,17 @@ func (v Address) GetCountryCode() sequel.ColumnValuer[CountryCode] {
 }
 
 func (Customer) Schemas() sequel.TableDefinition {
-	return sequel.TableDefinition{}
+	return sequel.TableDefinition{
+		Columns: []sequel.ColumnDefinition{
+			{Name: "`id`", Definition: "`id` BIGINT NOT NULL DEFAULT 0"},
+			{Name: "`howOld`", Definition: "`howOld` TINYINT UNSIGNED NOT NULL DEFAULT 0"},
+			{Name: "`name`", Definition: "`name` VARCHAR(255) NOT NULL DEFAULT ''"},
+			{Name: "`address`", Definition: "`address` JSON NOT NULL"},
+			{Name: "`nicknames`", Definition: "`nicknames` JSON NOT NULL"},
+			{Name: "`status`", Definition: "`status` VARCHAR(255) NOT NULL DEFAULT ''"},
+			{Name: "`join_at`", Definition: "`join_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP"},
+		},
+	}
 }
 func (Customer) TableName() string {
 	return "`customer`"

@@ -8,6 +8,32 @@ import (
 	"github.com/si3nloong/sqlgen/sequel/types"
 )
 
+func (Slice) Schemas() sequel.TableDefinition {
+	return sequel.TableDefinition{
+		PK: &sequel.PrimaryKeyDefinition{
+			Columns:    []string{"`id`"},
+			Definition: "PRIMARY KEY (`id`)",
+		},
+		Columns: []sequel.ColumnDefinition{
+			{Name: "`id`", Definition: "`id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT"},
+			{Name: "`bool_list`", Definition: "`bool_list` JSON NOT NULL"},
+			{Name: "`str_list`", Definition: "`str_list` JSON NOT NULL"},
+			{Name: "`custom_str_list`", Definition: "`custom_str_list` JSON NOT NULL"},
+			{Name: "`int_list`", Definition: "`int_list` JSON NOT NULL"},
+			{Name: "`int_8_list`", Definition: "`int_8_list` JSON NOT NULL"},
+			{Name: "`int_16_list`", Definition: "`int_16_list` JSON NOT NULL"},
+			{Name: "`int_32_list`", Definition: "`int_32_list` JSON NOT NULL"},
+			{Name: "`int_64_list`", Definition: "`int_64_list` JSON NOT NULL"},
+			{Name: "`uint_list`", Definition: "`uint_list` JSON NOT NULL"},
+			{Name: "`uint_8_list`", Definition: "`uint_8_list` JSON NOT NULL"},
+			{Name: "`uint_16_list`", Definition: "`uint_16_list` JSON NOT NULL"},
+			{Name: "`uint_32_list`", Definition: "`uint_32_list` JSON NOT NULL"},
+			{Name: "`uint_64_list`", Definition: "`uint_64_list` JSON NOT NULL"},
+			{Name: "`f_32_list`", Definition: "`f_32_list` JSON NOT NULL"},
+			{Name: "`f_64_list`", Definition: "`f_64_list` JSON NOT NULL"},
+		},
+	}
+}
 func (Slice) TableName() string {
 	return "`slice`"
 }

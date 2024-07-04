@@ -15,7 +15,7 @@ func (Car) Schemas() sequel.TableDefinition {
 			Definition: "PRIMARY KEY (`id`)",
 		},
 		Columns: []sequel.ColumnDefinition{
-			{Name: "`id`", Definition: "`id` BIGINT NOT NULL DEFAULT 0"},
+			{Name: "`id`", Definition: "`id` BIGINT NOT NULL"},
 			{Name: "`no`", Definition: "`no` VARCHAR(255) NOT NULL DEFAULT ''"},
 			{Name: "`color`", Definition: "`color` INTEGER NOT NULL DEFAULT 0"},
 			{Name: "`manuc_date`", Definition: "`manuc_date` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP"},
@@ -70,7 +70,7 @@ func (User) Schemas() sequel.TableDefinition {
 			Definition: "PRIMARY KEY (`id`)",
 		},
 		Columns: []sequel.ColumnDefinition{
-			{Name: "`id`", Definition: "`id` BIGINT NOT NULL DEFAULT 0"},
+			{Name: "`id`", Definition: "`id` BIGINT NOT NULL"},
 			{Name: "`name`", Definition: "`name` VARCHAR(255) NOT NULL DEFAULT ''"},
 			{Name: "`age`", Definition: "`age` TINYINT UNSIGNED NOT NULL DEFAULT 0"},
 			{Name: "`email`", Definition: "`email` VARCHAR(255) NOT NULL DEFAULT ''"},
@@ -125,7 +125,7 @@ func (House) Schemas() sequel.TableDefinition {
 			Definition: "PRIMARY KEY (`id`)",
 		},
 		Columns: []sequel.ColumnDefinition{
-			{Name: "`id`", Definition: "`id` INTEGER NOT NULL DEFAULT 0"},
+			{Name: "`id`", Definition: "`id` INTEGER UNSIGNED NOT NULL"},
 			{Name: "`no`", Definition: "`no` VARCHAR(255) NOT NULL DEFAULT ''"},
 		},
 	}

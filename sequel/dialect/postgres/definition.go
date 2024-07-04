@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"crypto/md5"
+	"database/sql"
 	"encoding/hex"
 	"strings"
 	"unsafe"
@@ -53,11 +54,13 @@ func (s *tableDefinition) Index(i int) sequel.TableIndex {
 }
 
 type columnDefinition struct {
-	name     string
-	length   int64
-	dataType string
-	nullable bool
-	comment  string
+	name         string
+	length       int64
+	dataType     string
+	nullable     bool
+	comment      string
+	defaultValue any
+	check        sql.RawBytes
 }
 
 func (c *columnDefinition) Name() string {
@@ -69,7 +72,7 @@ func (c *columnDefinition) Length() int64 {
 }
 
 func (c *columnDefinition) DataType() string {
-	return c.name
+	return c.dataType
 }
 
 func (c *columnDefinition) Nullable() bool {
@@ -80,8 +83,22 @@ func (c *columnDefinition) Comment() string {
 	return c.comment
 }
 
+func (c *columnDefinition) Default() any {
+	return c.defaultValue
+}
+
 func (c *columnDefinition) Definition() string {
-	return c.name
+	str := c.name + " " + c.dataType
+	if !c.nullable {
+		str += " NOT NULL"
+	}
+	if c.defaultValue != nil {
+		str += " DEFAULT " + format(c.defaultValue)
+	}
+	if len(c.check) != 0 {
+		str += " " + unsafe.String(unsafe.SliceData(c.check), len(c.check))
+	}
+	return str
 }
 
 type indexDefinition struct {

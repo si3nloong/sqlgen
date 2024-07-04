@@ -6,15 +6,9 @@ import (
 
 func (s *postgresDriver) TableSchemas(table sequel.GoTableSchema) sequel.TableSchema {
 	schema := new(tableDefinition)
+	schema.keys = append(schema.keys, table.Keys()...)
 	for i := range table.Columns() {
-		col := table.Column(i)
-		column := columnDefinition{}
-		column.name = col.ColumnName()
-		column.length = col.Size()
-		column.dataType = dataType(col)
-		// column.nullable =
-		column.comment = ""
-		schema.cols = append(schema.cols, &column)
+		schema.cols = append(schema.cols, dataType(table.Column(i)))
 	}
 	return schema
 }

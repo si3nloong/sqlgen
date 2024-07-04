@@ -9,23 +9,37 @@ import (
 	"github.com/si3nloong/sqlgen/sequel/types"
 )
 
+func (Model) Schemas() sequel.TableDefinition {
+	return sequel.TableDefinition{
+		Columns: []sequel.ColumnDefinition{
+			{Name: "`str`", Definition: "`str` VARCHAR(255) DEFAULT ''"},
+			{Name: "`bool`", Definition: "`bool` BOOL DEFAULT false"},
+			{Name: "`raw_bytes`", Definition: "`raw_bytes` BLOB NOT NULL"},
+			{Name: "`int_16`", Definition: "`int_16` SMALLINT DEFAULT 0"},
+			{Name: "`int_32`", Definition: "`int_32` MEDIUMINT DEFAULT 0"},
+			{Name: "`int_64`", Definition: "`int_64` BIGINT DEFAULT 0"},
+			{Name: "`float_64`", Definition: "`float_64` FLOAT DEFAULT 0"},
+			{Name: "`time`", Definition: "`time` TIMESTAMP DEFAULT CURRENT_TIMESTAMP"},
+		},
+	}
+}
 func (Model) TableName() string {
 	return "`model`"
 }
 func (Model) ColumnNames() []string {
-	return []string{"`str`", "`bool`", "`raw_bytes`", "`int_16`", "`int_32`", "`int_64`", "`time`"}
+	return []string{"`str`", "`bool`", "`raw_bytes`", "`int_16`", "`int_32`", "`int_64`", "`float_64`", "`time`"}
 }
 func (v Model) Values() []any {
-	return []any{(driver.Valuer)(v.Str), (driver.Valuer)(v.Bool), string(v.RawBytes), (driver.Valuer)(v.Int16), (driver.Valuer)(v.Int32), (driver.Valuer)(v.Int64), (driver.Valuer)(v.Time)}
+	return []any{(driver.Valuer)(v.Str), (driver.Valuer)(v.Bool), string(v.RawBytes), (driver.Valuer)(v.Int16), (driver.Valuer)(v.Int32), (driver.Valuer)(v.Int64), (driver.Valuer)(v.Float64), (driver.Valuer)(v.Time)}
 }
 func (v *Model) Addrs() []any {
-	return []any{(sql.Scanner)(&v.Str), (sql.Scanner)(&v.Bool), types.String(&v.RawBytes), (sql.Scanner)(&v.Int16), (sql.Scanner)(&v.Int32), (sql.Scanner)(&v.Int64), (sql.Scanner)(&v.Time)}
+	return []any{(sql.Scanner)(&v.Str), (sql.Scanner)(&v.Bool), types.String(&v.RawBytes), (sql.Scanner)(&v.Int16), (sql.Scanner)(&v.Int32), (sql.Scanner)(&v.Int64), (sql.Scanner)(&v.Float64), (sql.Scanner)(&v.Time)}
 }
 func (Model) InsertPlaceholders(row int) string {
-	return "(?,?,?,?,?,?,?)"
+	return "(?,?,?,?,?,?,?,?)"
 }
 func (v Model) InsertOneStmt() (string, []any) {
-	return "INSERT INTO `model` (`str`,`bool`,`raw_bytes`,`int_16`,`int_32`,`int_64`,`time`) VALUES (?,?,?,?,?,?,?);", v.Values()
+	return "INSERT INTO `model` (`str`,`bool`,`raw_bytes`,`int_16`,`int_32`,`int_64`,`float_64`,`time`) VALUES (?,?,?,?,?,?,?,?);", v.Values()
 }
 func (v Model) GetStr() sequel.ColumnValuer[sql.NullString] {
 	return sequel.Column("`str`", v.Str, func(val sql.NullString) driver.Value { return (driver.Valuer)(val) })
@@ -45,10 +59,20 @@ func (v Model) GetInt32() sequel.ColumnValuer[sql.NullInt32] {
 func (v Model) GetInt64() sequel.ColumnValuer[sql.NullInt64] {
 	return sequel.Column("`int_64`", v.Int64, func(val sql.NullInt64) driver.Value { return (driver.Valuer)(val) })
 }
+func (v Model) GetFloat64() sequel.ColumnValuer[sql.NullFloat64] {
+	return sequel.Column("`float_64`", v.Float64, func(val sql.NullFloat64) driver.Value { return (driver.Valuer)(val) })
+}
 func (v Model) GetTime() sequel.ColumnValuer[sql.NullTime] {
 	return sequel.Column("`time`", v.Time, func(val sql.NullTime) driver.Value { return (driver.Valuer)(val) })
 }
 
+func (Some) Schemas() sequel.TableDefinition {
+	return sequel.TableDefinition{
+		Columns: []sequel.ColumnDefinition{
+			{Name: "`id`", Definition: "`id` VARCHAR(36) NOT NULL DEFAULT UUID()"},
+		},
+	}
+}
 func (Some) TableName() string {
 	return "`some`"
 }

@@ -9,7 +9,31 @@ import (
 )
 
 func (Ptr) Schemas() sequel.TableDefinition {
-	return sequel.TableDefinition{}
+	return sequel.TableDefinition{
+		PK: &sequel.PrimaryKeyDefinition{
+			Columns:    []string{"`id`"},
+			Definition: "PRIMARY KEY (`id`)",
+		},
+		Columns: []sequel.ColumnDefinition{
+			{Name: "`id`", Definition: "`id` BIGINT NOT NULL AUTO_INCREMENT"},
+			{Name: "`str`", Definition: "`str` VARCHAR(255) DEFAULT ''"},
+			{Name: "`bytes`", Definition: "`bytes` BLOB"},
+			{Name: "`bool`", Definition: "`bool` BOOL DEFAULT false"},
+			{Name: "`int`", Definition: "`int` INTEGER DEFAULT 0"},
+			{Name: "`int_8`", Definition: "`int_8` TINYINT DEFAULT 0"},
+			{Name: "`int_16`", Definition: "`int_16` SMALLINT DEFAULT 0"},
+			{Name: "`int_32`", Definition: "`int_32` MEDIUMINT DEFAULT 0"},
+			{Name: "`int_64`", Definition: "`int_64` BIGINT DEFAULT 0"},
+			{Name: "`uint`", Definition: "`uint` INTEGER UNSIGNED DEFAULT 0"},
+			{Name: "`uint_8`", Definition: "`uint_8` TINYINT UNSIGNED DEFAULT 0"},
+			{Name: "`uint_16`", Definition: "`uint_16` SMALLINT UNSIGNED DEFAULT 0"},
+			{Name: "`uint_32`", Definition: "`uint_32` MEDIUMINT UNSIGNED DEFAULT 0"},
+			{Name: "`uint_64`", Definition: "`uint_64` BIGINT UNSIGNED DEFAULT 0"},
+			{Name: "`f_32`", Definition: "`f_32` FLOAT DEFAULT 0"},
+			{Name: "`f_64`", Definition: "`f_64` FLOAT DEFAULT 0"},
+			{Name: "`time`", Definition: "`time` TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6)"},
+		},
+	}
 }
 func (Ptr) TableName() string {
 	return "`ptr`"

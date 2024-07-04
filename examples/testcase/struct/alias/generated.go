@@ -9,7 +9,12 @@ import (
 )
 
 func (A) Schemas() sequel.TableDefinition {
-	return sequel.TableDefinition{}
+	return sequel.TableDefinition{
+		Columns: []sequel.ColumnDefinition{
+			{Name: "`date`", Definition: "`date` DATE NOT NULL"},
+			{Name: "`time`", Definition: "`time` TIME NOT NULL"},
+		},
+	}
 }
 func (A) ColumnNames() []string {
 	return []string{"`date`", "`time`"}
@@ -34,7 +39,12 @@ func (v A) GetTime() sequel.ColumnValuer[civil.Time] {
 }
 
 func (C) Schemas() sequel.TableDefinition {
-	return sequel.TableDefinition{}
+	return sequel.TableDefinition{
+		Columns: []sequel.ColumnDefinition{
+			{Name: "`string`", Definition: "`string` VARCHAR(255) NOT NULL DEFAULT ''"},
+			{Name: "`valid`", Definition: "`valid` BOOL NOT NULL DEFAULT false"},
+		},
+	}
 }
 func (C) TableName() string {
 	return "`c`"

@@ -11,7 +11,16 @@ import (
 )
 
 func (User) Schemas() sequel.TableDefinition {
-	return sequel.TableDefinition{}
+	return sequel.TableDefinition{
+		PK: &sequel.PrimaryKeyDefinition{
+			Columns:    []string{"`id`"},
+			Definition: "PRIMARY KEY (`id`)",
+		},
+		Columns: []sequel.ColumnDefinition{
+			{Name: "`id`", Definition: "`id` VARCHAR(36) NOT NULL"},
+			{Name: "`birth_date`", Definition: "`birth_date` DATE NOT NULL"},
+		},
+	}
 }
 func (User) TableName() string {
 	return "`user`"

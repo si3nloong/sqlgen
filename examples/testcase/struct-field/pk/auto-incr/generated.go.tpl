@@ -16,7 +16,7 @@ func (Model) Schemas() sequel.TableDefinition {
 		Columns: []sequel.ColumnDefinition{
 			{Name: "`name`", Definition: "`name` VARCHAR(255) NOT NULL DEFAULT ''"},
 			{Name: "`f`", Definition: "`f` BOOL NOT NULL DEFAULT false"},
-			{Name: "`id`", Definition: "`id` INTEGER NOT NULL DEFAULT 0"},
+			{Name: "`id`", Definition: "`id` INTEGER UNSIGNED NOT NULL AUTO_INCREMENT"},
 			{Name: "`n`", Definition: "`n` BIGINT NOT NULL DEFAULT 0"},
 		},
 	}

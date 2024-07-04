@@ -9,7 +9,12 @@ import (
 )
 
 func (B) Schemas() sequel.TableDefinition {
-	return sequel.TableDefinition{}
+	return sequel.TableDefinition{
+		Columns: []sequel.ColumnDefinition{
+			{Name: "`date`", Definition: "`date` DATE NOT NULL"},
+			{Name: "`time`", Definition: "`time` TIME NOT NULL"},
+		},
+	}
 }
 func (B) TableName() string {
 	return "`b`"

@@ -47,6 +47,7 @@ type GoTableSchema interface {
 type GoColumnSchema interface {
 	GoName() string
 	GoPath() string
+	AutoIncr() bool
 	// GoTag() reflect.StructTag
 	ColumnName() string
 	ColumnPos() int

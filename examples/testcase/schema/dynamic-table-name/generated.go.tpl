@@ -7,6 +7,13 @@ import (
 	"github.com/si3nloong/sqlgen/sequel/types"
 )
 
+func (Model) Schemas() sequel.TableDefinition {
+	return sequel.TableDefinition{
+		Columns: []sequel.ColumnDefinition{
+			{Name: "`name`", Definition: "`name` VARCHAR(255) NOT NULL DEFAULT ''"},
+		},
+	}
+}
 func (Model) ColumnNames() []string {
 	return []string{"`name`"}
 }
@@ -26,6 +33,18 @@ func (v Model) GetName() sequel.ColumnValuer[string] {
 	return sequel.Column("`name`", v.Name, func(val string) driver.Value { return string(val) })
 }
 
+func (A) Schemas() sequel.TableDefinition {
+	return sequel.TableDefinition{
+		PK: &sequel.PrimaryKeyDefinition{
+			Columns:    []string{"`id`"},
+			Definition: "PRIMARY KEY (`id`)",
+		},
+		Columns: []sequel.ColumnDefinition{
+			{Name: "`id`", Definition: "`id` BIGINT NOT NULL"},
+			{Name: "`name`", Definition: "`name` VARCHAR(255) NOT NULL DEFAULT ''"},
+		},
+	}
+}
 func (A) HasPK() {}
 func (v A) PK() (string, int, any) {
 	return "`id`", 0, int64(v.ID)
