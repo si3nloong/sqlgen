@@ -3,34 +3,14 @@ package sequel
 import (
 	"context"
 	"database/sql"
-	"fmt"
-	"io"
-
-	"github.com/si3nloong/sqlgen/codegen/templates"
+	"database/sql/driver"
+	"go/types"
 )
 
-type Scanner[T any] interface {
-	*T
-	Addrs() []any
-}
-
-type TableColumnValuer[T any] interface {
-	Tabler
-	Columner
-	Valuer
-}
-
-type KeyValuer[T any] interface {
-	Keyer
-	Tabler
-	Columner
-	Valuer
-}
-
-type KeyValueScanner[T any] interface {
-	KeyValuer[T]
-	Scanner[T]
-}
+type (
+	ConvertFunc[T any] func(T) driver.Value
+	QueryFunc          func(placeholder string) string
+)
 
 type DB interface {
 	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
@@ -48,65 +28,38 @@ type Dialect interface {
 	QuoteIdentifier(v string) string
 	QuoteRune() rune
 
-	CreateTableStmt(n string, model *templates.Model) string
-	AlterTableStmt(n string, model *templates.Model) string
+	TableSchemas(model GoTableSchema) TableSchema
 }
 
-type Migrator interface {
-	Tabler
-	CreateTableStmt() string
-	AlterTableStmt() string
+type GoTableSchema interface {
+	GoName() string
+	DatabaseName() string
+	TableName() string
+	AutoIncrKey() (GoColumnSchema, bool)
+	Keys() []string
+	Columns() []string
+	Indexes() []string
+	// Key(i int) GoColumnSchema
+	Column(i int) GoColumnSchema
+	Index(i int) GoIndexSchema
+	Implements(*types.Interface) (*types.Func, bool)
 }
 
-type MigratorV2 interface {
-	Up(ctx context.Context, db DB) error
-	Down(ctx context.Context, db DB) error
+type GoColumnSchema interface {
+	GoName() string
+	GoPath() string
+	AutoIncr() bool
+	DataType() (string, bool)
+	// GoTag() reflect.StructTag
+	ColumnName() string
+	ColumnPos() int
+	Size() int64
+	Type() types.Type
+	SQLValuer() QueryFunc
+	SQLScanner() QueryFunc
 }
 
-type SingleInserter interface {
-	InsertOneStmt() string
+type GoIndexSchema interface {
+	Columns() []string
+	Type() string
 }
-
-type KeyFinder interface {
-	Keyer
-	FindByPKStmt() string
-}
-
-type KeyUpdater interface {
-	Keyer
-	UpdateByPKStmt() string
-}
-
-type KeyDeleter interface {
-	Keyer
-	DeleteByPKStmt() string
-}
-
-type Inserter interface {
-	Columner
-	InsertVarQuery() string
-}
-
-type StmtWriter interface {
-	io.StringWriter
-	io.ByteWriter
-}
-
-type StmtBuilder interface {
-	StmtWriter
-	Var(query string, v any)
-	Vars(query string, v []any)
-}
-
-type Stmt interface {
-	StmtBuilder
-	fmt.Stringer
-	Args() []any
-	Reset()
-}
-
-type (
-	WhereClause   func(StmtBuilder)
-	SetClause     func(StmtBuilder)
-	OrderByClause func(StmtWriter)
-)

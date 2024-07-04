@@ -3,7 +3,6 @@ package tablename
 import "github.com/si3nloong/sqlgen/sequel"
 
 type CustomTableName1 struct {
-	// TODO: support embedded type
 	sequel.Table `sql:"CustomTableName_1"`
 	Text         string
 }

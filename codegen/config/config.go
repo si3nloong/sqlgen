@@ -4,9 +4,9 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/goccy/go-yaml"
 	"github.com/si3nloong/sqlgen/internal/fileutil"
 	"github.com/si3nloong/sqlgen/internal/strfmt"
-	"gopkg.in/yaml.v3"
 
 	_ "github.com/si3nloong/sqlgen/sequel/dialect/mysql"
 	_ "github.com/si3nloong/sqlgen/sequel/dialect/postgres"
@@ -43,19 +43,25 @@ type Config struct {
 	NamingConvention naming    `yaml:"naming_convention,omitempty"`
 	Tag              string    `yaml:"struct_tag,omitempty"`
 	// Whether to quote the table name and column name
-	OmitQuoteIdentifier bool            `yaml:"omit_quote_identifier,omitempty"`
-	OmitGetters         bool            `yaml:"omit_getters,omitempty"`
-	NoStrict            bool            `yaml:"no_strict,omitempty"`
-	Exec                ExecConfig      `yaml:"exec"`
-	Getter              GetterConfig    `yaml:"getter"`
-	Migration           MigrationConfig `yaml:"migration"`
-	Database            *DatabaseConfig `yaml:"database"`
-	SourceMap           bool            `yaml:"source_map"`
-	SkipHeader          bool            `yaml:"skip_header"`
-	SkipModTidy         bool            `yaml:"skip_mod_tidy"`
-	Models              map[string]struct {
-		Model []string `yaml:"model"`
-	} `yaml:"models"`
+	OmitQuoteIdentifier bool              `yaml:"omit_quote_identifier,omitempty"`
+	OmitGetters         bool              `yaml:"omit_getters,omitempty"`
+	Strict              *bool             `yaml:"strict,omitempty"`
+	Exec                ExecConfig        `yaml:"exec"`
+	Getter              GetterConfig      `yaml:"getter"`
+	Migration           *MigrationConfig  `yaml:"migration"`
+	Database            *DatabaseConfig   `yaml:"database"`
+	SourceMap           bool              `yaml:"source_map"`
+	SkipHeader          bool              `yaml:"skip_header"`
+	SkipModTidy         bool              `yaml:"skip_mod_tidy"`
+	Models              map[string]*Model `yaml:"models"`
+}
+
+type Model struct {
+	DataType   string `yaml:"data_type"`
+	Scanner    string `yaml:"scan"`
+	SQLScanner string `yaml:"sql_scan"`
+	Valuer     string `yaml:"value"`
+	SQLValuer  string `yaml:"sql_value"`
 }
 
 type ExecConfig struct {
@@ -83,10 +89,6 @@ type DatabaseOperatorConfig struct {
 	Package  string `yaml:"package"`
 	Dir      string `yaml:"dir"`
 	Filename string `yaml:"filename"`
-}
-
-func (c Config) IsStrict() bool {
-	return !c.NoStrict
 }
 
 func (c *Config) init() {

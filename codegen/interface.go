@@ -13,8 +13,11 @@ import (
 )
 
 var (
-	sqlValuer, sqlScanner,
-	sqlTabler, sqlColumner,
+	// native package interface
+	goSqlValuer, goSqlScanner,
+
+	// sqlgen interface
+	sqlDatabaser, sqlTabler, sqlColumner, sqlQueryColumner, sqlValuer, sqlScanner,
 	binaryMarshaler, binaryUnmarshaler,
 	textMarshaler, textUnmarshaler *types.Interface
 
@@ -33,9 +36,9 @@ func init() {
 	for _, p := range pkgs {
 		switch p.ID {
 		case "database/sql/driver":
-			sqlValuer = p.Types.Scope().Lookup("Valuer").Type().Underlying().(*types.Interface)
+			goSqlValuer = p.Types.Scope().Lookup("Valuer").Type().Underlying().(*types.Interface)
 		case "database/sql":
-			sqlScanner = p.Types.Scope().Lookup("Scanner").Type().Underlying().(*types.Interface)
+			goSqlScanner = p.Types.Scope().Lookup("Scanner").Type().Underlying().(*types.Interface)
 		case "encoding":
 			binaryMarshaler = p.Types.Scope().Lookup("BinaryMarshaler").Type().Underlying().(*types.Interface)
 			binaryUnmarshaler = p.Types.Scope().Lookup("BinaryUnmarshaler").Type().Underlying().(*types.Interface)
@@ -54,6 +57,10 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+	sqlDatabaser = pkg.Scope().Lookup("Databaser").Type().Underlying().(*types.Interface)
 	sqlTabler = pkg.Scope().Lookup("Tabler").Type().Underlying().(*types.Interface)
 	sqlColumner = pkg.Scope().Lookup("Columner").Type().Underlying().(*types.Interface)
+	sqlQueryColumner = pkg.Scope().Lookup("SQLColumner").Type().Underlying().(*types.Interface)
+	sqlValuer = pkg.Scope().Lookup("Valuer").Type().Underlying().(*types.Interface)
+	sqlScanner = pkg.Scope().Lookup("Scanner").Type().Underlying().(*types.Interface)
 }

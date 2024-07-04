@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
+
+	o "github.com/paulmach/orb"
 )
 
 func empty() {}
@@ -14,6 +16,7 @@ type Address struct {
 	City        string
 	PostCode    uint
 	StateCode   StateCode
+	GeoPoint    o.Point
 	CountryCode CountryCode
 }
 

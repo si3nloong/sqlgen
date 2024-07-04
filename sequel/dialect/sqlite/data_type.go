@@ -5,13 +5,13 @@ import (
 	"go/types"
 	"strings"
 
-	"github.com/si3nloong/sqlgen/codegen/templates"
+	"github.com/si3nloong/sqlgen/sequel"
 )
 
-func dataType(f *templates.Field) (dataType string) {
+func dataType(f sequel.GoColumnSchema) (dataType string) {
 	var (
 		ptrs = make([]types.Type, 0)
-		t    = f.Type
+		t    = f.Type()
 		prev types.Type
 	)
 	for t != nil {
@@ -55,26 +55,22 @@ func dataType(f *templates.Field) (dataType string) {
 		case "cloud.google.com/go/civil.Date":
 			return "DATE"
 		case "time.Time":
-			var size int
-			if f.Size > 0 && f.Size < 7 {
-				size = f.Size
-			}
-			if size > 0 {
+			if size := f.Size(); size > 0 {
 				return fmt.Sprintf("DATETIME(%d)", size) + notNull(len(ptrs) > 0)
 			}
 			return "DATETIME" + notNull(len(ptrs) > 0)
 		case "string":
-			size := 255
-			if f.Size > 0 {
-				size = f.Size
+			size := int64(255)
+			if v := f.Size(); v > 0 {
+				size = v
 			}
 			return fmt.Sprintf("VARCHAR(%d)", size) + notNull(len(ptrs) > 0)
 		case "[]byte":
 			return "BLOB" + notNull(len(ptrs) > 0)
 		case "[16]byte":
-			if f.IsBinary {
-				return "BINARY(16)"
-			}
+			// if f.IsBinary {
+			// 	return "BINARY(16)"
+			// }
 			return "VARCHAR(36)"
 		case "encoding/json.RawMessage":
 			return "JSON" + notNull(len(ptrs) > 0)
