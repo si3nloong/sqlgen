@@ -10,5 +10,15 @@ func (s *postgresDriver) TableSchemas(table sequel.GoTableSchema) sequel.TableSc
 	for i := range table.Columns() {
 		schema.cols = append(schema.cols, dataType(table.Column(i)))
 	}
+	for i := range table.Indexes() {
+		idx := table.Index(i)
+		idxDef := indexDefinition{}
+		idxDef.cols = idx.Columns()
+		switch idx.Type() {
+		case "unique":
+			idxDef.indexType = unique
+		}
+		schema.idxs = append(schema.idxs, &idxDef)
+	}
 	return schema
 }

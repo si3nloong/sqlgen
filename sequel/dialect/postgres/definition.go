@@ -15,13 +15,14 @@ import (
 type indexType uint8
 
 const (
-	bTree indexType = iota // BTREE
-	hash                   // HASH
-	brin                   // BRIN
+	bTree  indexType = iota // BTREE
+	hash                    // HASH
+	brin                    // BRIN
+	unique                  // UNIQUE
 )
 
 type tableDefinition struct {
-	keys []string
+	keys keyDefinition
 	cols []*columnDefinition
 	idxs []*indexDefinition
 }
@@ -30,7 +31,7 @@ func (s *tableDefinition) PK() (sequel.TablePK, bool) {
 	if len(s.keys) == 0 {
 		return nil, false
 	}
-	return nil, true
+	return s.keys, true
 }
 
 func (s *tableDefinition) Columns() []string {
@@ -51,6 +52,16 @@ func (s *tableDefinition) Column(i int) sequel.TableColumn {
 
 func (s *tableDefinition) Index(i int) sequel.TableIndex {
 	return s.idxs[i]
+}
+
+type keyDefinition []string
+
+func (k keyDefinition) Columns() []string {
+	return k
+}
+
+func (k keyDefinition) Definition() string {
+	return `PRIMARY KEY(` + strings.Join(k, ",") + `)`
 }
 
 type columnDefinition struct {

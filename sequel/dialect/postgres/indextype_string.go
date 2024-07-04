@@ -11,11 +11,12 @@ func _() {
 	_ = x[bTree-0]
 	_ = x[hash-1]
 	_ = x[brin-2]
+	_ = x[unique-3]
 }
 
-const _indexType_name = "BTREEHASHBRIN"
+const _indexType_name = "BTREEHASHBRINUNIQUE"
 
-var _indexType_index = [...]uint8{0, 5, 9, 13}
+var _indexType_index = [...]uint8{0, 5, 9, 13, 19}
 
 func (i indexType) String() string {
 	if i >= indexType(len(_indexType_index)-1) {
