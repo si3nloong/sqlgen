@@ -346,7 +346,7 @@ func Generate(c *config.Config) error {
 			// If it's just a file
 			if !fi.IsDir() {
 				srcDir = filepath.Dir(srcDir)
-				matcher = &FileMatcher{filepath.Join(srcDir, fi.Name()): struct{}{}}
+				matcher = FileMatcher{filepath.Join(srcDir, fi.Name()): struct{}{}}
 			}
 
 			rootDir = srcDir
