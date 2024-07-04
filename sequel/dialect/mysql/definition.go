@@ -140,5 +140,5 @@ func (i *indexDefinition) Columns() []string {
 }
 
 func (i *indexDefinition) Definition() string {
-	return i.Type() + "(" + strings.Join(i.cols, ",") + ")"
+	return "CONSTRAINT " + i.Name() + " " + i.Type() + " (" + strings.Join(i.cols, ",") + ")"
 }

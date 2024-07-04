@@ -20,6 +20,7 @@ import (
 	"strconv"
 
 	"github.com/Masterminds/semver/v3"
+	"github.com/elliotchance/orderedmap/v2"
 	"github.com/samber/lo"
 	"github.com/si3nloong/sqlgen/codegen/config"
 	"github.com/si3nloong/sqlgen/internal/fileutil"
@@ -59,6 +60,7 @@ const (
 	TagOptionEncode        = "encode"
 	TagOptionDecode        = "decode"
 	TagOptionUnique        = "unique"
+	TagOptionIndex         = "index"
 )
 
 var (
@@ -140,6 +142,12 @@ func (b *tableInfo) Columns() []string {
 	})
 }
 
+func (b *tableInfo) Indexes() []string {
+	return lo.Map(b.indexes, func(c *indexInfo, _ int) string {
+		return strings.Join(c.columns, ",")
+	})
+}
+
 func (b *tableInfo) Implements(T *types.Interface) (*types.Func, bool) {
 	return types.MissingMethod(b.t, T, true)
 }
@@ -187,6 +195,13 @@ func (c *columnInfo) GoPath() string {
 
 func (c *columnInfo) Type() types.Type {
 	return c.t
+}
+
+func (c *columnInfo) DataType() (string, bool) {
+	if c.model == nil {
+		return "", false
+	}
+	return c.model.DataType, true
 }
 
 func (c *columnInfo) Size() int64 {
@@ -677,6 +692,7 @@ func parseGoPackage(
 				pos      int
 				table    = new(tableInfo)
 				nameDict = make(map[string]struct{})
+				idxDict  = orderedmap.NewOrderedMap[string, []*columnInfo]()
 			)
 
 			table.t = s.t
@@ -755,6 +771,10 @@ func parseGoPackage(
 					}
 				}
 
+				if v, ok := column.tag.Lookup(TagOptionUnique); ok {
+					idxDict.Set(v, append(idxDict.GetOrDefault(v, []*columnInfo{}), column))
+				}
+
 				if _, ok := column.tag.Lookup(TagOptionPK, TagOptionPKAlias, TagOptionAutoIncrement); ok {
 					// Check auto increment
 					_, autoIncr := column.tag.Lookup(TagOptionAutoIncrement)
@@ -777,6 +797,14 @@ func parseGoPackage(
 			}
 
 			clear(nameDict)
+			for _, k := range idxDict.Keys() {
+				table.indexes = append(table.indexes, &indexInfo{
+					columns: lo.Map(idxDict.GetOrDefault(k, []*columnInfo{}), func(c *columnInfo, _ int) string {
+						return c.colName
+					}),
+					indexType: "unique",
+				})
+			}
 			// FIXME: we should allow database name to declare
 			// table.dbName = gen.QuoteIdentifier(table.dbName)
 			table.tableName = gen.QuoteIdentifier(table.tableName)

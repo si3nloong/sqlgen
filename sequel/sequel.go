@@ -38,6 +38,7 @@ type GoTableSchema interface {
 	AutoIncrKey() (GoColumnSchema, bool)
 	Keys() []string
 	Columns() []string
+	Indexes() []string
 	// Key(i int) GoColumnSchema
 	Column(i int) GoColumnSchema
 	Index(i int) GoIndexSchema
@@ -48,6 +49,7 @@ type GoColumnSchema interface {
 	GoName() string
 	GoPath() string
 	AutoIncr() bool
+	DataType() (string, bool)
 	// GoTag() reflect.StructTag
 	ColumnName() string
 	ColumnPos() int

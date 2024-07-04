@@ -307,15 +307,16 @@ func (g *Generator) buildSchemas(table *tableInfo) {
 
 	g.L("func (" + table.goName + ") Schemas() sequel.TableDefinition {")
 	g.L("return sequel.TableDefinition{")
-	if pk, ok := schema.PK(); ok {
+	if pk, ok := schema.PK(); ok && pk != nil {
 		g.L("PK: &sequel.PrimaryKeyDefinition{")
 		g.WriteString("Columns: []string{")
 		columns := pk.Columns()
 		for i := range columns {
 			if i > 0 {
-				g.WriteByte(',')
+				g.WriteString("," + g.Quote(columns[i]))
+			} else {
+				g.WriteString(g.Quote(columns[i]))
 			}
-			g.WriteString(g.Quote(columns[i]))
 		}
 		g.WriteString("},\n")
 		g.L("Definition:", g.Quote(pk.Definition()), ",")

@@ -20,7 +20,7 @@ func (Address) Schemas() sequel.TableDefinition {
 			{Name: "`city`", Definition: "`city` VARCHAR(255) NOT NULL DEFAULT ''"},
 			{Name: "`post_code`", Definition: "`post_code` INTEGER UNSIGNED NOT NULL DEFAULT 0"},
 			{Name: "`state_code`", Definition: "`state_code` VARCHAR(255) NOT NULL DEFAULT ''"},
-			{Name: "`geo_point`", Definition: "`geo_point` VARCHAR(255) NOT NULL"},
+			{Name: "`geo_point`", Definition: "`geo_point` POINT NOT NULL"},
 			{Name: "`country_code`", Definition: "`country_code` VARCHAR(255) NOT NULL DEFAULT ''"},
 		},
 	}

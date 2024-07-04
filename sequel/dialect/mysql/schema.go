@@ -21,5 +21,15 @@ func (s *mysqlDriver) TableSchemas(table sequel.GoTableSchema) sequel.TableSchem
 		}
 		schema.cols = append(schema.cols, colDef)
 	}
+	for i := range table.Indexes() {
+		idx := table.Index(i)
+		idxDef := indexDefinition{}
+		idxDef.cols = idx.Columns()
+		switch idx.Type() {
+		case "unique":
+			idxDef.indexType = unique
+		}
+		schema.idxs = append(schema.idxs, &idxDef)
+	}
 	return schema
 }

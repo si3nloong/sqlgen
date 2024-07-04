@@ -29,6 +29,7 @@ func TestAll(t *testing.T) {
 		},
 		Models: map[string]*config.Model{
 			"github.com/paulmach/orb.Point": {
+				DataType:   "POINT",
 				SQLScanner: `ST_AsBinary({column}, 4326)`,
 				Scanner:    `github.com/paulmach/orb/encoding/ewkb.Scanner({field})`,
 				SQLValuer:  `ST_GeomFromEWKB({placeholder})`,

@@ -20,6 +20,10 @@ func dataType(f sequel.GoColumnSchema) *columnDefinition {
 	)
 
 	col.name = f.ColumnName()
+	if dataType, ok := f.DataType(); ok {
+		col.dataType = dataType
+		return col
+	}
 	defer func() {
 		if !col.nullable {
 			col.nullable = len(ptrs) > 0
