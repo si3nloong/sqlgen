@@ -1,6 +1,7 @@
 package sequel
 
 import (
+	"database/sql/driver"
 	"fmt"
 	"io"
 )
@@ -82,17 +83,17 @@ type SingleInserter interface {
 }
 
 type Inserter interface {
-	Columner
+	TableColumnValuer
 	InsertPlaceholders(row int) string
 }
 
-type TableColumnValuer[T any] interface {
+type TableColumnValuer interface {
 	Tabler
 	Columner
 	Valuer
 }
 
-type KeyValuer[T any] interface {
+type KeyValuer interface {
 	Keyer
 	Tabler
 	Columner
@@ -100,7 +101,7 @@ type KeyValuer[T any] interface {
 }
 
 type KeyValueScanner[T any] interface {
-	KeyValuer[T]
+	KeyValuer
 	PtrScanner[T]
 }
 
@@ -118,6 +119,19 @@ type Stmt interface {
 
 type StmtBuilder interface {
 	StmtWriter
-	Var(query string, v any)
-	Vars(query string, v []any)
+	Var(v any) string
+	Vars(vals []any) string
+}
+
+type ColumnValuer[T any] interface {
+	ColumnName() string
+	Convert(T) driver.Value
+	Value() driver.Value
+}
+
+type SQLColumnValuer[T any] interface {
+	ColumnName() string
+	Convert(T) driver.Value
+	Value() driver.Value
+	SQLValue(placeholder string) string
 }
