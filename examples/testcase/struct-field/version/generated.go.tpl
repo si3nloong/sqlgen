@@ -8,23 +8,26 @@ import (
 	"github.com/si3nloong/sqlgen/sequel"
 )
 
-func (v Version) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS `version` (`id` VARCHAR(36),PRIMARY KEY (`id`));"
+func (Version) Schemas() sequel.TableDefinition {
+	return sequel.TableDefinition{
+		PK: &sequel.PrimaryKeyDefinition{
+			Columns:    []string{"`id`"},
+			Definition: "PRIMARY KEY (`id`)",
+		},
+		Columns: []sequel.ColumnDefinition{
+			{Name: "`id`", Definition: "`id` VARCHAR(36) NOT NULL"},
+		},
+	}
 }
 func (Version) TableName() string {
-	return "version"
+	return "`version`"
 }
-func (Version) InsertOneStmt() string {
-	return "INSERT INTO version (id) VALUES (?);"
+func (Version) HasPK() {}
+func (v Version) PK() (string, int, any) {
+	return "`id`", 0, (driver.Valuer)(v.ID)
 }
-func (Version) InsertVarQuery() string {
-	return "(?)"
-}
-func (Version) Columns() []string {
-	return []string{"id"}
-}
-func (v Version) PK() (columnName string, pos int, value driver.Value) {
-	return "id", 0, (driver.Valuer)(v.ID)
+func (Version) ColumnNames() []string {
+	return []string{"`id`"}
 }
 func (v Version) Values() []any {
 	return []any{(driver.Valuer)(v.ID)}
@@ -32,6 +35,15 @@ func (v Version) Values() []any {
 func (v *Version) Addrs() []any {
 	return []any{(sql.Scanner)(&v.ID)}
 }
+func (Version) InsertPlaceholders(row int) string {
+	return "(?)"
+}
+func (v Version) InsertOneStmt() (string, []any) {
+	return "INSERT INTO `version` (`id`) VALUES (?);", v.Values()
+}
+func (v Version) FindOneByPKStmt() (string, []any) {
+	return "SELECT `id` FROM `version` WHERE `id` = ? LIMIT 1;", []any{(driver.Valuer)(v.ID)}
+}
 func (v Version) GetID() sequel.ColumnValuer[uuid.UUID] {
-	return sequel.Column("id", v.ID, func(val uuid.UUID) driver.Value { return (driver.Valuer)(val) })
+	return sequel.Column("`id`", v.ID, func(val uuid.UUID) driver.Value { return (driver.Valuer)(val) })
 }

@@ -1,18 +1,18 @@
 package codegen
 
 import (
+	"fmt"
 	"go/types"
 )
 
-func UnderlyingType(t types.Type) (*Mapping, bool) {
+func UnderlyingType(t types.Type) (codec *Mapping, typeStr string) {
 	var (
-		typeStr string
-		prev    = t
+		prev = t
 	)
 
 loop:
-	for t != nil {
-		switch v := t.(type) {
+	for prev != nil {
+		switch v := prev.(type) {
 		case *types.Basic:
 			typeStr += v.String()
 			break loop
@@ -21,8 +21,7 @@ loop:
 				typeStr += v.String()
 				break loop
 			}
-			typeStr += v.Underlying().String()
-			prev = t.Underlying()
+			prev = v.Underlying()
 		case *types.Pointer:
 			typeStr += "*"
 			prev = v.Elem()
@@ -30,13 +29,13 @@ loop:
 			typeStr += "[]"
 			prev = v.Elem()
 		case *types.Array:
-			typeStr += "[]"
+			typeStr += fmt.Sprintf("[%d]", v.Len())
 			prev = v.Elem()
 		default:
 			break loop
 		}
 		if v, ok := typeMap[typeStr]; ok {
-			return v, ok
+			return v, typeStr
 		}
 		if prev == t {
 			break loop
@@ -44,9 +43,9 @@ loop:
 		t = prev
 	}
 	if v, ok := typeMap[typeStr]; ok {
-		return v, ok
+		return v, typeStr
 	}
-	return nil, false
+	return nil, typeStr
 }
 
 func assertAsPtr[T any](v any) *T {

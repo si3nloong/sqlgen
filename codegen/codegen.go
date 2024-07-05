@@ -14,14 +14,16 @@ import (
 	"reflect"
 	"regexp"
 	"sort"
-	"strconv"
 	"strings"
 	"syscall"
 
+	"strconv"
+
 	"github.com/Masterminds/semver/v3"
+	"github.com/elliotchance/orderedmap/v2"
+	"github.com/go-playground/validator/v10"
 	"github.com/samber/lo"
 	"github.com/si3nloong/sqlgen/codegen/config"
-	"github.com/si3nloong/sqlgen/codegen/templates"
 	"github.com/si3nloong/sqlgen/internal/fileutil"
 	"github.com/si3nloong/sqlgen/sequel"
 	"golang.org/x/tools/go/packages"
@@ -38,28 +40,28 @@ var (
 		`\`, `[\\/]`,
 		`/`, `[\\/]`,
 	)
-	nameRegex    = regexp.MustCompile(`(?i)^[a-z]+[a-z0-9\_]*$`)
-	codegenRegex = regexp.MustCompile(`^// Code generated .* DO NOT EDIT\.$`)
-	go121        = lo.Must1(semver.NewConstraint(">= 1.2.1"))
+	nameRegex     = regexp.MustCompile(`(?i)^[a-z]+[a-z0-9\_]*$`)
+	codegenRegex  = regexp.MustCompile(`^// Code generated .* DO NOT EDIT\.$`)
+	go121         = lo.Must1(semver.NewConstraint(">= 1.2.1"))
+	sqlFuncRegexp = regexp.MustCompile(`(?i)\s*(\w+\()(\w+\s*\,\s*)?(\{\})(\s*\,\s*\w+)?(\))\s*`)
 )
 
 const fileMode = 0o755
 
-type tagOption string
-
 const (
-	TagOptionAutoIncrement tagOption = "auto_increment"
-	TagOptionBinary        tagOption = "binary"
-	TagOptionPKAlias       tagOption = "pk"
-	TagOptionPK            tagOption = "primary_key"
-	TagOptionFKAlias       tagOption = "fk"
-	TagOptionFK            tagOption = "foreign_key"
-	TagOptionUnsigned      tagOption = "unsigned"
-	TagOptionSize          tagOption = "size"
-	TagOptionDataType      tagOption = "data_type"
-	TagOptionEncode        tagOption = "encode"
-	TagOptionDecode        tagOption = "decode"
-	TagOptionUnique        tagOption = "unique"
+	TagOptionAutoIncrement = "auto_increment"
+	TagOptionBinary        = "binary"
+	TagOptionPKAlias       = "pk"
+	TagOptionPK            = "primary_key"
+	TagOptionFKAlias       = "fk"
+	TagOptionFK            = "foreign_key"
+	TagOptionUnsigned      = "unsigned"
+	TagOptionSize          = "size"
+	TagOptionDataType      = "data_type"
+	TagOptionEncode        = "encode"
+	TagOptionDecode        = "decode"
+	TagOptionUnique        = "unique"
+	TagOptionIndex         = "index"
 )
 
 var (
@@ -75,7 +77,6 @@ type typeQueue struct {
 }
 
 type structType struct {
-	// pkg    *packages.Package
 	t      types.Type
 	name   *ast.Ident
 	fields []structField
@@ -93,23 +94,185 @@ type structField struct {
 
 type tagOpts map[string]string
 
-func (t tagOpts) Lookup(key tagOption, keys ...tagOption) (v string, ok bool) {
+func (t tagOpts) Lookup(key string, keys ...string) (string, bool) {
 	keys = append(keys, key)
-	for k, v := range t {
-		if lo.IndexOf(keys, tagOption(k)) >= 0 {
-			return v, true
+	for k, val := range t {
+		if lo.IndexOf(keys, k) >= 0 {
+			return val, true
 		}
 	}
+	return "", false
+}
+
+type tableInfo struct {
+	goName      string
+	dbName      string
+	tableName   string
+	t           types.Type
+	autoIncrKey *columnInfo
+	keys        []*columnInfo
+	columns     []*columnInfo
+	indexes     []*indexInfo
+}
+
+func (b *tableInfo) GoName() string {
+	return b.goName
+}
+
+func (b *tableInfo) DatabaseName() string {
+	return b.dbName
+}
+
+func (b *tableInfo) TableName() string {
+	return b.tableName
+}
+
+func (b *tableInfo) AutoIncrKey() (sequel.GoColumnSchema, bool) {
+	return b.autoIncrKey, b.autoIncrKey != nil
+}
+
+func (b *tableInfo) Keys() []string {
+	return lo.Map(b.keys, func(c *columnInfo, _ int) string {
+		return c.colName
+	})
+}
+
+func (b *tableInfo) Columns() []string {
+	return lo.Map(b.columns, func(c *columnInfo, _ int) string {
+		return c.colName
+	})
+}
+
+func (b *tableInfo) Indexes() []string {
+	return lo.Map(b.indexes, func(c *indexInfo, _ int) string {
+		return strings.Join(c.columns, ",")
+	})
+}
+
+func (b *tableInfo) Implements(T *types.Interface) (*types.Func, bool) {
+	return types.MissingMethod(b.t, T, true)
+}
+
+func (b *tableInfo) PtrImplements(T *types.Interface) (*types.Func, bool) {
+	return types.MissingMethod(types.NewPointer(b.t), T, true)
+}
+
+func (b *tableInfo) Column(i int) sequel.GoColumnSchema {
+	return b.columns[i]
+}
+
+func (b *tableInfo) Index(i int) sequel.GoIndexSchema {
+	return b.indexes[i]
+}
+
+// Mean table has only pk
+func (b tableInfo) hasNoColsExceptPK() bool {
+	return len(b.keys) == len(b.columns)
+}
+
+type columnInfo struct {
+	goName   string
+	goPath   string
+	colName  string
+	colPos   int
+	t        types.Type
+	autoIncr bool
+	tag      tagOpts
+	model    *config.Model
+	size     int64
+}
+
+var (
+	_ (sequel.GoColumnSchema) = (*columnInfo)(nil)
+)
+
+func (c *columnInfo) GoName() string {
+	return c.goName
+}
+
+func (c *columnInfo) GoPath() string {
+	return c.goPath
+}
+
+func (c *columnInfo) Type() types.Type {
+	return c.t
+}
+
+func (c *columnInfo) DataType() (string, bool) {
+	if c.model == nil {
+		return "", false
+	}
+	return c.model.DataType, true
+}
+
+func (c *columnInfo) Size() int64 {
+	return c.size
+}
+
+func (c *columnInfo) AutoIncr() bool {
+	return c.autoIncr
+}
+
+func (c *columnInfo) ColumnName() string {
+	return c.colName
+}
+
+func (c *columnInfo) ColumnPos() int {
+	return c.colPos
+}
+
+func (c *columnInfo) Implements(T *types.Interface) (wrongType bool) {
+	_, wrongType = types.MissingMethod(c.t, T, true)
 	return
 }
 
+func (i columnInfo) SQLValuer() sequel.QueryFunc {
+	if i.model == nil {
+		return nil
+	}
+	if i.model.SQLValuer == "" {
+		return nil
+	}
+	return func(placeholder string) string {
+		return strings.Replace(i.model.SQLValuer, "{placeholder}", placeholder, 1)
+	}
+}
+
+func (i columnInfo) SQLScanner() sequel.QueryFunc {
+	if i.model == nil {
+		return nil
+	}
+	if i.model.SQLScanner == "" {
+		return nil
+	}
+	return func(column string) string {
+		return strings.Replace(i.model.SQLScanner, "{column}", column, 1)
+	}
+}
+
+type indexInfo struct {
+	columns   []string
+	indexType string
+}
+
+func (i indexInfo) Columns() []string {
+	return i.columns
+}
+
+func (i indexInfo) Type() string {
+	return i.indexType
+}
+
 func Generate(c *config.Config) error {
-	cfg := *config.DefaultConfig()
+	cfg := config.DefaultConfig()
 	if c != nil {
-		cfg = *c
+		cfg = cfg.Merge(c)
 	}
 
-	cfg.Init()
+	vldr := validator.New()
+	if err := vldr.Struct(c); err != nil {
+		return err
+	}
 
 	dialect, ok := sequel.GetDialect(string(cfg.Driver))
 	if !ok {
@@ -214,15 +377,13 @@ func Generate(c *config.Config) error {
 		// Generate db code
 		_ = syscall.Unlink(filepath.Join(cfg.Database.Dir, cfg.Database.Filename))
 		if err := renderTemplate(
-			gen,
+			dialect,
 			"db.go.tpl",
-			true,
+			// true,
 			"",
 			cfg.Database.Package,
-			cfg.Getter.Prefix,
 			cfg.Database.Dir,
 			cfg.Database.Filename,
-			struct{}{},
 		); err != nil {
 			return err
 		}
@@ -231,15 +392,12 @@ func Generate(c *config.Config) error {
 	if cfg.Database.Operator != nil {
 		_ = syscall.Unlink(filepath.Join(cfg.Database.Dir, cfg.Database.Operator.Filename))
 		if err := renderTemplate(
-			gen,
+			dialect,
 			"operator.go.tpl",
-			true,
 			"",
 			cfg.Database.Operator.Package,
-			cfg.Getter.Prefix,
 			cfg.Database.Operator.Dir,
 			cfg.Database.Operator.Filename,
-			struct{}{},
 		); err != nil {
 			return err
 		}
@@ -264,13 +422,14 @@ func parseGoPackage(
 	}
 
 	var (
-		rename   = gen.config.RenameFunc()
 		dir      string
 		filename string
+		rename   = gen.config.RenameFunc()
 	)
 
 	for len(dirs) > 0 {
 		dir = path.Join(rootDir, dirs[0])
+
 		// Skip if the file is exists in db folder
 		if idx := sort.SearchStrings([]string{
 			path.Join(fileutil.Getpwd(), gen.config.Database.Dir),
@@ -536,67 +695,58 @@ func parseGoPackage(
 			structCaches = structCaches[1:]
 		}
 
-		// Generate interface code
-		var (
-			params = templates.ModelTmplParams{
-				OmitGetters: gen.config.OmitGetters,
-			}
-		)
+		schemaList := make([]*tableInfo, 0)
 
-		// Convert struct to models and generate code
 		for _, s := range structs {
 			var (
-				index   int
-				nameMap = make(map[string]struct{})
-				model   = templates.Model{}
+				pos      int
+				table    = new(tableInfo)
+				nameDict = make(map[string]struct{})
+				idxDict  = orderedmap.NewOrderedMap[string, []*columnInfo]()
 			)
 
-			model.GoName = types.ExprString(s.name)
-			model.TableName = rename(model.GoName)
-
-			// Check struct implements `sequel.Tabler`
-			if m, w := types.MissingMethod(s.t, sqlTabler, true); !gen.config.NoStrict && w {
-				return fmt.Errorf(`sqlgen: struct %q has implements "sequel.Tabler" but wrong footprint`, s.name)
-			} else if m == nil && !w {
-				model.HasTableName = true
-			}
-
-			// Check struct implements `sequel.Columner`
-			if m, w := types.MissingMethod(s.t, sqlColumner, true); !gen.config.NoStrict && w {
-				return fmt.Errorf(`sqlgen: struct %q has implements "sequel.Columner" but wrong footprint`, s.name)
-			} else if m == nil && !w {
-				model.HasColumn = true
-			}
+			table.t = s.t
+			table.goName = types.ExprString(s.name)
+			table.tableName = rename(table.goName)
 
 			for _, f := range s.fields {
 				var (
-					tv  = f.tag.Get(gen.config.Tag)
-					tf  = &templates.Field{}
-					tag = make(tagOpts)
-					n   string
+					column = new(columnInfo)
+					name   string
 				)
 
-				tf.ColumnName = rename(f.name)
+				column.goName = f.name
+				column.goPath = f.path
+				column.t = f.t
+				column.colName = rename(f.name)
+				column.colPos = pos
+				column.tag = make(tagOpts)
 
-				if tv != "" {
-					tags := strings.Split(tv, ",")
-					n = strings.TrimSpace(tags[0])
-					if n == "-" {
+				if model, ok := gen.config.Models[f.t.String()]; ok {
+					column.model = model
+				}
+
+				tagVal := strings.TrimSpace(f.tag.Get(gen.config.Tag))
+				if tagVal != "" {
+					tagPaths := strings.Split(tagVal, ",")
+					name = strings.TrimSpace(tagPaths[0])
+					// Skip field if user mentioned skip
+					if name == "-" {
 						continue
-					} else if n != "" {
-						if !gen.config.NoStrict && !nameRegex.MatchString(n) {
-							return fmt.Errorf(`sqlgen: invalid column name %q in struct %q`, n, s.name)
+					} else if name != "" { // Column name must follow convention
+						if !nameRegex.MatchString(name) {
+							return fmt.Errorf(`sqlgen: invalid column name %q in struct %q`, name, s.name)
 						}
-						tf.ColumnName = n
+						column.colName = name
 					}
 
-					for _, v := range tags[1:] {
+					for _, v := range tagPaths[1:] {
 						kv := strings.SplitN(v, ":", 2)
 						k := strings.TrimSpace(strings.ToLower(kv[0]))
 						if len(kv) > 1 {
-							tag[k] = kv[1]
+							column.tag[k] = kv[1]
 						} else {
-							tag[k] = ""
+							column.tag[k] = ""
 						}
 					}
 				}
@@ -605,8 +755,8 @@ func parseGoPackage(
 				// If the type is table name, then we replace table name
 				// and continue on next property
 				case tableNameSchema:
-					if n != "" {
-						model.TableName = n
+					if name != "" {
+						table.tableName = name
 					}
 					continue
 				}
@@ -619,77 +769,68 @@ func parseGoPackage(
 					continue
 				}
 
-				tf.Type = f.t
-				tf.GoName = f.name
-				tf.GoPath = f.path
-				tf.Index = index
-				if val, ok := tag.Lookup(TagOptionEncode); ok {
-					tf.CustomMarshaler = val
+				// Check uniqueness of the column
+				if _, ok := nameDict[column.colName]; ok {
+					return fmt.Errorf("sqlgen: struct %q has duplicate key %q in %s", s.name, column.colName, dir)
 				}
-				if val, ok := tag.Lookup(TagOptionDecode); ok {
-					tf.CustomUnmarshaler = val
-				}
-				if _, ok := tag.Lookup(TagOptionBinary); ok {
-					if isImplemented(tf.Type, binaryMarshaler) && isImplemented(newPointer(tf.Type), binaryUnmarshaler) {
-						tf.IsBinary = true
-					} else if !gen.config.NoStrict {
-						return fmt.Errorf(`sqlgen: field %q of struct %q specific for "binary" must comply to encoding.BinaryMarshaler and encoding.BinaryUnmarshaler`, tf.GoName, model.GoName)
+
+				if v, ok := column.tag.Lookup(TagOptionSize); ok {
+					column.size, err = strconv.ParseInt(v, 10, 64)
+					if err != nil {
+						return fmt.Errorf(`sqlgen: %w`, err)
 					}
 				}
-				if val, ok := tag.Lookup(TagOptionSize); ok {
-					tf.Size, _ = strconv.Atoi(val)
+
+				if v, ok := column.tag.Lookup(TagOptionUnique); ok {
+					idxDict.Set(v, append(idxDict.GetOrDefault(v, []*columnInfo{}), column))
 				}
-				tf.IsTextMarshaler = isImplemented(tf.Type, textMarshaler)
-				tf.IsTextUnmarshaler = isImplemented(newPointer(tf.Type), textUnmarshaler)
-				index++
 
-				if _, ok := tag.Lookup(TagOptionPK, TagOptionPKAlias, TagOptionAutoIncrement); ok {
-					if !gen.config.NoStrict && model.PK != nil {
-						return fmt.Errorf(`sqlgen: a model can only allow one primary key, else it will get overriden`)
-					}
-
+				if _, ok := column.tag.Lookup(TagOptionPK, TagOptionPKAlias, TagOptionAutoIncrement); ok {
 					// Check auto increment
-					pk := templates.PK{Field: tf}
-					_, pk.IsAutoIncr = tag.Lookup(TagOptionAutoIncrement)
-					model.PK = &pk
-				}
-
-				if !gen.config.NoStrict {
-					// Check uniqueness of the column
-					if _, ok := nameMap[tf.ColumnName]; ok {
-						return fmt.Errorf("sqlgen: struct %q has duplicate key %q in %s", s.name, tf.ColumnName, dir)
+					_, autoIncr := column.tag.Lookup(TagOptionAutoIncrement)
+					if autoIncr {
+						if table.autoIncrKey != nil {
+							return fmt.Errorf(`sqlgen: you cannot have a composite key if you define auto increment key`)
+						}
+						table.autoIncrKey = column
+						column.autoIncr = true
 					}
+					table.keys = append(table.keys, column)
 				}
-				nameMap[tf.ColumnName] = struct{}{}
 
-				// Check type is sequel.Name, then override name
-				model.Fields = append(model.Fields, tf)
+				nameDict[column.colName] = struct{}{}
+
+				column.colName = gen.QuoteIdentifier(column.colName)
+				// TODO: Check type is sequel.Name, then override name
+				table.columns = append(table.columns, column)
+				pos++
 			}
 
-			clear(nameMap)
+			clear(nameDict)
+			for _, k := range idxDict.Keys() {
+				table.indexes = append(table.indexes, &indexInfo{
+					columns: lo.Map(idxDict.GetOrDefault(k, []*columnInfo{}), func(c *columnInfo, _ int) string {
+						return c.colName
+					}),
+					indexType: "unique",
+				})
+			}
+			// FIXME: we should allow database name to declare
+			// table.dbName = gen.QuoteIdentifier(table.dbName)
+			table.tableName = gen.QuoteIdentifier(table.tableName)
 
 			// If the model doesn't consist any field,
 			// we don't really want to generate the boilerplate code
-			if len(model.Fields) > 0 {
-				params.Models = append(params.Models, &model)
+			if len(table.columns) > 0 {
+				schemaList = append(schemaList, table)
 			}
 		}
 
-		if gen.config.Exec.SkipEmpty && len(params.Models) == 0 {
+		if gen.config.Exec.SkipEmpty && len(schemaList) == 0 {
 			goto nextDir
 		}
 
-		if err := renderTemplate(
-			gen,
-			"model.go.tpl",
-			typeInferred,
-			pkg.PkgPath,
-			pkg.Name,
-			gen.config.Getter.Prefix,
-			dir,
-			gen.config.Exec.Filename,
-			params,
-		); err != nil {
+		if err := gen.generate(pkg, dir, typeInferred, schemaList); err != nil {
 			return err
 		}
 

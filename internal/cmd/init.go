@@ -67,7 +67,7 @@ func runInitCommand(cmd *cobra.Command, args []string) error {
 		SqlDriver        string `survey:"driver"`
 		NamingConvention string `survey:"naming_convention"`
 		Tag              string `survey:"tag"`
-		Strict           bool   `survey:"strict,omitempty"`
+		Strict           bool   `survey:"strict"`
 	}
 
 	_, err := os.Stat(fileDest)
@@ -100,7 +100,7 @@ func runInitCommand(cmd *cobra.Command, args []string) error {
 		cfg.NamingConvention = config.CamelCase
 	}
 	cfg.Tag = answer.Tag
-	cfg.NoStrict = !answer.Strict
+	cfg.Strict = &answer.Strict
 
 	cmd.Println("\nAbout to write to " + fileDest + ":\n")
 

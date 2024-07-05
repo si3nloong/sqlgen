@@ -3,6 +3,7 @@ package slice
 type customStr string
 
 type Slice struct {
+	priv          int64
 	ID            uint64 `sql:",pk,auto_increment"`
 	BoolList      []bool
 	StrList       []string

@@ -4,21 +4,21 @@ import (
 	"database/sql/driver"
 
 	"github.com/si3nloong/sqlgen/sequel"
-	"github.com/si3nloong/sqlgen/sequel/types"
 )
 
-func (v A) CreateTableStmt() string {
-	return "CREATE TABLE IF NOT EXISTS " + v.TableName() + " (`name` VARCHAR(255) NOT NULL);"
+func (A) Schemas() sequel.TableDefinition {
+	return sequel.TableDefinition{
+		Columns: []sequel.ColumnDefinition{
+			{Name: "`name`", Definition: "`name` VARCHAR(255) NOT NULL DEFAULT ''"},
+		},
+	}
 }
-func (A) InsertVarQuery() string {
+func (A) InsertPlaceholders(row int) string {
 	return "(?)"
 }
-func (v A) Values() []any {
-	return []any{string(v.Name)}
-}
-func (v *A) Addrs() []any {
-	return []any{types.String(&v.Name)}
+func (v A) InsertOneStmt() (string, []any) {
+	return "INSERT INTO `a` (`name`) VALUES (?);", v.Values()
 }
 func (v A) GetName() sequel.ColumnValuer[string] {
-	return sequel.Column("name", v.Name, func(val string) driver.Value { return string(val) })
+	return sequel.Column("`name`", v.Name, func(val string) driver.Value { return string(val) })
 }

@@ -18,11 +18,52 @@ func TestAll(t *testing.T) {
 	const rootDir = "./testcase"
 
 	if err := codegen.Generate(&config.Config{
-		Source:              []string{rootDir + "/**/*.go", rootDir + "/db/*"},
-		SkipHeader:          true,
-		OmitQuoteIdentifier: true,
+		Source:     []string{rootDir + "/**/*.go"},
+		SkipHeader: true,
+		Database: &config.DatabaseConfig{
+			Package: "mysqldb",
+			Dir:     "./db/mysql",
+		},
 		Exec: config.ExecConfig{
 			SkipEmpty: false,
+		},
+		Models: map[string]*config.Model{
+			"github.com/paulmach/orb.Point": {
+				DataType:   "POINT",
+				SQLScanner: `ST_AsBinary({column}, 4326)`,
+				Scanner:    `github.com/paulmach/orb/encoding/ewkb.Scanner({field})`,
+				SQLValuer:  `ST_GeomFromEWKB({placeholder})`,
+				Valuer:     `github.com/paulmach/orb/encoding/ewkb.Value({field}, 4326)`,
+			},
+			"encoding/json.Number": {
+				DataType: "VARCHAR(20)",
+				Scanner:  "github.com/si3nloong/sqlgen/examples/testcase/struct-field/json.Number({field})",
+				Valuer:   "{field}.String()",
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := codegen.Generate(&config.Config{
+		Source:     []string{},
+		SkipHeader: true,
+		Driver:     config.Postgres,
+		Database: &config.DatabaseConfig{
+			Package: "postgresdb",
+			Dir:     "./db/postgres",
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := codegen.Generate(&config.Config{
+		Source:     []string{},
+		SkipHeader: true,
+		Driver:     config.Sqlite,
+		Database: &config.DatabaseConfig{
+			Package: "sqlite",
+			Dir:     "./db/sqlite",
 		},
 	}); err != nil {
 		t.Fatal(err)

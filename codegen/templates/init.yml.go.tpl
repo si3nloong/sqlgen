@@ -47,3 +47,5 @@ source_map: {{ .SourceMap }}
 
 # Optional: set to skip running `go mod tidy` when generating server code
 skip_mod_tidy: {{ .SkipModTidy }}
+
+models:
