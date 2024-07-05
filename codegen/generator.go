@@ -160,7 +160,11 @@ func (g *Generator) generate(pkg *packages.Package, dstDir string, typeInferred 
 					}
 					if sqlScanner := f.SQLScanner(); sqlScanner != nil {
 						matches := sqlFuncRegexp.FindStringSubmatch(sqlScanner("{}"))
-						g.WriteString(g.Quote(matches[1] + matches[2] + f.ColumnName() + matches[4] + matches[5]))
+						if len(matches) > 4 {
+							g.WriteString(g.Quote(matches[1] + matches[2] + f.ColumnName() + matches[4] + matches[5]))
+						} else {
+							g.WriteString(g.Quote(f.ColumnName()))
+						}
 					} else {
 						g.WriteString(g.Quote(f.ColumnName()))
 					}
@@ -225,12 +229,19 @@ func (g *Generator) generate(pkg *packages.Package, dstDir string, typeInferred 
 				if !typeInferred {
 					specificType = "[" + typeStr + "]"
 				}
+
 				if sqlValuer := f.SQLValuer(); sqlValuer != nil {
 					matches := sqlFuncRegexp.FindStringSubmatch(sqlValuer("{}"))
 
-					g.L("func (v "+t.goName+") ", g.config.Getter.Prefix+f.GoName(), "() sequel.SQLColumnValuer[", typeStr, "] {")
-					g.L(`return sequel.SQLColumn`+specificType+`(`, g.Quote(f.ColumnName()), `, v.`, f.GoPath()+",", fmt.Sprintf(`func(placeholder string) string { return %q+ placeholder + %q}`, matches[1]+matches[2], matches[4]+matches[5]), `, func(val `, typeStr, `) driver.Value { return `, g.valuer(importPkgs, "val", f.Type()), ` })`)
-					g.L("}")
+					if len(matches) > 4 {
+						g.L("func (v "+t.goName+") ", g.config.Getter.Prefix+f.GoName(), "() sequel.SQLColumnValuer[", typeStr, "] {")
+						g.L(`return sequel.SQLColumn`+specificType+`(`, g.Quote(f.ColumnName()), `, v.`, f.GoPath()+",", fmt.Sprintf(`func(placeholder string) string { return %q+ placeholder + %q}`, matches[1]+matches[2], matches[4]+matches[5]), `, func(val `, typeStr, `) driver.Value { return `, g.valuer(importPkgs, "val", f.Type()), ` })`)
+						g.L("}")
+					} else {
+						g.L("func (v "+t.goName+") ", g.config.Getter.Prefix+f.GoName(), "() sequel.ColumnValuer[", typeStr, "] {")
+						g.L(`return sequel.Column`, specificType, `(`, g.Quote(f.ColumnName()), `, v.`, f.GoPath(), `, func(val `, typeStr, `) driver.Value { return `, g.valuer(importPkgs, "val", f.Type()), ` })`)
+						g.L("}")
+					}
 				} else {
 					g.L("func (v "+t.goName+") ", g.config.Getter.Prefix+f.GoName(), "() sequel.ColumnValuer[", typeStr, "] {")
 					g.L(`return sequel.Column`, specificType, `(`, g.Quote(f.ColumnName()), `, v.`, f.GoPath(), `, func(val `, typeStr, `) driver.Value { return `, g.valuer(importPkgs, "val", f.Type()), ` })`)
@@ -307,7 +318,7 @@ func (g *Generator) buildSchemas(table *tableInfo) {
 
 	g.L("func (" + table.goName + ") Schemas() sequel.TableDefinition {")
 	g.L("return sequel.TableDefinition{")
-	if pk, ok := schema.PK(); ok && pk != nil {
+	if pk, ok := schema.PK(); ok {
 		g.L("PK: &sequel.PrimaryKeyDefinition{")
 		g.WriteString("Columns: []string{")
 		columns := pk.Columns()
@@ -402,8 +413,7 @@ func (g *Generator) buildScanner(importPkgs *Package, table *tableInfo) {
 }
 
 func (g *Generator) valuer(importPkgs *Package, goPath string, t types.Type) string {
-
-	if model, ok := g.config.Models[t.String()]; ok {
+	if model, ok := g.config.Models[t.String()]; ok && model.Valuer != "" {
 		// TODO: do it better
 		return Expr(strings.Replace(model.Valuer, "{field}", goPath, -1)).Format(importPkgs)
 	} else if _, wrong := types.MissingMethod(t, goSqlValuer, true); wrong {
@@ -420,7 +430,7 @@ func (g *Generator) valuer(importPkgs *Package, goPath string, t types.Type) str
 }
 
 func (g *Generator) scanner(importPkgs *Package, goPath string, t types.Type) string {
-	if model, ok := g.config.Models[t.String()]; ok {
+	if model, ok := g.config.Models[t.String()]; ok && model.Scanner != "" {
 		// TODO: do it better
 		return Expr(strings.Replace(model.Scanner, "{field}", goPath, -1)).Format(importPkgs)
 	} else if types.Implements(newPointer(t), goSqlScanner) {
@@ -484,7 +494,11 @@ func (g *Generator) buildInsertOne(importPkgs *Package, table *tableInfo) {
 		if sqlValuer := f.SQLValuer(); sqlValuer != nil {
 			matches := sqlFuncRegexp.FindStringSubmatch(sqlValuer("{}"))
 			// g.WriteString(fmt.Sprintf("%q + strconv.Itoa((row * noOfColumn) + %d) +%q", matches[1]+string(g.dialect.VarRune()), f.ColumnPos(), matches[5]))
-			buf.WriteString(matches[1] + matches[2] + g.dialect.QuoteVar(f.ColumnPos()+1) + matches[4] + matches[5])
+			if len(matches) > 4 {
+				buf.WriteString(matches[1] + matches[2] + g.dialect.QuoteVar(f.ColumnPos()+1) + matches[4] + matches[5])
+			} else {
+				buf.WriteString(g.dialect.QuoteVar(f.ColumnPos() + 1))
+			}
 		} else {
 			buf.WriteString(g.dialect.QuoteVar(f.ColumnPos() + 1))
 		}

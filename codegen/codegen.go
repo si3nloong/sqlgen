@@ -21,6 +21,7 @@ import (
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/elliotchance/orderedmap/v2"
+	"github.com/go-playground/validator/v10"
 	"github.com/samber/lo"
 	"github.com/si3nloong/sqlgen/codegen/config"
 	"github.com/si3nloong/sqlgen/internal/fileutil"
@@ -229,6 +230,9 @@ func (i columnInfo) SQLValuer() sequel.QueryFunc {
 	if i.model == nil {
 		return nil
 	}
+	if i.model.SQLValuer == "" {
+		return nil
+	}
 	return func(placeholder string) string {
 		return strings.Replace(i.model.SQLValuer, "{placeholder}", placeholder, 1)
 	}
@@ -236,6 +240,9 @@ func (i columnInfo) SQLValuer() sequel.QueryFunc {
 
 func (i columnInfo) SQLScanner() sequel.QueryFunc {
 	if i.model == nil {
+		return nil
+	}
+	if i.model.SQLScanner == "" {
 		return nil
 	}
 	return func(column string) string {
@@ -260,6 +267,11 @@ func Generate(c *config.Config) error {
 	cfg := config.DefaultConfig()
 	if c != nil {
 		cfg = cfg.Merge(c)
+	}
+
+	vldr := validator.New()
+	if err := vldr.Struct(c); err != nil {
+		return err
 	}
 
 	dialect, ok := sequel.GetDialect(string(cfg.Driver))

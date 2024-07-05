@@ -35,6 +35,11 @@ func TestAll(t *testing.T) {
 				SQLValuer:  `ST_GeomFromEWKB({placeholder})`,
 				Valuer:     `github.com/paulmach/orb/encoding/ewkb.Value({field}, 4326)`,
 			},
+			"encoding/json.Number": {
+				DataType: "VARCHAR(20)",
+				Scanner:  "github.com/si3nloong/sqlgen/examples/testcase/struct-field/json.Number({field})",
+				Valuer:   "{field}.String()",
+			},
 		},
 	}); err != nil {
 		t.Fatal(err)
