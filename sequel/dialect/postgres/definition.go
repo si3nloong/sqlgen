@@ -4,6 +4,7 @@ import (
 	"crypto/md5"
 	"database/sql"
 	"encoding/hex"
+	"strconv"
 	"strings"
 	"unsafe"
 
@@ -120,7 +121,12 @@ type indexDefinition struct {
 func (i *indexDefinition) Name() string {
 	str := strings.Join(i.cols, ",")
 	hash := md5.Sum(unsafe.Slice(unsafe.StringData(str), len(str)))
-	return hex.EncodeToString(hash[:])
+	switch i.indexType {
+	case unique:
+		return "UQ_" + hex.EncodeToString(hash[:])
+	default:
+		return "IX_" + hex.EncodeToString(hash[:])
+	}
 }
 
 func (i *indexDefinition) Type() string {
@@ -132,5 +138,5 @@ func (i *indexDefinition) Columns() []string {
 }
 
 func (i *indexDefinition) Definition() string {
-	return "CONSTRAINT " + i.Name() + " " + i.Type() + " (" + strings.Join(i.cols, ",") + ")"
+	return "CONSTRAINT " + strconv.Quote(i.Name()) + " " + i.Type() + " (" + strings.Join(i.cols, ",") + ")"
 }
