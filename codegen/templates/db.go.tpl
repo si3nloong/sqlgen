@@ -345,7 +345,10 @@ func UpsertOne[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Co
 }
 
 // Upsert is a helper function to upsert multiple records.
-func Upsert[T sequel.KeyValuer, Ptr sequel.PtrScanner[T]](ctx context.Context, sqlConn sequel.DB, data []T, opts ...UpsertOption) (sql.Result, error) {
+func Upsert[T interface {
+	sequel.Keyer
+	sequel.Inserter
+}, Ptr sequel.PtrScanner[T]](ctx context.Context, sqlConn sequel.DB, data []T, opts ...UpsertOption) (sql.Result, error) {
 	noOfData := len(data)
 	if noOfData == 0 {
 		return new(sequel.EmptyResult), nil
@@ -398,17 +401,10 @@ func Upsert[T sequel.KeyValuer, Ptr sequel.PtrScanner[T]](ctx context.Context, s
 		stmt.WriteString("INSERT INTO " + DbTable(model) + " (" + strings.Join(columns, ",") + ") VALUES ")
 		for i := 0; i < noOfData; i++ {
 			if i > 0 {
-				stmt.WriteByte(',')
+				stmt.WriteString("," + model.InsertPlaceholders(i))
+			} else {
+				stmt.WriteString(model.InsertPlaceholders(i))
 			}
-			stmt.WriteByte('(')
-			for j := 1; j <= noOfCols; j++ {
-				if j > 1 {
-					stmt.WriteString("," + wrapVar((i*noOfCols)+j))
-				} else {
-					stmt.WriteString(wrapVar((i * noOfCols) + j))
-				}
-			}
-			stmt.WriteByte(')')
 			args = append(args, data[i].Values()...)
 		}
 	case sequel.CompositeKeyer:
@@ -417,17 +413,10 @@ func Upsert[T sequel.KeyValuer, Ptr sequel.PtrScanner[T]](ctx context.Context, s
 		stmt.WriteString("INSERT INTO " + DbTable(model) + " (" + strings.Join(columns, ",") + ") VALUES ")
 		for i := 0; i < noOfData; i++ {
 			if i > 0 {
-				stmt.WriteByte(',')
+				stmt.WriteString("," + model.InsertPlaceholders(i))
+			} else {
+				stmt.WriteString(model.InsertPlaceholders(i))
 			}
-			stmt.WriteByte('(')
-			for j := 1; j <= noOfCols; j++ {
-				if j > 1 {
-					stmt.WriteString("," + wrapVar((i*noOfCols)+j))
-				} else {
-					stmt.WriteString(wrapVar((i * noOfCols) + j))
-				}
-			}
-			stmt.WriteByte(')')
 			args = append(args, data[i].Values()...)
 		}
 	default:
@@ -578,7 +567,10 @@ func UpsertOne[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Co
 }
 
 // Upsert is a helper function to upsert multiple records.
-func Upsert[T sequel.KeyValuer, Ptr sequel.PtrScanner[T]](ctx context.Context, sqlConn sequel.DB, data []T, override bool, omittedFields ...string) (sql.Result, error) {
+func Upsert[T interface {
+	sequel.Keyer
+	sequel.Inserter
+}, Ptr sequel.PtrScanner[T]](ctx context.Context, sqlConn sequel.DB, data []T, override bool, omittedFields ...string) (sql.Result, error) {
 	noOfData := len(data)
 	if noOfData == 0 {
 		return new(sequel.EmptyResult), nil
@@ -623,12 +615,11 @@ func Upsert[T sequel.KeyValuer, Ptr sequel.PtrScanner[T]](ctx context.Context, s
 		} else {
 			stmt.WriteString("INSERT IGNORE INTO " + DbTable(model) + " (" + strings.Join(columns, ",") + ") VALUES ")
 		}
-		placeholder := ",(" + strings.Repeat(",?", noOfCols)[1:] + ")"
 		for i := 0; i < noOfData; i++ {
 			if i > 0 {
-				stmt.WriteString(placeholder)
+				stmt.WriteString("," + model.InsertPlaceholders(i))
 			} else {
-				stmt.WriteString(placeholder[1:])
+				stmt.WriteString(model.InsertPlaceholders(i))
 			}
 			args = append(args, data[i].Values()...)
 		}
@@ -638,12 +629,11 @@ func Upsert[T sequel.KeyValuer, Ptr sequel.PtrScanner[T]](ctx context.Context, s
 		} else {
 			stmt.WriteString("INSERT IGNORE INTO " + DbTable(model) + " (" + strings.Join(columns, ",") + ") VALUES ")
 		}
-		placeholder := ",(" + strings.Repeat(",?", noOfCols)[1:] + ")"
 		for i := 0; i < noOfData; i++ {
 			if i > 0 {
-				stmt.WriteString(placeholder)
+				stmt.WriteString("," + model.InsertPlaceholders(i))
 			} else {
-				stmt.WriteString(placeholder[1:])
+				stmt.WriteString(model.InsertPlaceholders(i))
 			}
 			args = append(args, data[i].Values()...)
 		}
