@@ -3,6 +3,7 @@ package types
 import (
 	"database/sql"
 	"database/sql/driver"
+	"fmt"
 	"strconv"
 	"unsafe"
 
@@ -58,15 +59,17 @@ func (f floatLike[T]) Scan(v any) error {
 	case uint64:
 		val = T(vi)
 	default:
-		if !f.strictType {
-			switch vi := v.(type) {
-			case string:
-				f, err := strconv.ParseFloat(vi, 64)
-				if err != nil {
-					return err
-				}
-				val = T(f)
+		if f.strictType {
+			return fmt.Errorf(`types: unable to scan %T to float`, vi)
+		}
+
+		switch vi := v.(type) {
+		case string:
+			f, err := strconv.ParseFloat(vi, 64)
+			if err != nil {
+				return err
 			}
+			val = T(f)
 		}
 	}
 	*f.addr = val

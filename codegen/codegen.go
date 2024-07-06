@@ -234,7 +234,7 @@ func (i columnInfo) SQLValuer() sequel.QueryFunc {
 		return nil
 	}
 	return func(placeholder string) string {
-		return strings.Replace(i.model.SQLValuer, "{placeholder}", placeholder, 1)
+		return strings.Replace(i.model.SQLValuer, "{{.}}", placeholder, 1)
 	}
 }
 
@@ -246,7 +246,7 @@ func (i columnInfo) SQLScanner() sequel.QueryFunc {
 		return nil
 	}
 	return func(column string) string {
-		return strings.Replace(i.model.SQLScanner, "{column}", column, 1)
+		return strings.Replace(i.model.SQLScanner, "{{.}}", column, 1)
 	}
 }
 

@@ -26,7 +26,7 @@ func (s intList[T]) Scan(v any) error {
 		}
 		length := len(vi)
 		if length < 2 || vi[0] != '[' || vi[length-1] != ']' {
-			return fmt.Errorf(`sqlgen: invalid value of %q to unmarshal to []~int`, vi)
+			return fmt.Errorf(`types: invalid value of %q to unmarshal to []~int`, vi)
 		}
 		vi = vi[1 : length-1]
 		if len(vi) == 0 {
@@ -46,6 +46,8 @@ func (s intList[T]) Scan(v any) error {
 			values[i] = T(i64)
 		}
 		*s.v = values
+	default:
+		return fmt.Errorf(`types: unsupported scan type %T for []~int`, vi)
 	}
 	return nil
 }

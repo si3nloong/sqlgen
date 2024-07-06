@@ -41,6 +41,6 @@ func (b binaryUnmarshaler[T, Ptr]) Scan(v any) error {
 	case []byte:
 		return b.v.UnmarshalBinary(vi)
 	default:
-		return fmt.Errorf(`sqlgen: binary must be []byte`)
+		return fmt.Errorf(`types: binary must be []byte`)
 	}
 }

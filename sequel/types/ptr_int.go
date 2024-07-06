@@ -1,6 +1,7 @@
 package types
 
 import (
+	"fmt"
 	"strconv"
 	"unsafe"
 
@@ -39,6 +40,8 @@ func (p ptrOfIntLike[T]) Scan(v any) error {
 	case int64:
 		val := T(vi)
 		*p.addr = &val
+	default:
+		return fmt.Errorf(`types: unable to scan %T to *int`, vi)
 	}
 	return nil
 }

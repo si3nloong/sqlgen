@@ -3,6 +3,7 @@ package types
 import (
 	"database/sql"
 	"database/sql/driver"
+	"fmt"
 	"strconv"
 	"unsafe"
 )
@@ -54,15 +55,17 @@ func (b boolLike[T]) Scan(v any) error {
 	case int64:
 		val = T(vi != 0)
 	default:
-		if !b.strictType {
-			switch vi := v.(type) {
-			case string:
-				f, err := strconv.ParseBool(vi)
-				if err != nil {
-					return err
-				}
-				val = T(f)
+		if b.strictType {
+			return fmt.Errorf(`types: unable to scan %T to bool`, vi)
+		}
+
+		switch vi := v.(type) {
+		case string:
+			f, err := strconv.ParseBool(vi)
+			if err != nil {
+				return err
 			}
+			val = T(f)
 		}
 	}
 	*b.addr = val

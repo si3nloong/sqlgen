@@ -43,7 +43,7 @@ func (s boolList[T]) Scan(v any) error {
 		}
 		length := len(vi)
 		if length < 2 || vi[0] != '[' || vi[length-1] != ']' {
-			return fmt.Errorf(`sqlgen: invalid value of %q to unmarshal to %v`, vi, reflect.TypeOf(vi))
+			return fmt.Errorf(`types: invalid value of %q to unmarshal to %v`, vi, reflect.TypeOf(vi))
 		}
 		vi = vi[1 : length-1]
 		if len(vi) == 0 {

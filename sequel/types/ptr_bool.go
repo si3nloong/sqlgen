@@ -1,6 +1,7 @@
 package types
 
 import (
+	"fmt"
 	"strconv"
 	"unsafe"
 )
@@ -47,6 +48,8 @@ func (p ptrOfBoolLike[T]) Scan(v any) error {
 	case int64:
 		val := T(vi != 0)
 		*p.addr = &val
+	default:
+		return fmt.Errorf(`types: unable to scan %T to *bool`, vi)
 	}
 	return nil
 }

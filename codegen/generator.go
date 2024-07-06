@@ -414,33 +414,41 @@ func (g *Generator) buildScanner(importPkgs *Package, table *tableInfo) {
 
 func (g *Generator) valuer(importPkgs *Package, goPath string, t types.Type) string {
 	if model, ok := g.config.Models[t.String()]; ok && model.Valuer != "" {
-		// TODO: do it better
-		return Expr(strings.Replace(model.Valuer, "{field}", goPath, -1)).Format(importPkgs)
+		return Expr(model.Valuer).Format(importPkgs, ExprParams{GoPath: goPath})
 	} else if _, wrong := types.MissingMethod(t, goSqlValuer, true); wrong {
-		return Expr("(database/sql/driver.Valuer)(%s)").Format(importPkgs, goPath)
-	} else if codec, _ := UnderlyingType(t); codec != nil {
-		return codec.Encoder.Format(importPkgs, goPath)
+		return Expr("(database/sql/driver.Valuer)({{goPath}})").Format(importPkgs, ExprParams{GoPath: goPath})
+	} else if codec, goType := UnderlyingType(t); codec != nil {
+		switch vi := goType.(type) {
+		case GoArray:
+			return codec.Encoder.Format(importPkgs, ExprParams{GoPath: goPath, Len: vi.Len()})
+		default:
+			return codec.Encoder.Format(importPkgs, ExprParams{GoPath: goPath})
+		}
 	} else if isImplemented(t, textMarshaler) {
-		return Expr("github.com/si3nloong/sqlgen/sequel/types.TextMarshaler(%s)").Format(importPkgs, goPath)
+		return Expr("github.com/si3nloong/sqlgen/sequel/types.TextMarshaler({{goPath}})").Format(importPkgs, ExprParams{GoPath: goPath})
 	} else if isImplemented(t, binaryMarshaler) {
-		return Expr("github.com/si3nloong/sqlgen/sequel/types.BinaryMarshaler(%s)").Format(importPkgs, goPath)
+		return Expr("github.com/si3nloong/sqlgen/sequel/types.BinaryMarshaler({{goPath}})").Format(importPkgs, ExprParams{GoPath: goPath})
 	} else {
-		return Expr("github.com/si3nloong/sqlgen/sequel/types.JSONMarshaler(%s)").Format(importPkgs, goPath)
+		return Expr("github.com/si3nloong/sqlgen/sequel/types.JSONMarshaler({{goPath}})").Format(importPkgs, ExprParams{GoPath: goPath})
 	}
 }
 
 func (g *Generator) scanner(importPkgs *Package, goPath string, t types.Type) string {
 	if model, ok := g.config.Models[t.String()]; ok && model.Scanner != "" {
-		// TODO: do it better
-		return Expr(strings.Replace(model.Scanner, "{field}", goPath, -1)).Format(importPkgs)
+		return Expr(model.Scanner).Format(importPkgs, ExprParams{GoPath: goPath})
 	} else if types.Implements(newPointer(t), goSqlScanner) {
-		return Expr("(database/sql.Scanner)(%s)").Format(importPkgs, goPath)
-	} else if codec, _ := UnderlyingType(t); codec != nil {
-		return codec.Decoder.Format(importPkgs, goPath)
+		return Expr("(database/sql.Scanner)({{addrOfGoPath}})").Format(importPkgs, ExprParams{GoPath: goPath})
+	} else if codec, goType := UnderlyingType(t); codec != nil {
+		switch vi := goType.(type) {
+		case GoArray:
+			return codec.Decoder.Format(importPkgs, ExprParams{GoPath: goPath, Len: vi.Len()})
+		default:
+			return codec.Decoder.Format(importPkgs, ExprParams{GoPath: goPath})
+		}
 	} else if isImplemented(types.NewPointer(t), textMarshaler) {
-		return Expr("github.com/si3nloong/sqlgen/sequel/types.TextUnmarshaler(%s)").Format(importPkgs, goPath)
+		return Expr("github.com/si3nloong/sqlgen/sequel/types.TextUnmarshaler({{addrOfGoPath}})").Format(importPkgs, ExprParams{GoPath: goPath})
 	}
-	return Expr("github.com/si3nloong/sqlgen/sequel/types.JSONUnmarshaler(%s)").Format(importPkgs, goPath)
+	return Expr("github.com/si3nloong/sqlgen/sequel/types.JSONUnmarshaler({{addrOfGoPath}})").Format(importPkgs, ExprParams{GoPath: goPath})
 }
 
 func (g *Generator) buildFindByPK(importPkgs *Package, table *tableInfo) {
