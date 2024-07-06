@@ -3,11 +3,46 @@ package codegen
 import (
 	"fmt"
 	"go/types"
+	"regexp"
+	"strconv"
 )
 
-func UnderlyingType(t types.Type) (codec *Mapping, typeStr string) {
+type GoType interface {
+	String() string
+}
+
+type GoArray interface {
+	Len() int
+}
+
+type nNode struct {
+	t string
+}
+
+func (n nNode) String() string {
+	return n.t
+}
+
+type arrNode struct {
+	t    string
+	size int
+}
+
+func (n arrNode) String() string {
+	return n.t
+}
+func (n arrNode) Len() int {
+	return n.size
+}
+
+var (
+	arrayRegexp = regexp.MustCompile(`^\[(\d+)\](rune|string|byte)$`)
+)
+
+func UnderlyingType(t types.Type) (*Mapping, GoType) {
 	var (
-		prev = t
+		prev    = t
+		typeStr string
 	)
 
 loop:
@@ -35,7 +70,7 @@ loop:
 			break loop
 		}
 		if v, ok := typeMap[typeStr]; ok {
-			return v, typeStr
+			return v, &nNode{t: typeStr}
 		}
 		if prev == t {
 			break loop
@@ -43,9 +78,16 @@ loop:
 		t = prev
 	}
 	if v, ok := typeMap[typeStr]; ok {
-		return v, typeStr
+		return v, &nNode{t: typeStr}
 	}
-	return nil, typeStr
+	// Find fixed size array mapper
+	if matches := arrayRegexp.FindStringSubmatch(typeStr); len(matches) > 0 {
+		if v, ok := typeMap["[...]"+matches[2]]; ok {
+			len, _ := strconv.Atoi(matches[1])
+			return v, &arrNode{t: typeStr, size: len}
+		}
+	}
+	return nil, &nNode{t: typeStr}
 }
 
 func assertAsPtr[T any](v any) *T {

@@ -54,7 +54,7 @@ func (p ptrOfFloatLike[T]) Scan(v any) error {
 		val := T(vi)
 		*p.addr = &val
 	default:
-		return fmt.Errorf(`sqlgen: unable to scan to float`)
+		return fmt.Errorf(`types: unable to scan %T to *float`, vi)
 	}
 	return nil
 }

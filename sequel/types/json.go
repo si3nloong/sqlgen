@@ -62,5 +62,5 @@ func (j jsonUnmarshaler[T, Ptr]) Scan(v any) error {
 			return json.NewDecoder(bytes.NewBufferString(vi)).Decode(j.v)
 		}
 	}
-	return fmt.Errorf(`sqlgen: invalid scan type for JSON, %T`, v)
+	return fmt.Errorf(`types: invalid scan type for JSON, %T`, v)
 }

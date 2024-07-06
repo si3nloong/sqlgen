@@ -3,6 +3,7 @@ package types
 import (
 	"database/sql"
 	"database/sql/driver"
+	"fmt"
 	"time"
 	"unsafe"
 )
@@ -58,6 +59,8 @@ func (s datetime[T]) Scan(v any) error {
 		val = T(vi)
 	case int64:
 		val = T(time.Unix(vi, 0))
+	default:
+		return fmt.Errorf(`types: unsupported scan type %T for time.Time`, vi)
 	}
 	*s.addr = val
 	return nil

@@ -3,6 +3,7 @@ package types
 import (
 	"database/sql"
 	"database/sql/driver"
+	"fmt"
 	"strconv"
 )
 
@@ -50,17 +51,19 @@ func (s strLike[T]) Scan(v any) error {
 	case []byte:
 		val = T(vi)
 	default:
-		if !s.strictType {
-			switch vi := v.(type) {
-			case bool:
-				val = T(strconv.FormatBool(vi))
-			case int:
-				val = T(strconv.Itoa(vi))
-			case int64:
-				val = T(strconv.FormatInt(vi, 10))
-			case uint64:
-				val = T(strconv.FormatUint(vi, 10))
-			}
+		if s.strictType {
+			return fmt.Errorf(`types: unable to scan %T to string`, vi)
+		}
+
+		switch vi := v.(type) {
+		case bool:
+			val = T(strconv.FormatBool(vi))
+		case int:
+			val = T(strconv.Itoa(vi))
+		case int64:
+			val = T(strconv.FormatInt(vi, 10))
+		case uint64:
+			val = T(strconv.FormatUint(vi, 10))
 		}
 	}
 	*s.addr = val

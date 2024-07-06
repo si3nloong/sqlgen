@@ -30,15 +30,15 @@ func TestAll(t *testing.T) {
 		Models: map[string]*config.Model{
 			"github.com/paulmach/orb.Point": {
 				DataType:   "POINT",
-				SQLScanner: `ST_AsBinary({column}, 4326)`,
-				Scanner:    `github.com/paulmach/orb/encoding/ewkb.Scanner({field})`,
-				SQLValuer:  `ST_GeomFromEWKB({placeholder})`,
-				Valuer:     `github.com/paulmach/orb/encoding/ewkb.Value({field}, 4326)`,
+				SQLScanner: `ST_AsBinary({{.}}, 4326)`,
+				Scanner:    `github.com/paulmach/orb/encoding/ewkb.Scanner({{.}})`,
+				SQLValuer:  `ST_GeomFromEWKB({{.}})`,
+				Valuer:     `github.com/paulmach/orb/encoding/ewkb.Value({{.}}, 4326)`,
 			},
 			"encoding/json.Number": {
 				DataType: "VARCHAR(20)",
-				Scanner:  "github.com/si3nloong/sqlgen/examples/testcase/struct-field/json.Number({field})",
-				Valuer:   "{field}.String()",
+				Scanner:  "github.com/si3nloong/sqlgen/examples/testcase/struct-field/json.Number({{.}})",
+				Valuer:   "{{.}}.String()",
 			},
 		},
 	}); err != nil {

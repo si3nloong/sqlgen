@@ -10,10 +10,10 @@ import (
 func TestExpr(t *testing.T) {
 	pkg := NewPackage("", "")
 
-	require.Equal(t, "string(v)", Expr(`string(%s)`).Format(pkg, "v"))
-	require.Equal(t, `time.Time(v)`, Expr(`time.Time(%s)`).Format(pkg, "v"))
-	require.Equal(t, `(*time.Time)(v)`, Expr(`(*time.Time)(%s)`).Format(pkg, "v"))
-	require.Equal(t, `(driver.Valuer)(v)`, Expr(`(database/sql/driver.Valuer)(%s)`).Format(pkg, "v"))
+	require.Equal(t, "string(v)", Expr(`string({{goPath}})`).Format(pkg, ExprParams{GoPath: "v"}))
+	require.Equal(t, `time.Time(v)`, Expr(`time.Time({{goPath}})`).Format(pkg, ExprParams{GoPath: "v"}))
+	require.Equal(t, `(*time.Time)(&v)`, Expr(`(*time.Time)({{addrOfGoPath}})`).Format(pkg, ExprParams{GoPath: "v"}))
+	require.Equal(t, `(driver.Valuer)(v)`, Expr(`(database/sql/driver.Valuer)({{goPath}})`).Format(pkg, ExprParams{GoPath: "v"}))
 
 	require.ElementsMatch(t, []*types.Package{
 		types.NewPackage("time", "time"),

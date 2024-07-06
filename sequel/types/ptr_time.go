@@ -1,6 +1,7 @@
 package types
 
 import (
+	"fmt"
 	"regexp"
 	"time"
 	"unsafe"
@@ -51,6 +52,8 @@ func (p ptrOfTime[T]) Scan(v any) error {
 	case time.Time:
 		val := T(vi)
 		*p.addr = &val
+	default:
+		return fmt.Errorf(`types: unable to scan %T to *time.Time`, vi)
 	}
 	return nil
 }

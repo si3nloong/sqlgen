@@ -3,6 +3,7 @@ package types
 import (
 	"database/sql"
 	"database/sql/driver"
+	"fmt"
 	"time"
 	"unsafe"
 
@@ -47,6 +48,8 @@ func (b localDate) Scan(v any) error {
 		val = f
 	case time.Time:
 		val = civil.DateOf(vi)
+	default:
+		return fmt.Errorf(`types: unable to scan %T to civil.Date`, vi)
 	}
 	*b.addr = val
 	return nil

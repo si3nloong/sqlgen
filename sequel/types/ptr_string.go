@@ -1,5 +1,7 @@
 package types
 
+import "fmt"
+
 type ptrOfStrLike[T StringLikeType] struct {
 	addr **T
 }
@@ -28,6 +30,8 @@ func (p ptrOfStrLike[T]) Scan(v any) error {
 	case []byte:
 		val := T(vi)
 		*p.addr = &val
+	default:
+		return fmt.Errorf(`types: unable to scan %T to *string`, vi)
 	}
 	return nil
 }

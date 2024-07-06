@@ -3,6 +3,7 @@ package types
 import (
 	"database/sql"
 	"database/sql/driver"
+	"fmt"
 	"strconv"
 	"unsafe"
 
@@ -50,40 +51,43 @@ func (i intLike[T]) Scan(v any) error {
 			return err
 		}
 		val = T(m)
-	case uint64:
-		val = T(vi)
-	case uint32:
-		val = T(vi)
-	case uint16:
-		val = T(vi)
-	case uint8:
-		val = T(vi)
-	case uint:
-		val = T(vi)
 	case int64:
 		val = T(vi)
-	case int32:
-		val = T(vi)
-	case int16:
-		val = T(vi)
-	case int8:
-		val = T(vi)
-	case int:
-		val = T(vi)
+
 	default:
-		if !i.strictType {
-			switch vi := v.(type) {
-			case string:
-				m, err := strconv.ParseInt(string(vi), 10, 64)
-				if err != nil {
-					return err
-				}
-				val = T(m)
-			case float32:
-				val = T(vi)
-			case float64:
-				val = T(vi)
+		if i.strictType {
+			return fmt.Errorf(`types: unable to scan %T to int`, vi)
+		}
+
+		switch vi := v.(type) {
+		case string:
+			m, err := strconv.ParseInt(string(vi), 10, 64)
+			if err != nil {
+				return err
 			}
+			val = T(m)
+		case uint64:
+			val = T(vi)
+		case uint32:
+			val = T(vi)
+		case uint16:
+			val = T(vi)
+		case uint8:
+			val = T(vi)
+		case uint:
+			val = T(vi)
+		case int32:
+			val = T(vi)
+		case int16:
+			val = T(vi)
+		case int8:
+			val = T(vi)
+		case int:
+			val = T(vi)
+		case float32:
+			val = T(vi)
+		case float64:
+			val = T(vi)
 		}
 	}
 	*i.addr = val
