@@ -430,11 +430,13 @@ func parseGoPackage(
 	for len(dirs) > 0 {
 		dir = path.Join(rootDir, dirs[0])
 
-		// Skip if the file is exists in db folder
-		if idx := sort.SearchStrings([]string{
+		// Sometimes user might place db destination in the source as well
+		// In this situation, we're not process the folder, we will skip it
+		// if the file is exists in db folder
+		if idx := lo.IndexOf([]string{
 			path.Join(fileutil.Getpwd(), gen.config.Database.Dir),
 			path.Join(fileutil.Getpwd(), gen.config.Database.Operator.Dir),
-		}, dir); idx != 2 {
+		}, dir); idx >= 0 {
 			dirs = dirs[1:]
 			continue
 		}
