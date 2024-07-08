@@ -31,7 +31,7 @@ func (p ptrOfStrLike[T]) Scan(v any) error {
 		val := T(vi)
 		*p.addr = &val
 	default:
-		return fmt.Errorf(`types: unable to scan %T to *string`, vi)
+		return fmt.Errorf(`sequel/types: unable to scan %T to *string`, vi)
 	}
 	return nil
 }

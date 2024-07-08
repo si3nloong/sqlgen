@@ -60,7 +60,7 @@ func (f floatLike[T]) Scan(v any) error {
 		val = T(vi)
 	default:
 		if f.strictType {
-			return fmt.Errorf(`types: unable to scan %T to float`, vi)
+			return fmt.Errorf(`sequel/types: unable to scan %T to float`, vi)
 		}
 
 		switch vi := v.(type) {
@@ -70,6 +70,8 @@ func (f floatLike[T]) Scan(v any) error {
 				return err
 			}
 			val = T(f)
+		default:
+			return fmt.Errorf(`sequel/types: unable to scan %T to float`, vi)
 		}
 	}
 	*f.addr = val

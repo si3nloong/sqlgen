@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 
 	"github.com/si3nloong/sqlgen/codegen"
-	"github.com/si3nloong/sqlgen/codegen/config"
 	"github.com/si3nloong/sqlgen/internal/fileutil"
 
 	"github.com/AlecAivazis/survey/v2"
@@ -20,7 +19,7 @@ var (
 	}
 	initCmd = &cobra.Command{
 		Use:   "init",
-		Short: fmt.Sprintf("Set up a new %q file", config.DefaultConfigFile),
+		Short: fmt.Sprintf("Set up a new %q file", codegen.DefaultConfigFile),
 		RunE:  runInitCommand,
 	}
 )
@@ -34,23 +33,23 @@ func runInitCommand(cmd *cobra.Command, args []string) error {
 				Name: "driver",
 				Prompt: &survey.Select{
 					Message: "What is your sql driver:",
-					Options: []string{string(config.MySQL), string(config.Postgres), string(config.Sqlite)},
-					Default: string(config.MySQL),
+					Options: []string{string(codegen.MySQL), string(codegen.Postgres), string(codegen.Sqlite)},
+					Default: string(codegen.MySQL),
 				},
 			},
 			{
 				Name: "naming_convention",
 				Prompt: &survey.Select{
 					Message: "What is your naming convention:",
-					Options: []string{string(config.SnakeCase), string(config.CamelCase), string(config.PascalCase)},
-					Default: string(config.SnakeCase),
+					Options: []string{string(codegen.SnakeCase), string(codegen.CamelCase), string(codegen.PascalCase)},
+					Default: string(codegen.SnakeCase),
 				},
 			},
 			{
 				Name: "tag",
 				Prompt: &survey.Input{
 					Message: "What is your tag for parsing:",
-					Default: config.DefaultStructTag,
+					Default: codegen.DefaultStructTag,
 				},
 			},
 			{
@@ -80,24 +79,24 @@ func runInitCommand(cmd *cobra.Command, args []string) error {
 		return noInterruptError(err)
 	}
 
-	cfg := config.DefaultConfig()
+	cfg := codegen.DefaultConfig()
 	switch answer.SqlDriver {
-	case string(config.MySQL):
-		cfg.Driver = config.MySQL
-	case string(config.Postgres):
-		cfg.Driver = config.Postgres
-	case string(config.Sqlite):
-		cfg.Driver = config.Sqlite
+	case string(codegen.MySQL):
+		cfg.Driver = codegen.MySQL
+	case string(codegen.Postgres):
+		cfg.Driver = codegen.Postgres
+	case string(codegen.Sqlite):
+		cfg.Driver = codegen.Sqlite
 	default:
-		cfg.Driver = config.SqlDriver(answer.SqlDriver)
+		cfg.Driver = codegen.SqlDriver(answer.SqlDriver)
 	}
 	switch answer.NamingConvention {
-	case string(config.SnakeCase):
-		cfg.NamingConvention = config.SnakeCase
-	case string(config.PascalCase):
-		cfg.NamingConvention = config.PascalCase
-	case string(config.CamelCase):
-		cfg.NamingConvention = config.CamelCase
+	case string(codegen.SnakeCase):
+		cfg.NamingConvention = codegen.SnakeCase
+	case string(codegen.PascalCase):
+		cfg.NamingConvention = codegen.PascalCase
+	case string(codegen.CamelCase):
+		cfg.NamingConvention = codegen.CamelCase
 	}
 	cfg.Tag = answer.Tag
 	cfg.Strict = &answer.Strict

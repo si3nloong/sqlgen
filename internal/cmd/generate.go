@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"github.com/si3nloong/sqlgen/codegen"
-	"github.com/si3nloong/sqlgen/codegen/config"
 	"github.com/spf13/cobra"
 )
 
@@ -18,7 +17,7 @@ var (
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var (
-				cfg = config.DefaultConfig()
+				cfg = codegen.DefaultConfig()
 			)
 
 			// If user pass the source, then we refer to it.

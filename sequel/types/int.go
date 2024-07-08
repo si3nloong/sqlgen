@@ -56,7 +56,7 @@ func (i intLike[T]) Scan(v any) error {
 
 	default:
 		if i.strictType {
-			return fmt.Errorf(`types: unable to scan %T to int`, vi)
+			return fmt.Errorf(`sequel/types: unable to scan %T to int`, vi)
 		}
 
 		switch vi := v.(type) {

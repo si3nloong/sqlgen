@@ -23,7 +23,6 @@ import (
 	"github.com/elliotchance/orderedmap/v2"
 	"github.com/go-playground/validator/v10"
 	"github.com/samber/lo"
-	"github.com/si3nloong/sqlgen/codegen/config"
 	"github.com/si3nloong/sqlgen/internal/fileutil"
 	"github.com/si3nloong/sqlgen/sequel"
 	"golang.org/x/tools/go/packages"
@@ -178,7 +177,7 @@ type columnInfo struct {
 	t        types.Type
 	autoIncr bool
 	tag      tagOpts
-	model    *config.Model
+	model    *DataType
 	size     int64
 }
 
@@ -263,8 +262,8 @@ func (i indexInfo) Type() string {
 	return i.indexType
 }
 
-func Generate(c *config.Config) error {
-	cfg := config.DefaultConfig()
+func Generate(c *Config) error {
+	cfg := DefaultConfig()
 	if c != nil {
 		cfg = cfg.Merge(c)
 	}
@@ -724,7 +723,7 @@ func parseGoPackage(
 				column.colPos = pos
 				column.tag = make(tagOpts)
 
-				if model, ok := gen.config.Models[f.t.String()]; ok {
+				if model, ok := gen.config.DataTypes[f.t.String()]; ok {
 					column.model = model
 				}
 

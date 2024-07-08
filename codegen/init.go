@@ -9,19 +9,18 @@ import (
 	"strconv"
 	"text/template"
 
-	"github.com/si3nloong/sqlgen/codegen/config"
 	"github.com/si3nloong/sqlgen/sequel"
 	"github.com/si3nloong/sqlgen/sequel/strpool"
 	"golang.org/x/tools/imports"
 )
 
-func Init(cfg *config.Config) error {
+func Init(cfg *Config) error {
 	tmpl, err := template.ParseFS(codegenTemplates, "templates/init.yml.go.tpl")
 	if err != nil {
 		return err
 	}
 
-	f, err := os.OpenFile(config.DefaultConfigFile, os.O_RDWR|os.O_CREATE|os.O_TRUNC, fileMode)
+	f, err := os.OpenFile(DefaultConfigFile, os.O_RDWR|os.O_CREATE|os.O_TRUNC, fileMode)
 	if err != nil {
 		return err
 	}

@@ -13,7 +13,6 @@ import (
 
 	"github.com/samber/lo"
 	"github.com/si3nloong/sqlgen"
-	"github.com/si3nloong/sqlgen/codegen/config"
 	"github.com/si3nloong/sqlgen/sequel"
 	"github.com/si3nloong/sqlgen/sequel/strpool"
 	"golang.org/x/tools/go/packages"
@@ -22,14 +21,14 @@ import (
 
 type Generator struct {
 	*bytes.Buffer
-	config    *config.Config
+	config    *Config
 	dialect   sequel.Dialect
 	quoteRune rune
 	staticVar bool
 	errs      []error
 }
 
-func newGenerator(cfg *config.Config, dialect sequel.Dialect) *Generator {
+func newGenerator(cfg *Config, dialect sequel.Dialect) *Generator {
 	gen := new(Generator)
 	gen.Buffer = new(bytes.Buffer)
 	gen.config = cfg
@@ -413,7 +412,7 @@ func (g *Generator) buildScanner(importPkgs *Package, table *tableInfo) {
 }
 
 func (g *Generator) valuer(importPkgs *Package, goPath string, t types.Type) string {
-	if model, ok := g.config.Models[t.String()]; ok && model.Valuer != "" {
+	if model, ok := g.config.DataTypes[t.String()]; ok && model.Valuer != "" {
 		return Expr(model.Valuer).Format(importPkgs, ExprParams{GoPath: goPath})
 	} else if _, wrong := types.MissingMethod(t, goSqlValuer, true); wrong {
 		return Expr("(database/sql/driver.Valuer)({{goPath}})").Format(importPkgs, ExprParams{GoPath: goPath})
@@ -434,7 +433,7 @@ func (g *Generator) valuer(importPkgs *Package, goPath string, t types.Type) str
 }
 
 func (g *Generator) scanner(importPkgs *Package, goPath string, t types.Type) string {
-	if model, ok := g.config.Models[t.String()]; ok && model.Scanner != "" {
+	if model, ok := g.config.DataTypes[t.String()]; ok && model.Scanner != "" {
 		return Expr(model.Scanner).Format(importPkgs, ExprParams{GoPath: goPath})
 	} else if types.Implements(newPointer(t), goSqlScanner) {
 		return Expr("(database/sql.Scanner)({{addrOfGoPath}})").Format(importPkgs, ExprParams{GoPath: goPath})
@@ -512,7 +511,7 @@ func (g *Generator) buildInsertOne(importPkgs *Package, table *tableInfo) {
 		}
 	}
 	buf.WriteByte(')')
-	if g.config.Driver == config.Postgres {
+	if g.config.Driver == Postgres {
 		buf.WriteString(" RETURNING ")
 		for i, f := range table.columns {
 			if i > 0 {
