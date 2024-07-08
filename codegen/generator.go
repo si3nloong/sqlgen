@@ -243,7 +243,7 @@ func (g *Generator) generate(pkg *packages.Package, dstDir string, typeInferred 
 					}
 				} else {
 					g.L("func (v "+t.goName+") ", g.config.Getter.Prefix+f.GoName(), "() sequel.ColumnValuer[", typeStr, "] {")
-					g.L(`return sequel.Column`, specificType, `(`, g.Quote(f.ColumnName()), `, v.`, f.GoPath(), `, func(val `, typeStr, `) driver.Value { return `, g.valuer(importPkgs, "val", f.Type()), ` })`)
+					g.L("return sequel.Column", specificType, "(", g.Quote(f.ColumnName()), ", v.", f.GoPath(), ", func(val ", typeStr, `) driver.Value { return `, g.valuer(importPkgs, "val", f.Type()), ` })`)
 					g.L("}")
 				}
 			}

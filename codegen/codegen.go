@@ -4,6 +4,7 @@ import (
 	"embed"
 	"fmt"
 	"go/ast"
+	"go/token"
 	"go/types"
 	"io/fs"
 	"log/slog"
@@ -40,7 +41,6 @@ var (
 		`/`, `[\\/]`,
 	)
 	nameRegex     = regexp.MustCompile(`(?i)^[a-z]+[a-z0-9\_]*$`)
-	codegenRegex  = regexp.MustCompile(`^// Code generated .* DO NOT EDIT\.$`)
 	go121         = lo.Must1(semver.NewConstraint(">= 1.2.1"))
 	sqlFuncRegexp = regexp.MustCompile(`(?i)\s*(\w+\()(\w+\s*\,\s*)?(\{\})(\s*\,\s*\w+)?(\))\s*`)
 )
@@ -89,6 +89,28 @@ type structField struct {
 	exported bool
 	embedded bool
 	tag      reflect.StructTag
+}
+
+type goEnum struct {
+	name  *ast.Ident
+	value interface {
+		enum()
+		fmt.Stringer
+	}
+}
+
+type goStringEnum string
+
+func (goStringEnum) enum() {}
+func (e goStringEnum) String() string {
+	return string(e)
+}
+
+type goIotaEnum int64
+
+func (goIotaEnum) enum() {}
+func (e goIotaEnum) String() string {
+	return strconv.FormatInt(int64(e), 10)
 }
 
 type tagOpts map[string]string
@@ -175,9 +197,10 @@ type columnInfo struct {
 	colName  string
 	colPos   int
 	t        types.Type
+	enums    []lo.Tuple2[string, any]
 	autoIncr bool
 	tag      tagOpts
-	model    *DataType
+	dataType *DataType
 	size     int64
 }
 
@@ -198,10 +221,10 @@ func (c *columnInfo) Type() types.Type {
 }
 
 func (c *columnInfo) DataType() (string, bool) {
-	if c.model == nil {
+	if c.dataType == nil {
 		return "", false
 	}
-	return c.model.DataType, true
+	return c.dataType.DataType, true
 }
 
 func (c *columnInfo) Size() int64 {
@@ -226,26 +249,26 @@ func (c *columnInfo) Implements(T *types.Interface) (wrongType bool) {
 }
 
 func (i columnInfo) SQLValuer() sequel.QueryFunc {
-	if i.model == nil {
+	if i.dataType == nil {
 		return nil
 	}
-	if i.model.SQLValuer == "" {
+	if i.dataType.SQLValuer == "" {
 		return nil
 	}
 	return func(placeholder string) string {
-		return strings.Replace(i.model.SQLValuer, "{{.}}", placeholder, 1)
+		return strings.Replace(i.dataType.SQLValuer, "{{.}}", placeholder, 1)
 	}
 }
 
 func (i columnInfo) SQLScanner() sequel.QueryFunc {
-	if i.model == nil {
+	if i.dataType == nil {
 		return nil
 	}
-	if i.model.SQLScanner == "" {
+	if i.dataType.SQLScanner == "" {
 		return nil
 	}
 	return func(column string) string {
-		return strings.Replace(i.model.SQLScanner, "{{.}}", column, 1)
+		return strings.Replace(i.dataType.SQLScanner, "{{.}}", column, 1)
 	}
 }
 
@@ -466,15 +489,13 @@ func parseGoPackage(
 			pkg          = pkgs[0]
 			typeInferred = false
 			structCaches = make([]structCache, 0)
+			enumMap      = make(map[string][]*goEnum)
 		)
 
 		for _, file := range pkg.Syntax {
-			if len(file.Comments) > 0 && len(file.Comments[0].List) > 0 {
-				// If the first comment is "^// Code generated .* DO NOT EDIT\.$"
-				// we will skip it
-				if codegenRegex.MatchString(file.Comments[0].List[0].Text) {
-					continue
-				}
+			// If it's the generated code, we will skip it
+			if ast.IsGenerated(file) {
+				continue
 			}
 
 			if pkg.Module != nil {
@@ -486,13 +507,19 @@ func parseGoPackage(
 
 			// ast.Print(pkg.Fset, f)
 			ast.Inspect(file, func(node ast.Node) bool {
+				if node == nil {
+					return true
+				}
+
+				mapEnumIfExists(pkg, node, enumMap)
+
 				typeSpec := assertAsPtr[ast.TypeSpec](node)
 				if typeSpec == nil {
 					return true
 				}
 
 				// We only interested on Type Definition, or else we will skip
-				// e.g: `type Model sql.NullString`
+				// e.g: `type Entity sql.NullString`
 				if typeSpec.Assign > 0 {
 					return true
 				}
@@ -607,7 +634,7 @@ func parseGoPackage(
 									}
 								}
 							}
-
+							// After lookup still cannot find the type, then skip
 							if obj == nil {
 								continue
 							}
@@ -664,6 +691,20 @@ func parseGoPackage(
 						}
 					}
 
+					switch fv := fi.Type.(type) {
+					case *ast.SelectorExpr:
+						// If the field type is a Go imported enum,
+						// we will inspect it
+						importPkg := f.pkg.Imports[types.ExprString(fv.X)]
+
+						for _, file := range importPkg.Syntax {
+							ast.Inspect(file, func(n ast.Node) bool {
+								mapEnumIfExists(importPkg, n, enumMap)
+								return true
+							})
+						}
+					}
+
 					for j, n := range fi.Names {
 						path := types.ExprString(n)
 						if f.path != "" {
@@ -680,12 +721,12 @@ func parseGoPackage(
 
 			if len(fields) > 0 {
 				sort.Slice(fields, func(i, j int) bool {
-					for k, xik := range fields[i].index {
+					for k, f := range fields[i].index {
 						if k >= len(fields[j].index) {
 							return false
 						}
-						if xik != fields[j].index[k] {
-							return xik < fields[j].index[k]
+						if f != fields[j].index[k] {
+							return f < fields[j].index[k]
 						}
 					}
 					return len(fields[i].index) < len(fields[j].index)
@@ -697,7 +738,6 @@ func parseGoPackage(
 		}
 
 		schemaList := make([]*tableInfo, 0)
-
 		for _, s := range structs {
 			var (
 				pos      int
@@ -722,9 +762,14 @@ func parseGoPackage(
 				column.colName = rename(f.name)
 				column.colPos = pos
 				column.tag = make(tagOpts)
+				if enumValues, ok := enumMap[f.t.String()]; ok {
+					column.enums = lo.Map(enumValues, func(v *goEnum, _ int) lo.Tuple2[string, any] {
+						return lo.Tuple2[string, any]{A: types.ExprString(v.name), B: v.value}
+					})
+				}
 
-				if model, ok := gen.config.DataTypes[f.t.String()]; ok {
-					column.model = model
+				if dataType, ok := gen.config.DataTypes[f.t.String()]; ok {
+					column.dataType = dataType
 				}
 
 				tagVal := strings.TrimSpace(f.tag.Get(gen.config.Tag))
@@ -827,6 +872,8 @@ func parseGoPackage(
 			}
 		}
 
+		clear(enumMap)
+
 		if gen.config.Exec.SkipEmpty && len(schemaList) == 0 {
 			goto nextDir
 		}
@@ -838,7 +885,6 @@ func parseGoPackage(
 	nextDir:
 		dirs = dirs[1:]
 	}
-
 	return nil
 }
 
@@ -847,4 +893,59 @@ func goModTidy() error {
 	tidyCmd.Stdout = os.Stdout
 	tidyCmd.Stderr = os.Stdout
 	return tidyCmd.Run()
+}
+
+func mapEnumIfExists(pkg *packages.Package, node ast.Node, enumMap map[string][]*goEnum) {
+	switch v := node.(type) {
+	case *ast.GenDecl:
+		switch v.Tok {
+		case token.CONST:
+			var prevGoType string
+			for _, spec := range v.Specs {
+				valueSpec := assertAsPtr[ast.ValueSpec](spec)
+				if valueSpec == nil {
+					continue
+				}
+
+				typeName := assertAsPtr[ast.Ident](valueSpec.Type)
+				if typeName == nil {
+					if prevGoType == "" {
+						return
+					}
+
+					enums := enumMap[prevGoType]
+					switch v := enums[len(enums)-1].value.(type) {
+					case goIotaEnum:
+						for _, n := range valueSpec.Names {
+							enumMap[prevGoType] = append(enumMap[prevGoType], &goEnum{name: n, value: v + 1})
+						}
+					case goStringEnum:
+						for _, n := range valueSpec.Names {
+							enumMap[prevGoType] = append(enumMap[prevGoType], &goEnum{name: n, value: v})
+						}
+					}
+				} else if typeName.IsExported() {
+					obj := pkg.TypesInfo.ObjectOf(typeName)
+					if !obj.Exported() {
+						return
+					}
+
+					goType := obj.Type().String()
+					val := types.ExprString(valueSpec.Values[0])
+					if strings.Contains(val, "iota") {
+						for _, n := range valueSpec.Names {
+							enum := &goEnum{name: n, value: goStringEnum(val)}
+							enumMap[goType] = append(enumMap[goType], enum)
+						}
+					} else {
+						for _, n := range valueSpec.Names {
+							enum := &goEnum{name: n, value: goIotaEnum(0)}
+							enumMap[goType] = append(enumMap[goType], enum)
+						}
+					}
+					prevGoType = goType
+				}
+			}
+		}
+	}
 }
