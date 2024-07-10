@@ -26,7 +26,7 @@ func (Model) Schemas() sequel.TableDefinition {
 func (Model) TableName() string {
 	return "`model`"
 }
-func (Model) ColumnNames() []string {
+func (Model) Columns() []string {
 	return []string{"`str`", "`bool`", "`raw_bytes`", "`int_16`", "`int_32`", "`int_64`", "`float_64`", "`time`"}
 }
 func (v Model) Values() []any {
@@ -76,7 +76,7 @@ func (Some) Schemas() sequel.TableDefinition {
 func (Some) TableName() string {
 	return "`some`"
 }
-func (Some) ColumnNames() []string {
+func (Some) Columns() []string {
 	return []string{"`id`"}
 }
 func (v Some) Values() []any {

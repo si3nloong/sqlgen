@@ -21,7 +21,7 @@ func (Array) Schemas() sequel.TableDefinition {
 func (Array) TableName() string {
 	return "`array`"
 }
-func (Array) ColumnNames() []string {
+func (Array) Columns() []string {
 	return []string{"`tuple`", "`runes`", "`bytes`", "`fixed_size`", "`str`"}
 }
 func (v Array) Values() []any {

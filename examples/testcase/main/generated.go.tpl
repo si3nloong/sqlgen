@@ -17,7 +17,7 @@ func (A) Schemas() sequel.TableDefinition {
 func (A) TableName() string {
 	return "`a`"
 }
-func (A) ColumnNames() []string {
+func (A) Columns() []string {
 	return []string{"`t`"}
 }
 func (v A) Values() []any {

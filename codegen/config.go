@@ -92,7 +92,7 @@ type DatabaseOperatorConfig struct {
 	Filename string `yaml:"filename"`
 }
 
-func (c *Config) init() {
+func (c *Config) Init() {
 	strict := true
 	c.Source = []string{"./**/*"}
 	c.NamingConvention = SnakeCase
@@ -230,7 +230,7 @@ func (c Config) RenameFunc() func(string) string {
 
 func LoadConfigFrom(src string) (*Config, error) {
 	cfg := new(Config)
-	cfg.init()
+	cfg.Init()
 	if err := decodeToFile(src, cfg); err != nil {
 		return nil, err
 	}
@@ -239,7 +239,7 @@ func LoadConfigFrom(src string) (*Config, error) {
 
 func DefaultConfig() *Config {
 	cfg := new(Config)
-	cfg.init()
+	cfg.Init()
 	file, exists := findCfgInDir(fileutil.Getpwd())
 	if !exists {
 		return cfg

@@ -20,7 +20,7 @@ func (Size) Schemas() sequel.TableDefinition {
 func (Size) TableName() string {
 	return "`size`"
 }
-func (Size) ColumnNames() []string {
+func (Size) Columns() []string {
 	return []string{"`str`", "`timestamp`", "`time`"}
 }
 func (v Size) Values() []any {

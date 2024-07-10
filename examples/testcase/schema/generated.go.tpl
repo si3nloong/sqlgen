@@ -21,7 +21,7 @@ func (A) Schemas() sequel.TableDefinition {
 func (A) TableName() string {
 	return "`Apple`"
 }
-func (A) ColumnNames() []string {
+func (A) Columns() []string {
 	return []string{"`id`", "`text`", "`created_at`"}
 }
 func (v A) Values() []any {
@@ -57,7 +57,7 @@ func (B) Schemas() sequel.TableDefinition {
 func (B) TableName() string {
 	return "`b`"
 }
-func (B) ColumnNames() []string {
+func (B) Columns() []string {
 	return []string{"`id`", "`created_at`"}
 }
 func (v B) Values() []any {
@@ -97,7 +97,7 @@ func (C) HasPK() {}
 func (v C) PK() (string, int, any) {
 	return "`id`", 0, int64(v.ID)
 }
-func (C) ColumnNames() []string {
+func (C) Columns() []string {
 	return []string{"`id`"}
 }
 func (v C) Values() []any {
@@ -137,7 +137,7 @@ func (D) HasPK() {}
 func (v D) PK() (string, int, any) {
 	return "`id`", 0, (driver.Valuer)(v.ID)
 }
-func (D) ColumnNames() []string {
+func (D) Columns() []string {
 	return []string{"`id`"}
 }
 func (v D) Values() []any {

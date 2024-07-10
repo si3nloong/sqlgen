@@ -28,7 +28,7 @@ func (Address) Schemas() sequel.TableDefinition {
 func (Address) TableName() string {
 	return "`address`"
 }
-func (Address) ColumnNames() []string {
+func (Address) Columns() []string {
 	return []string{"`line_1`", "`line_2`", "`city`", "`post_code`", "`state_code`", "`geo_point`", "`country_code`"}
 }
 func (Address) SQLColumns() []string {
@@ -84,7 +84,7 @@ func (Customer) Schemas() sequel.TableDefinition {
 func (Customer) TableName() string {
 	return "`customer`"
 }
-func (Customer) ColumnNames() []string {
+func (Customer) Columns() []string {
 	return []string{"`id`", "`howOld`", "`name`", "`address`", "`nicknames`", "`status`", "`join_at`"}
 }
 func (v Customer) Values() []any {

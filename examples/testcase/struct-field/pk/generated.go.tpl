@@ -29,7 +29,7 @@ func (Car) HasPK() {}
 func (v Car) PK() (string, int, any) {
 	return "`id`", 0, (driver.Valuer)(v.ID)
 }
-func (Car) ColumnNames() []string {
+func (Car) Columns() []string {
 	return []string{"`id`", "`no`", "`color`", "`manuc_date`"}
 }
 func (v Car) Values() []any {
@@ -84,7 +84,7 @@ func (User) HasPK() {}
 func (v User) PK() (string, int, any) {
 	return "`id`", 0, int64(v.ID)
 }
-func (User) ColumnNames() []string {
+func (User) Columns() []string {
 	return []string{"`id`", "`name`", "`age`", "`email`"}
 }
 func (v User) Values() []any {
@@ -137,7 +137,7 @@ func (House) HasPK() {}
 func (v House) PK() (string, int, any) {
 	return "`id`", 0, int64(v.ID)
 }
-func (House) ColumnNames() []string {
+func (House) Columns() []string {
 	return []string{"`id`", "`no`"}
 }
 func (v House) Values() []any {

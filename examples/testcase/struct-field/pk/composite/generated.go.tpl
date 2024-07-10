@@ -30,7 +30,7 @@ func (Composite) HasPK() {}
 func (v Composite) CompositeKey() ([]string, []int, []any) {
 	return []string{"`col_1`", "`col_3`"}, []int{1, 3}, []any{string(v.Col1), (driver.Valuer)(v.Col3)}
 }
-func (Composite) ColumnNames() []string {
+func (Composite) Columns() []string {
 	return []string{"`flag`", "`col_1`", "`col_2`", "`col_3`"}
 }
 func (v Composite) Values() []any {

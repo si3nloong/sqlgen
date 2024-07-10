@@ -19,7 +19,7 @@ func (Customer) Schemas() sequel.TableDefinition {
 func (Customer) TableName() string {
 	return "`customer`"
 }
-func (Customer) ColumnNames() []string {
+func (Customer) Columns() []string {
 	return []string{"`name`", "`age`", "`married`"}
 }
 func (v Customer) Values() []any {

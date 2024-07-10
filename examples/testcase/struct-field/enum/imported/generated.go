@@ -18,7 +18,7 @@ func (ImportedEnum) Schemas() sequel.TableDefinition {
 func (ImportedEnum) TableName() string {
 	return "`imported_enum`"
 }
-func (ImportedEnum) ColumnNames() []string {
+func (ImportedEnum) Columns() []string {
 	return []string{"`weekday`"}
 }
 func (v ImportedEnum) Values() []any {

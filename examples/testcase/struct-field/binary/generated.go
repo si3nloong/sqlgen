@@ -30,7 +30,7 @@ func (Binary) HasPK() {}
 func (v Binary) PK() (string, int, any) {
 	return "`id`", 0, (driver.Valuer)(v.ID)
 }
-func (Binary) ColumnNames() []string {
+func (Binary) Columns() []string {
 	return []string{"`id`", "`str`", "`time`"}
 }
 func (v Binary) Values() []any {

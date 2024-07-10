@@ -14,7 +14,7 @@ func (Model) Schemas() sequel.TableDefinition {
 		},
 	}
 }
-func (Model) ColumnNames() []string {
+func (Model) Columns() []string {
 	return []string{"`name`"}
 }
 func (v Model) Values() []any {
@@ -49,7 +49,7 @@ func (A) HasPK() {}
 func (v A) PK() (string, int, any) {
 	return "`id`", 0, int64(v.ID)
 }
-func (A) ColumnNames() []string {
+func (A) Columns() []string {
 	return []string{"`id`", "`name`"}
 }
 func (v A) Values() []any {

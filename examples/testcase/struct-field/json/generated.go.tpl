@@ -19,7 +19,7 @@ func (JSON) Schemas() sequel.TableDefinition {
 func (JSON) TableName() string {
 	return "`json`"
 }
-func (JSON) ColumnNames() []string {
+func (JSON) Columns() []string {
 	return []string{"`num`", "`raw_bytes`"}
 }
 func (v JSON) Values() []any {

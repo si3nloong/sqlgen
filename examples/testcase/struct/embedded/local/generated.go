@@ -22,7 +22,7 @@ func (B) Schemas() sequel.TableDefinition {
 func (B) TableName() string {
 	return "`b`"
 }
-func (B) ColumnNames() []string {
+func (B) Columns() []string {
 	return []string{"`id`", "`name`", "`z`", "`created`", "`ok`"}
 }
 func (v B) Values() []any {

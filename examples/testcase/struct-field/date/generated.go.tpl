@@ -29,7 +29,7 @@ func (User) HasPK() {}
 func (v User) PK() (string, int, any) {
 	return "`id`", 0, (driver.Valuer)(v.ID)
 }
-func (User) ColumnNames() []string {
+func (User) Columns() []string {
 	return []string{"`id`", "`birth_date`"}
 }
 func (v User) Values() []any {

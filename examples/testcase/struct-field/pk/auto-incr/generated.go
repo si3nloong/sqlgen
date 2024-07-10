@@ -29,7 +29,7 @@ func (Model) IsAutoIncr() {}
 func (v Model) PK() (string, int, any) {
 	return "`id`", 2, int64(v.ID)
 }
-func (Model) ColumnNames() []string {
+func (Model) Columns() []string {
 	return []string{"`name`", "`f`", "`id`", "`n`"}
 }
 func (v Model) Values() []any {

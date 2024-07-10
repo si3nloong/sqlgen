@@ -34,7 +34,7 @@ func (AliasStruct) HasPK() {}
 func (v AliasStruct) PK() (string, int, any) {
 	return "`Id`", 1, int64(v.pk.ID)
 }
-func (AliasStruct) ColumnNames() []string {
+func (AliasStruct) Columns() []string {
 	return []string{"`b`", "`Id`", "`header`", "`raw`", "`text`", "`null_str`", "`created`", "`updated`"}
 }
 func (v AliasStruct) Values() []any {
@@ -90,7 +90,7 @@ func (B) Schemas() sequel.TableDefinition {
 func (B) TableName() string {
 	return "`b`"
 }
-func (B) ColumnNames() []string {
+func (B) Columns() []string {
 	return []string{"`name`"}
 }
 func (v B) Values() []any {
@@ -119,7 +119,7 @@ func (C) Schemas() sequel.TableDefinition {
 func (C) TableName() string {
 	return "`c`"
 }
-func (C) ColumnNames() []string {
+func (C) Columns() []string {
 	return []string{"`id`"}
 }
 func (v C) Values() []any {

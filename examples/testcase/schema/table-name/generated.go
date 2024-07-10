@@ -17,7 +17,7 @@ func (CustomTableName1) Schemas() sequel.TableDefinition {
 func (CustomTableName1) TableName() string {
 	return "`CustomTableName_1`"
 }
-func (CustomTableName1) ColumnNames() []string {
+func (CustomTableName1) Columns() []string {
 	return []string{"`text`"}
 }
 func (v CustomTableName1) Values() []any {
@@ -46,7 +46,7 @@ func (CustomTableName2) Schemas() sequel.TableDefinition {
 func (CustomTableName2) TableName() string {
 	return "`table_2`"
 }
-func (CustomTableName2) ColumnNames() []string {
+func (CustomTableName2) Columns() []string {
 	return []string{"`text`"}
 }
 func (v CustomTableName2) Values() []any {
@@ -75,7 +75,7 @@ func (CustomTableName3) Schemas() sequel.TableDefinition {
 func (CustomTableName3) TableName() string {
 	return "`table_3`"
 }
-func (CustomTableName3) ColumnNames() []string {
+func (CustomTableName3) Columns() []string {
 	return []string{"`text`"}
 }
 func (v CustomTableName3) Values() []any {

@@ -19,7 +19,7 @@ func (Custom) Schemas() sequel.TableDefinition {
 func (Custom) TableName() string {
 	return "`custom`"
 }
-func (Custom) ColumnNames() []string {
+func (Custom) Columns() []string {
 	return []string{"`text`", "`e`", "`num`"}
 }
 func (v Custom) Values() []any {

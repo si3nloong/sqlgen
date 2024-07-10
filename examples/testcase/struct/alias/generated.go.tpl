@@ -16,7 +16,7 @@ func (A) Schemas() sequel.TableDefinition {
 		},
 	}
 }
-func (A) ColumnNames() []string {
+func (A) Columns() []string {
 	return []string{"`date`", "`time`"}
 }
 func (v A) Values() []any {
@@ -49,7 +49,7 @@ func (C) Schemas() sequel.TableDefinition {
 func (C) TableName() string {
 	return "`c`"
 }
-func (C) ColumnNames() []string {
+func (C) Columns() []string {
 	return []string{"`string`", "`valid`"}
 }
 func (v C) Values() []any {

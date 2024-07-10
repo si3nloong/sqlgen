@@ -24,7 +24,7 @@ func (User) Schemas() sequel.TableDefinition {
 func (User) TableName() string {
 	return "`user`"
 }
-func (User) ColumnNames() []string {
+func (User) Columns() []string {
 	return []string{"`email`", "`age`", "`first_name`", "`last_name`"}
 }
 func (v User) Values() []any {

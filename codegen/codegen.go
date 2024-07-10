@@ -302,9 +302,9 @@ func Generate(c *Config) error {
 	}
 
 	var (
-		srcDir  string
-		sources = make([]string, len(cfg.Source))
-		gen     = newGenerator(cfg, dialect)
+		srcDir    string
+		sources   = make([]string, len(cfg.Source))
+		generator = newGenerator(cfg, dialect)
 	)
 
 	copy(sources, cfg.Source)
@@ -387,7 +387,7 @@ func Generate(c *Config) error {
 			dirs = append(dirs, "")
 		}
 
-		if err := parseGoPackage(gen, rootDir, dirs, matcher); err != nil {
+		if err := parseGoPackage(generator, rootDir, dirs, matcher); err != nil {
 			return err
 		}
 
@@ -399,7 +399,7 @@ func Generate(c *Config) error {
 		// Generate db code
 		_ = syscall.Unlink(filepath.Join(cfg.Database.Dir, cfg.Database.Filename))
 		if err := renderTemplate(
-			dialect,
+			generator,
 			"db.go.tpl",
 			// true,
 			"",
@@ -414,7 +414,7 @@ func Generate(c *Config) error {
 	if cfg.Database.Operator != nil {
 		_ = syscall.Unlink(filepath.Join(cfg.Database.Dir, cfg.Database.Operator.Filename))
 		if err := renderTemplate(
-			dialect,
+			generator,
 			"operator.go.tpl",
 			"",
 			cfg.Database.Operator.Package,
@@ -695,13 +695,14 @@ func parseGoPackage(
 					case *ast.SelectorExpr:
 						// If the field type is a Go imported enum,
 						// we will inspect it
-						importPkg := f.pkg.Imports[types.ExprString(fv.X)]
-
-						for _, file := range importPkg.Syntax {
-							ast.Inspect(file, func(n ast.Node) bool {
-								mapEnumIfExists(importPkg, n, enumMap)
-								return true
-							})
+						importPkg, ok := f.pkg.Imports[types.ExprString(fv.X)]
+						if ok {
+							for _, file := range importPkg.Syntax {
+								ast.Inspect(file, func(n ast.Node) bool {
+									mapEnumIfExists(importPkg, n, enumMap)
+									return true
+								})
+							}
 						}
 					}
 

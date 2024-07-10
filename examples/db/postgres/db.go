@@ -26,7 +26,7 @@ func InsertOne[T sequel.TableColumnValuer, Ptr interface {
 		query, args := v.InsertOneStmt()
 		return sqlConn.QueryRowContext(ctx, query, args...).Scan(model.Addrs()...)
 	default:
-		columns, values := model.ColumnNames(), model.Values()
+		columns, values := model.Columns(), model.Values()
 		stmt := strpool.AcquireString()
 		defer strpool.ReleaseString(stmt)
 		cols := strings.Join(columns, ",")
@@ -39,7 +39,7 @@ func InsertOne[T sequel.TableColumnValuer, Ptr interface {
 				stmt.WriteString(wrapVar(i + 1))
 			}
 		}
-		stmt.WriteString(") RETURNING " + strings.Join(Columns(model), ",") + ";")
+		stmt.WriteString(") RETURNING " + strings.Join(TableColumns(model), ",") + ";")
 		return sqlConn.QueryRowContext(ctx, stmt.String(), values...).Scan(model.Addrs()...)
 	}
 }
@@ -53,7 +53,7 @@ func Insert[T sequel.TableColumnValuer, Ptr sequel.PtrScanner[T]](ctx context.Co
 
 	var (
 		model   = data[0]
-		columns = model.ColumnNames()
+		columns = model.Columns()
 		stmt    = strpool.AcquireString()
 	)
 	defer strpool.ReleaseString(stmt)
@@ -86,7 +86,7 @@ func Insert[T sequel.TableColumnValuer, Ptr sequel.PtrScanner[T]](ctx context.Co
 			values = append(values[:idx], values[idx+1:]...)
 			args = append(args, values...)
 		}
-		stmt.WriteString(" RETURNING " + strings.Join(Columns(model), ",") + ";")
+		stmt.WriteString(" RETURNING " + strings.Join(TableColumns(model), ",") + ";")
 		rows, err := sqlConn.QueryContext(ctx, stmt.String(), args...)
 		if err != nil {
 			return nil, err
@@ -123,7 +123,7 @@ func Insert[T sequel.TableColumnValuer, Ptr sequel.PtrScanner[T]](ctx context.Co
 			stmt.WriteByte(')')
 			args = append(args, data[i].Values()...)
 		}
-		stmt.WriteString(" RETURNING " + strings.Join(Columns(model), ",") + ";")
+		stmt.WriteString(" RETURNING " + strings.Join(TableColumns(model), ",") + ";")
 		rows, err := sqlConn.QueryContext(ctx, stmt.String(), args...)
 		if err != nil {
 			return nil, err
@@ -176,7 +176,7 @@ func UpsertOne[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Co
 
 	var (
 		stmt     = strpool.AcquireString()
-		columns  = model.ColumnNames()
+		columns  = model.Columns()
 		noOfCols = len(columns)
 		values   = model.Values()
 	)
@@ -248,7 +248,7 @@ func UpsertOne[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Co
 		}
 		clear(omitDict)
 	}
-	stmt.WriteString(" RETURNING " + strings.Join(Columns(model), ",") + ";")
+	stmt.WriteString(" RETURNING " + strings.Join(TableColumns(model), ",") + ";")
 	return sqlConn.QueryRowContext(ctx, stmt.String(), values...).Scan(model.Addrs()...)
 }
 
@@ -264,7 +264,7 @@ func Upsert[T interface {
 
 	var (
 		model    = data[0]
-		columns  = model.ColumnNames()
+		columns  = model.Columns()
 		noOfCols = len(columns)
 		args     = make([]any, 0, noOfCols*noOfData)
 		opt      upsertOpts
@@ -301,7 +301,7 @@ func Upsert[T interface {
 			values = append(values[:idx], values[idx+1:]...)
 			args = append(args, values...)
 		}
-		columns = model.ColumnNames()
+		columns = model.Columns()
 		noOfCols = len(columns)
 	case sequel.PrimaryKeyer:
 		pkName, _, _ := v.PK()
@@ -372,7 +372,7 @@ func Upsert[T interface {
 		}
 		clear(omitDict)
 	}
-	stmt.WriteString(" RETURNING " + strings.Join(Columns(model), ",") + ";")
+	stmt.WriteString(" RETURNING " + strings.Join(TableColumns(model), ",") + ";")
 	rows, err := sqlConn.QueryContext(ctx, stmt.String(), args...)
 	if err != nil {
 		return nil, err
@@ -400,11 +400,11 @@ func FindByPK[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Con
 		query, args := v.FindOneByPKStmt()
 		return sqlConn.QueryRowContext(ctx, query, args...).Scan(model.Addrs()...)
 	case sequel.PrimaryKeyer:
-		columns := Columns(model)
+		columns := TableColumns(model)
 		pkName, _, pk := v.PK()
 		return sqlConn.QueryRowContext(ctx, "SELECT "+strings.Join(columns, ",")+" FROM "+DbTable(model)+" WHERE "+pkName+" = $1 LIMIT 1;", pk).Scan(model.Addrs()...)
 	case sequel.CompositeKeyer:
-		columns := Columns(model)
+		columns := TableColumns(model)
 		names, _, keys := v.CompositeKey()
 		stmt := strpool.AcquireString()
 		defer strpool.ReleaseString(stmt)
@@ -432,7 +432,7 @@ func UpdateByPK[T sequel.KeyValuer](ctx context.Context, sqlConn sequel.DB, mode
 		return sqlConn.ExecContext(ctx, query, args...)
 	case sequel.PrimaryKeyer:
 		pkName, pkIdx, pk := v.PK()
-		columns := model.ColumnNames()
+		columns := model.Columns()
 		columns = append(columns[:pkIdx], columns[pkIdx+1:]...)
 		values := model.Values()
 		values = append(values[:pkIdx], append(values[pkIdx+1:], pk)...)
@@ -517,7 +517,7 @@ func QueryStmt[T any, Ptr sequel.PtrScanner[T], Stmt interface {
 		} else {
 			switch vj := any(v).(type) {
 			case sequel.Columner:
-				blr.WriteString(strings.Join(Columns(vj), ","))
+				blr.WriteString(strings.Join(TableColumns(vj), ","))
 			default:
 				blr.WriteByte('*')
 			}
@@ -733,11 +733,11 @@ func DbTable[T sequel.Tabler](model T) string {
 	return model.TableName()
 }
 
-func Columns[T sequel.Columner](model T) []string {
+func TableColumns[T sequel.Columner](model T) []string {
 	if v, ok := any(model).(sequel.SQLColumner); ok {
 		return v.SQLColumns()
 	}
-	return model.ColumnNames()
+	return model.Columns()
 }
 
 func dbName(model any) string {
