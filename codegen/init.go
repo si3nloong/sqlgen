@@ -26,14 +26,15 @@ func Init(cfg *Config) error {
 		"$.driver":            []*yaml.Comment{yaml.HeadComment(` Optional: possibly values : "mysql", "postgres" or "sqlite". Default value is "mysql".`)},
 		"$.naming_convention": []*yaml.Comment{yaml.HeadComment(` Optional: possibly values : "snake_case", "camelCase" or "PascalCase". Default value is "snake_case".`)},
 		"$.struct_tag":        []*yaml.Comment{yaml.HeadComment(` Optional: the struct tag for "sqlgen" to read from. Default is "sql".`)},
+		"$.quote_identifier":  []*yaml.Comment{yaml.HeadComment(` Optional: whether to quote the table or column name. Default value is "false"`)},
 		"$.strict":            []*yaml.Comment{yaml.HeadComment(` Optional: enables a wide range of type checking behavior that results in stronger guarantees of program correctness. Default value is "true".`)},
-		"$.quote_identifier":  []*yaml.Comment{yaml.HeadComment(` Optional: whether to omit the quote on table name and column name.`)},
 		"$.exec":              []*yaml.Comment{yaml.HeadComment(` Optional: where should the generated model code go?`)},
+		"$.exec.skip_empty":   []*yaml.Comment{yaml.HeadComment(` Optional: whether to not generate codes for struct that has no field.`)},
 		"$.database":          []*yaml.Comment{yaml.HeadComment(` Optional: where should the generated database code go?`)},
 		"$.source_map":        []*yaml.Comment{yaml.HeadComment(` Optional: generate source map. Default value is "false".`)},
 		"$.skip_mod_tidy":     []*yaml.Comment{yaml.HeadComment(` Optional: set to skip running "go mod tidy" when generating server code.`)},
 		"$.skip_header":       []*yaml.Comment{yaml.HeadComment(` Optional: turn on to not generate any file header in generated files.`)},
-		"$.data_types":        []*yaml.Comment{yaml.HeadComment(` Optional:`)},
+		"$.data_types":        []*yaml.Comment{yaml.HeadComment(` Optional: configure column type mapping for go types.`)},
 	}))
 
 	if err := enc.Encode(cfg); err != nil {
@@ -56,7 +57,7 @@ func renderTemplate(
 	impPkg := NewPackage(pkgPath, pkgName)
 	tmpl, err := template.New(tmplName).Funcs(template.FuncMap{
 		"driver":   g.dialect.Driver,
-		"quote":    g.QuoteIdentifier,
+		"quote":    g.Quote,
 		"quoteVar": g.dialect.QuoteVar,
 		"isStaticVar": func() bool {
 			return g.dialect.QuoteVar(1) == g.dialect.QuoteVar(2)

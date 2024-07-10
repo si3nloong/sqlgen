@@ -13,24 +13,24 @@ import (
 func (User) Schemas() sequel.TableDefinition {
 	return sequel.TableDefinition{
 		PK: &sequel.PrimaryKeyDefinition{
-			Columns:    []string{"`id`"},
-			Definition: "PRIMARY KEY (`id`)",
+			Columns:    []string{"id"},
+			Definition: "PRIMARY KEY (id)",
 		},
 		Columns: []sequel.ColumnDefinition{
-			{Name: "`id`", Definition: "`id` VARCHAR(36) NOT NULL"},
-			{Name: "`birth_date`", Definition: "`birth_date` DATE NOT NULL"},
+			{Name: "id", Definition: "id VARCHAR(36) NOT NULL"},
+			{Name: "birth_date", Definition: "birth_date DATE NOT NULL"},
 		},
 	}
 }
 func (User) TableName() string {
-	return "`user`"
+	return "user"
 }
 func (User) HasPK() {}
 func (v User) PK() (string, int, any) {
-	return "`id`", 0, (driver.Valuer)(v.ID)
+	return "id", 0, (driver.Valuer)(v.ID)
 }
 func (User) Columns() []string {
-	return []string{"`id`", "`birth_date`"}
+	return []string{"id", "birth_date"}
 }
 func (v User) Values() []any {
 	return []any{(driver.Valuer)(v.ID), types.TextMarshaler(v.BirthDate)}
@@ -42,17 +42,17 @@ func (User) InsertPlaceholders(row int) string {
 	return "(?,?)"
 }
 func (v User) InsertOneStmt() (string, []any) {
-	return "INSERT INTO `user` (`id`,`birth_date`) VALUES (?,?);", v.Values()
+	return "INSERT INTO user (id,birth_date) VALUES (?,?);", v.Values()
 }
 func (v User) FindOneByPKStmt() (string, []any) {
-	return "SELECT `id`,`birth_date` FROM `user` WHERE `id` = ? LIMIT 1;", []any{(driver.Valuer)(v.ID)}
+	return "SELECT id,birth_date FROM user WHERE id = ? LIMIT 1;", []any{(driver.Valuer)(v.ID)}
 }
 func (v User) UpdateOneByPKStmt() (string, []any) {
-	return "UPDATE `user` SET `birth_date` = ? WHERE `id` = ? LIMIT 1;", []any{types.TextMarshaler(v.BirthDate), (driver.Valuer)(v.ID)}
+	return "UPDATE user SET birth_date = ? WHERE id = ? LIMIT 1;", []any{types.TextMarshaler(v.BirthDate), (driver.Valuer)(v.ID)}
 }
 func (v User) GetID() sequel.ColumnValuer[uuid.UUID] {
-	return sequel.Column("`id`", v.ID, func(val uuid.UUID) driver.Value { return (driver.Valuer)(val) })
+	return sequel.Column("id", v.ID, func(val uuid.UUID) driver.Value { return (driver.Valuer)(val) })
 }
 func (v User) GetBirthDate() sequel.ColumnValuer[civil.Date] {
-	return sequel.Column("`birth_date`", v.BirthDate, func(val civil.Date) driver.Value { return types.TextMarshaler(val) })
+	return sequel.Column("birth_date", v.BirthDate, func(val civil.Date) driver.Value { return types.TextMarshaler(val) })
 }

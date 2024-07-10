@@ -10,15 +10,15 @@ import (
 func (A) Schemas() sequel.TableDefinition {
 	return sequel.TableDefinition{
 		Columns: []sequel.ColumnDefinition{
-			{Name: "`t`", Definition: "`t` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP"},
+			{Name: "t", Definition: "t TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP"},
 		},
 	}
 }
 func (A) TableName() string {
-	return "`a`"
+	return "a"
 }
 func (A) Columns() []string {
-	return []string{"`t`"}
+	return []string{"t"}
 }
 func (v A) Values() []any {
 	return []any{time.Time(v.T)}
@@ -30,8 +30,8 @@ func (A) InsertPlaceholders(row int) string {
 	return "(?)"
 }
 func (v A) InsertOneStmt() (string, []any) {
-	return "INSERT INTO `a` (`t`) VALUES (?);", v.Values()
+	return "INSERT INTO a (t) VALUES (?);", v.Values()
 }
 func (v A) GetT() sequel.ColumnValuer[time.Time] {
-	return sequel.Column("`t`", v.T, func(val time.Time) driver.Value { return time.Time(val) })
+	return sequel.Column("t", v.T, func(val time.Time) driver.Value { return time.Time(val) })
 }

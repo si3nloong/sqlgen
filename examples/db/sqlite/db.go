@@ -574,7 +574,7 @@ var (
 func (s *sqlStmt) Var(value any) string {
 	s.pos++
 	s.args = append(s.args, value)
-	return "?"
+	return `?`
 }
 
 func (s *sqlStmt) Vars(values []any) string {

@@ -73,7 +73,7 @@ func (g *Generator) Quote(str string) string {
 }
 
 func (g *Generator) QuoteIdentifier(str string) string {
-	if g.config.OmitQuoteIdentifier {
+	if !g.config.QuoteIdentifier {
 		return str
 	}
 	return g.dialect.QuoteIdentifier(str)

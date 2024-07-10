@@ -748,5 +748,5 @@ func dbName(model any) string {
 }
 
 func wrapVar(i int) string {
-	return "$" + strconv.Itoa(i)
+	return `$` + strconv.Itoa(i)
 }
