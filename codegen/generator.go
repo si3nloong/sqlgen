@@ -503,12 +503,12 @@ func (g *Generator) buildInsertOne(importPkgs *Package, table *tableInfo) {
 			matches := sqlFuncRegexp.FindStringSubmatch(sqlValuer("{}"))
 			// g.WriteString(fmt.Sprintf("%q + strconv.Itoa((row * noOfColumn) + %d) +%q", matches[1]+string(g.dialect.VarRune()), f.ColumnPos(), matches[5]))
 			if len(matches) > 4 {
-				buf.WriteString(matches[1] + matches[2] + g.dialect.QuoteVar(f.ColumnPos()+1) + matches[4] + matches[5])
+				buf.WriteString(matches[1] + matches[2] + g.dialect.QuoteVar(i+1) + matches[4] + matches[5])
 			} else {
-				buf.WriteString(g.dialect.QuoteVar(f.ColumnPos() + 1))
+				buf.WriteString(g.dialect.QuoteVar(i + 1))
 			}
 		} else {
-			buf.WriteString(g.dialect.QuoteVar(f.ColumnPos() + 1))
+			buf.WriteString(g.dialect.QuoteVar(i + 1))
 		}
 	}
 	buf.WriteByte(')')
