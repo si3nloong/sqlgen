@@ -158,16 +158,7 @@ func (g *Generator) generate(pkg *packages.Package, dstDir string, typeInferred 
 					if i > 0 {
 						g.WriteByte(',')
 					}
-					if sqlScanner := f.SQLScanner(); sqlScanner != nil {
-						matches := sqlFuncRegexp.FindStringSubmatch(sqlScanner("{}"))
-						if len(matches) > 4 {
-							g.WriteString(g.Quote(matches[1] + matches[2] + f.ColumnName() + matches[4] + matches[5]))
-						} else {
-							g.WriteString(g.Quote(f.ColumnName()))
-						}
-					} else {
-						g.WriteString(g.Quote(f.ColumnName()))
-					}
+					g.WriteString(g.sqlScanner(f))
 				}
 				g.WriteString("}\n")
 				g.L("}")
@@ -451,6 +442,18 @@ func (g *Generator) scanner(importPkgs *Package, goPath string, t types.Type) st
 	return Expr("github.com/si3nloong/sqlgen/sequel/types.JSONUnmarshaler({{addrOfGoPath}})").Format(importPkgs, ExprParams{GoPath: goPath})
 }
 
+func (g *Generator) sqlScanner(f *columnInfo) string {
+	if sqlScanner := f.SQLScanner(); sqlScanner != nil {
+		matches := sqlFuncRegexp.FindStringSubmatch(sqlScanner("{}"))
+		if len(matches) > 4 {
+			return g.Quote(matches[1] + matches[2] + f.ColumnName() + matches[4] + matches[5])
+		} else {
+			return g.Quote(f.ColumnName())
+		}
+	}
+	return g.Quote(f.ColumnName())
+}
+
 func (g *Generator) buildFindByPK(importPkgs *Package, table *tableInfo) {
 	buf := strpool.AcquireString()
 	buf.WriteString("SELECT ")
@@ -518,7 +521,7 @@ func (g *Generator) buildInsertOne(importPkgs *Package, table *tableInfo) {
 			if i > 0 {
 				buf.WriteByte(',')
 			}
-			buf.WriteString(f.ColumnName())
+			g.WriteString(g.sqlScanner(f))
 		}
 	}
 	buf.WriteByte(';')

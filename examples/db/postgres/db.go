@@ -705,12 +705,17 @@ func (s *sqlStmt) Var(value any) string {
 
 func (s *sqlStmt) Vars(values []any) string {
 	noOfLen := len(values)
+	s.args = append(s.args, values...)
 	buf := new(strings.Builder)
 	buf.WriteByte('(')
 	i := s.pos
 	s.pos += noOfLen
 	for ; i < s.pos; i++ {
-		buf.WriteString(wrapVar(i + 1))
+		if i < s.pos-1 {
+			buf.WriteString(wrapVar(i+1) + ",")
+		} else {
+			buf.WriteString(wrapVar(i + 1))
+		}
 	}
 	buf.WriteByte(')')
 	return buf.String()
