@@ -128,9 +128,9 @@ func (g *Generator) generate(pkg *packages.Package, dstDir string, typeInferred 
 			}
 		}
 
-		// Build the "ColumnNames" function which return the column names
+		// Build the "Columns" function which return the column names
 		if method, wrongType := t.Implements(sqlColumner); wrongType {
-			g.LogError(fmt.Errorf(`sqlgen: struct %q has function "ColumnNames" but wrong footprint`, t.goName))
+			g.LogError(fmt.Errorf(`sqlgen: struct %q has function "Columns" but wrong footprint`, t.goName))
 		} else if method != nil && !wrongType {
 			g.L("func (" + t.goName + ") Columns() []string {")
 			g.WriteString("return []string{")
