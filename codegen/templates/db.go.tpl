@@ -80,7 +80,7 @@ func InsertOne[T sequel.TableColumnValuer, Ptr interface {
 {{ if eq driver "postgres" -}}
 {{- /* postgres */ -}}
 // Insert is a helper function to insert multiple records.
-func Insert[T sequel.TableColumnValuer, Ptr sequel.PtrScanner[T]](ctx context.Context, sqlConn sequel.DB, data []T) (sql.Result, error) {
+func Insert[T sequel.Inserter, Ptr sequel.PtrScanner[T]](ctx context.Context, sqlConn sequel.DB, data []T) (sql.Result, error) {
 	noOfData := len(data)
 	if noOfData == 0 {
 		return new(sequel.EmptyResult), nil
@@ -101,22 +101,12 @@ func Insert[T sequel.TableColumnValuer, Ptr sequel.PtrScanner[T]](ctx context.Co
 		cols := strings.Join(columns, ",")
 		args := make([]any, 0, noOfCols*noOfData)
 		stmt.WriteString("INSERT INTO " + DbTable(model) + " (" + cols + ") VALUES ")
-		var offset int
 		for i := range data {
 			if i > 0 {
-				stmt.WriteString(",(")
+				stmt.WriteString("," + model.InsertPlaceholders(i))
 			} else {
-				stmt.WriteByte('(')
+				stmt.WriteString(model.InsertPlaceholders(i))
 			}
-			offset = noOfCols * i
-			for j := 0; j < noOfCols; j++ {
-				if j > 0 {
-					stmt.WriteString("," + wrapVar(offset+1+j))
-				} else {
-					stmt.WriteString(wrapVar(offset + 1 + j))
-				}
-			}
-			stmt.WriteByte(')')
 			values := data[i].Values()
 			values = append(values[:idx], values[idx+1:]...)
 			args = append(args, values...)
@@ -140,22 +130,12 @@ func Insert[T sequel.TableColumnValuer, Ptr sequel.PtrScanner[T]](ctx context.Co
 		cols := strings.Join(columns, ",")
 		args := make([]any, 0, noOfCols*noOfData)
 		stmt.WriteString("INSERT INTO " + DbTable(model) + " (" + cols + ") VALUES ")
-		var offset int
 		for i := range data {
 			if i > 0 {
-				stmt.WriteString(",(")
+				stmt.WriteString("," + model.InsertPlaceholders(i))
 			} else {
-				stmt.WriteByte('(')
+				stmt.WriteString(model.InsertPlaceholders(i))
 			}
-			offset = noOfCols * i
-			for j := 0; j < noOfCols; j++ {
-				if j > 0 {
-					stmt.WriteString("," + wrapVar(offset+1+j))
-				} else {
-					stmt.WriteString(wrapVar(offset + 1 + j))
-				}
-			}
-			stmt.WriteByte(')')
 			args = append(args, data[i].Values()...)
 		}
 		stmt.WriteString(" RETURNING " + strings.Join(Columns(model), ",") + ";")
@@ -373,28 +353,18 @@ func Upsert[T interface {
 		pkName, idx, _ := v.PK()
 		opt.omitFields = append(opt.omitFields, pkName)
 		columns = append(columns[:idx], columns[idx+1:]...)
-		noOfCols = len(columns)
 		// Don't include auto increment primary key on INSERT
 		stmt.WriteString("INSERT INTO " + DbTable(model) + " (" + strings.Join(columns, ",") + ") VALUES ")
 		for i := 0; i < noOfData; i++ {
 			if i > 0 {
-				stmt.WriteByte(',')
+				stmt.WriteString("," + model.InsertPlaceholders(i))
+			} else {
+				stmt.WriteString(model.InsertPlaceholders(i))
 			}
-			stmt.WriteByte('(')
-			for j := 1; j <= noOfCols; j++ {
-				if j > 1 {
-					stmt.WriteString("," + wrapVar((i*noOfCols)+j))
-				} else {
-					stmt.WriteString(wrapVar((i * noOfCols) + j))
-				}
-			}
-			stmt.WriteByte(')')
 			values := data[i].Values()
 			values = append(values[:idx], values[idx+1:]...)
 			args = append(args, values...)
 		}
-		columns = model.ColumnNames()
-		noOfCols = len(columns)
 	case sequel.PrimaryKeyer:
 		pkName, _, _ := v.PK()
 		opt.omitFields = append(opt.omitFields, pkName)
@@ -449,6 +419,7 @@ func Upsert[T interface {
 	} else {
 		stmt.WriteString(" DO UPDATE SET ")
 		omitDict := make(map[string]struct{})
+		columns = model.ColumnNames()
 		for i := range opt.omitFields {
 			omitDict[opt.omitFields[i]] = struct{}{}
 		}

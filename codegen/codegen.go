@@ -115,6 +115,12 @@ type tableInfo struct {
 	indexes     []*indexInfo
 }
 
+func (b *tableInfo) colsWithoutAutoIncrPK() []*columnInfo {
+	return lo.Filter(b.columns, func(v *columnInfo, _ int) bool {
+		return !v.autoIncr
+	})
+}
+
 func (b *tableInfo) GoName() string {
 	return b.goName
 }

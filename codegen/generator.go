@@ -158,7 +158,7 @@ func (g *Generator) generate(pkg *packages.Package, dstDir string, typeInferred 
 					if i > 0 {
 						g.WriteByte(',')
 					}
-					g.WriteString(g.sqlScanner(f))
+					g.WriteString(g.Quote(g.sqlScanner(f)))
 				}
 				g.WriteString("}\n")
 				g.L("}")
@@ -181,21 +181,22 @@ func (g *Generator) generate(pkg *packages.Package, dstDir string, typeInferred 
 
 		if g.staticVar {
 			g.L("func (" + t.goName + ") InsertPlaceholders(row int) string {")
-			g.L(`return "(` + strings.Repeat(","+g.dialect.QuoteVar(0), len(t.columns))[1:] + `)"`)
+			g.L(`return "(` + strings.Repeat(","+g.dialect.QuoteVar(0), len(t.colsWithoutAutoIncrPK()))[1:] + `)"`)
 			g.L("}")
 		} else {
+			cols := t.colsWithoutAutoIncrPK()
 			g.L("func (" + t.goName + ") InsertPlaceholders(row int) string {")
-			g.L(fmt.Sprintf("const noOfColumn = %d", len(t.columns)))
+			g.L(fmt.Sprintf("const noOfColumn = %d", len(cols)))
 			g.WriteString(`return "("+`)
-			for i, f := range t.columns {
+			for i, f := range cols {
 				if i > 0 {
 					g.WriteString(`+","+`)
 				}
 				if sqlValuer := f.SQLValuer(); sqlValuer != nil {
 					matches := sqlFuncRegexp.FindStringSubmatch(sqlValuer("{}"))
-					g.WriteString(fmt.Sprintf("%q + strconv.Itoa((row * noOfColumn) + %d) +%q", matches[1]+string(g.dialect.VarRune()), f.ColumnPos()+1, matches[5]))
+					g.WriteString(fmt.Sprintf("%q + strconv.Itoa((row * noOfColumn) + %d) +%q", matches[1]+string(g.dialect.VarRune()), i+1, matches[5]))
 				} else {
-					g.WriteString(fmt.Sprintf(`%q+ strconv.Itoa((row * noOfColumn) + %d)`, string(g.dialect.VarRune()), f.ColumnPos()+1))
+					g.WriteString(fmt.Sprintf(`%q+ strconv.Itoa((row * noOfColumn) + %d)`, string(g.dialect.VarRune()), i+1))
 				}
 			}
 			g.WriteString(`+")"` + "\n")
@@ -446,12 +447,12 @@ func (g *Generator) sqlScanner(f *columnInfo) string {
 	if sqlScanner := f.SQLScanner(); sqlScanner != nil {
 		matches := sqlFuncRegexp.FindStringSubmatch(sqlScanner("{}"))
 		if len(matches) > 4 {
-			return g.Quote(matches[1] + matches[2] + f.ColumnName() + matches[4] + matches[5])
+			return matches[1] + matches[2] + f.ColumnName() + matches[4] + matches[5]
 		} else {
-			return g.Quote(f.ColumnName())
+			return f.ColumnName()
 		}
 	}
-	return g.Quote(f.ColumnName())
+	return f.ColumnName()
 }
 
 func (g *Generator) buildFindByPK(importPkgs *Package, table *tableInfo) {
@@ -521,7 +522,7 @@ func (g *Generator) buildInsertOne(importPkgs *Package, table *tableInfo) {
 			if i > 0 {
 				buf.WriteByte(',')
 			}
-			g.WriteString(g.sqlScanner(f))
+			buf.WriteString(g.sqlScanner(f))
 		}
 	}
 	buf.WriteByte(';')
