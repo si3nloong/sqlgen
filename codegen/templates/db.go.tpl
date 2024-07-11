@@ -1001,8 +1001,8 @@ func (s *sqlStmt) Var(value any) string {
 
 func (s *sqlStmt) Vars(values []any) string {
 	noOfLen := len(values)
-	{{ if isStaticVar -}}
 	s.args = append(s.args, values...)
+	{{ if isStaticVar -}}
 	return "(" + strings.Repeat(",{{ varRune }}", noOfLen)[1:] + ")"
 	{{ else -}}
 	buf := new(strings.Builder)
