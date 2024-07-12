@@ -32,12 +32,32 @@ func TestBytesArray(t *testing.T) {
 		require.Equal(t, [size]byte{'a', 'B', 'j', 'k'}, fsBytes)
 	})
 
-	t.Run("Scan with overflow string", func(t *testing.T) {
+	t.Run("Scan with non-overflow & smaller length string", func(t *testing.T) {
+		const size = 10
+		fsBytes := [size]byte{}
+		bytes := FixedSizeBytes(fsBytes[:], size)
+		require.Equal(t, size, bytes.size)
+
+		require.NoError(t, bytes.Scan(`Si3nloong`))
+		require.Equal(t, size, len(bytes.v))
+		require.Equal(t, [size]byte{'S', 'i', '3', 'n', 'l', 'o', 'o', 'n', 'g'}, fsBytes)
+	})
+
+	t.Run("Scan with overflow bytes", func(t *testing.T) {
 		const size = 10
 		fsBytes := [size]byte{}
 		bytes := FixedSizeBytes(fsBytes[:], size)
 		require.Equal(t, size, bytes.size)
 
 		require.Error(t, bytes.Scan([]byte(`hello world`)))
+	})
+
+	t.Run("Scan with overflow string", func(t *testing.T) {
+		const size = 10
+		fsBytes := [size]byte{}
+		bytes := FixedSizeBytes(fsBytes[:], size)
+		require.Equal(t, size, bytes.size)
+
+		require.Error(t, bytes.Scan(`hello world`))
 	})
 }
