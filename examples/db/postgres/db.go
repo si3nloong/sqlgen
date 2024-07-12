@@ -327,7 +327,7 @@ func Upsert[T interface {
 	} else {
 		stmt.WriteString(" DO UPDATE SET ")
 		omitDict := make(map[string]struct{})
-		columns = model.ColumnNames()
+		columns = model.Columns()
 		for i := range opt.omitFields {
 			omitDict[opt.omitFields[i]] = struct{}{}
 		}
