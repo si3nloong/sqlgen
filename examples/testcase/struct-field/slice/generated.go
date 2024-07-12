@@ -52,7 +52,7 @@ func (v *Slice) Addrs() []any {
 	return []any{types.Integer(&v.ID), types.BoolList(&v.BoolList), types.StringList(&v.StrList), types.StringList(&v.CustomStrList), types.IntList(&v.IntList), types.IntList(&v.Int8List), types.IntList(&v.Int16List), types.IntList(&v.Int32List), types.IntList(&v.Int64List), types.UintList(&v.UintList), types.UintList(&v.Uint8List), types.UintList(&v.Uint16List), types.UintList(&v.Uint32List), types.UintList(&v.Uint64List), types.FloatList(&v.F32List), types.FloatList(&v.F64List)}
 }
 func (Slice) InsertPlaceholders(row int) string {
-	return "(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+	return "(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
 }
 func (v Slice) InsertOneStmt() (string, []any) {
 	return "INSERT INTO `slice` (`bool_list`,`str_list`,`custom_str_list`,`int_list`,`int_8_list`,`int_16_list`,`int_32_list`,`int_64_list`,`uint_list`,`uint_8_list`,`uint_16_list`,`uint_32_list`,`uint_64_list`,`f_32_list`,`f_64_list`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);", []any{encoding.MarshalBoolList(v.BoolList), encoding.MarshalStringList(v.StrList), encoding.MarshalStringList(v.CustomStrList), encoding.MarshalSignedIntList(v.IntList), encoding.MarshalSignedIntList(v.Int8List), encoding.MarshalSignedIntList(v.Int16List), encoding.MarshalSignedIntList(v.Int32List), encoding.MarshalSignedIntList(v.Int64List), encoding.MarshalUnsignedIntList(v.UintList), encoding.MarshalUnsignedIntList(v.Uint8List), encoding.MarshalUnsignedIntList(v.Uint16List), encoding.MarshalUnsignedIntList(v.Uint32List), encoding.MarshalUnsignedIntList(v.Uint64List), encoding.MarshalFloatList(v.F32List), encoding.MarshalFloatList(v.F64List)}

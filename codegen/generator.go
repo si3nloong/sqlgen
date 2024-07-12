@@ -404,6 +404,121 @@ func (g *Generator) buildScanner(importPkgs *Package, table *tableInfo) {
 	g.L("}")
 }
 
+func (g *Generator) buildFindByPK(importPkgs *Package, table *tableInfo) {
+	buf := strpool.AcquireString()
+	buf.WriteString("SELECT ")
+	for i, f := range table.columns {
+		if i > 0 {
+			buf.WriteByte(',')
+		}
+		buf.WriteString(g.sqlScanner(f))
+	}
+	buf.WriteString(" FROM " + table.tableName + " WHERE ")
+	for i, f := range table.keys {
+		if i > 0 {
+			buf.WriteString(" AND ")
+		}
+		buf.WriteString(f.ColumnName() + " = " + g.dialect.QuoteVar(i+1))
+	}
+	buf.WriteString(" LIMIT 1;")
+	g.L("func (v " + table.goName + ") FindOneByPKStmt() (string, []any) {")
+	g.WriteString("return " + g.Quote(buf.String()) + ", []any{")
+	strpool.ReleaseString(buf)
+	for i, f := range table.keys {
+		if i > 0 {
+			g.WriteByte(',')
+		}
+		g.WriteString(g.valuer(importPkgs, "v."+f.GoPath(), f.Type()))
+	}
+	g.WriteString("}\n")
+	g.L("}")
+}
+
+func (g *Generator) buildInsertOne(importPkgs *Package, table *tableInfo) {
+	// Filter out auto increment key
+	columns := lo.Filter(table.columns, func(col *columnInfo, _ int) bool {
+		return col != table.autoIncrKey
+	})
+	buf := strpool.AcquireString()
+	buf.WriteString("INSERT INTO " + table.tableName + " (")
+	for i, f := range columns {
+		if i > 0 {
+			buf.WriteByte(',')
+		}
+		buf.WriteString(f.ColumnName())
+	}
+	buf.WriteString(") VALUES (")
+	for i, f := range columns {
+		if i > 0 {
+			buf.WriteByte(',')
+		}
+		buf.WriteString(g.sqlValuer(f, i))
+	}
+	buf.WriteByte(')')
+	if g.config.Driver == config.Postgres {
+		buf.WriteString(" RETURNING ")
+		for i, f := range table.columns {
+			if i > 0 {
+				buf.WriteByte(',')
+			}
+			buf.WriteString(g.sqlScanner(f))
+		}
+	}
+	buf.WriteByte(';')
+	// If the columns and after filter columns is the same
+	// mean it has no auto increment key
+	g.L("func (v " + table.goName + ") InsertOneStmt() (string, []any) {")
+	if len(columns) == len(table.columns) {
+		g.L("return " + g.Quote(buf.String()) + ", v.Values()")
+		strpool.ReleaseString(buf)
+	} else {
+		g.WriteString("return " + g.Quote(buf.String()) + ", []any{")
+		strpool.ReleaseString(buf)
+		for i, f := range columns {
+			if i > 0 {
+				g.WriteByte(',')
+			}
+			g.WriteString(g.valuer(importPkgs, "v."+f.GoPath(), f.Type()))
+		}
+		g.WriteString("}\n")
+	}
+	g.L("}")
+}
+
+func (g *Generator) buildUpdateByPK(importPkgs *Package, table *tableInfo) {
+	buf := strpool.AcquireString()
+	buf.WriteString("UPDATE " + (table.tableName) + " SET ")
+	columns := lo.Filter(table.columns, func(col *columnInfo, _ int) bool {
+		return !lo.Contains(table.keys, col)
+	})
+	for i, f := range columns {
+		if i > 0 {
+			buf.WriteByte(',')
+		}
+		buf.WriteString(f.ColumnName() + " = " + g.sqlValuer(f, i))
+	}
+	buf.WriteString(" WHERE ")
+	for i, k := range table.keys {
+		if i > 0 {
+			buf.WriteString(" AND ")
+		}
+		buf.WriteString(k.ColumnName() + " = " + g.sqlValuer(k, i+len(columns)+1))
+	}
+	buf.WriteString(" LIMIT 1;")
+	g.L("func (v " + table.goName + ") UpdateOneByPKStmt() (string, []any) {")
+	g.WriteString("return " + g.Quote(buf.String()) + ", []any{")
+	strpool.ReleaseString(buf)
+	for i, f := range append(columns, table.keys...) {
+		if i > 0 {
+			g.WriteByte(',')
+		}
+		g.WriteString(g.valuer(importPkgs, "v."+f.GoPath(), f.Type()))
+	}
+	g.WriteString("}\n")
+	g.L("}")
+	strpool.ReleaseString(buf)
+}
+
 func (g *Generator) valuer(importPkgs *Package, goPath string, t types.Type) string {
 	if model, ok := g.config.Models[t.String()]; ok && model.Valuer != "" {
 		return Expr(model.Valuer).Format(importPkgs, ExprParams{GoPath: goPath})
@@ -455,127 +570,14 @@ func (g *Generator) sqlScanner(f *columnInfo) string {
 	return f.ColumnName()
 }
 
-func (g *Generator) buildFindByPK(importPkgs *Package, table *tableInfo) {
-	buf := strpool.AcquireString()
-	buf.WriteString("SELECT ")
-	for i, f := range table.columns {
-		if i > 0 {
-			buf.WriteByte(',')
+func (g *Generator) sqlValuer(f *columnInfo, idx int) string {
+	if sqlValuer := f.SQLValuer(); sqlValuer != nil {
+		matches := sqlFuncRegexp.FindStringSubmatch(sqlValuer("{}"))
+		// g.WriteString(fmt.Sprintf("%q + strconv.Itoa((row * noOfColumn) + %d) +%q", matches[1]+string(g.dialect.VarRune()), f.ColumnPos(), matches[5]))
+		if len(matches) > 4 {
+			return matches[1] + matches[2] + g.dialect.QuoteVar(idx+1) + matches[4] + matches[5]
 		}
-		buf.WriteString(f.ColumnName())
+		return g.dialect.QuoteVar(idx + 1)
 	}
-	buf.WriteString(" FROM " + table.tableName + " WHERE ")
-	for i, f := range table.keys {
-		if i > 0 {
-			buf.WriteString(" AND ")
-		}
-		buf.WriteString(f.ColumnName() + " = " + g.dialect.QuoteVar(i+1))
-	}
-	buf.WriteString(" LIMIT 1;")
-	g.L("func (v " + table.goName + ") FindOneByPKStmt() (string, []any) {")
-	g.WriteString("return " + g.Quote(buf.String()) + ", []any{")
-	strpool.ReleaseString(buf)
-	for i, f := range table.keys {
-		if i > 0 {
-			g.WriteByte(',')
-		}
-		g.WriteString(g.valuer(importPkgs, "v."+f.GoPath(), f.Type()))
-	}
-	g.WriteString("}\n")
-	g.L("}")
-}
-
-func (g *Generator) buildInsertOne(importPkgs *Package, table *tableInfo) {
-	// Filter out auto increment key
-	columns := lo.Filter(table.columns, func(col *columnInfo, _ int) bool {
-		return col != table.autoIncrKey
-	})
-	buf := strpool.AcquireString()
-	buf.WriteString("INSERT INTO " + table.tableName + " (")
-	for i, f := range columns {
-		if i > 0 {
-			buf.WriteByte(',')
-		}
-		buf.WriteString(f.ColumnName())
-	}
-	buf.WriteString(") VALUES (")
-	for i, f := range columns {
-		if i > 0 {
-			buf.WriteByte(',')
-		}
-		if sqlValuer := f.SQLValuer(); sqlValuer != nil {
-			matches := sqlFuncRegexp.FindStringSubmatch(sqlValuer("{}"))
-			// g.WriteString(fmt.Sprintf("%q + strconv.Itoa((row * noOfColumn) + %d) +%q", matches[1]+string(g.dialect.VarRune()), f.ColumnPos(), matches[5]))
-			if len(matches) > 4 {
-				buf.WriteString(matches[1] + matches[2] + g.dialect.QuoteVar(i+1) + matches[4] + matches[5])
-			} else {
-				buf.WriteString(g.dialect.QuoteVar(i + 1))
-			}
-		} else {
-			buf.WriteString(g.dialect.QuoteVar(i + 1))
-		}
-	}
-	buf.WriteByte(')')
-	if g.config.Driver == config.Postgres {
-		buf.WriteString(" RETURNING ")
-		for i, f := range table.columns {
-			if i > 0 {
-				buf.WriteByte(',')
-			}
-			buf.WriteString(g.sqlScanner(f))
-		}
-	}
-	buf.WriteByte(';')
-	// If the columns and after filter columns is the same
-	// mean it has no auto increment key
-	g.L("func (v " + table.goName + ") InsertOneStmt() (string, []any) {")
-	if len(columns) == len(table.columns) {
-		g.L("return " + g.Quote(buf.String()) + ", v.Values()")
-		strpool.ReleaseString(buf)
-	} else {
-		g.WriteString("return " + g.Quote(buf.String()) + ", []any{")
-		strpool.ReleaseString(buf)
-		for i, f := range columns {
-			if i > 0 {
-				g.WriteByte(',')
-			}
-			g.WriteString(g.valuer(importPkgs, "v."+f.GoPath(), f.Type()))
-		}
-		g.WriteString("}\n")
-	}
-	g.L("}")
-}
-
-func (g *Generator) buildUpdateByPK(importPkgs *Package, table *tableInfo) {
-	buf := strpool.AcquireString()
-	buf.WriteString("UPDATE " + (table.tableName) + " SET ")
-	columns := lo.Filter(table.columns, func(col *columnInfo, _ int) bool {
-		return !lo.Contains(table.keys, col)
-	})
-	for i, f := range columns {
-		if i > 0 {
-			buf.WriteByte(',')
-		}
-		buf.WriteString(f.ColumnName() + " = " + g.dialect.QuoteVar(i+1))
-	}
-	buf.WriteString(" WHERE ")
-	for i, k := range table.keys {
-		if i > 0 {
-			buf.WriteString(" AND ")
-		}
-		buf.WriteString(k.ColumnName() + " = " + g.dialect.QuoteVar(i+len(columns)+1))
-	}
-	buf.WriteString(" LIMIT 1;")
-	g.L("func (v " + table.goName + ") UpdateOneByPKStmt() (string, []any) {")
-	g.WriteString("return " + g.Quote(buf.String()) + ", []any{")
-	strpool.ReleaseString(buf)
-	for i, f := range append(columns, table.keys...) {
-		if i > 0 {
-			g.WriteByte(',')
-		}
-		g.WriteString(g.valuer(importPkgs, "v."+f.GoPath(), f.Type()))
-	}
-	g.WriteString("}\n")
-	g.L("}")
-	strpool.ReleaseString(buf)
+	return g.dialect.QuoteVar(idx + 1)
 }

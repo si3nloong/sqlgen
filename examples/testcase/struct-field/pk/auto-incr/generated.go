@@ -39,7 +39,7 @@ func (v *Model) Addrs() []any {
 	return []any{types.String(&v.Name), types.Bool(&v.F), types.Integer(&v.ID), types.Integer(&v.N)}
 }
 func (Model) InsertPlaceholders(row int) string {
-	return "(?,?,?,?)"
+	return "(?,?,?)"
 }
 func (v Model) InsertOneStmt() (string, []any) {
 	return "INSERT INTO `AutoIncrPK` (`name`,`f`,`n`) VALUES (?,?,?);", []any{string(v.Name), bool(v.F), int64(v.N)}
