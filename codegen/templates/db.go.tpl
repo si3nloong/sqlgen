@@ -640,15 +640,10 @@ func Upsert[T interface {
 }
 {{ end }}
 
-type primaryKeyFinder interface {
-	sequel.PrimaryKeyer
-	sequel.KeyFinder
-}
-
 // FindByPK is to find single record using primary key.
 func FindByPK[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Context, sqlConn sequel.DB, model Ptr) error {
 	switch v := any(model).(type) {
-	case primaryKeyFinder:
+	case sequel.KeyFinder:
 		query, args := v.FindOneByPKStmt()
 		return sqlConn.QueryRowContext(ctx, query, args...).Scan(model.Addrs()...)
 	case sequel.PrimaryKeyer:
@@ -663,13 +658,13 @@ func FindByPK[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Con
 		{{ else -}}
 		stmt := strpool.AcquireString()
 		defer strpool.ReleaseString(stmt)
-		stmt.WriteString("SELECT "+strings.Join(columns, ",")+" FROM "+DbTable(model)+" WHERE ")
-		max := len(names)
-		for i := 1; i <= max; i++ {
-			if i > 1 {
-				stmt.WriteString(" AND "+ names[i]+" = "+ wrapVar(i))
+		stmt.WriteString("SELECT " + strings.Join(columns, ",") + " FROM " + DbTable(model) + " WHERE ")
+		noOfKey := len(names)
+		for i := 0; i < noOfKey; i++ {
+			if i > 0 {
+				stmt.WriteString(" AND " + names[i] + " = " + wrapVar(i+1))
 			} else {
-				stmt.WriteString(names[i]+" = "+ wrapVar(i))
+				stmt.WriteString(names[i] + " = " + wrapVar(i+1))
 			}
 		}
 		stmt.WriteString(" LIMIT 1;")
@@ -729,12 +724,12 @@ func DeleteByPK[T sequel.KeyValuer](ctx context.Context, sqlConn sequel.DB, mode
 		stmt := strpool.AcquireString()
 		defer strpool.ReleaseString(stmt)
 		stmt.WriteString("DELETE FROM "+DbTable(model)+" WHERE ")
-		max := len(names)
-		for i := 1; i <= max; i++ {
+		noOfKey := len(names)
+		for i := 0; i < noOfKey; i++ {
 			if i == 1 {
-				stmt.WriteString(names[i]+" = "+ wrapVar(i))
+				stmt.WriteString(names[i]+" = "+ wrapVar(i+1))
 			} else {
-				stmt.WriteString(" AND "+ names[i]+" = "+ wrapVar(i))
+				stmt.WriteString(" AND "+ names[i]+" = "+ wrapVar(i+1))
 			}
 		}
 		stmt.WriteByte(';')

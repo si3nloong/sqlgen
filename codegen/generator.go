@@ -178,28 +178,30 @@ func (g *Generator) generate(pkg *packages.Package, dstDir string, typeInferred 
 			g.buildScanner(importPkgs, t)
 		}
 
-		if g.staticVar {
-			g.L("func (" + t.goName + ") InsertPlaceholders(row int) string {")
-			g.L(`return "(` + strings.Repeat(","+g.dialect.QuoteVar(0), len(t.colsWithoutAutoIncrPK()))[1:] + `)"`)
-			g.L("}")
-		} else {
-			cols := t.colsWithoutAutoIncrPK()
-			g.L("func (" + t.goName + ") InsertPlaceholders(row int) string {")
-			g.L(fmt.Sprintf("const noOfColumn = %d", len(cols)))
-			g.WriteString(`return "("+`)
-			for i, f := range cols {
-				if i > 0 {
-					g.WriteString(`+","+`)
+		if !t.hasNoColsExceptAutoPK() {
+			if g.staticVar {
+				g.L("func (" + t.goName + ") InsertPlaceholders(row int) string {")
+				g.L(`return "(` + strings.Repeat(","+g.dialect.QuoteVar(0), len(t.colsWithoutAutoIncrPK()))[1:] + `)"`)
+				g.L("}")
+			} else {
+				cols := t.colsWithoutAutoIncrPK()
+				g.L("func (" + t.goName + ") InsertPlaceholders(row int) string {")
+				g.L(fmt.Sprintf("const noOfColumn = %d", len(cols)))
+				g.WriteString(`return "("+`)
+				for i, f := range cols {
+					if i > 0 {
+						g.WriteString(`+","+`)
+					}
+					if sqlValuer := f.SQLValuer(); sqlValuer != nil {
+						matches := sqlFuncRegexp.FindStringSubmatch(sqlValuer("{}"))
+						g.WriteString(fmt.Sprintf("%q + strconv.Itoa((row * noOfColumn) + %d) +%q", matches[1]+string(g.dialect.VarRune()), i+1, matches[5]))
+					} else {
+						g.WriteString(fmt.Sprintf(`%q+ strconv.Itoa((row * noOfColumn) + %d)`, string(g.dialect.VarRune()), i+1))
+					}
 				}
-				if sqlValuer := f.SQLValuer(); sqlValuer != nil {
-					matches := sqlFuncRegexp.FindStringSubmatch(sqlValuer("{}"))
-					g.WriteString(fmt.Sprintf("%q + strconv.Itoa((row * noOfColumn) + %d) +%q", matches[1]+string(g.dialect.VarRune()), i+1, matches[5]))
-				} else {
-					g.WriteString(fmt.Sprintf(`%q+ strconv.Itoa((row * noOfColumn) + %d)`, string(g.dialect.VarRune()), i+1))
-				}
+				g.WriteString(`+")"` + "\n")
+				g.L("}")
 			}
-			g.WriteString(`+")"` + "\n")
-			g.L("}")
 		}
 
 		g.buildInsertOne(importPkgs, t)

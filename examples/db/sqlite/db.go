@@ -296,15 +296,10 @@ func Upsert[T interface {
 	return sqlConn.ExecContext(ctx, stmt.String(), args...)
 }
 
-type primaryKeyFinder interface {
-	sequel.PrimaryKeyer
-	sequel.KeyFinder
-}
-
 // FindByPK is to find single record using primary key.
 func FindByPK[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Context, sqlConn sequel.DB, model Ptr) error {
 	switch v := any(model).(type) {
-	case primaryKeyFinder:
+	case sequel.KeyFinder:
 		query, args := v.FindOneByPKStmt()
 		return sqlConn.QueryRowContext(ctx, query, args...).Scan(model.Addrs()...)
 	case sequel.PrimaryKeyer:

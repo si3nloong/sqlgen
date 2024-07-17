@@ -197,6 +197,11 @@ func (b tableInfo) hasNoColsExceptPK() bool {
 	return len(b.keys) == len(b.columns)
 }
 
+func (b tableInfo) hasNoColsExceptAutoPK() bool {
+	return b.autoIncrKey != nil && len(b.columns) == 1 &&
+		b.autoIncrKey == b.columns[0]
+}
+
 type columnInfo struct {
 	goName   string
 	goPath   string
