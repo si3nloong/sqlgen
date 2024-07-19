@@ -88,6 +88,8 @@ func (b ptrOfLocalDate) Scan(v any) error {
 		val = f
 	case time.Time:
 		val = civil.DateOf(vi)
+	default:
+		return fmt.Errorf(`sequel/types: unable to scan %T to civil.Date`, vi)
 	}
 	*b.addr = &val
 	return nil

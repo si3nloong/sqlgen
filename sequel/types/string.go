@@ -52,7 +52,7 @@ func (s strLike[T]) Scan(v any) error {
 		val = T(vi)
 	default:
 		if s.strictType {
-			return fmt.Errorf(`sequel/types: unable to scan %T to string`, vi)
+			return fmt.Errorf(`sequel/types: unable to scan %T to ~string`, vi)
 		}
 
 		switch vi := v.(type) {
@@ -61,7 +61,7 @@ func (s strLike[T]) Scan(v any) error {
 		case int64:
 			val = T(strconv.FormatInt(vi, 10))
 		default:
-			return fmt.Errorf(`sequel/types: unable to scan %T to string`, vi)
+			return fmt.Errorf(`sequel/types: unable to scan %T to ~string`, vi)
 		}
 	}
 	*s.addr = val
