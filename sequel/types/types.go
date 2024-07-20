@@ -5,4 +5,8 @@
 // This package is a helper library to prevent the value being fallback using reflection in `database/sql`.
 package types
 
-var nullBytes = []byte(`null`)
+import "unsafe"
+
+const nullStr = "null"
+
+var nullBytes = unsafe.Slice(unsafe.StringData(nullStr), len(nullStr))

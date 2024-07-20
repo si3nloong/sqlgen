@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"strconv"
+	"strings"
 	"unsafe"
 
 	"golang.org/x/exp/constraints"
@@ -40,6 +41,33 @@ func (s intList[T]) Scan(v any) error {
 		for i := range paths {
 			b = bytes.TrimSpace(paths[i])
 			i64, err := strconv.ParseInt(unsafe.String(unsafe.SliceData(b), len(b)), 10, 64)
+			if err != nil {
+				return err
+			}
+			values[i] = T(i64)
+		}
+		*s.v = values
+	case string:
+		if vi == nullStr {
+			*s.v = nil
+			return nil
+		}
+		length := len(vi)
+		if length < 2 || vi[0] != '[' || vi[length-1] != ']' {
+			return fmt.Errorf(`sequel/types: invalid value of %q to unmarshal to []~int`, vi)
+		}
+		vi = vi[1 : length-1]
+		if len(vi) == 0 {
+			return nil
+		}
+		var (
+			paths  = strings.Split(vi, ",")
+			values = make([]T, len(paths))
+			b      string
+		)
+		for i := range paths {
+			b = strings.TrimSpace(paths[i])
+			i64, err := strconv.ParseInt(b, 10, 64)
 			if err != nil {
 				return err
 			}

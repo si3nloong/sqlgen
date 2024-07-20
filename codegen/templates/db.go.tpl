@@ -229,7 +229,7 @@ func WithDoNothing(doNothing bool) UpsertOption {
 	}
 }
 
-func WithOmitFields(fields []string) UpsertOption {
+func WithOmitFields(fields ...string) UpsertOption {
 	return func(opt *upsertOpts) {
 		opt.omitFields = fields
 	}
