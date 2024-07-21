@@ -821,7 +821,6 @@ func QueryStmt[T any, Ptr sequel.PtrScanner[T], Stmt interface{
 		}
 		blr.WriteByte(';')
 		rows, err = sqlConn.QueryContext(ctx, blr.String(), blr.Args()...)
-		ReleaseStmt(blr)
 
 	case SQLStatement:
 		rows, err = sqlConn.QueryContext(ctx, vi.Query, vi.Arguments...)
