@@ -134,7 +134,7 @@ func dataType(f sequel.GoColumnSchema) *columnDefinition {
 			col.dataType = "VARBIT(36)"
 			return col
 		case "encoding/json.RawMessage":
-			col.dataType = "VARBIT"
+			col.dataType = "JSONB"
 			return col
 		case "database/sql.NullBool":
 			col.dataType = "BOOL"

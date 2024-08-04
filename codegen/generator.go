@@ -507,9 +507,9 @@ func (g *Generator) buildUpdateByPK(importPkgs *Package, table *tableInfo) {
 		if i > 0 {
 			buf.WriteString(" AND ")
 		}
-		buf.WriteString(k.ColumnName() + " = " + g.sqlValuer(k, i+len(columns)+1))
+		buf.WriteString(k.ColumnName() + " = " + g.sqlValuer(k, i+len(columns)))
 	}
-	buf.WriteString(" LIMIT 1;")
+	buf.WriteByte(';')
 	g.L("func (v " + table.goName + ") UpdateOneByPKStmt() (string, []any) {")
 	g.WriteString("return " + g.Quote(buf.String()) + ", []any{")
 	strpool.ReleaseString(buf)

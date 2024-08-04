@@ -216,6 +216,9 @@ func Insert[T sequel.TableColumnValuer](ctx context.Context, sqlConn sequel.DB, 
 type duplicateKeyer interface {
 	DuplicateKeys() []string
 }
+type setOnUpsertOmitter interface {
+	OnUpsertOmitColumns() []string
+}
 type upsertOpts struct {
 	doNothing     bool
 	omitFields    []string
@@ -235,7 +238,7 @@ func WithOmitFields(fields ...string) UpsertOption {
 	}
 }
 
-func WithDuplicateKeys(keys []string) UpsertOption {
+func WithDuplicateKeys(keys ...string) UpsertOption {
 	return func(opt *upsertOpts) {
 		opt.duplicateKeys = keys
 	}
@@ -306,6 +309,9 @@ func UpsertOne[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Co
 		stmt.WriteString(" DO UPDATE SET ")
 		omitDict := make(map[string]struct{})
 		noOfCols = len(columns)
+		if omitter, ok := any(model).(setOnUpsertOmitter); ok {
+			opt.omitFields = append(opt.omitFields, omitter.OnUpsertOmitColumns()...)
+		}
 		for i := range opt.omitFields {
 			omitDict[opt.omitFields[i]] = struct{}{}
 		}
@@ -420,6 +426,9 @@ func Upsert[T interface {
 	} else {
 		stmt.WriteString(" DO UPDATE SET ")
 		omitDict := make(map[string]struct{})
+		if omitter, ok := any(model).(setOnUpsertOmitter); ok {
+			opt.omitFields = append(opt.omitFields, omitter.OnUpsertOmitColumns()...)
+		}
 		columns = model.Columns()
 		for i := range opt.omitFields {
 			omitDict[opt.omitFields[i]] = struct{}{}
@@ -842,6 +851,82 @@ func QueryStmt[T any, Ptr sequel.PtrScanner[T], Stmt interface{
 		return nil, err
 	}
 	return result, nil
+}
+
+type SelectOneStmt struct {
+	Select    []string
+	FromTable string
+	Where     sequel.WhereClause
+	OrderBy   []sequel.OrderByClause
+	GroupBy   []string
+}
+
+func QueryOneStmt[T any, Ptr sequel.PtrScanner[T], Stmt interface {
+	SelectOneStmt | SQLStatement
+}](ctx context.Context, sqlConn sequel.DB, stmt Stmt) (Ptr, error) {
+	var v T
+	switch vi := any(stmt).(type) {
+	case SelectOneStmt:
+		var blr = AcquireStmt()
+		defer ReleaseStmt(blr)
+		blr.WriteString("SELECT ")
+		if len(vi.Select) > 0 {
+			blr.WriteString(strings.Join(vi.Select, ","))
+		} else {
+			switch vj := any(v).(type) {
+			case sequel.Columner:
+				blr.WriteString(strings.Join(TableColumns(vj), ","))
+			default:
+				blr.WriteByte('*')
+			}
+		}
+		if vi.FromTable != "" {
+			blr.WriteString(" FROM " + dbName(v) + vi.FromTable)
+		} else {
+			switch vj := any(v).(type) {
+			case sequel.Tabler:
+				blr.WriteString(" FROM " + DbTable(vj))
+			default:
+				return nil, fmt.Errorf("missing table name for model %T", v)
+			}
+		}
+		if vi.Where != nil {
+			blr.WriteString(" WHERE ")
+			vi.Where(blr)
+		}
+		if len(vi.GroupBy) > 0 {
+			blr.WriteString(" GROUP BY ")
+			for i := range vi.GroupBy {
+				if i > 0 {
+					blr.WriteByte(',')
+				}
+				blr.WriteString(vi.GroupBy[i])
+			}
+		}
+		if len(vi.OrderBy) > 0 {
+			blr.WriteString(" ORDER BY ")
+			for i := range vi.OrderBy {
+				if i > 0 {
+					blr.WriteByte(',')
+				}
+				vi.OrderBy[i](blr)
+			}
+		}
+		blr.WriteString(" LIMIT 1;")
+		if err := sqlConn.QueryRowContext(ctx, blr.String(), blr.Args()...).Scan(Ptr(&v).Addrs()...); err != nil {
+			return nil, err
+		}
+		return &v, nil
+
+	case SQLStatement:
+		if err := sqlConn.QueryRowContext(ctx, vi.Query, vi.Arguments...).Scan(Ptr(&v).Addrs()...); err != nil {
+			return nil, err
+		}
+		return &v, nil
+
+	default:
+		panic("unreachable")
+	}
 }
 
 type UpdateStmt struct {
