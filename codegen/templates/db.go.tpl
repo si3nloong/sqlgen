@@ -958,10 +958,6 @@ func ExecStmt[T any, Stmt interface {
 		} else {
 			blr.WriteString("UPDATE " + dbName(v) + vi.Table)
 		}
-		if vi.Where != nil {
-			blr.WriteString(" WHERE ")
-			vi.Where(blr)
-		}
 		if len(vi.Set) > 0 {
 			blr.WriteString(" SET ")
 			for i := range vi.Set {
@@ -970,6 +966,10 @@ func ExecStmt[T any, Stmt interface {
 				}
 				vi.Set[i](blr)
 			}
+		}
+		if vi.Where != nil {
+			blr.WriteString(" WHERE ")
+			vi.Where(blr)
 		}
 		if len(vi.OrderBy) > 0 {
 			blr.WriteString(" ORDER BY ")
