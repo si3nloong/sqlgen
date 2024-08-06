@@ -1,4 +1,4 @@
-package config
+package codegen
 
 import (
 	"testing"
@@ -11,6 +11,7 @@ func TestConfig(t *testing.T) {
 	require.NotNil(t, cfg)
 	require.ElementsMatch(t, []string{"./**/*"}, cfg.Source)
 	require.Equal(t, MySQL, cfg.Driver)
+	require.False(t, cfg.QuoteIdentifier)
 	require.Equal(t, SnakeCase, cfg.NamingConvention)
 	require.Equal(t, DefaultStructTag, cfg.Tag)
 	require.Equal(t, DefaultGeneratedFile, cfg.Exec.Filename)

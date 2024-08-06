@@ -152,7 +152,7 @@ func TestInsert(t *testing.T) {
 		require.NotZero(t, *ptr.F64)
 
 		ptrs, err := mysqldb.QueryStmt[pointer.Ptr](ctx, dbConn, mysqldb.SelectStmt{
-			Select:    ptr.ColumnNames(),
+			Select:    ptr.Columns(),
 			FromTable: ptr.TableName(),
 			Where:     mysqldb.Equal(ptr.GetInt(), &i),
 			Limit:     3,

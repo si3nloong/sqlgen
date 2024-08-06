@@ -18,6 +18,8 @@ func JSONMarshaler[T any](addr T) jsonMarshaler[T] {
 
 func (j jsonMarshaler[T]) Value() (driver.Value, error) {
 	switch vj := any(j.v).(type) {
+	case json.RawMessage:
+		return []byte(vj)[:], nil
 	case json.Marshaler:
 		return vj.MarshalJSON()
 	default:
@@ -62,5 +64,5 @@ func (j jsonUnmarshaler[T, Ptr]) Scan(v any) error {
 			return json.NewDecoder(bytes.NewBufferString(vi)).Decode(j.v)
 		}
 	}
-	return fmt.Errorf(`types: invalid scan type for JSON, %T`, v)
+	return fmt.Errorf(`sequel/types: invalid scan type for JSON, %T`, v)
 }

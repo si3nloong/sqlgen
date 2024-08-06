@@ -12,7 +12,7 @@ func (A) TableName() string {
 }
 
 // Codegen will not override the custom declaration even if it has error
-func (A) ColumnNames() []string {
+func (A) Columns() []string {
 	return []string{`a`, "b", "b"}
 }
 

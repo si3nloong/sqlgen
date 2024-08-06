@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"strconv"
+	"strings"
 	"unsafe"
 
 	"golang.org/x/exp/constraints"
@@ -26,7 +27,7 @@ func (s intList[T]) Scan(v any) error {
 		}
 		length := len(vi)
 		if length < 2 || vi[0] != '[' || vi[length-1] != ']' {
-			return fmt.Errorf(`types: invalid value of %q to unmarshal to []~int`, vi)
+			return fmt.Errorf(`sequel/types: invalid value of %q to unmarshal to []~int`, vi)
 		}
 		vi = vi[1 : length-1]
 		if len(vi) == 0 {
@@ -46,8 +47,35 @@ func (s intList[T]) Scan(v any) error {
 			values[i] = T(i64)
 		}
 		*s.v = values
+	case string:
+		if vi == nullStr {
+			*s.v = nil
+			return nil
+		}
+		length := len(vi)
+		if length < 2 || vi[0] != '[' || vi[length-1] != ']' {
+			return fmt.Errorf(`sequel/types: invalid value of %q to unmarshal to []~int`, vi)
+		}
+		vi = vi[1 : length-1]
+		if len(vi) == 0 {
+			return nil
+		}
+		var (
+			paths  = strings.Split(vi, ",")
+			values = make([]T, len(paths))
+			b      string
+		)
+		for i := range paths {
+			b = strings.TrimSpace(paths[i])
+			i64, err := strconv.ParseInt(b, 10, 64)
+			if err != nil {
+				return err
+			}
+			values[i] = T(i64)
+		}
+		*s.v = values
 	default:
-		return fmt.Errorf(`types: unsupported scan type %T for []~int`, vi)
+		return fmt.Errorf(`sequel/types: unsupported scan type %T for []~int`, vi)
 	}
 	return nil
 }

@@ -5,7 +5,6 @@ import (
 	"log"
 
 	"github.com/si3nloong/sqlgen/codegen"
-	"github.com/si3nloong/sqlgen/codegen/config"
 	"github.com/spf13/cobra"
 )
 
@@ -29,13 +28,13 @@ var (
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var (
-				cfg = config.DefaultConfig()
+				cfg = codegen.DefaultConfig()
 				err error
 			)
 
 			// If user passing config file, then we load from it.
 			if rootOpts.config != "" {
-				cfg, err = config.LoadConfigFrom(rootOpts.config)
+				cfg, err = codegen.LoadConfigFrom(rootOpts.config)
 				if err != nil {
 					return err
 				}

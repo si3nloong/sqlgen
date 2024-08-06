@@ -44,9 +44,6 @@ func (p ptrOfFloatLike[T]) Scan(v any) error {
 		}
 		val := T(f)
 		*p.addr = &val
-	case float32:
-		val := T(vi)
-		*p.addr = &val
 	case float64:
 		val := T(vi)
 		*p.addr = &val
@@ -54,7 +51,7 @@ func (p ptrOfFloatLike[T]) Scan(v any) error {
 		val := T(vi)
 		*p.addr = &val
 	default:
-		return fmt.Errorf(`types: unable to scan %T to *float`, vi)
+		return fmt.Errorf(`sequel/types: unable to scan %T to *float`, vi)
 	}
 	return nil
 }

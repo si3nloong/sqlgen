@@ -1,4 +1,4 @@
-package config
+package codegen
 
 import (
 	"maps"
@@ -17,9 +17,10 @@ import (
 type SqlDriver string
 
 const (
-	MySQL    SqlDriver = "mysql"
-	Postgres SqlDriver = "postgres"
-	Sqlite   SqlDriver = "sqlite"
+	MySQL       SqlDriver = "mysql"
+	Postgres    SqlDriver = "postgres"
+	Sqlite      SqlDriver = "sqlite"
+	MSSqlServer SqlDriver = "mssql"
 )
 
 type naming string
@@ -44,20 +45,20 @@ type Config struct {
 	NamingConvention naming    `yaml:"naming_convention,omitempty"`
 	Tag              string    `yaml:"struct_tag,omitempty"`
 	// Whether to quote the table name and column name
-	OmitQuoteIdentifier bool              `yaml:"omit_quote_identifier,omitempty"`
-	OmitGetters         bool              `yaml:"omit_getters,omitempty"`
-	Strict              *bool             `yaml:"strict,omitempty"`
-	Exec                ExecConfig        `yaml:"exec"`
-	Getter              GetterConfig      `yaml:"getter"`
-	Migration           *MigrationConfig  `yaml:"migration"`
-	Database            *DatabaseConfig   `yaml:"database"`
-	SourceMap           bool              `yaml:"source_map"`
-	SkipHeader          bool              `yaml:"skip_header"`
-	SkipModTidy         bool              `yaml:"skip_mod_tidy"`
-	Models              map[string]*Model `yaml:"models"`
+	QuoteIdentifier bool                 `yaml:"quote_identifier"`
+	OmitGetters     bool                 `yaml:"omit_getters,omitempty"`
+	Strict          *bool                `yaml:"strict,omitempty"`
+	Exec            ExecConfig           `yaml:"exec"`
+	Getter          GetterConfig         `yaml:"getter"`
+	Migration       *MigrationConfig     `yaml:"migration"`
+	Database        *DatabaseConfig      `yaml:"database"`
+	SourceMap       bool                 `yaml:"source_map"`
+	SkipHeader      bool                 `yaml:"skip_header"`
+	SkipModTidy     bool                 `yaml:"skip_mod_tidy"`
+	DataTypes       map[string]*DataType `yaml:"data_types"`
 }
 
-type Model struct {
+type DataType struct {
 	DataType   string `yaml:"data_type"`
 	Scanner    string `yaml:"scan" validate:"required_with=Valuer"`
 	SQLScanner string `yaml:"sql_scan" validate:"required_with=SQLValuer"`
@@ -92,7 +93,7 @@ type DatabaseOperatorConfig struct {
 	Filename string `yaml:"filename"`
 }
 
-func (c *Config) init() {
+func (c *Config) Init() {
 	strict := true
 	c.Source = []string{"./**/*"}
 	c.NamingConvention = SnakeCase
@@ -109,7 +110,7 @@ func (c *Config) init() {
 	c.Database.Operator.Package = c.Database.Package
 	c.Database.Operator.Dir = c.Database.Dir
 	c.Database.Operator.Filename = "operator.go"
-	c.Models = make(map[string]*Model)
+	c.DataTypes = make(map[string]*DataType)
 }
 
 func (c *Config) initIfEmpty() {
@@ -156,8 +157,8 @@ func (c *Config) initIfEmpty() {
 	if c.Database.Operator.Filename == "" {
 		c.Database.Operator.Filename = "operator.go"
 	}
-	if c.Models == nil {
-		c.Models = make(map[string]*Model)
+	if c.DataTypes == nil {
+		c.DataTypes = make(map[string]*DataType)
 	}
 }
 
@@ -208,8 +209,8 @@ func (c *Config) Merge(mapCfg *Config) *Config {
 	if mapCfg.SkipModTidy {
 		c.SkipModTidy = true
 	}
-	if mapCfg.Models != nil {
-		maps.Copy(c.Models, mapCfg.Models)
+	if mapCfg.DataTypes != nil {
+		maps.Copy(c.DataTypes, mapCfg.DataTypes)
 	}
 	c.initIfEmpty()
 	return c
@@ -230,7 +231,7 @@ func (c Config) RenameFunc() func(string) string {
 
 func LoadConfigFrom(src string) (*Config, error) {
 	cfg := new(Config)
-	cfg.init()
+	cfg.Init()
 	if err := decodeToFile(src, cfg); err != nil {
 		return nil, err
 	}
@@ -239,7 +240,7 @@ func LoadConfigFrom(src string) (*Config, error) {
 
 func DefaultConfig() *Config {
 	cfg := new(Config)
-	cfg.init()
+	cfg.Init()
 	file, exists := findCfgInDir(fileutil.Getpwd())
 	if !exists {
 		return cfg

@@ -7,8 +7,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/si3nloong/sqlgen/codegen/config"
-
 	"github.com/si3nloong/sqlgen/codegen"
 	"github.com/si3nloong/sqlgen/internal/fileutil"
 	"github.com/stretchr/testify/require"
@@ -17,17 +15,17 @@ import (
 func TestAll(t *testing.T) {
 	const rootDir = "./testcase"
 
-	if err := codegen.Generate(&config.Config{
+	if err := codegen.Generate(&codegen.Config{
 		Source:     []string{rootDir + "/**/*.go"},
 		SkipHeader: true,
-		Database: &config.DatabaseConfig{
+		Database: &codegen.DatabaseConfig{
 			Package: "mysqldb",
 			Dir:     "./db/mysql",
 		},
-		Exec: config.ExecConfig{
+		Exec: codegen.ExecConfig{
 			SkipEmpty: false,
 		},
-		Models: map[string]*config.Model{
+		DataTypes: map[string]*codegen.DataType{
 			"github.com/paulmach/orb.Point": {
 				DataType:   "POINT",
 				SQLScanner: `ST_AsBinary({{.}}, 4326)`,
@@ -45,11 +43,11 @@ func TestAll(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := codegen.Generate(&config.Config{
+	if err := codegen.Generate(&codegen.Config{
 		Source:     []string{},
 		SkipHeader: true,
-		Driver:     config.Postgres,
-		Database: &config.DatabaseConfig{
+		Driver:     codegen.Postgres,
+		Database: &codegen.DatabaseConfig{
 			Package: "postgresdb",
 			Dir:     "./db/postgres",
 		},
@@ -57,11 +55,11 @@ func TestAll(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := codegen.Generate(&config.Config{
+	if err := codegen.Generate(&codegen.Config{
 		Source:     []string{},
 		SkipHeader: true,
-		Driver:     config.Sqlite,
-		Database: &config.DatabaseConfig{
+		Driver:     codegen.Sqlite,
+		Database: &codegen.DatabaseConfig{
 			Package: "sqlite",
 			Dir:     "./db/sqlite",
 		},
@@ -88,13 +86,13 @@ func generateModel(t *testing.T, rootDir string) error {
 			return nil
 		}
 
-		actual, err := os.ReadFile(filepath.Join(path, config.DefaultGeneratedFile))
+		actual, err := os.ReadFile(filepath.Join(path, codegen.DefaultGeneratedFile))
 		if err != nil {
 			return err
 		}
 
 		// Read result file
-		expected, err := os.ReadFile(filepath.Join(path, config.DefaultGeneratedFile+".tpl"))
+		expected, err := os.ReadFile(filepath.Join(path, codegen.DefaultGeneratedFile+".tpl"))
 		if err != nil {
 			return fmt.Errorf("%w, happened in directory %q", err, path)
 		}

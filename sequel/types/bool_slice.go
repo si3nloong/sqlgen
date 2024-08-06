@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
+	"strings"
 	"unsafe"
 
 	"github.com/si3nloong/sqlgen/sequel/encoding"
@@ -43,7 +44,7 @@ func (s boolList[T]) Scan(v any) error {
 		}
 		length := len(vi)
 		if length < 2 || vi[0] != '[' || vi[length-1] != ']' {
-			return fmt.Errorf(`types: invalid value of %q to unmarshal to %v`, vi, reflect.TypeOf(vi))
+			return fmt.Errorf(`sequel/types: invalid value of %q to unmarshal to %v`, vi, reflect.TypeOf(vi))
 		}
 		vi = vi[1 : length-1]
 		if len(vi) == 0 {
@@ -63,6 +64,35 @@ func (s boolList[T]) Scan(v any) error {
 			values[i] = T(flag)
 		}
 		*s.v = values
+	case string:
+		if vi == nullStr {
+			*s.v = nil
+			return nil
+		}
+		length := len(vi)
+		if length < 2 || vi[0] != '[' || vi[length-1] != ']' {
+			return fmt.Errorf(`sequel/types: invalid value of %q to unmarshal to %v`, vi, reflect.TypeOf(vi))
+		}
+		vi = vi[1 : length-1]
+		if len(vi) == 0 {
+			return nil
+		}
+		var (
+			paths  = strings.Split(vi, ",")
+			values = make([]T, len(paths))
+			b      string
+		)
+		for i := range paths {
+			b = strings.TrimSpace(paths[i])
+			flag, err := strconv.ParseBool(b)
+			if err != nil {
+				return err
+			}
+			values[i] = T(flag)
+		}
+		*s.v = values
+	default:
+		return fmt.Errorf(`sequel/types: unsupported scan type %T for []~bool`, vi)
 	}
 	return nil
 }

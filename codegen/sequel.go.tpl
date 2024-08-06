@@ -24,7 +24,7 @@ type Tabler interface {
 }
 
 type Columner interface {
-	ColumnNames() []string
+	Columns() []string
 }
 
 type SQLColumner interface {

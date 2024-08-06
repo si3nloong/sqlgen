@@ -60,7 +60,7 @@ func (s datetime[T]) Scan(v any) error {
 	case int64:
 		val = T(time.Unix(vi, 0))
 	default:
-		return fmt.Errorf(`types: unsupported scan type %T for time.Time`, vi)
+		return fmt.Errorf(`sequel/types: unsupported scan type %T for time.Time`, vi)
 	}
 	*s.addr = val
 	return nil
