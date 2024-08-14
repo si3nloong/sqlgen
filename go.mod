@@ -3,7 +3,7 @@ module github.com/si3nloong/sqlgen
 go 1.21
 
 require (
-	cloud.google.com/go v0.115.0
+	cloud.google.com/go v0.115.1
 	github.com/AlecAivazis/survey/v2 v2.3.7
 	github.com/Masterminds/semver/v3 v3.2.1
 	github.com/elliotchance/orderedmap/v2 v2.2.0
