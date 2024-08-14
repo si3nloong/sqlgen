@@ -244,7 +244,10 @@ func WithDuplicateKeys(keys ...string) UpsertOption {
 	}
 }
 
-func UpsertOne[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Context, sqlConn sequel.DB, model Ptr, opts ...UpsertOption) error {
+func UpsertOne[T sequel.Inserter, Ptr interface{
+	sequel.Inserter
+	sequel.KeyValueScanner[T]
+}](ctx context.Context, sqlConn sequel.DB, model Ptr, opts ...UpsertOption) error {
 	var opt upsertOpts
 	for i := range opts {
 		opts[i](&opt)
@@ -263,42 +266,35 @@ func UpsertOne[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Co
 		pkName, idx, _ := v.PK()
 		opt.omitFields = append(opt.omitFields, pkName)
 		columns = append(columns[:idx], columns[idx+1:]...)
-		noOfCols = len(columns)
 		values = append(values[:idx], values[idx+1:]...)
 		// Don't include auto increment primary key on INSERT
-		stmt.WriteString("INSERT INTO " + DbTable(model) + " (" + strings.Join(columns, ",") + ") VALUES (")
+		stmt.WriteString("INSERT INTO " + DbTable(model) + " (" + strings.Join(columns, ",") + ") VALUES ")
 	case sequel.PrimaryKeyer:
 		pkName, _, _ := v.PK()
 		opt.omitFields = append(opt.omitFields, pkName)
-		stmt.WriteString("INSERT INTO " + DbTable(model) + " (" + strings.Join(columns, ",") + ") VALUES (")
+		stmt.WriteString("INSERT INTO " + DbTable(model) + " (" + strings.Join(columns, ",") + ") VALUES ")
 	case sequel.CompositeKeyer:
 		keyNames, _, _ := v.CompositeKey()
 		opt.omitFields = append(opt.omitFields, keyNames...)
-		stmt.WriteString("INSERT INTO " + DbTable(model) + " (" + strings.Join(columns, ",") + ") VALUES (")
+		stmt.WriteString("INSERT INTO " + DbTable(model) + " (" + strings.Join(columns, ",") + ") VALUES ")
 	default:
 		panic("unreachable")
 	}
-	for i := 1; i <= noOfCols; i++ {
-		if i > 1 {
-			stmt.WriteString("," + wrapVar(i))
-		} else {
-			stmt.WriteString(wrapVar(i))
-		}
-	}
+	stmt.WriteString(model.InsertPlaceholders(0))
 	if len(opt.duplicateKeys) > 0 {
-		stmt.WriteString(") ON CONFLICT(" + strings.Join(opt.duplicateKeys, ",") + ")")
+		stmt.WriteString(" ON CONFLICT(" + strings.Join(opt.duplicateKeys, ",") + ")")
 	} else {
 		switch vi := any(model).(type) {
 		case duplicateKeyer:
 			keys := vi.DuplicateKeys()
 			opt.omitFields = append(opt.omitFields, keys...)
-			stmt.WriteString(") ON CONFLICT(" + strings.Join(keys, ",") + ")")
+			stmt.WriteString(" ON CONFLICT(" + strings.Join(keys, ",") + ")")
 		case sequel.PrimaryKeyer:
 			pkName, _, _ := vi.PK()
-			stmt.WriteString(") ON CONFLICT(" + pkName + ")")
+			stmt.WriteString(" ON CONFLICT(" + pkName + ")")
 		case sequel.CompositeKeyer:
 			names, _, _ := vi.CompositeKey()
-			stmt.WriteString(") ON CONFLICT(" + strings.Join(names, ",") + ")")
+			stmt.WriteString(" ON CONFLICT(" + strings.Join(names, ",") + ")")
 		default:
 			panic("unreachable")
 		}
