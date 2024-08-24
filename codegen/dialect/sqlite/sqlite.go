@@ -3,21 +3,25 @@ package sqlite
 import (
 	"strconv"
 
-	"github.com/si3nloong/sqlgen/sequel"
+	"github.com/si3nloong/sqlgen/codegen/dialect"
 )
 
 type sqliteDriver struct{}
 
 var (
-	_ sequel.Dialect = (*sqliteDriver)(nil)
+	_ dialect.Dialect = (*sqliteDriver)(nil)
 )
 
 func init() {
-	sequel.RegisterDialect("sqlite", &sqliteDriver{})
+	dialect.RegisterDialect("sqlite", &sqliteDriver{})
 }
 
 func (*sqliteDriver) Driver() string {
 	return "sqlite"
+}
+
+func (*sqliteDriver) Var() string {
+	return "?"
 }
 
 func (*sqliteDriver) VarRune() rune {

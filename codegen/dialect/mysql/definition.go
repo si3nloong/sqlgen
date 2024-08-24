@@ -104,7 +104,7 @@ func (c *columnDefinition) Definition() string {
 		str += " NOT NULL"
 	}
 	if c.defaultValue != nil {
-		str += " DEFAULT " + format(c.defaultValue)
+		// str += " DEFAULT " + format(c.defaultValue)
 	}
 	if c.extra != "" {
 		str += " " + c.extra

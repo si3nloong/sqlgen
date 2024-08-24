@@ -18,7 +18,9 @@ func ConvertBool[T ~bool](v T) driver.Value {
 	return (bool)(v)
 }
 
-func ConvertString[T ~string](v T) driver.Value {
+func ConvertString[T interface {
+	~string | ~[]byte
+}](v T) driver.Value {
 	return (string)(v)
 }
 

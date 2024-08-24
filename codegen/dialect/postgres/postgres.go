@@ -3,21 +3,25 @@ package postgres
 import (
 	"strconv"
 
-	"github.com/si3nloong/sqlgen/sequel"
+	"github.com/si3nloong/sqlgen/codegen/dialect"
 )
 
 type postgresDriver struct{}
 
 var (
-	_ sequel.Dialect = (*postgresDriver)(nil)
+	_ dialect.Dialect = (*postgresDriver)(nil)
 )
 
 func init() {
-	sequel.RegisterDialect("postgres", &postgresDriver{})
+	dialect.RegisterDialect("postgres", &postgresDriver{})
 }
 
 func (*postgresDriver) Driver() string {
 	return "postgres"
+}
+
+func (*postgresDriver) Var() string {
+	return "$%d"
 }
 
 func (*postgresDriver) VarRune() rune {

@@ -9,9 +9,9 @@ import (
 	"github.com/si3nloong/sqlgen/internal/fileutil"
 	"github.com/si3nloong/sqlgen/internal/strfmt"
 
-	_ "github.com/si3nloong/sqlgen/sequel/dialect/mysql"
-	_ "github.com/si3nloong/sqlgen/sequel/dialect/postgres"
-	_ "github.com/si3nloong/sqlgen/sequel/dialect/sqlite"
+	_ "github.com/si3nloong/sqlgen/codegen/dialect/mysql"
+	_ "github.com/si3nloong/sqlgen/codegen/dialect/postgres"
+	_ "github.com/si3nloong/sqlgen/codegen/dialect/sqlite"
 )
 
 type SqlDriver string
@@ -60,10 +60,10 @@ type Config struct {
 
 type DataType struct {
 	DataType   string `yaml:"data_type"`
-	Scanner    string `yaml:"scan" validate:"required_with=Valuer"`
-	SQLScanner string `yaml:"sql_scan" validate:"required_with=SQLValuer"`
-	Valuer     string `yaml:"value" validate:"required_with=Scanner"`
-	SQLValuer  string `yaml:"sql_value" validate:"required_with=SQLScanner"`
+	Scanner    string `yaml:"scan"`
+	SQLScanner string `yaml:"sql_scan"`
+	Valuer     string `yaml:"value"`
+	SQLValuer  string `yaml:"sql_value"`
 }
 
 type ExecConfig struct {

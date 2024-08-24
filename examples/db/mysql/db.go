@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 	"sync"
@@ -431,7 +432,6 @@ func QueryStmt[T any, Ptr sequel.PtrScanner[T], Stmt interface {
 		}
 		blr.WriteByte(';')
 		rows, err = sqlConn.QueryContext(ctx, blr.String(), blr.Args()...)
-		ReleaseStmt(blr)
 
 	case SQLStatement:
 		rows, err = sqlConn.QueryContext(ctx, vi.Query, vi.Arguments...)
@@ -535,6 +535,74 @@ func ExecStmt[T any, Stmt interface {
 	}
 	blr.WriteByte(';')
 	return sqlConn.ExecContext(ctx, blr.String(), blr.Args()...)
+}
+
+type RecordSet[T sequel.Keyer] []T
+
+func (r RecordSet[T]) All(yield func(T) bool) {
+	for _, s := range r {
+		if !yield(s) {
+			return
+		}
+	}
+}
+
+func (r RecordSet[T]) AllWithIndex(yield func(int, T) bool) {
+	for i, s := range r {
+		if !yield(i, s) {
+			return
+		}
+	}
+}
+
+func (r RecordSet[T]) StartCursor() {}
+func (r RecordSet[T]) EndCursor()   {}
+
+func Paginate[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Context, sqlConn sequel.DB, cursor T, stmt SelectStmt) (RecordSet[T], error) {
+	// Check whether it has the start cursor
+	// If start cursor provided, we query the data
+	var v = cursor
+	if err := FindByPK(ctx, sqlConn, Ptr(&v)); err != nil {
+		return nil, err
+	}
+	// Get all values, later need to compare
+	log.Println(v.Values())
+	// If end cursor provided, we query the data
+	// values := v.Values()
+	blr := AcquireStmt()
+	defer ReleaseStmt(blr)
+	blr.WriteString("SELECT " + strings.Join(v.Columns(), ",") + " FROM " + DbTable(v) + " WHERE ")
+	pkCols := []string{}
+	switch vi := any(v).(type) {
+	case sequel.CompositeKeyer:
+		keys, _, vals := vi.CompositeKey()
+		blr.WriteString("(" + strings.Join(keys, ",") + ") > " + blr.Vars(vals))
+		pkCols = append(pkCols, keys...)
+	case sequel.PrimaryKeyer:
+		pkName, _, pk := vi.PK()
+		blr.WriteString(pkName + " > " + blr.Var(pk))
+		pkCols = append(pkCols, pkName)
+	default:
+		panic("unreachable")
+	}
+	blr.WriteString(" ORDER BY " + strings.Join(pkCols, ","))
+	blr.WriteByte(';')
+	rows, err := sqlConn.QueryContext(ctx, blr.String(), blr.Args()...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	result := make([]T, 0)
+	for rows.Next() {
+		var v T
+		if err := rows.Scan(Ptr(&v).Addrs()...); err != nil {
+			return nil, err
+		}
+		result = append(result, v)
+	}
+	log.Println(result)
+	return RecordSet[T]{}, rows.Close()
 }
 
 var (

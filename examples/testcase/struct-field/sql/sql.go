@@ -1,6 +1,9 @@
 package sql
 
-import "github.com/paulmach/orb"
+import (
+	"cloud.google.com/go/civil"
+	"github.com/paulmach/orb"
+)
 
 type Location struct {
 	ID       uint64 `sql:",pk"`
@@ -10,4 +13,6 @@ type Location struct {
 type AutoPkLocation struct {
 	ID       uint64 `sql:",pk,auto_increment"`
 	GeoPoint orb.Point
+	PtrGeo   *orb.Point
+	PtrDate  *civil.Date
 }
