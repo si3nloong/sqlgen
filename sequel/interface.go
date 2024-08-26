@@ -108,6 +108,7 @@ type KeyValueScanner[T any] interface {
 type StmtWriter interface {
 	io.StringWriter
 	io.ByteWriter
+	io.Writer
 }
 
 type Stmt interface {
