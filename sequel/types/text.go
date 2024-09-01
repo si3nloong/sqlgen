@@ -43,6 +43,6 @@ func (b textUnmarshaler[T, Ptr]) Scan(v any) error {
 	case []byte:
 		return b.v.UnmarshalText(vi)
 	default:
-		return fmt.Errorf(`types: text must be []byte to unmarshal`)
+		return fmt.Errorf(`sequel/types: text must be []byte to unmarshal`)
 	}
 }

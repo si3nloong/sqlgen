@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"strconv"
+	"strings"
 	"unsafe"
 
 	"golang.org/x/exp/constraints"
@@ -26,7 +27,7 @@ func (s floatList[T]) Scan(v any) error {
 		}
 		length := len(vi)
 		if length < 2 || vi[0] != '[' || vi[length-1] != ']' {
-			return fmt.Errorf(`types: invalid value of %q to unmarshal to []~float`, vi)
+			return fmt.Errorf(`sequel/types: invalid value of %q to unmarshal to []~float`, vi)
 		}
 		vi = vi[1 : length-1]
 		if len(vi) == 0 {
@@ -46,8 +47,35 @@ func (s floatList[T]) Scan(v any) error {
 			values[i] = T(f64)
 		}
 		*s.v = values
+	case string:
+		if vi == nullStr {
+			*s.v = nil
+			return nil
+		}
+		length := len(vi)
+		if length < 2 || vi[0] != '[' || vi[length-1] != ']' {
+			return fmt.Errorf(`sequel/types: invalid value of %q to unmarshal to []~float`, vi)
+		}
+		vi = vi[1 : length-1]
+		if len(vi) == 0 {
+			return nil
+		}
+		var (
+			paths  = strings.Split(vi, ",")
+			values = make([]T, len(paths))
+			b      string
+		)
+		for i := range paths {
+			b = strings.TrimSpace(paths[i])
+			f64, err := strconv.ParseFloat(b, 64)
+			if err != nil {
+				return err
+			}
+			values[i] = T(f64)
+		}
+		*s.v = values
 	default:
-		return fmt.Errorf(`types: unsupported scan type %T for []~float`, vi)
+		return fmt.Errorf(`sequel/types: unsupported scan type %T for []~float`, vi)
 	}
 	return nil
 }

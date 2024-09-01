@@ -56,7 +56,7 @@ func (b boolLike[T]) Scan(v any) error {
 		val = T(vi != 0)
 	default:
 		if b.strictType {
-			return fmt.Errorf(`types: unable to scan %T to bool`, vi)
+			return fmt.Errorf(`sequel/types: unable to scan %T to ~bool`, vi)
 		}
 
 		switch vi := v.(type) {
@@ -66,6 +66,8 @@ func (b boolLike[T]) Scan(v any) error {
 				return err
 			}
 			val = T(f)
+		default:
+			return fmt.Errorf(`sequel/types: unable to scan %T to ~bool`, vi)
 		}
 	}
 	*b.addr = val

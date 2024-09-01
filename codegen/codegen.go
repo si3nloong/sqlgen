@@ -14,16 +14,15 @@ import (
 	"reflect"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"syscall"
 
-	"strconv"
-
 	"github.com/Masterminds/semver/v3"
-	"github.com/elliotchance/orderedmap/v2"
+
 	"github.com/go-playground/validator/v10"
 	"github.com/samber/lo"
-	"github.com/si3nloong/sqlgen/codegen/config"
+	"github.com/si3nloong/sqlgen/codegen/dialect"
 	"github.com/si3nloong/sqlgen/internal/fileutil"
 	"github.com/si3nloong/sqlgen/sequel"
 	"golang.org/x/tools/go/packages"
@@ -41,9 +40,11 @@ var (
 		`/`, `[\\/]`,
 	)
 	nameRegex     = regexp.MustCompile(`(?i)^[a-z]+[a-z0-9\_]*$`)
-	codegenRegex  = regexp.MustCompile(`^// Code generated .* DO NOT EDIT\.$`)
 	go121         = lo.Must1(semver.NewConstraint(">= 1.2.1"))
+	goTagRegexp   = regexp.MustCompile(`(?i)^([a-z][a-z_]*[a-z])(\:(\w+))?$`)
 	sqlFuncRegexp = regexp.MustCompile(`(?i)\s*(\w+\()(\w+\s*\,\s*)?(\{\})(\s*\,\s*\w+)?(\))\s*`)
+	typeOfTable   = reflect.TypeOf(sequel.Table{})
+	tableNameType = typeOfTable.PkgPath() + "." + typeOfTable.Name()
 )
 
 const fileMode = 0o755
@@ -64,11 +65,6 @@ const (
 	TagOptionIndex         = "index"
 )
 
-var (
-	schemaName      = reflect.TypeOf(sequel.Table{})
-	tableNameSchema = schemaName.PkgPath() + "." + schemaName.Name()
-)
-
 type typeQueue struct {
 	path string
 	idx  []int
@@ -76,201 +72,8 @@ type typeQueue struct {
 	pkg  *packages.Package
 }
 
-type structType struct {
-	t      types.Type
-	name   *ast.Ident
-	fields []structField
-}
-
-type structField struct {
-	index    []int
-	name     string
-	path     string
-	t        types.Type
-	exported bool
-	embedded bool
-	tag      reflect.StructTag
-}
-
-type tagOpts map[string]string
-
-func (t tagOpts) Lookup(key string, keys ...string) (string, bool) {
-	keys = append(keys, key)
-	for k, val := range t {
-		if lo.IndexOf(keys, k) >= 0 {
-			return val, true
-		}
-	}
-	return "", false
-}
-
-type tableInfo struct {
-	goName      string
-	dbName      string
-	tableName   string
-	t           types.Type
-	autoIncrKey *columnInfo
-	keys        []*columnInfo
-	columns     []*columnInfo
-	indexes     []*indexInfo
-}
-
-func (b *tableInfo) colsWithoutAutoIncrPK() []*columnInfo {
-	return lo.Filter(b.columns, func(v *columnInfo, _ int) bool {
-		return !v.autoIncr
-	})
-}
-
-func (b *tableInfo) GoName() string {
-	return b.goName
-}
-
-func (b *tableInfo) DatabaseName() string {
-	return b.dbName
-}
-
-func (b *tableInfo) TableName() string {
-	return b.tableName
-}
-
-func (b *tableInfo) AutoIncrKey() (sequel.GoColumnSchema, bool) {
-	return b.autoIncrKey, b.autoIncrKey != nil
-}
-
-func (b *tableInfo) Keys() []string {
-	return lo.Map(b.keys, func(c *columnInfo, _ int) string {
-		return c.colName
-	})
-}
-
-func (b *tableInfo) Columns() []string {
-	return lo.Map(b.columns, func(c *columnInfo, _ int) string {
-		return c.colName
-	})
-}
-
-func (b *tableInfo) Indexes() []string {
-	return lo.Map(b.indexes, func(c *indexInfo, _ int) string {
-		return strings.Join(c.columns, ",")
-	})
-}
-
-func (b *tableInfo) Implements(T *types.Interface) (*types.Func, bool) {
-	return types.MissingMethod(b.t, T, true)
-}
-
-func (b *tableInfo) PtrImplements(T *types.Interface) (*types.Func, bool) {
-	return types.MissingMethod(types.NewPointer(b.t), T, true)
-}
-
-func (b *tableInfo) Column(i int) sequel.GoColumnSchema {
-	return b.columns[i]
-}
-
-func (b *tableInfo) Index(i int) sequel.GoIndexSchema {
-	return b.indexes[i]
-}
-
-// Mean table has only pk
-func (b tableInfo) hasNoColsExceptPK() bool {
-	return len(b.keys) == len(b.columns)
-}
-
-type columnInfo struct {
-	goName   string
-	goPath   string
-	colName  string
-	colPos   int
-	t        types.Type
-	autoIncr bool
-	tag      tagOpts
-	model    *config.Model
-	size     int64
-}
-
-var (
-	_ (sequel.GoColumnSchema) = (*columnInfo)(nil)
-)
-
-func (c *columnInfo) GoName() string {
-	return c.goName
-}
-
-func (c *columnInfo) GoPath() string {
-	return c.goPath
-}
-
-func (c *columnInfo) Type() types.Type {
-	return c.t
-}
-
-func (c *columnInfo) DataType() (string, bool) {
-	if c.model == nil {
-		return "", false
-	}
-	return c.model.DataType, true
-}
-
-func (c *columnInfo) Size() int64 {
-	return c.size
-}
-
-func (c *columnInfo) AutoIncr() bool {
-	return c.autoIncr
-}
-
-func (c *columnInfo) ColumnName() string {
-	return c.colName
-}
-
-func (c *columnInfo) ColumnPos() int {
-	return c.colPos
-}
-
-func (c *columnInfo) Implements(T *types.Interface) (wrongType bool) {
-	_, wrongType = types.MissingMethod(c.t, T, true)
-	return
-}
-
-func (i columnInfo) SQLValuer() sequel.QueryFunc {
-	if i.model == nil {
-		return nil
-	}
-	if i.model.SQLValuer == "" {
-		return nil
-	}
-	return func(placeholder string) string {
-		return strings.Replace(i.model.SQLValuer, "{{.}}", placeholder, 1)
-	}
-}
-
-func (i columnInfo) SQLScanner() sequel.QueryFunc {
-	if i.model == nil {
-		return nil
-	}
-	if i.model.SQLScanner == "" {
-		return nil
-	}
-	return func(column string) string {
-		return strings.Replace(i.model.SQLScanner, "{{.}}", column, 1)
-	}
-}
-
-type indexInfo struct {
-	columns   []string
-	indexType string
-}
-
-func (i indexInfo) Columns() []string {
-	return i.columns
-}
-
-func (i indexInfo) Type() string {
-	return i.indexType
-}
-
-func Generate(c *config.Config) error {
-	cfg := config.DefaultConfig()
+func Generate(c *Config) error {
+	cfg := DefaultConfig()
 	if c != nil {
 		cfg = cfg.Merge(c)
 	}
@@ -280,15 +83,15 @@ func Generate(c *config.Config) error {
 		return err
 	}
 
-	dialect, ok := sequel.GetDialect(string(cfg.Driver))
+	dialect, ok := dialect.GetDialect(string(cfg.Driver))
 	if !ok {
-		panic("sqlgen: missing dialect, please register your dialect first")
+		return fmt.Errorf("sqlgen: missing dialect, please register your dialect first")
 	}
 
 	var (
-		srcDir  string
-		sources = make([]string, len(cfg.Source))
-		gen     = newGenerator(cfg, dialect)
+		srcDir    string
+		sources   = make([]string, len(cfg.Source))
+		generator = newGenerator(cfg, dialect)
 	)
 
 	copy(sources, cfg.Source)
@@ -297,7 +100,7 @@ func Generate(c *config.Config) error {
 	for len(sources) > 0 {
 		srcDir = strings.TrimSpace(sources[0])
 		if srcDir == "" {
-			return fmt.Errorf(`sqlgen: src is empty path`)
+			return fmt.Errorf("sqlgen: source directory %q is empty path", srcDir)
 		}
 
 		if srcDir == "." {
@@ -371,7 +174,7 @@ func Generate(c *config.Config) error {
 			dirs = append(dirs, "")
 		}
 
-		if err := parseGoPackage(gen, rootDir, dirs, matcher); err != nil {
+		if err := parseGoPackage(generator, rootDir, dirs, matcher); err != nil {
 			return err
 		}
 
@@ -379,35 +182,34 @@ func Generate(c *config.Config) error {
 		sources = sources[1:]
 	}
 
-	if cfg.Database != nil {
-		// Generate db code
-		_ = syscall.Unlink(filepath.Join(cfg.Database.Dir, cfg.Database.Filename))
-		if err := renderTemplate(
-			dialect,
-			"db.go.tpl",
-			// true,
-			"",
-			cfg.Database.Package,
-			cfg.Database.Dir,
-			cfg.Database.Filename,
-		); err != nil {
-			return err
-		}
-	}
+	// if cfg.Database != nil {
+	// 	// Generate db code
+	// 	_ = syscall.Unlink(filepath.Join(cfg.Database.Dir, cfg.Database.Filename))
+	// 	if err := renderTemplate(
+	// 		generator,
+	// 		"db.go.tpl",
+	// 		"",
+	// 		cfg.Database.Package,
+	// 		cfg.Database.Dir,
+	// 		cfg.Database.Filename,
+	// 	); err != nil {
+	// 		return err
+	// 	}
+	// }
 
-	if cfg.Database.Operator != nil {
-		_ = syscall.Unlink(filepath.Join(cfg.Database.Dir, cfg.Database.Operator.Filename))
-		if err := renderTemplate(
-			dialect,
-			"operator.go.tpl",
-			"",
-			cfg.Database.Operator.Package,
-			cfg.Database.Operator.Dir,
-			cfg.Database.Operator.Filename,
-		); err != nil {
-			return err
-		}
-	}
+	// if cfg.Database.Operator != nil {
+	// 	_ = syscall.Unlink(filepath.Join(cfg.Database.Dir, cfg.Database.Operator.Filename))
+	// 	if err := renderTemplate(
+	// 		generator,
+	// 		"operator.go.tpl",
+	// 		"",
+	// 		cfg.Database.Operator.Package,
+	// 		cfg.Database.Operator.Dir,
+	// 		cfg.Database.Operator.Filename,
+	// 	); err != nil {
+	// 		return err
+	// 	}
+	// }
 
 	if cfg.SkipModTidy {
 		return nil
@@ -459,6 +261,8 @@ func parseGoPackage(
 		_ = syscall.Unlink(filename)
 
 		// slog.Info("Load package", "dir", dir)
+		// Since we're loading one directory at a time,
+		// the return results will only return one package back
 		pkgs, err := packages.Load(&packages.Config{
 			Dir:  dir,
 			Mode: pkgMode,
@@ -470,18 +274,17 @@ func parseGoPackage(
 		}
 
 		var (
-			pkg          = pkgs[0]
+			pkg = pkgs[0]
+			// enum cache in the packages
+			enumCache    = make(map[string]*enum)
 			typeInferred = false
 			structCaches = make([]structCache, 0)
 		)
 
 		for _, file := range pkg.Syntax {
-			if len(file.Comments) > 0 && len(file.Comments[0].List) > 0 {
-				// If the first comment is "^// Code generated .* DO NOT EDIT\.$"
-				// we will skip it
-				if codegenRegex.MatchString(file.Comments[0].List[0].Text) {
-					continue
-				}
+			// If it's the generated code, we will skip it
+			if ast.IsGenerated(file) {
+				continue
 			}
 
 			if pkg.Module != nil {
@@ -493,13 +296,17 @@ func parseGoPackage(
 
 			// ast.Print(pkg.Fset, f)
 			ast.Inspect(file, func(node ast.Node) bool {
+				if node == nil {
+					return true
+				}
+
 				typeSpec := assertAsPtr[ast.TypeSpec](node)
 				if typeSpec == nil {
 					return true
 				}
 
 				// We only interested on Type Definition, or else we will skip
-				// e.g: `type Model sql.NullString`
+				// e.g: `type Entity sql.NullString`
 				if typeSpec.Assign > 0 {
 					return true
 				}
@@ -555,6 +362,7 @@ func parseGoPackage(
 						structCaches = append(structCaches, structCache{name: typeSpec.Name, t: v, pkg: importPkg})
 					}
 				}
+
 				return true
 			})
 		}
@@ -562,7 +370,7 @@ func parseGoPackage(
 		// If we want to preserve the ordering,
 		// we must use array instead of map
 		var (
-			structs = make([]structType, 0)
+			structs = make([]*structType, 0)
 		)
 
 		// Loop every struct and inspect the fields
@@ -570,9 +378,9 @@ func parseGoPackage(
 			var (
 				s = structCaches[0]
 				// Struct queue, this is useful when handling embedded struct
-				q      = []typeQueue{{t: s.t, pkg: s.pkg}}
-				f      typeQueue
-				fields = make([]structField, 0)
+				q            = []typeQueue{{t: s.t, pkg: s.pkg}}
+				f            typeQueue
+				structFields = make([]*structFieldType, 0)
 			)
 
 			for len(q) > 0 {
@@ -614,7 +422,7 @@ func parseGoPackage(
 									}
 								}
 							}
-
+							// After lookup still cannot find the type, then skip
 							if obj == nil {
 								continue
 							}
@@ -626,7 +434,15 @@ func parseGoPackage(
 							t := obj.Decl.(*ast.TypeSpec)
 							q = append(q, typeQueue{path: path, idx: append(f.idx, i), t: t.Type.(*ast.StructType), pkg: f.pkg})
 
-							fields = append(fields, structField{index: append(f.idx, i), exported: vi.IsExported(), embedded: true, name: types.ExprString(vi), tag: tag, path: path, t: f.pkg.TypesInfo.TypeOf(fi.Type)})
+							structFields = append(structFields, &structFieldType{
+								index:    append(f.idx, i),
+								exported: vi.IsExported(),
+								embedded: true,
+								name:     types.ExprString(vi),
+								tag:      tag,
+								path:     path,
+								t:        f.pkg.TypesInfo.TypeOf(fi.Type),
+							})
 							continue
 
 						// Embedded with imported struct
@@ -665,9 +481,42 @@ func parseGoPackage(
 							if st := assertAsPtr[ast.StructType](decl.Type); st != nil {
 								q = append(q, typeQueue{path: path, idx: append(f.idx, i), t: st, pkg: importPkg})
 
-								fields = append(fields, structField{index: append(f.idx, i), exported: vi.Sel.IsExported(), embedded: true, name: types.ExprString(vi.Sel), tag: tag, path: path, t: f.pkg.TypesInfo.TypeOf(fi.Type)})
+								structFields = append(structFields, &structFieldType{
+									index:    append(f.idx, i),
+									exported: vi.Sel.IsExported(),
+									embedded: true,
+									name:     types.ExprString(vi.Sel),
+									tag:      tag,
+									path:     path,
+									t:        f.pkg.TypesInfo.TypeOf(fi.Type),
+								})
 							}
 							continue
+						}
+					}
+
+					var goEnum *enum
+					// Every struct field
+					switch fv := fi.Type.(type) {
+					// Imported types
+					case *ast.SelectorExpr:
+						// If the field type is a Go imported enum,
+						// we will inspect it
+						// importPkg, ok := f.pkg.Imports[types.ExprString(fv.X)]
+						// if ok {
+						// 	for _, file := range importPkg.Syntax {
+						// 		ast.Inspect(file, func(n ast.Node) bool {
+						// 			mapEnumIfExists(importPkg, n, enumMap)
+						// 			return true
+						// 		})
+						// 	}
+						// }
+
+					// Local types
+					case *ast.Ident:
+						if fv.Obj != nil {
+							mapGoEnums(enumCache, pkg, fv)
+							// goEnum = mapGoEnums(enumCache, pkg, fv)
 						}
 					}
 
@@ -677,7 +526,15 @@ func parseGoPackage(
 							path = f.path + "." + path
 						}
 
-						fields = append(fields, structField{index: append(f.idx, i+j), exported: n.IsExported(), name: types.ExprString(n), tag: tag, path: path, t: f.pkg.TypesInfo.TypeOf(fi.Type)})
+						structFields = append(structFields, &structFieldType{
+							index:    append(f.idx, i+j),
+							exported: n.IsExported(),
+							name:     types.ExprString(n),
+							tag:      tag,
+							enums:    goEnum,
+							path:     path,
+							t:        f.pkg.TypesInfo.TypeOf(fi.Type),
+						})
 					}
 				}
 
@@ -685,55 +542,57 @@ func parseGoPackage(
 				q = q[1:]
 			}
 
-			if len(fields) > 0 {
-				sort.Slice(fields, func(i, j int) bool {
-					for k, xik := range fields[i].index {
-						if k >= len(fields[j].index) {
+			if len(structFields) > 0 {
+				sort.Slice(structFields, func(i, j int) bool {
+					for k, f := range structFields[i].index {
+						if k >= len(structFields[j].index) {
 							return false
 						}
-						if xik != fields[j].index[k] {
-							return xik < fields[j].index[k]
+						if f != structFields[j].index[k] {
+							return f < structFields[j].index[k]
 						}
 					}
-					return len(fields[i].index) < len(fields[j].index)
+					return len(structFields[i].index) < len(structFields[j].index)
 				})
-				structs = append(structs, structType{name: s.name, fields: fields, t: pkg.TypesInfo.TypeOf(s.name)})
+
+				structs = append(structs, &structType{
+					name:   types.ExprString(s.name),
+					t:      pkg.TypesInfo.TypeOf(s.name),
+					fields: structFields,
+				})
 			}
 
 			structCaches = structCaches[1:]
 		}
 
-		schemaList := make([]*tableInfo, 0)
+		// Sort the struct in package in ascending order
+		sort.Slice(structs, func(i, j int) bool {
+			return structs[i].name < structs[j].name
+		})
 
-		for _, s := range structs {
-			var (
-				pos      int
-				table    = new(tableInfo)
-				nameDict = make(map[string]struct{})
-				idxDict  = orderedmap.NewOrderedMap[string, []*columnInfo]()
-			)
+		schemas := make([]*tableInfo, 0)
+		for len(structs) > 0 {
+			s := structs[0]
 
-			table.t = s.t
-			table.goName = types.ExprString(s.name)
+			// To store struct fields, to prevent field name collision
+			nameDict := make(map[string]struct{})
+
+			table := new(tableInfo)
+			table.goName = s.name
 			table.tableName = rename(table.goName)
+			table.t = s.t
 
+			var pos int
 			for _, f := range s.fields {
-				var (
-					column = new(columnInfo)
-					name   string
-				)
-
+				column := new(columnInfo)
 				column.goName = f.name
 				column.goPath = f.path
 				column.t = f.t
-				column.colName = rename(f.name)
-				column.colPos = pos
-				column.tag = make(tagOpts)
+				column.columnName = rename(f.name)
+				column.columnPos = pos
+				column.enums = f.enums
 
-				if model, ok := gen.config.Models[f.t.String()]; ok {
-					column.model = model
-				}
-
+				name := s.name
 				tagVal := strings.TrimSpace(f.tag.Get(gen.config.Tag))
 				if tagVal != "" {
 					tagPaths := strings.Split(tagVal, ",")
@@ -745,16 +604,13 @@ func parseGoPackage(
 						if !nameRegex.MatchString(name) {
 							return fmt.Errorf(`sqlgen: invalid column name %q in struct %q`, name, s.name)
 						}
-						column.colName = name
+						column.columnName = name
 					}
 
 					for _, v := range tagPaths[1:] {
-						kv := strings.SplitN(v, ":", 2)
-						k := strings.TrimSpace(strings.ToLower(kv[0]))
-						if len(kv) > 1 {
-							column.tag[k] = kv[1]
-						} else {
-							column.tag[k] = ""
+						submatches := goTagRegexp.FindStringSubmatch(v)
+						if len(submatches) > 2 {
+							column.tags = append(column.tags, goTag{key: submatches[1], value: submatches[3]})
 						}
 					}
 				}
@@ -762,7 +618,9 @@ func parseGoPackage(
 				switch f.t.String() {
 				// If the type is table name, then we replace table name
 				// and continue on next property
-				case tableNameSchema:
+				//
+				// Check type is sequel.Name, then override name
+				case tableNameType:
 					if name != "" {
 						table.tableName = name
 					}
@@ -778,74 +636,65 @@ func parseGoPackage(
 				}
 
 				// Check uniqueness of the column
-				if _, ok := nameDict[column.colName]; ok {
-					return fmt.Errorf("sqlgen: struct %q has duplicate key %q in %s", s.name, column.colName, dir)
+				if _, ok := nameDict[column.columnName]; ok {
+					return fmt.Errorf("sqlgen: struct %q has duplicate column name %q in directory %q", s.name, column.columnName, dir)
 				}
 
-				if v, ok := column.tag.Lookup(TagOptionSize); ok {
-					column.size, err = strconv.ParseInt(v, 10, 64)
+				if v, ok := column.getOption(TagOptionSize); ok {
+					column.size, err = strconv.Atoi(v)
 					if err != nil {
-						return fmt.Errorf(`sqlgen: %w`, err)
+						return fmt.Errorf(`sqlgen: invalid size value %q %w`, v, err)
 					}
 				}
 
-				if v, ok := column.tag.Lookup(TagOptionUnique); ok {
-					idxDict.Set(v, append(idxDict.GetOrDefault(v, []*columnInfo{}), column))
+				if columnType, ok := gen.columnTypes[f.t.String()]; ok {
+					column.mapper = columnType
+				} else if columnType, ok := gen.columnDataType(f.t); ok {
+					column.mapper = columnType
+				} else if columnType, ok := gen.defaultColumnTypes["*"]; ok {
+					column.mapper = columnType
+				} else {
+					return fmt.Errorf(`sqlgen: missing data type mapping for data type %T`, f.t)
 				}
 
-				if _, ok := column.tag.Lookup(TagOptionPK, TagOptionPKAlias, TagOptionAutoIncrement); ok {
-					// Check auto increment
-					_, autoIncr := column.tag.Lookup(TagOptionAutoIncrement)
-					if autoIncr {
-						if table.autoIncrKey != nil {
-							return fmt.Errorf(`sqlgen: you cannot have a composite key if you define auto increment key`)
-						}
-						table.autoIncrKey = column
-						column.autoIncr = true
+				if column.hasOption(TagOptionAutoIncrement) {
+					if table.autoIncrKey != nil {
+						return fmt.Errorf(`sqlgen: you cannot have a composite key if you define auto increment key`)
 					}
+					table.autoIncrKey = column
+					table.keys = append(table.keys, column)
+				} else if column.hasOption(TagOptionPK) || column.hasOption(TagOptionPKAlias) {
 					table.keys = append(table.keys, column)
 				}
 
-				nameDict[column.colName] = struct{}{}
-
-				column.colName = gen.QuoteIdentifier(column.colName)
-				// TODO: Check type is sequel.Name, then override name
 				table.columns = append(table.columns, column)
+				nameDict[column.columnName] = struct{}{}
 				pos++
 			}
-
-			clear(nameDict)
-			for _, k := range idxDict.Keys() {
-				table.indexes = append(table.indexes, &indexInfo{
-					columns: lo.Map(idxDict.GetOrDefault(k, []*columnInfo{}), func(c *columnInfo, _ int) string {
-						return c.colName
-					}),
-					indexType: "unique",
-				})
-			}
-			// FIXME: we should allow database name to declare
-			// table.dbName = gen.QuoteIdentifier(table.dbName)
-			table.tableName = gen.QuoteIdentifier(table.tableName)
 
 			// If the model doesn't consist any field,
 			// we don't really want to generate the boilerplate code
 			if len(table.columns) > 0 {
-				schemaList = append(schemaList, table)
+				schemas = append(schemas, table)
 			}
+
+			clear(nameDict)
+			structs = structs[1:]
 		}
 
-		if gen.config.Exec.SkipEmpty && len(schemaList) == 0 {
+		// If the `skip_empty` is true,
+		// we do not generate the go file
+		if gen.config.Exec.SkipEmpty && len(schemas) == 0 {
 			goto nextDir
 		}
 
-		if err := gen.generate(pkg, dir, typeInferred, schemaList); err != nil {
+		if err := gen.generate(pkg, dir, typeInferred, schemas); err != nil {
 			return err
 		}
 
 	nextDir:
 		dirs = dirs[1:]
 	}
-
 	return nil
 }
 
@@ -855,3 +704,126 @@ func goModTidy() error {
 	tidyCmd.Stderr = os.Stdout
 	return tidyCmd.Run()
 }
+
+func isGoEnum(pkg *packages.Package, ident *ast.Ident) *ast.Object {
+	for _, f := range pkg.Syntax {
+		if obj := f.Scope.Lookup(types.ExprString(ident)); obj != nil {
+			return obj
+		}
+	}
+	return nil
+}
+
+func mapGoEnums(enumCache map[string]*enum, pkg *packages.Package, f *ast.Ident) *enum {
+	// enumMap := make(map[string][]*parser.EnumValue)
+	key := types.ExprString(f)
+	if enum, ok := enumCache[key]; ok {
+		return enum
+	}
+
+	// Loop thru every files
+	for _, f := range pkg.Syntax {
+		for _, d := range f.Decls {
+			decl := assertAsPtr[ast.GenDecl](d)
+			if decl == nil {
+				continue
+			}
+
+			var typeName *ast.Ident
+			for _, s := range decl.Specs {
+				spec := assertAsPtr[ast.ValueSpec](s)
+				if spec == nil {
+					continue
+				}
+
+				n := assertAsPtr[ast.Ident](spec.Type)
+				if n == nil {
+					n = typeName
+				}
+
+				// If it's still empty type, we skip
+				if n == nil {
+					continue
+				}
+
+				if _, ok := enumCache[types.ExprString(n)]; !ok {
+					enumCache[types.ExprString(n)] = new(enum)
+				}
+
+				values := make([]*enumValue, 0)
+				// 	v := s.(*ast.ValueSpec) // safe because decl.Tok == token.VAR
+				for _, name := range spec.Names {
+					obj := pkg.TypesInfo.ObjectOf(name)
+					switch v := obj.(type) {
+					case *types.Const:
+						values = append(values, &enumValue{name: types.ExprString(name), value: v.Val().ExactString()})
+					case *types.Var:
+						values = append(values, &enumValue{name: types.ExprString(name), value: v.String()})
+					}
+				}
+
+				if n != nil {
+					enumCache[types.ExprString(n)].values = append(enumCache[types.ExprString(n)].values, values...)
+					typeName = n
+				}
+			}
+		}
+	}
+
+	return enumCache[key]
+}
+
+// func mapEnumIfExists(pkg *packages.Package, node ast.Node, enumMap map[string][]*goEnum) {
+// 	switch v := node.(type) {
+// 	case *ast.GenDecl:
+// 		switch v.Tok {
+// 		case token.CONST:
+// 			var prevGoType string
+// 			for _, spec := range v.Specs {
+// 				valueSpec := assertAsPtr[ast.ValueSpec](spec)
+// 				if valueSpec == nil {
+// 					continue
+// 				}
+
+// 				typeName := assertAsPtr[ast.Ident](valueSpec.Type)
+// 				if typeName == nil {
+// 					if prevGoType == "" {
+// 						return
+// 					}
+
+// 					mapGoEnums := enumMap[prevGoType]
+// 					switch v := mapGoEnums[len(mapGoEnums)-1].value.(type) {
+// 					case goIotaEnum:
+// 						for _, n := range valueSpec.Names {
+// 							enumMap[prevGoType] = append(enumMap[prevGoType], &goEnum{name: n, value: v + 1})
+// 						}
+// 					case goStringEnum:
+// 						for _, n := range valueSpec.Names {
+// 							enumMap[prevGoType] = append(enumMap[prevGoType], &goEnum{name: n, value: v})
+// 						}
+// 					}
+// 				} else if typeName.IsExported() {
+// 					obj := pkg.TypesInfo.ObjectOf(typeName)
+// 					if !obj.Exported() {
+// 						return
+// 					}
+
+// 					goType := obj.Type().String()
+// 					val := types.ExprString(valueSpec.Values[0])
+// 					if strings.Contains(val, "iota") {
+// 						for _, n := range valueSpec.Names {
+// 							enum := &goEnum{name: n, value: goStringEnum(val)}
+// 							enumMap[goType] = append(enumMap[goType], enum)
+// 						}
+// 					} else {
+// 						for _, n := range valueSpec.Names {
+// 							enum := &goEnum{name: n, value: goIotaEnum(0)}
+// 							enumMap[goType] = append(enumMap[goType], enum)
+// 						}
+// 					}
+// 					prevGoType = goType
+// 				}
+// 			}
+// 		}
+// 	}
+// }

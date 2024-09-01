@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 	"sync"
@@ -49,8 +50,9 @@ func InsertOne[T sequel.TableColumnValuer, Ptr interface {
 		query, args := v.InsertOneStmt()
 		return sqlConn.ExecContext(ctx, query, args...)
 	default:
-		columns, values := model.ColumnNames(), model.Values()
-		return sqlConn.ExecContext(ctx, "INSERT INTO "+DbTable(model)+" ("+strings.Join(columns, ",")+") VALUES ("+strings.Repeat(",?", len(columns))[1:]+");", values...)
+		columns, values := model.Columns(), model.Values()
+		s := strings.Repeat("?,", len(columns))
+		return sqlConn.ExecContext(ctx, "INSERT INTO "+DbTable(model)+" ("+strings.Join(columns, ",")+") VALUES ("+s[:len(s)-1]+");", values...)
 	}
 }
 
@@ -63,7 +65,7 @@ func Insert[T sequel.TableColumnValuer](ctx context.Context, sqlConn sequel.DB, 
 
 	var (
 		model   = data[0]
-		columns = model.ColumnNames()
+		columns = model.Columns()
 		stmt    = strpool.AcquireString()
 	)
 	defer strpool.ReleaseString(stmt)
@@ -112,7 +114,7 @@ func UpsertOne[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Co
 	switch v := any(model).(type) {
 	case sequel.PrimaryKeyer:
 		pkName, idx, _ := v.PK()
-		columns := model.ColumnNames()
+		columns := model.Columns()
 		stmt := strpool.AcquireString()
 		defer strpool.ReleaseString(stmt)
 		if !override {
@@ -160,7 +162,7 @@ func UpsertOne[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Co
 		return sqlConn.ExecContext(ctx, stmt.String(), model.Values()...)
 	case sequel.CompositeKeyer:
 		names, idxs, _ := v.CompositeKey()
-		columns := model.ColumnNames()
+		columns := model.Columns()
 		stmt := strpool.AcquireString()
 		defer strpool.ReleaseString(stmt)
 		if !override {
@@ -206,7 +208,7 @@ func Upsert[T interface {
 
 	var (
 		model    = data[0]
-		columns  = model.ColumnNames()
+		columns  = model.Columns()
 		noOfCols = len(columns)
 		args     = make([]any, 0, noOfCols*noOfData)
 	)
@@ -295,23 +297,18 @@ func Upsert[T interface {
 	return sqlConn.ExecContext(ctx, stmt.String(), args...)
 }
 
-type primaryKeyFinder interface {
-	sequel.PrimaryKeyer
-	sequel.KeyFinder
-}
-
 // FindByPK is to find single record using primary key.
 func FindByPK[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Context, sqlConn sequel.DB, model Ptr) error {
 	switch v := any(model).(type) {
-	case primaryKeyFinder:
+	case sequel.KeyFinder:
 		query, args := v.FindOneByPKStmt()
 		return sqlConn.QueryRowContext(ctx, query, args...).Scan(model.Addrs()...)
 	case sequel.PrimaryKeyer:
-		columns := Columns(model)
+		columns := TableColumns(model)
 		pkName, _, pk := v.PK()
 		return sqlConn.QueryRowContext(ctx, "SELECT "+strings.Join(columns, ",")+" FROM "+DbTable(model)+" WHERE "+pkName+" = ? LIMIT 1;", pk).Scan(model.Addrs()...)
 	case sequel.CompositeKeyer:
-		columns := Columns(model)
+		columns := TableColumns(model)
 		names, _, keys := v.CompositeKey()
 		return sqlConn.QueryRowContext(ctx, "SELECT "+strings.Join(columns, ",")+" FROM "+DbTable(model)+" WHERE "+strings.Join(names, " = ? AND ")+" = ? LIMIT 1;", keys...).Scan(model.Addrs()...)
 	default:
@@ -327,7 +324,7 @@ func UpdateByPK[T sequel.KeyValuer](ctx context.Context, sqlConn sequel.DB, mode
 		return sqlConn.ExecContext(ctx, query, args...)
 	case sequel.PrimaryKeyer:
 		pkName, pkIdx, pk := v.PK()
-		columns := model.ColumnNames()
+		columns := model.Columns()
 		columns = append(columns[:pkIdx], columns[pkIdx+1:]...)
 		values := model.Values()
 		values = append(values[:pkIdx], append(values[pkIdx+1:], pk)...)
@@ -390,7 +387,7 @@ func QueryStmt[T any, Ptr sequel.PtrScanner[T], Stmt interface {
 		} else {
 			switch vj := any(v).(type) {
 			case sequel.Columner:
-				blr.WriteString(strings.Join(Columns(vj), ","))
+				blr.WriteString(strings.Join(TableColumns(vj), ","))
 			default:
 				blr.WriteByte('*')
 			}
@@ -435,7 +432,6 @@ func QueryStmt[T any, Ptr sequel.PtrScanner[T], Stmt interface {
 		}
 		blr.WriteByte(';')
 		rows, err = sqlConn.QueryContext(ctx, blr.String(), blr.Args()...)
-		ReleaseStmt(blr)
 
 	case SQLStatement:
 		rows, err = sqlConn.QueryContext(ctx, vi.Query, vi.Arguments...)
@@ -541,6 +537,74 @@ func ExecStmt[T any, Stmt interface {
 	return sqlConn.ExecContext(ctx, blr.String(), blr.Args()...)
 }
 
+type RecordSet[T sequel.Keyer] []T
+
+func (r RecordSet[T]) All(yield func(T) bool) {
+	for _, s := range r {
+		if !yield(s) {
+			return
+		}
+	}
+}
+
+func (r RecordSet[T]) AllWithIndex(yield func(int, T) bool) {
+	for i, s := range r {
+		if !yield(i, s) {
+			return
+		}
+	}
+}
+
+func (r RecordSet[T]) StartCursor() {}
+func (r RecordSet[T]) EndCursor()   {}
+
+func Paginate[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Context, sqlConn sequel.DB, cursor T, stmt SelectStmt) (RecordSet[T], error) {
+	// Check whether it has the start cursor
+	// If start cursor provided, we query the data
+	var v = cursor
+	if err := FindByPK(ctx, sqlConn, Ptr(&v)); err != nil {
+		return nil, err
+	}
+	// Get all values, later need to compare
+	log.Println(v.Values())
+	// If end cursor provided, we query the data
+	// values := v.Values()
+	blr := AcquireStmt()
+	defer ReleaseStmt(blr)
+	blr.WriteString("SELECT " + strings.Join(v.Columns(), ",") + " FROM " + DbTable(v) + " WHERE ")
+	pkCols := []string{}
+	switch vi := any(v).(type) {
+	case sequel.CompositeKeyer:
+		keys, _, vals := vi.CompositeKey()
+		blr.WriteString("(" + strings.Join(keys, ",") + ") > " + blr.Vars(vals))
+		pkCols = append(pkCols, keys...)
+	case sequel.PrimaryKeyer:
+		pkName, _, pk := vi.PK()
+		blr.WriteString(pkName + " > " + blr.Var(pk))
+		pkCols = append(pkCols, pkName)
+	default:
+		panic("unreachable")
+	}
+	blr.WriteString(" ORDER BY " + strings.Join(pkCols, ","))
+	blr.WriteByte(';')
+	rows, err := sqlConn.QueryContext(ctx, blr.String(), blr.Args()...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	result := make([]T, 0)
+	for rows.Next() {
+		var v T
+		if err := rows.Scan(Ptr(&v).Addrs()...); err != nil {
+			return nil, err
+		}
+		result = append(result, v)
+	}
+	log.Println(result)
+	return RecordSet[T]{}, rows.Close()
+}
+
 var (
 	pool = sync.Pool{
 		New: func() any {
@@ -573,7 +637,7 @@ var (
 func (s *sqlStmt) Var(value any) string {
 	s.pos++
 	s.args = append(s.args, value)
-	return `?`
+	return "?"
 }
 
 func (s *sqlStmt) Vars(values []any) string {
@@ -599,11 +663,11 @@ func DbTable[T sequel.Tabler](model T) string {
 	return model.TableName()
 }
 
-func Columns[T sequel.Columner](model T) []string {
+func TableColumns[T sequel.Columner](model T) []string {
 	if v, ok := any(model).(sequel.SQLColumner); ok {
 		return v.SQLColumns()
 	}
-	return model.ColumnNames()
+	return model.Columns()
 }
 
 func dbName(model any) string {

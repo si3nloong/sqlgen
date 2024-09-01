@@ -49,7 +49,7 @@ func (p ptrOfBoolLike[T]) Scan(v any) error {
 		val := T(vi != 0)
 		*p.addr = &val
 	default:
-		return fmt.Errorf(`types: unable to scan %T to *bool`, vi)
+		return fmt.Errorf(`sequel/types: unable to scan %T to *bool`, vi)
 	}
 	return nil
 }

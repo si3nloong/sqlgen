@@ -1,19 +1,23 @@
 package mysql
 
-import "github.com/si3nloong/sqlgen/sequel"
+import "github.com/si3nloong/sqlgen/codegen/dialect"
 
 type mysqlDriver struct{}
 
 var (
-	_ sequel.Dialect = (*mysqlDriver)(nil)
+	_ dialect.Dialect = (*mysqlDriver)(nil)
 )
 
 func init() {
-	sequel.RegisterDialect("mysql", &mysqlDriver{})
+	dialect.RegisterDialect("mysql", &mysqlDriver{})
 }
 
 func (*mysqlDriver) Driver() string {
 	return "mysql"
+}
+
+func (*mysqlDriver) Var() string {
+	return "?"
 }
 
 func (*mysqlDriver) VarRune() rune {

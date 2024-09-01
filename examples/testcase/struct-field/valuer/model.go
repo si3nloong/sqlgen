@@ -9,7 +9,8 @@ func (anyType) Value() (driver.Value, error) {
 }
 
 type B struct {
-	ID    int64
-	Value anyType
-	N     string
+	ID       int64
+	Value    anyType
+	PtrValue *anyType
+	N        string
 }

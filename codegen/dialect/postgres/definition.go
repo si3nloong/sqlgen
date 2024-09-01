@@ -1,7 +1,8 @@
-package mysql
+package postgres
 
 import (
 	"crypto/md5"
+	"database/sql"
 	"encoding/hex"
 	"strconv"
 	"strings"
@@ -15,10 +16,10 @@ import (
 type indexType uint8
 
 const (
-	bTree    indexType = iota // BTREE
-	fullText                  // FULLTEXT
-	unique                    // UNIQUE
-	spatial                   // SPATIAL
+	bTree  indexType = iota // BTREE
+	hash                    // HASH
+	brin                    // BRIN
+	unique                  // UNIQUE
 )
 
 type tableDefinition struct {
@@ -61,7 +62,7 @@ func (k keyDefinition) Columns() []string {
 }
 
 func (k keyDefinition) Definition() string {
-	return `PRIMARY KEY (` + strings.Join(k, ",") + `)`
+	return `PRIMARY KEY(` + strings.Join(k, ",") + `)`
 }
 
 type columnDefinition struct {
@@ -69,9 +70,9 @@ type columnDefinition struct {
 	length       int64
 	dataType     string
 	nullable     bool
-	defaultValue any
 	comment      string
-	extra        string
+	defaultValue any
+	check        sql.RawBytes
 }
 
 func (c *columnDefinition) Name() string {
@@ -90,32 +91,24 @@ func (c *columnDefinition) Nullable() bool {
 	return c.nullable
 }
 
-func (c *columnDefinition) Default() any {
-	return c.defaultValue
-}
-
 func (c *columnDefinition) Comment() string {
 	return c.comment
 }
 
+func (c *columnDefinition) Default() any {
+	return c.defaultValue
+}
+
 func (c *columnDefinition) Definition() string {
-	str := c.name + " " + c.columnType()
+	str := c.name + " " + c.dataType
 	if !c.nullable {
 		str += " NOT NULL"
 	}
 	if c.defaultValue != nil {
-		str += " DEFAULT " + format(c.defaultValue)
+		// str += " DEFAULT " + format(c.defaultValue)
 	}
-	if c.extra != "" {
-		str += " " + c.extra
-	}
-	return str
-}
-
-func (c *columnDefinition) columnType() string {
-	str := c.dataType
-	if c.length > 0 {
-		str += "(" + strconv.FormatInt(c.length, 10) + ")"
+	if len(c.check) != 0 {
+		str += " " + unsafe.String(unsafe.SliceData(c.check), len(c.check))
 	}
 	return str
 }
@@ -128,7 +121,12 @@ type indexDefinition struct {
 func (i *indexDefinition) Name() string {
 	str := strings.Join(i.cols, ",")
 	hash := md5.Sum(unsafe.Slice(unsafe.StringData(str), len(str)))
-	return hex.EncodeToString(hash[:])
+	switch i.indexType {
+	case unique:
+		return "UQ_" + hex.EncodeToString(hash[:])
+	default:
+		return "IX_" + hex.EncodeToString(hash[:])
+	}
 }
 
 func (i *indexDefinition) Type() string {
@@ -140,5 +138,5 @@ func (i *indexDefinition) Columns() []string {
 }
 
 func (i *indexDefinition) Definition() string {
-	return "CONSTRAINT " + i.Name() + " " + i.Type() + " (" + strings.Join(i.cols, ",") + ")"
+	return "CONSTRAINT " + strconv.Quote(i.Name()) + " " + i.Type() + " (" + strings.Join(i.cols, ",") + ")"
 }

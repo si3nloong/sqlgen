@@ -10,8 +10,8 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/require"
 
-	_ "github.com/si3nloong/sqlgen/sequel/dialect/mysql"
-	_ "github.com/si3nloong/sqlgen/sequel/dialect/postgres"
+	_ "github.com/si3nloong/sqlgen/codegen/dialect/mysql"
+	_ "github.com/si3nloong/sqlgen/codegen/dialect/postgres"
 
 	"github.com/jaswdr/faker"
 	mysqldb "github.com/si3nloong/sqlgen/examples/db/mysql"
@@ -152,7 +152,7 @@ func TestInsert(t *testing.T) {
 		require.NotZero(t, *ptr.F64)
 
 		ptrs, err := mysqldb.QueryStmt[pointer.Ptr](ctx, dbConn, mysqldb.SelectStmt{
-			Select:    ptr.ColumnNames(),
+			Select:    ptr.Columns(),
 			FromTable: ptr.TableName(),
 			Where:     mysqldb.Equal(ptr.GetInt(), &i),
 			Limit:     3,

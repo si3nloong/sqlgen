@@ -31,7 +31,7 @@ type ExprParams struct {
 	// You may pass `&v.Path` or `v.Path` or any relevant go path,
 	// we will check whether it's addr of the go path
 	GoPath string
-	Len    int
+	Len    int64
 }
 
 func (e Expr) Format(pkg *Package, args ...ExprParams) string {
@@ -56,7 +56,7 @@ func (e Expr) Format(pkg *Package, args ...ExprParams) string {
 		},
 	}
 	if params.Len > 0 {
-		funcMap["len"] = func() int {
+		funcMap["len"] = func() int64 {
 			return params.Len
 		}
 	}

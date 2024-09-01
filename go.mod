@@ -3,10 +3,8 @@ module github.com/si3nloong/sqlgen
 go 1.21
 
 require (
-	cloud.google.com/go v0.115.1
 	github.com/AlecAivazis/survey/v2 v2.3.7
 	github.com/Masterminds/semver/v3 v3.3.0
-	github.com/elliotchance/orderedmap/v2 v2.4.0
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/go-playground/validator/v10 v10.22.0
 	github.com/goccy/go-yaml v1.12.0
@@ -25,6 +23,7 @@ require (
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
+	github.com/kr/pretty v0.1.0 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/mattn/go-colorable v0.1.8 // indirect
 	github.com/mattn/go-isatty v0.0.12 // indirect
@@ -39,5 +38,6 @@ require (
 	golang.org/x/term v0.23.0 // indirect
 	golang.org/x/text v0.17.0 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
+	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
