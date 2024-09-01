@@ -8,13 +8,6 @@ import (
 	"github.com/si3nloong/sqlgen/sequel/types"
 )
 
-func (ImportedEnum) Schemas() sequel.TableDefinition {
-	return sequel.TableDefinition{
-		Columns: []sequel.ColumnDefinition{
-			{Name: "weekday", Definition: "weekday INTEGER NOT NULL DEFAULT 0"},
-		},
-	}
-}
 func (ImportedEnum) TableName() string {
 	return "imported_enum"
 }

@@ -8,14 +8,6 @@ import (
 	"github.com/si3nloong/sqlgen/sequel/types"
 )
 
-func (JSON) Schemas() sequel.TableDefinition {
-	return sequel.TableDefinition{
-		Columns: []sequel.ColumnDefinition{
-			{Name: "num", Definition: "num VARCHAR(20) NOT NULL"},
-			{Name: "raw_bytes", Definition: "raw_bytes JSON NOT NULL"},
-		},
-	}
-}
 func (JSON) TableName() string {
 	return "json"
 }

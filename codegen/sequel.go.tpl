@@ -1,6 +1,8 @@
 package sequel
 
 import (
+	"context"
+	"database/sql"
 	"database/sql/driver"
 	"fmt"
 	"io"
@@ -10,10 +12,18 @@ import (
 type Table struct{}
 
 type (
-	WhereClause   func(StmtBuilder)
-	SetClause     func(StmtBuilder)
-	OrderByClause func(StmtWriter)
+	ConvertFunc[T any] func(T) driver.Value
+	QueryFunc          func(placeholder string) string
+	WhereClause        func(StmtBuilder)
+	SetClause          func(StmtBuilder)
+	OrderByClause      func(StmtWriter)
 )
+
+type DB interface {
+	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
+	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
+	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
+}
 
 type Databaser interface {
 	DatabaseName() string
@@ -110,17 +120,19 @@ type StmtWriter interface {
 	io.ByteWriter
 }
 
-type Stmt interface {
-	StmtBuilder
-	fmt.Stringer
-	Args() []any
-	Reset()
-}
-
 type StmtBuilder interface {
 	StmtWriter
 	Var(v any) string
+	// Vars will group the valus in parenthesis
 	Vars(vals []any) string
+}
+
+type Stmt interface {
+	StmtBuilder
+	io.Writer
+	fmt.Stringer
+	Args() []any
+	Reset()
 }
 
 type ColumnValuer[T any] interface {

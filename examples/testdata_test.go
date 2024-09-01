@@ -25,7 +25,7 @@ func TestAll(t *testing.T) {
 		Exec: codegen.ExecConfig{
 			SkipEmpty: false,
 		},
-		DataTypes: map[string]*codegen.DataType{
+		DataTypes: map[string]codegen.DataType{
 			"github.com/paulmach/orb.Point": {
 				DataType:   "POINT",
 				SQLScanner: `ST_AsBinary({{.}}, 4326)`,

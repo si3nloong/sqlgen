@@ -8,33 +8,6 @@ import (
 	"github.com/si3nloong/sqlgen/sequel/types"
 )
 
-func (Ptr) Schemas() sequel.TableDefinition {
-	return sequel.TableDefinition{
-		PK: &sequel.PrimaryKeyDefinition{
-			Columns:    []string{"id"},
-			Definition: "PRIMARY KEY (id)",
-		},
-		Columns: []sequel.ColumnDefinition{
-			{Name: "id", Definition: "id BIGINT NOT NULL AUTO_INCREMENT"},
-			{Name: "str", Definition: "str VARCHAR(255) DEFAULT ''"},
-			{Name: "bytes", Definition: "bytes BLOB"},
-			{Name: "bool", Definition: "bool BOOL DEFAULT false"},
-			{Name: "int", Definition: "int INTEGER DEFAULT 0"},
-			{Name: "int_8", Definition: "int_8 TINYINT DEFAULT 0"},
-			{Name: "int_16", Definition: "int_16 SMALLINT DEFAULT 0"},
-			{Name: "int_32", Definition: "int_32 MEDIUMINT DEFAULT 0"},
-			{Name: "int_64", Definition: "int_64 BIGINT DEFAULT 0"},
-			{Name: "uint", Definition: "uint INTEGER UNSIGNED DEFAULT 0"},
-			{Name: "uint_8", Definition: "uint_8 TINYINT UNSIGNED DEFAULT 0"},
-			{Name: "uint_16", Definition: "uint_16 SMALLINT UNSIGNED DEFAULT 0"},
-			{Name: "uint_32", Definition: "uint_32 MEDIUMINT UNSIGNED DEFAULT 0"},
-			{Name: "uint_64", Definition: "uint_64 BIGINT UNSIGNED DEFAULT 0"},
-			{Name: "f_32", Definition: "f_32 FLOAT DEFAULT 0"},
-			{Name: "f_64", Definition: "f_64 FLOAT DEFAULT 0"},
-			{Name: "time", Definition: "time TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6)"},
-		},
-	}
-}
 func (Ptr) TableName() string {
 	return "ptr"
 }
@@ -62,7 +35,7 @@ func (v Ptr) FindOneByPKStmt() (string, []any) {
 	return "SELECT id,str,bytes,bool,int,int_8,int_16,int_32,int_64,uint,uint_8,uint_16,uint_32,uint_64,f_32,f_64,time FROM ptr WHERE id = ? LIMIT 1;", []any{int64(v.ID)}
 }
 func (v Ptr) UpdateOneByPKStmt() (string, []any) {
-	return "UPDATE ptr SET str = ?,bytes = ?,bool = ?,int = ?,int_8 = ?,int_16 = ?,int_32 = ?,int_64 = ?,uint = ?,uint_8 = ?,uint_16 = ?,uint_32 = ?,uint_64 = ?,f_32 = ?,f_64 = ?,time = ? WHERE id = ? LIMIT 1;", []any{types.String(v.Str), types.String(v.Bytes), types.Bool(v.Bool), types.Integer(v.Int), types.Integer(v.Int8), types.Integer(v.Int16), types.Integer(v.Int32), types.Integer(v.Int64), types.Integer(v.Uint), types.Integer(v.Uint8), types.Integer(v.Uint16), types.Integer(v.Uint32), types.Integer(v.Uint64), types.Float(v.F32), types.Float(v.F64), types.Time(v.Time), int64(v.ID)}
+	return "UPDATE ptr SET str = ?,bytes = ?,bool = ?,int = ?,int_8 = ?,int_16 = ?,int_32 = ?,int_64 = ?,uint = ?,uint_8 = ?,uint_16 = ?,uint_32 = ?,uint_64 = ?,f_32 = ?,f_64 = ?,time = ? WHERE id = ?;", []any{types.String(v.Str), types.String(v.Bytes), types.Bool(v.Bool), types.Integer(v.Int), types.Integer(v.Int8), types.Integer(v.Int16), types.Integer(v.Int32), types.Integer(v.Int64), types.Integer(v.Uint), types.Integer(v.Uint8), types.Integer(v.Uint16), types.Integer(v.Uint32), types.Integer(v.Uint64), types.Float(v.F32), types.Float(v.F64), types.Time(v.Time), int64(v.ID)}
 }
 func (v Ptr) GetID() sequel.ColumnValuer[int64] {
 	return sequel.Column("id", v.ID, func(val int64) driver.Value { return int64(val) })

@@ -7,17 +7,6 @@ import (
 	"github.com/si3nloong/sqlgen/sequel/types"
 )
 
-func (Array) Schemas() sequel.TableDefinition {
-	return sequel.TableDefinition{
-		Columns: []sequel.ColumnDefinition{
-			{Name: "tuple", Definition: "tuple VARCHAR(255) NOT NULL"},
-			{Name: "runes", Definition: "runes VARCHAR(255) NOT NULL"},
-			{Name: "bytes", Definition: "bytes VARCHAR(255) NOT NULL"},
-			{Name: "fixed_size", Definition: "fixed_size VARCHAR(255) NOT NULL"},
-			{Name: "str", Definition: "str VARCHAR(255) NOT NULL"},
-		},
-	}
-}
 func (Array) TableName() string {
 	return "array"
 }

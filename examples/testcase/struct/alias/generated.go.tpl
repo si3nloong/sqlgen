@@ -8,14 +8,6 @@ import (
 	"github.com/si3nloong/sqlgen/sequel/types"
 )
 
-func (A) Schemas() sequel.TableDefinition {
-	return sequel.TableDefinition{
-		Columns: []sequel.ColumnDefinition{
-			{Name: "date", Definition: "date DATE NOT NULL"},
-			{Name: "time", Definition: "time TIME NOT NULL"},
-		},
-	}
-}
 func (A) Columns() []string {
 	return []string{"date", "time"}
 }
@@ -23,13 +15,13 @@ func (v A) Values() []any {
 	return []any{types.TextMarshaler(v.Date), types.TextMarshaler(v.Time)}
 }
 func (v *A) Addrs() []any {
-	return []any{types.Date(&v.Date), types.TextUnmarshaler(&v.Time)}
+	return []any{types.TextUnmarshaler(&v.Date), types.TextUnmarshaler(&v.Time)}
 }
 func (A) InsertPlaceholders(row int) string {
 	return "(?,?)"
 }
 func (v A) InsertOneStmt() (string, []any) {
-	return "INSERT INTO a (date,time) VALUES (?,?);", v.Values()
+	return "INSERT INTO " + v.TableName() + " (date,time) VALUES (?,?);", v.Values()
 }
 func (v A) GetDate() sequel.ColumnValuer[civil.Date] {
 	return sequel.Column("date", v.Date, func(val civil.Date) driver.Value { return types.TextMarshaler(val) })
@@ -38,14 +30,6 @@ func (v A) GetTime() sequel.ColumnValuer[civil.Time] {
 	return sequel.Column("time", v.Time, func(val civil.Time) driver.Value { return types.TextMarshaler(val) })
 }
 
-func (C) Schemas() sequel.TableDefinition {
-	return sequel.TableDefinition{
-		Columns: []sequel.ColumnDefinition{
-			{Name: "string", Definition: "string VARCHAR(255) NOT NULL DEFAULT ''"},
-			{Name: "valid", Definition: "valid BOOL NOT NULL DEFAULT false"},
-		},
-	}
-}
 func (C) TableName() string {
 	return "c"
 }

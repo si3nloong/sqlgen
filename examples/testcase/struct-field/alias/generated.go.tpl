@@ -9,24 +9,6 @@ import (
 	"github.com/si3nloong/sqlgen/sequel/types"
 )
 
-func (AliasStruct) Schemas() sequel.TableDefinition {
-	return sequel.TableDefinition{
-		PK: &sequel.PrimaryKeyDefinition{
-			Columns:    []string{"Id"},
-			Definition: "PRIMARY KEY (Id)",
-		},
-		Columns: []sequel.ColumnDefinition{
-			{Name: "b", Definition: "b FLOAT NOT NULL DEFAULT 0"},
-			{Name: "Id", Definition: "Id BIGINT NOT NULL"},
-			{Name: "header", Definition: "header VARCHAR(255) NOT NULL DEFAULT ''"},
-			{Name: "raw", Definition: "raw BLOB NOT NULL"},
-			{Name: "text", Definition: "text VARCHAR(255) NOT NULL DEFAULT ''"},
-			{Name: "null_str", Definition: "null_str VARCHAR(255) DEFAULT ''"},
-			{Name: "created", Definition: "created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP"},
-			{Name: "updated", Definition: "updated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP"},
-		},
-	}
-}
 func (AliasStruct) TableName() string {
 	return "alias_struct"
 }
@@ -53,7 +35,7 @@ func (v AliasStruct) FindOneByPKStmt() (string, []any) {
 	return "SELECT b,Id,header,raw,text,null_str,created,updated FROM alias_struct WHERE Id = ? LIMIT 1;", []any{int64(v.pk.ID)}
 }
 func (v AliasStruct) UpdateOneByPKStmt() (string, []any) {
-	return "UPDATE alias_struct SET b = ?,header = ?,raw = ?,text = ?,null_str = ?,created = ?,updated = ? WHERE Id = ? LIMIT 1;", []any{float64(v.B), string(v.Header), string(v.Raw), string(v.Text), (driver.Valuer)(v.NullStr), time.Time(v.model.Created), time.Time(v.model.Updated), int64(v.pk.ID)}
+	return "UPDATE alias_struct SET b = ?,header = ?,raw = ?,text = ?,null_str = ?,created = ?,updated = ? WHERE Id = ?;", []any{float64(v.B), string(v.Header), string(v.Raw), string(v.Text), (driver.Valuer)(v.NullStr), time.Time(v.model.Created), time.Time(v.model.Updated), int64(v.pk.ID)}
 }
 func (v AliasStruct) GetB() sequel.ColumnValuer[float64] {
 	return sequel.Column("b", v.B, func(val float64) driver.Value { return float64(val) })
@@ -80,13 +62,6 @@ func (v AliasStruct) GetUpdated() sequel.ColumnValuer[time.Time] {
 	return sequel.Column("updated", v.model.Updated, func(val time.Time) driver.Value { return time.Time(val) })
 }
 
-func (B) Schemas() sequel.TableDefinition {
-	return sequel.TableDefinition{
-		Columns: []sequel.ColumnDefinition{
-			{Name: "name", Definition: "name VARCHAR(255) NOT NULL DEFAULT ''"},
-		},
-	}
-}
 func (B) TableName() string {
 	return "b"
 }
@@ -109,13 +84,6 @@ func (v B) GetName() sequel.ColumnValuer[string] {
 	return sequel.Column("name", v.Name, func(val string) driver.Value { return string(val) })
 }
 
-func (C) Schemas() sequel.TableDefinition {
-	return sequel.TableDefinition{
-		Columns: []sequel.ColumnDefinition{
-			{Name: "id", Definition: "id BIGINT NOT NULL DEFAULT 0"},
-		},
-	}
-}
 func (C) TableName() string {
 	return "c"
 }

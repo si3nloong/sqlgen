@@ -7,20 +7,6 @@ import (
 	"github.com/si3nloong/sqlgen/sequel/types"
 )
 
-func (Model) Schemas() sequel.TableDefinition {
-	return sequel.TableDefinition{
-		PK: &sequel.PrimaryKeyDefinition{
-			Columns:    []string{"id"},
-			Definition: "PRIMARY KEY (id)",
-		},
-		Columns: []sequel.ColumnDefinition{
-			{Name: "name", Definition: "name VARCHAR(255) NOT NULL DEFAULT ''"},
-			{Name: "f", Definition: "f BOOL NOT NULL DEFAULT false"},
-			{Name: "id", Definition: "id INTEGER UNSIGNED NOT NULL AUTO_INCREMENT"},
-			{Name: "n", Definition: "n BIGINT NOT NULL DEFAULT 0"},
-		},
-	}
-}
 func (Model) TableName() string {
 	return "AutoIncrPK"
 }
@@ -48,7 +34,7 @@ func (v Model) FindOneByPKStmt() (string, []any) {
 	return "SELECT name,f,id,n FROM AutoIncrPK WHERE id = ? LIMIT 1;", []any{int64(v.ID)}
 }
 func (v Model) UpdateOneByPKStmt() (string, []any) {
-	return "UPDATE AutoIncrPK SET name = ?,f = ?,n = ? WHERE id = ? LIMIT 1;", []any{string(v.Name), bool(v.F), int64(v.N), int64(v.ID)}
+	return "UPDATE AutoIncrPK SET name = ?,f = ?,n = ? WHERE id = ?;", []any{string(v.Name), bool(v.F), int64(v.N), int64(v.ID)}
 }
 func (v Model) GetName() sequel.ColumnValuer[LongText] {
 	return sequel.Column("name", v.Name, func(val LongText) driver.Value { return string(val) })

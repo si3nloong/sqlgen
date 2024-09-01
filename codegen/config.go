@@ -40,22 +40,27 @@ const (
 var cfgFilenames = []string{DefaultConfigFile, ".sqlgen.yml", ".sqlgen.yaml", "sqlgen.yaml"}
 
 type Config struct {
-	Source           []string  `yaml:"src"`
-	Driver           SqlDriver `yaml:"driver"`
-	NamingConvention naming    `yaml:"naming_convention,omitempty"`
-	Tag              string    `yaml:"struct_tag,omitempty"`
-	// Whether to quote the table name and column name
-	QuoteIdentifier bool                 `yaml:"quote_identifier"`
-	OmitGetters     bool                 `yaml:"omit_getters,omitempty"`
-	Strict          *bool                `yaml:"strict,omitempty"`
-	Exec            ExecConfig           `yaml:"exec"`
-	Getter          GetterConfig         `yaml:"getter"`
-	Migration       *MigrationConfig     `yaml:"migration"`
-	Database        *DatabaseConfig      `yaml:"database"`
-	SourceMap       bool                 `yaml:"source_map"`
-	SkipHeader      bool                 `yaml:"skip_header"`
-	SkipModTidy     bool                 `yaml:"skip_mod_tidy"`
-	DataTypes       map[string]*DataType `yaml:"data_types"`
+	Source []string  `yaml:"src"`
+	Driver SqlDriver `yaml:"driver"`
+	// The possibly values of naming convention are
+	// 	SnakeCase
+	//	PascalCase
+	// 	CamelCase
+	NamingConvention naming `yaml:"naming_convention,omitempty"`
+	Tag              string `yaml:"struct_tag,omitempty"`
+	// Whether to quote the table name or column name
+	QuoteIdentifier bool                `yaml:"quote_identifier"`
+	ReadOnly        bool                `yaml:"read_only"`
+	Strict          *bool               `yaml:"strict,omitempty"`
+	Exec            ExecConfig          `yaml:"exec"`
+	Getter          GetterConfig        `yaml:"getter"`
+	Migration       *MigrationConfig    `yaml:"migration"`
+	Database        *DatabaseConfig     `yaml:"database"`
+	OmitGetters     bool                `yaml:"omit_getters,omitempty"`
+	SourceMap       bool                `yaml:"source_map"`
+	SkipHeader      bool                `yaml:"skip_header"`
+	SkipModTidy     bool                `yaml:"skip_mod_tidy"`
+	DataTypes       map[string]DataType `yaml:"data_types"`
 }
 
 type DataType struct {
@@ -78,6 +83,9 @@ type GetterConfig struct {
 }
 
 type MigrationConfig struct {
+	Package  string `yaml:"package"`
+	Dir      string `yaml:"dir"`
+	Filename string `yaml:"filename"`
 }
 
 type DatabaseConfig struct {
@@ -110,7 +118,7 @@ func (c *Config) Init() {
 	c.Database.Operator.Package = c.Database.Package
 	c.Database.Operator.Dir = c.Database.Dir
 	c.Database.Operator.Filename = "operator.go"
-	c.DataTypes = make(map[string]*DataType)
+	c.DataTypes = make(map[string]DataType)
 }
 
 func (c *Config) initIfEmpty() {
@@ -157,8 +165,14 @@ func (c *Config) initIfEmpty() {
 	if c.Database.Operator.Filename == "" {
 		c.Database.Operator.Filename = "operator.go"
 	}
+	if c.Migration == nil {
+		c.Migration = new(MigrationConfig)
+	}
+	c.Migration.Dir = "migrate"
+	c.Migration.Package = "migrate"
+	c.Migration.Filename = "migrate.go"
 	if c.DataTypes == nil {
-		c.DataTypes = make(map[string]*DataType)
+		c.DataTypes = make(map[string]DataType)
 	}
 }
 

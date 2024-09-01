@@ -129,6 +129,7 @@ type StmtBuilder interface {
 
 type Stmt interface {
 	StmtBuilder
+	io.Writer
 	fmt.Stringer
 	Args() []any
 	Reset()

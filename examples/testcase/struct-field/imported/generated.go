@@ -9,20 +9,6 @@ import (
 	"github.com/si3nloong/sqlgen/sequel/types"
 )
 
-func (Model) Schemas() sequel.TableDefinition {
-	return sequel.TableDefinition{
-		Columns: []sequel.ColumnDefinition{
-			{Name: "str", Definition: "str VARCHAR(255) DEFAULT ''"},
-			{Name: "bool", Definition: "bool BOOL DEFAULT false"},
-			{Name: "raw_bytes", Definition: "raw_bytes BLOB NOT NULL"},
-			{Name: "int_16", Definition: "int_16 SMALLINT DEFAULT 0"},
-			{Name: "int_32", Definition: "int_32 MEDIUMINT DEFAULT 0"},
-			{Name: "int_64", Definition: "int_64 BIGINT DEFAULT 0"},
-			{Name: "float_64", Definition: "float_64 FLOAT DEFAULT 0"},
-			{Name: "time", Definition: "time TIMESTAMP DEFAULT CURRENT_TIMESTAMP"},
-		},
-	}
-}
 func (Model) TableName() string {
 	return "model"
 }
@@ -66,13 +52,6 @@ func (v Model) GetTime() sequel.ColumnValuer[sql.NullTime] {
 	return sequel.Column("time", v.Time, func(val sql.NullTime) driver.Value { return (driver.Valuer)(val) })
 }
 
-func (Some) Schemas() sequel.TableDefinition {
-	return sequel.TableDefinition{
-		Columns: []sequel.ColumnDefinition{
-			{Name: "id", Definition: "id VARCHAR(36) NOT NULL DEFAULT UUID()"},
-		},
-	}
-}
 func (Some) TableName() string {
 	return "some"
 }

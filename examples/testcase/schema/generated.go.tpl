@@ -9,15 +9,6 @@ import (
 	"github.com/si3nloong/sqlgen/sequel/types"
 )
 
-func (A) Schemas() sequel.TableDefinition {
-	return sequel.TableDefinition{
-		Columns: []sequel.ColumnDefinition{
-			{Name: "id", Definition: "id VARCHAR(255) NOT NULL DEFAULT ''"},
-			{Name: "text", Definition: "text VARCHAR(255) NOT NULL DEFAULT ''"},
-			{Name: "created_at", Definition: "created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP"},
-		},
-	}
-}
 func (A) TableName() string {
 	return "Apple"
 }
@@ -46,14 +37,6 @@ func (v A) GetCreatedAt() sequel.ColumnValuer[time.Time] {
 	return sequel.Column("created_at", v.CreatedAt, func(val time.Time) driver.Value { return time.Time(val) })
 }
 
-func (B) Schemas() sequel.TableDefinition {
-	return sequel.TableDefinition{
-		Columns: []sequel.ColumnDefinition{
-			{Name: "id", Definition: "id VARCHAR(255) NOT NULL DEFAULT ''"},
-			{Name: "created_at", Definition: "created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP"},
-		},
-	}
-}
 func (B) TableName() string {
 	return "b"
 }
@@ -79,17 +62,6 @@ func (v B) GetCreatedAt() sequel.ColumnValuer[time.Time] {
 	return sequel.Column("created_at", v.CreatedAt, func(val time.Time) driver.Value { return time.Time(val) })
 }
 
-func (C) Schemas() sequel.TableDefinition {
-	return sequel.TableDefinition{
-		PK: &sequel.PrimaryKeyDefinition{
-			Columns:    []string{"id"},
-			Definition: "PRIMARY KEY (id)",
-		},
-		Columns: []sequel.ColumnDefinition{
-			{Name: "id", Definition: "id BIGINT NOT NULL"},
-		},
-	}
-}
 func (C) TableName() string {
 	return "c"
 }
@@ -119,17 +91,6 @@ func (v C) GetID() sequel.ColumnValuer[int64] {
 	return sequel.Column("id", v.ID, func(val int64) driver.Value { return int64(val) })
 }
 
-func (D) Schemas() sequel.TableDefinition {
-	return sequel.TableDefinition{
-		PK: &sequel.PrimaryKeyDefinition{
-			Columns:    []string{"id"},
-			Definition: "PRIMARY KEY (id)",
-		},
-		Columns: []sequel.ColumnDefinition{
-			{Name: "id", Definition: "id VARCHAR(255)"},
-		},
-	}
-}
 func (D) TableName() string {
 	return "d"
 }

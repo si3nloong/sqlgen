@@ -7,13 +7,6 @@ import (
 	"github.com/si3nloong/sqlgen/sequel/types"
 )
 
-func (CustomTableName1) Schemas() sequel.TableDefinition {
-	return sequel.TableDefinition{
-		Columns: []sequel.ColumnDefinition{
-			{Name: "text", Definition: "text VARCHAR(255) NOT NULL DEFAULT ''"},
-		},
-	}
-}
 func (CustomTableName1) TableName() string {
 	return "CustomTableName_1"
 }
@@ -36,13 +29,6 @@ func (v CustomTableName1) GetText() sequel.ColumnValuer[string] {
 	return sequel.Column("text", v.Text, func(val string) driver.Value { return string(val) })
 }
 
-func (CustomTableName2) Schemas() sequel.TableDefinition {
-	return sequel.TableDefinition{
-		Columns: []sequel.ColumnDefinition{
-			{Name: "text", Definition: "text VARCHAR(255) NOT NULL DEFAULT ''"},
-		},
-	}
-}
 func (CustomTableName2) TableName() string {
 	return "table_2"
 }
@@ -65,13 +51,6 @@ func (v CustomTableName2) GetText() sequel.ColumnValuer[string] {
 	return sequel.Column("text", v.Text, func(val string) driver.Value { return string(val) })
 }
 
-func (CustomTableName3) Schemas() sequel.TableDefinition {
-	return sequel.TableDefinition{
-		Columns: []sequel.ColumnDefinition{
-			{Name: "text", Definition: "text VARCHAR(255) NOT NULL DEFAULT ''"},
-		},
-	}
-}
 func (CustomTableName3) TableName() string {
 	return "table_3"
 }

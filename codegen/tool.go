@@ -4,46 +4,20 @@ import (
 	"fmt"
 	"go/types"
 	"regexp"
-	"strconv"
+
+	"github.com/si3nloong/sqlgen/codegen/dialect"
 )
-
-type GoType interface {
-	String() string
-}
-
-type GoArray interface {
-	Len() int
-}
-
-type nNode struct {
-	t string
-}
-
-func (n nNode) String() string {
-	return n.t
-}
-
-type arrNode struct {
-	t    string
-	size int
-}
-
-func (n arrNode) String() string {
-	return n.t
-}
-func (n arrNode) Len() int {
-	return n.size
-}
 
 var (
 	arrayRegexp = regexp.MustCompile(`^\[(\d+)\](rune|string|byte)$`)
 )
 
-func UnderlyingType(t types.Type) (*Mapping, GoType) {
+func (g *Generator) columnDataType(t types.Type) (*dialect.ColumnType, bool) {
 	var (
 		prev    = t
 		typeStr string
 	)
+	// log.Println("HERE ->", t)
 
 loop:
 	for prev != nil {
@@ -60,34 +34,38 @@ loop:
 		case *types.Pointer:
 			typeStr += "*"
 			prev = v.Elem()
+			continue
 		case *types.Slice:
 			typeStr += "[]"
 			prev = v.Elem()
+			continue
 		case *types.Array:
 			typeStr += fmt.Sprintf("[%d]", v.Len())
 			prev = v.Elem()
+			continue
 		default:
 			break loop
 		}
-		if v, ok := typeMap[typeStr]; ok {
-			return v, &nNode{t: typeStr}
+		if v, ok := g.defaultColumnTypes[typeStr]; ok {
+			return v, true
 		}
 		if prev == t {
 			break loop
 		}
 		t = prev
 	}
-	if v, ok := typeMap[typeStr]; ok {
-		return v, &nNode{t: typeStr}
+	// log.Println("typeStr ->", typeStr)
+	if v, ok := g.defaultColumnTypes[typeStr]; ok {
+		return v, true
 	}
 	// Find fixed size array mapper
 	if matches := arrayRegexp.FindStringSubmatch(typeStr); len(matches) > 0 {
-		if v, ok := typeMap["[...]"+matches[2]]; ok {
-			len, _ := strconv.Atoi(matches[1])
-			return v, &arrNode{t: typeStr, size: len}
+		if v, ok := g.defaultColumnTypes["[...]"+matches[2]]; ok {
+			// len, _ := strconv.Atoi(matches[1])
+			return v, true
 		}
 	}
-	return nil, &nNode{t: typeStr}
+	return nil, false
 }
 
 func assertAsPtr[T any](v any) *T {
@@ -96,6 +74,20 @@ func assertAsPtr[T any](v any) *T {
 		return t
 	}
 	return nil
+}
+
+func arraySize(t types.Type) int64 {
+	for t != nil {
+		switch vt := t.(type) {
+		case *types.Pointer:
+			t = vt.Elem()
+		case *types.Array:
+			return vt.Len()
+		default:
+			return -1
+		}
+	}
+	return -1
 }
 
 func isImplemented(t types.Type, iv *types.Interface) bool {

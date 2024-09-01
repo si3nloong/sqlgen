@@ -8,32 +8,6 @@ import (
 	"github.com/si3nloong/sqlgen/sequel/types"
 )
 
-func (Slice) Schemas() sequel.TableDefinition {
-	return sequel.TableDefinition{
-		PK: &sequel.PrimaryKeyDefinition{
-			Columns:    []string{"id"},
-			Definition: "PRIMARY KEY (id)",
-		},
-		Columns: []sequel.ColumnDefinition{
-			{Name: "id", Definition: "id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT"},
-			{Name: "bool_list", Definition: "bool_list JSON NOT NULL"},
-			{Name: "str_list", Definition: "str_list JSON NOT NULL"},
-			{Name: "custom_str_list", Definition: "custom_str_list JSON NOT NULL"},
-			{Name: "int_list", Definition: "int_list JSON NOT NULL"},
-			{Name: "int_8_list", Definition: "int_8_list JSON NOT NULL"},
-			{Name: "int_16_list", Definition: "int_16_list JSON NOT NULL"},
-			{Name: "int_32_list", Definition: "int_32_list JSON NOT NULL"},
-			{Name: "int_64_list", Definition: "int_64_list JSON NOT NULL"},
-			{Name: "uint_list", Definition: "uint_list JSON NOT NULL"},
-			{Name: "uint_8_list", Definition: "uint_8_list JSON NOT NULL"},
-			{Name: "uint_16_list", Definition: "uint_16_list JSON NOT NULL"},
-			{Name: "uint_32_list", Definition: "uint_32_list JSON NOT NULL"},
-			{Name: "uint_64_list", Definition: "uint_64_list JSON NOT NULL"},
-			{Name: "f_32_list", Definition: "f_32_list JSON NOT NULL"},
-			{Name: "f_64_list", Definition: "f_64_list JSON NOT NULL"},
-		},
-	}
-}
 func (Slice) TableName() string {
 	return "slice"
 }
@@ -61,7 +35,7 @@ func (v Slice) FindOneByPKStmt() (string, []any) {
 	return "SELECT id,bool_list,str_list,custom_str_list,int_list,int_8_list,int_16_list,int_32_list,int_64_list,uint_list,uint_8_list,uint_16_list,uint_32_list,uint_64_list,f_32_list,f_64_list FROM slice WHERE id = ? LIMIT 1;", []any{int64(v.ID)}
 }
 func (v Slice) UpdateOneByPKStmt() (string, []any) {
-	return "UPDATE slice SET bool_list = ?,str_list = ?,custom_str_list = ?,int_list = ?,int_8_list = ?,int_16_list = ?,int_32_list = ?,int_64_list = ?,uint_list = ?,uint_8_list = ?,uint_16_list = ?,uint_32_list = ?,uint_64_list = ?,f_32_list = ?,f_64_list = ? WHERE id = ? LIMIT 1;", []any{encoding.MarshalBoolList(v.BoolList), encoding.MarshalStringList(v.StrList), encoding.MarshalStringList(v.CustomStrList), encoding.MarshalSignedIntList(v.IntList), encoding.MarshalSignedIntList(v.Int8List), encoding.MarshalSignedIntList(v.Int16List), encoding.MarshalSignedIntList(v.Int32List), encoding.MarshalSignedIntList(v.Int64List), encoding.MarshalUnsignedIntList(v.UintList), encoding.MarshalUnsignedIntList(v.Uint8List), encoding.MarshalUnsignedIntList(v.Uint16List), encoding.MarshalUnsignedIntList(v.Uint32List), encoding.MarshalUnsignedIntList(v.Uint64List), encoding.MarshalFloatList(v.F32List), encoding.MarshalFloatList(v.F64List), int64(v.ID)}
+	return "UPDATE slice SET bool_list = ?,str_list = ?,custom_str_list = ?,int_list = ?,int_8_list = ?,int_16_list = ?,int_32_list = ?,int_64_list = ?,uint_list = ?,uint_8_list = ?,uint_16_list = ?,uint_32_list = ?,uint_64_list = ?,f_32_list = ?,f_64_list = ? WHERE id = ?;", []any{encoding.MarshalBoolList(v.BoolList), encoding.MarshalStringList(v.StrList), encoding.MarshalStringList(v.CustomStrList), encoding.MarshalSignedIntList(v.IntList), encoding.MarshalSignedIntList(v.Int8List), encoding.MarshalSignedIntList(v.Int16List), encoding.MarshalSignedIntList(v.Int32List), encoding.MarshalSignedIntList(v.Int64List), encoding.MarshalUnsignedIntList(v.UintList), encoding.MarshalUnsignedIntList(v.Uint8List), encoding.MarshalUnsignedIntList(v.Uint16List), encoding.MarshalUnsignedIntList(v.Uint32List), encoding.MarshalUnsignedIntList(v.Uint64List), encoding.MarshalFloatList(v.F32List), encoding.MarshalFloatList(v.F64List), int64(v.ID)}
 }
 func (v Slice) GetID() sequel.ColumnValuer[uint64] {
 	return sequel.Column("id", v.ID, func(val uint64) driver.Value { return int64(val) })

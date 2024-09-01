@@ -21,7 +21,7 @@ func Init(cfg *Config) error {
 	}
 	defer f.Close()
 
-	enc := yaml.NewEncoder(f, yaml.WithComment(yaml.CommentMap{
+	if err := yaml.NewEncoder(f, yaml.WithComment(yaml.CommentMap{
 		"$.src":               []*yaml.Comment{yaml.HeadComment(" Where are all the model files located? Globs are supported eg: src/**/*.go")},
 		"$.driver":            []*yaml.Comment{yaml.HeadComment(` Optional: possibly values : "mysql", "postgres" or "sqlite". Default value is "mysql".`)},
 		"$.naming_convention": []*yaml.Comment{yaml.HeadComment(` Optional: possibly values : "snake_case", "camelCase" or "PascalCase". Default value is "snake_case".`)},
@@ -35,12 +35,11 @@ func Init(cfg *Config) error {
 		"$.skip_mod_tidy":     []*yaml.Comment{yaml.HeadComment(` Optional: set to skip running "go mod tidy" when generating server code.`)},
 		"$.skip_header":       []*yaml.Comment{yaml.HeadComment(` Optional: turn on to not generate any file header in generated files.`)},
 		"$.data_types":        []*yaml.Comment{yaml.HeadComment(` Optional: configure column type mapping for go types.`)},
-	}))
-
-	if err := enc.Encode(cfg); err != nil {
+	})).Encode(cfg); err != nil {
 		return err
 	}
-	return nil
+
+	return f.Close()
 }
 
 func renderTemplate(
@@ -95,7 +94,6 @@ func renderTemplate(
 	g.WriteString(blr.String())
 	strpool.ReleaseString(blr)
 
-	// log.Println(w.String())
 	os.MkdirAll(dstDir, fileMode)
 	fileDest := filepath.Join(dstDir, dstFilename)
 	// formatted, err := format.Source([]byte(w.String()))
