@@ -762,10 +762,8 @@ func mapGoEnums(enumCache map[string]*enum, pkg *packages.Package, f *ast.Ident)
 					}
 				}
 
-				if n != nil {
-					enumCache[types.ExprString(n)].values = append(enumCache[types.ExprString(n)].values, values...)
-					typeName = n
-				}
+				enumCache[types.ExprString(n)].values = append(enumCache[types.ExprString(n)].values, values...)
+				typeName = n
 			}
 		}
 	}

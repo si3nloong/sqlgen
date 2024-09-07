@@ -17,7 +17,6 @@ func (g *Generator) columnDataType(t types.Type) (*dialect.ColumnType, bool) {
 		prev    = t
 		typeStr string
 	)
-	// log.Println("HERE ->", t)
 
 loop:
 	for prev != nil {
@@ -43,6 +42,9 @@ loop:
 			typeStr += fmt.Sprintf("[%d]", v.Len())
 			prev = v.Elem()
 			continue
+		case *types.Alias:
+			prev = v.Rhs()
+			continue
 		default:
 			break loop
 		}
@@ -54,7 +56,6 @@ loop:
 		}
 		t = prev
 	}
-	// log.Println("typeStr ->", typeStr)
 	if v, ok := g.defaultColumnTypes[typeStr]; ok {
 		return v, true
 	}

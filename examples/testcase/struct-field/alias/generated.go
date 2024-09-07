@@ -43,8 +43,8 @@ func (v AliasStruct) GetB() sequel.ColumnValuer[float64] {
 func (v AliasStruct) GetID() sequel.ColumnValuer[int64] {
 	return sequel.Column("Id", v.pk.ID, func(val int64) driver.Value { return int64(val) })
 }
-func (v AliasStruct) GetHeader() sequel.ColumnValuer[customStr] {
-	return sequel.Column("header", v.Header, func(val customStr) driver.Value { return string(val) })
+func (v AliasStruct) GetHeader() sequel.ColumnValuer[aliasStr] {
+	return sequel.Column("header", v.Header, func(val aliasStr) driver.Value { return string(val) })
 }
 func (v AliasStruct) GetRaw() sequel.ColumnValuer[sql.RawBytes] {
 	return sequel.Column("raw", v.Raw, func(val sql.RawBytes) driver.Value { return string(val) })
@@ -55,11 +55,11 @@ func (v AliasStruct) GetText() sequel.ColumnValuer[customStr] {
 func (v AliasStruct) GetNullStr() sequel.ColumnValuer[sql.NullString] {
 	return sequel.Column("null_str", v.NullStr, func(val sql.NullString) driver.Value { return (driver.Valuer)(val) })
 }
-func (v AliasStruct) GetCreated() sequel.ColumnValuer[time.Time] {
-	return sequel.Column("created", v.model.Created, func(val time.Time) driver.Value { return time.Time(val) })
+func (v AliasStruct) GetCreated() sequel.ColumnValuer[DT] {
+	return sequel.Column("created", v.model.Created, func(val DT) driver.Value { return time.Time(val) })
 }
-func (v AliasStruct) GetUpdated() sequel.ColumnValuer[time.Time] {
-	return sequel.Column("updated", v.model.Updated, func(val time.Time) driver.Value { return time.Time(val) })
+func (v AliasStruct) GetUpdated() sequel.ColumnValuer[DT] {
+	return sequel.Column("updated", v.model.Updated, func(val DT) driver.Value { return time.Time(val) })
 }
 
 func (B) TableName() string {
