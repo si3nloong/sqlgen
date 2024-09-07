@@ -16,7 +16,6 @@ type (
 	QueryFunc          func(placeholder string) string
 	WhereClause        func(StmtBuilder)
 	SetClause          func(StmtBuilder)
-	OrderByClause      func(StmtWriter)
 )
 
 type DB interface {
@@ -116,6 +115,7 @@ type KeyValueScanner[T any] interface {
 }
 
 type StmtWriter interface {
+	io.Writer
 	io.StringWriter
 	io.ByteWriter
 }
@@ -129,8 +129,8 @@ type StmtBuilder interface {
 
 type Stmt interface {
 	StmtBuilder
-	io.Writer
 	fmt.Stringer
+	fmt.Formatter
 	Args() []any
 	Reset()
 }
@@ -146,4 +146,9 @@ type SQLColumnValuer[T any] interface {
 	Convert(T) driver.Value
 	Value() driver.Value
 	SQLValue(placeholder string) string
+}
+
+type ColumnOrder interface {
+	ColumnName() string
+	Asc() bool
 }

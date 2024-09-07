@@ -182,34 +182,34 @@ func Generate(c *Config) error {
 		sources = sources[1:]
 	}
 
-	// if cfg.Database != nil {
-	// 	// Generate db code
-	// 	_ = syscall.Unlink(filepath.Join(cfg.Database.Dir, cfg.Database.Filename))
-	// 	if err := renderTemplate(
-	// 		generator,
-	// 		"db.go.tpl",
-	// 		"",
-	// 		cfg.Database.Package,
-	// 		cfg.Database.Dir,
-	// 		cfg.Database.Filename,
-	// 	); err != nil {
-	// 		return err
-	// 	}
-	// }
+	if cfg.Database != nil {
+		// Generate db code
+		_ = syscall.Unlink(filepath.Join(cfg.Database.Dir, cfg.Database.Filename))
+		if err := renderTemplate(
+			generator,
+			"db.go.tpl",
+			"",
+			cfg.Database.Package,
+			cfg.Database.Dir,
+			cfg.Database.Filename,
+		); err != nil {
+			return err
+		}
+	}
 
-	// if cfg.Database.Operator != nil {
-	// 	_ = syscall.Unlink(filepath.Join(cfg.Database.Dir, cfg.Database.Operator.Filename))
-	// 	if err := renderTemplate(
-	// 		generator,
-	// 		"operator.go.tpl",
-	// 		"",
-	// 		cfg.Database.Operator.Package,
-	// 		cfg.Database.Operator.Dir,
-	// 		cfg.Database.Operator.Filename,
-	// 	); err != nil {
-	// 		return err
-	// 	}
-	// }
+	if cfg.Database.Operator != nil {
+		_ = syscall.Unlink(filepath.Join(cfg.Database.Dir, cfg.Database.Operator.Filename))
+		if err := renderTemplate(
+			generator,
+			"operator.go.tpl",
+			"",
+			cfg.Database.Operator.Package,
+			cfg.Database.Operator.Dir,
+			cfg.Database.Operator.Filename,
+		); err != nil {
+			return err
+		}
+	}
 
 	if cfg.SkipModTidy {
 		return nil

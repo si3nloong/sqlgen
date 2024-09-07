@@ -3,6 +3,7 @@
 {{- reserveImport "strings" }}
 {{- reserveImport "strconv" }}
 {{- reserveImport "sync" }}
+{{- reserveImport "unsafe" }}
 {{- reserveImport "github.com/si3nloong/sqlgen/sequel" }}
 {{- reserveImport "github.com/si3nloong/sqlgen/sequel/strpool" }}
 
@@ -749,11 +750,416 @@ func DeleteByPK[T sequel.KeyValuer](ctx context.Context, sqlConn sequel.DB, mode
 	}
 }
 
+type PaginateStmt struct {
+	Select    []string
+	FromTable string
+	Where     sequel.WhereClause
+	OrderBy   []sequel.ColumnOrder
+	Limit     uint16
+}
+
+func Paginate[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](stmt PaginateStmt) *Pager[T, Ptr] {
+	// Set default limit
+	if stmt.Limit == 0 {
+		stmt.Limit = 100
+	}
+	return &Pager[T, Ptr]{
+		stmt: &stmt,
+	}
+}
+
+type Result[T any] struct {
+	data []T
+	err  error
+}
+
+func (r *Result[T]) All(yield func(T) bool) {
+	for _, s := range r.data {
+		if !yield(s) {
+			return
+		}
+	}
+}
+
+func (r *Result[T]) AllWithIndex(yield func(int, T) bool) {
+	for i, s := range r.data {
+		if !yield(i, s) {
+			return
+		}
+	}
+}
+
+func (r *Result[T]) Err() error {
+	return r.err
+}
+
+type Pager[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]] struct {
+	stmt *PaginateStmt
+}
+
+func (r *Pager[T, Ptr]) Prev(ctx context.Context, sqlConn sequel.DB, cursor ...T) iter.Seq[*Result[T]] {
+	return func(yield func(*Result[T]) bool) {
+		var (
+			v         T
+			hasCursor bool
+			maxLimit  = r.stmt.Limit
+		)
+		if len(cursor) > 0 {
+			v = cursor[0]
+			hasCursor = true
+		}
+
+		for {
+			if hasCursor {
+				if err := FindByPK(ctx, sqlConn, Ptr(&v)); err != nil {
+					if !yield(&Result[T]{err: err}) {
+						return
+					}
+					return
+				}
+			}
+
+			blr := AcquireStmt()
+			defer ReleaseStmt(blr)
+			blr.WriteString("SELECT " + strings.Join(v.Columns(), ",") + " FROM " + DbTable(v) + " WHERE ")
+			if r.stmt.Where != nil {
+				r.stmt.Where(blr)
+			}
+
+			if len(r.stmt.OrderBy) > 0 {
+				colDict := make(map[string]int)
+				columns := v.Columns()
+				values := v.Values()
+				for i := range columns {
+					colDict[columns[i]] = i
+				}
+
+				for i, orderBy := range r.stmt.OrderBy {
+					colName := orderBy.ColumnName()
+					val := values[colDict[colName]]
+					if i > 0 {
+						blr.WriteString(" AND ")
+					}
+					if orderBy.Asc() {
+						// If ascending
+						blr.WriteString(colName + " <= " + blr.Var(val))
+					} else {
+						// If descending
+						blr.WriteString(colName + " >= " + blr.Var(val))
+					}
+				}
+				blr.WriteString(" AND (")
+				for i, orderBy := range r.stmt.OrderBy {
+					colName := orderBy.ColumnName()
+					val := values[colDict[colName]]
+					if i > 0 {
+						blr.WriteString(" OR ")
+					}
+					if orderBy.Asc() {
+						// If ascending
+						blr.WriteString(colName + " < " + blr.Var(val))
+					} else {
+						// If descending
+						blr.WriteString(colName + " > " + blr.Var(val))
+					}
+				}
+				clear(colDict)
+				blr.WriteString(" OR ")
+			} else {
+				blr.WriteByte('(')
+			}
+
+			// Check the primary key and compare value
+			switch vi := any(v).(type) {
+			case sequel.CompositeKeyer:
+				pkNames, _, vals := vi.CompositeKey()
+				blr.WriteString("(" + strings.Join(pkNames, ",") + ") <= " + blr.Vars(vals))
+			case sequel.PrimaryKeyer:
+				pkName, _, val := vi.PK()
+				blr.WriteString(pkName + " <= " + blr.Var(val))
+			default:
+				panic("unreachable")
+			}
+
+			blr.WriteString(") ORDER BY ")
+			if len(r.stmt.OrderBy) > 0 {
+				for i := range r.stmt.OrderBy {
+					if r.stmt.OrderBy[i].Asc() {
+						blr.WriteString(r.stmt.OrderBy[i].ColumnName() + " ASC,")
+					} else {
+						blr.WriteString(r.stmt.OrderBy[i].ColumnName() + " DESC,")
+					}
+				}
+				var (
+					suffix  = " DESC"
+					lastCol = r.stmt.OrderBy[len(r.stmt.OrderBy)-1]
+				)
+				if lastCol.Asc() {
+					suffix = " ASC"
+				}
+				switch vi := any(v).(type) {
+				case sequel.CompositeKeyer:
+					pkNames, _, _ := vi.CompositeKey()
+					for i := range pkNames {
+						if i > 0 {
+							blr.WriteString("," + pkNames[i] + suffix)
+						} else {
+							blr.WriteString(pkNames[i] + suffix)
+						}
+					}
+				case sequel.PrimaryKeyer:
+					pkName, _, _ := vi.PK()
+					blr.WriteString(pkName + suffix)
+				default:
+					panic("unreachable")
+				}
+			} else {
+				// If there is no order by clause,
+				// ascending is the default order
+				switch vi := any(v).(type) {
+				case sequel.CompositeKeyer:
+					pkNames, _, _ := vi.CompositeKey()
+					for i := range pkNames {
+						if i > 0 {
+							blr.WriteString("," + pkNames[i] + " DESC")
+						} else {
+							blr.WriteString(pkNames[i] + " DESC")
+						}
+					}
+				case sequel.PrimaryKeyer:
+					pkName, _, _ := vi.PK()
+					blr.WriteString(pkName + " DESC")
+				default:
+					panic("unreachable")
+				}
+			}
+			// Add one to limit to find next cursor
+			blr.WriteString(" LIMIT " + strconv.FormatUint(uint64(r.stmt.Limit+1), 10) + ";")
+
+			rows, err := sqlConn.QueryContext(ctx, blr.String(), blr.Args()...)
+			if err != nil {
+				if !yield(&Result[T]{err: err}) {
+					return
+				}
+				return
+			}
+			defer rows.Close()
+
+			data := make([]T, 0, r.stmt.Limit+1)
+			for rows.Next() {
+				var v T
+				if err := rows.Scan(Ptr(&v).Addrs()...); err != nil {
+					if !yield(&Result[T]{err: err}) {
+						return
+					}
+					return
+				}
+				data = append(data, v)
+			}
+
+			noOfRecord := len(data)
+			if uint16(noOfRecord) < maxLimit {
+				if !yield(&Result[T]{data: data}) {
+					return
+				}
+				return
+			}
+
+			if !yield(&Result[T]{data: data[:noOfRecord-1]}) {
+				return
+			}
+
+			// Set next cursor
+			v = data[noOfRecord-1]
+			hasCursor = true
+		}
+	}
+}
+
+func (r *Pager[T, Ptr]) Next(ctx context.Context, sqlConn sequel.DB, cursor ...T) iter.Seq[*Result[T]] {
+	return func(yield func(*Result[T]) bool) {
+		var (
+			v         T
+			hasCursor bool
+			maxLimit  = r.stmt.Limit
+		)
+		if len(cursor) > 0 {
+			v = cursor[0]
+			hasCursor = true
+		}
+
+		for {
+			if hasCursor {
+				if err := FindByPK(ctx, sqlConn, Ptr(&v)); err != nil {
+					if !yield(&Result[T]{err: err}) {
+						return
+					}
+					return
+				}
+			}
+
+			blr := AcquireStmt()
+			defer ReleaseStmt(blr)
+			blr.WriteString("SELECT " + strings.Join(v.Columns(), ",") + " FROM " + DbTable(v) + " WHERE ")
+			if r.stmt.Where != nil {
+				r.stmt.Where(blr)
+			}
+
+			if len(r.stmt.OrderBy) > 0 {
+				colDict := make(map[string]int)
+				columns := v.Columns()
+				values := v.Values()
+				for i := range columns {
+					colDict[columns[i]] = i
+				}
+
+				for i, orderBy := range r.stmt.OrderBy {
+					colName := orderBy.ColumnName()
+					val := values[colDict[colName]]
+					if i > 0 {
+						blr.WriteString(" AND ")
+					}
+					if orderBy.Asc() {
+						// If ascending
+						blr.WriteString(colName + " >= " + blr.Var(val))
+					} else {
+						// If descending
+						blr.WriteString(colName + " <= " + blr.Var(val))
+					}
+				}
+				blr.WriteString(" AND (")
+				for i, orderBy := range r.stmt.OrderBy {
+					colName := orderBy.ColumnName()
+					val := values[colDict[colName]]
+					if i > 0 {
+						blr.WriteString(" OR ")
+					}
+					if orderBy.Asc() {
+						// If ascending
+						blr.WriteString(colName + " > " + blr.Var(val))
+					} else {
+						// If descending
+						blr.WriteString(colName + " < " + blr.Var(val))
+					}
+				}
+				clear(colDict)
+				blr.WriteString(" OR ")
+			} else {
+				blr.WriteByte('(')
+			}
+
+			// Check the primary key and compare value
+			switch vi := any(v).(type) {
+			case sequel.CompositeKeyer:
+				pkNames, _, vals := vi.CompositeKey()
+				blr.WriteString("(" + strings.Join(pkNames, ",") + ") >= " + blr.Vars(vals))
+			case sequel.PrimaryKeyer:
+				pkName, _, val := vi.PK()
+				blr.WriteString(pkName + " >= " + blr.Var(val))
+			default:
+				panic("unreachable")
+			}
+
+			blr.WriteString(") ORDER BY ")
+			if len(r.stmt.OrderBy) > 0 {
+				for i := range r.stmt.OrderBy {
+					if r.stmt.OrderBy[i].Asc() {
+						blr.WriteString(r.stmt.OrderBy[i].ColumnName() + " ASC,")
+					} else {
+						blr.WriteString(r.stmt.OrderBy[i].ColumnName() + " DESC,")
+					}
+				}
+				var (
+					suffix  = " ASC"
+					lastCol = r.stmt.OrderBy[len(r.stmt.OrderBy)-1]
+				)
+				if !lastCol.Asc() {
+					suffix = " DESC"
+				}
+				switch vi := any(v).(type) {
+				case sequel.CompositeKeyer:
+					pkNames, _, _ := vi.CompositeKey()
+					for i := range pkNames {
+						if i > 0 {
+							blr.WriteString("," + pkNames[i] + suffix)
+						} else {
+							blr.WriteString(pkNames[i] + suffix)
+						}
+					}
+				case sequel.PrimaryKeyer:
+					pkName, _, _ := vi.PK()
+					blr.WriteString(pkName + suffix)
+				default:
+					panic("unreachable")
+				}
+			} else {
+				// If there is no order by clause,
+				// ascending is the default order
+				switch vi := any(v).(type) {
+				case sequel.CompositeKeyer:
+					pkNames, _, _ := vi.CompositeKey()
+					for i := range pkNames {
+						if i > 0 {
+							blr.WriteString("," + pkNames[i] + " ASC")
+						} else {
+							blr.WriteString(pkNames[i] + " ASC")
+						}
+					}
+				case sequel.PrimaryKeyer:
+					pkName, _, _ := vi.PK()
+					blr.WriteString(pkName + " ASC")
+				default:
+					panic("unreachable")
+				}
+			}
+			// Add one to limit to find next cursor
+			blr.WriteString(" LIMIT " + strconv.FormatUint(uint64(r.stmt.Limit+1), 10) + ";")
+
+			rows, err := sqlConn.QueryContext(ctx, blr.String(), blr.Args()...)
+			if err != nil {
+				if !yield(&Result[T]{err: err}) {
+					return
+				}
+				return
+			}
+			defer rows.Close()
+
+			data := make([]T, 0, r.stmt.Limit+1)
+			for rows.Next() {
+				var v T
+				if err := rows.Scan(Ptr(&v).Addrs()...); err != nil {
+					if !yield(&Result[T]{err: err}) {
+						return
+					}
+					return
+				}
+				data = append(data, v)
+			}
+
+			noOfRecord := len(data)
+			if uint16(noOfRecord) < maxLimit {
+				if !yield(&Result[T]{data: data}) {
+					return
+				}
+				return
+			}
+
+			if !yield(&Result[T]{data: data[:noOfRecord-1]}) {
+				return
+			}
+
+			// Set next cursor
+			v = data[noOfRecord-1]
+			hasCursor = true
+		}
+	}
+}
+
 type SelectStmt struct {
 	Select    []string
 	FromTable string
 	Where     sequel.WhereClause
-	OrderBy   []sequel.OrderByClause
+	OrderBy   []sequel.ColumnOrder
 	GroupBy	  []string
 	Offset	  uint64
 	Limit     uint16
@@ -819,7 +1225,11 @@ func QueryStmt[T any, Ptr sequel.PtrScanner[T], Stmt interface{
 				if i > 0 {
 					blr.WriteByte(',')
 				}
-				vi.OrderBy[i](blr)
+				if vi.OrderBy[i].Asc() {
+					blr.WriteString(vi.OrderBy[i].ColumnName() +" ASC")
+				} else {
+					blr.WriteString(vi.OrderBy[i].ColumnName() +" DESC")
+				}
 			}
 		}
 		if vi.Limit > 0 {
@@ -857,7 +1267,7 @@ type SelectOneStmt struct {
 	Select    []string
 	FromTable string
 	Where     sequel.WhereClause
-	OrderBy   []sequel.OrderByClause
+	OrderBy   []sequel.ColumnOrder
 	GroupBy   []string
 }
 
@@ -909,7 +1319,11 @@ func QueryOneStmt[T any, Ptr sequel.PtrScanner[T], Stmt interface {
 				if i > 0 {
 					blr.WriteByte(',')
 				}
-				vi.OrderBy[i](blr)
+				if vi.OrderBy[i].Asc() {
+					blr.WriteString(vi.OrderBy[i].ColumnName() +" ASC")
+				} else {
+					blr.WriteString(vi.OrderBy[i].ColumnName() +" DESC")
+				}
 			}
 		}
 		blr.WriteString(" LIMIT 1;")
@@ -933,14 +1347,14 @@ type UpdateStmt struct {
 	Table	string
 	Set		[]sequel.SetClause
 	Where	sequel.WhereClause
-	OrderBy []sequel.OrderByClause
+	OrderBy []sequel.ColumnOrder
 	Limit	uint16
 }
 
 type DeleteStmt struct {
 	FromTable string
 	Where     sequel.WhereClause
-	OrderBy   []sequel.OrderByClause
+	OrderBy   []sequel.ColumnOrder
 	Limit     uint16
 }
 
@@ -977,7 +1391,11 @@ func ExecStmt[T any, Stmt interface {
 				if i > 0 {
 					blr.WriteByte(',')
 				}
-				vi.OrderBy[i](blr)
+				if vi.OrderBy[i].Asc() {
+					blr.WriteString(vi.OrderBy[i].ColumnName() +" ASC")
+				} else {
+					blr.WriteString(vi.OrderBy[i].ColumnName() +" DESC")
+				}
 			}
 		}
 		if vi.Limit > 0 {
@@ -1000,7 +1418,11 @@ func ExecStmt[T any, Stmt interface {
 				if i > 0 {
 					blr.WriteByte(',')
 				}
-				vi.OrderBy[i](blr)
+				if vi.OrderBy[i].Asc() {
+					blr.WriteString(vi.OrderBy[i].ColumnName() +" ASC")
+				} else {
+					blr.WriteString(vi.OrderBy[i].ColumnName() +" DESC")
+				}
 			}
 		}
 		if vi.Limit > 0 {
@@ -1076,6 +1498,43 @@ func (s sqlStmt) Args() []any {
 	return s.args
 }
 
+func (s *sqlStmt) Format(f fmt.State, verb rune) {
+	str := s.String()
+	switch verb {
+	case 's':
+		f.Write(unsafe.Slice(unsafe.StringData(str), len(str)))
+		return
+	case 'v':
+		if !f.Flag('#') && !f.Flag('+') {
+			f.Write(unsafe.Slice(unsafe.StringData(str), len(str)))
+			return
+		}
+	}
+
+	var (
+		args = make([]any, len(s.args))
+		idx  int
+		i    int
+	)
+
+	copy(args, s.args)
+
+	for {
+		idx = strings.Index(str, "?")
+		if idx < 0 {
+			f.Write(unsafe.Slice(unsafe.StringData(str), len(str)))
+			break
+		}
+
+		f.Write([]byte(str[:idx]))
+		v := toStr(args[0])
+		f.Write(unsafe.Slice(unsafe.StringData(v), len(v)))
+		str = str[idx+1:]
+		args = args[1:]
+		i++
+	}
+}
+
 func (s *sqlStmt) Reset() {
 	s.args = nil
 	s.pos = 0
@@ -1108,3 +1567,24 @@ func wrapVar(i int) string {
 	return {{ quote varRune }}+ strconv.Itoa(i)
 }
 {{ end }}
+
+func toStr(v any) string {
+	switch vi := v.(type) {
+	case string:
+		return strconv.Quote(vi)
+	case []byte:
+		return strconv.Quote(unsafe.String(unsafe.SliceData(vi), len(vi)))
+	case bool:
+		return strconv.FormatBool(vi)
+	case int64:
+		return strconv.FormatInt(vi, 10)
+	case float64:
+		return strconv.FormatFloat(vi, 'f', 10, 64)
+	case time.Time:
+		return strconv.Quote(vi.Format(time.RFC3339))
+	case sql.RawBytes:
+		return unsafe.String(unsafe.SliceData(vi), len(vi))
+	default:
+		panic("unreachable")
+	}
+}

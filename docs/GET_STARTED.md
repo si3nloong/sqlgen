@@ -325,7 +325,7 @@
                 db.Equal(user.GetGender(), model.Female),
                 db.GreaterThanOrEqual(user.GetBirthDate(), birthDate),
             ),
-            OrderBy: []sequel.OrderByClause{
+            OrderBy: []sequel.ColumnOrder{
                 db.Desc(user.GetCreated()),
             },
             Limit: 50,

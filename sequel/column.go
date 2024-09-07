@@ -21,7 +21,11 @@ func (c column[T]) Value() driver.Value {
 }
 
 func Column[T any](columnName string, value T, convert ConvertFunc[T]) ColumnValuer[T] {
-	return column[T]{colName: columnName, v: convert(value), convert: convert}
+	return column[T]{
+		colName: columnName,
+		v:       convert(value),
+		convert: convert,
+	}
 }
 
 type sqlCol[T any] struct {
@@ -40,4 +44,24 @@ func SQLColumn[T any](columnName string, value T, sqlValue QueryFunc, convert Co
 	c.convert = convert
 	c.sqlValuer = sqlValue
 	return c
+}
+
+type orderByCol struct {
+	colName string
+	asc     bool
+}
+
+func (c orderByCol) ColumnName() string {
+	return c.colName
+}
+
+func (c orderByCol) Asc() bool {
+	return c.asc
+}
+
+func OrderByColumn(columnName string, asc bool) ColumnOrder {
+	return orderByCol{
+		colName: columnName,
+		asc:     asc,
+	}
 }

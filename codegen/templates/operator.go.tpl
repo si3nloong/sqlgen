@@ -172,14 +172,10 @@ func Set[T any](f sequel.ColumnValuer[T], value ...T) sequel.SetClause {
 	}
 }
 
-func Asc[T any](f sequel.ColumnValuer[T]) sequel.OrderByClause {
-	return func(sw sequel.StmtWriter) {
-		sw.WriteString(f.ColumnName() + " ASC")
-	}
+func Asc[T any](f sequel.ColumnValuer[T]) sequel.ColumnOrder {
+	return sequel.OrderByColumn(f.ColumnName(), true)
 }
 
-func Desc[T any](f sequel.ColumnValuer[T]) sequel.OrderByClause {
-	return func(sw sequel.StmtWriter) {
-		sw.WriteString(f.ColumnName() + " DESC")
-	}
+func Desc[T any](f sequel.ColumnValuer[T]) sequel.ColumnOrder {
+	return sequel.OrderByColumn(f.ColumnName(), false)
 }
