@@ -16,7 +16,7 @@ const (
 )
 
 type ColumnType struct {
-	DataType   func(GoColumn) string
+	DataType   func(col GoColumn) string
 	Scanner    string
 	Valuer     string
 	SQLScanner string

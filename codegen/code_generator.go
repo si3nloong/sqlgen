@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 	"unsafe"
 
 	"github.com/samber/lo"
@@ -94,7 +95,8 @@ func (g *Generator) QuoteIdentifier(str string) string {
 	return g.dialect.QuoteIdentifier(str)
 }
 
-func (g *Generator) generate(pkg *packages.Package, dstDir string, typeInferred bool, schemas []*tableInfo) error {
+// Generate model functions
+func (g *Generator) genModels(pkg *packages.Package, dstDir string, typeInferred bool, schemas []*tableInfo) error {
 	defer g.Reset()
 	importPkgs := NewPackage(pkg.PkgPath, pkg.Name)
 	importPkgs.Import(types.NewPackage("strings", ""))
@@ -288,7 +290,6 @@ func (g *Generator) generate(pkg *packages.Package, dstDir string, typeInferred 
 
 	g.Reset()
 	g.Write(formatted)
-	// panic("stop now!")
 
 	// fset := token.NewFileSet()
 	// fileAST, err := parser.ParseFile(fset, "", g.Bytes(), parser.ParseComments|parser.AllErrors)
@@ -598,4 +599,30 @@ func (g *Generator) sqlValuer(f *columnInfo, idx int) string {
 		return g.dialect.QuoteVar(idx + 1)
 	}
 	return g.dialect.QuoteVar(idx + 1)
+}
+
+// Generate migration files for models
+func (g *Generator) genMigrations(schemas []*tableInfo) error {
+	unix := time.Now().Unix()
+	for i := range schemas {
+		// Each schema should have one migration files
+		if err := g.genMigration(unix, schemas[i]); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (g *Generator) genMigration(unix int64, t *tableInfo) error {
+	fileDest := fmt.Sprintf("%s/%d_%s.sql", g.config.Migration.Dir, unix, t.TableName())
+	f, err := os.OpenFile(fileDest, os.O_RDWR|os.O_CREATE|os.O_TRUNC, fileMode)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	if err := g.dialect.CreateTableStmt(f, t); err != nil {
+		return err
+	}
+	return nil
 }

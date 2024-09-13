@@ -28,7 +28,10 @@ func (v AutoPkLocation) Values() []any {
 	return []any{int64(v.ID), ewkb.Value(v.GeoPoint, 4326), types.JSONMarshaler(v.PtrGeo), types.TextMarshaler(v.PtrDate)}
 }
 func (v *AutoPkLocation) Addrs() []any {
-	return []any{types.Integer(&v.ID), ewkb.Scanner(&v.GeoPoint), types.JSONUnmarshaler(&v.PtrGeo), types.TextUnmarshaler(&v.PtrDate)}
+	if v.PtrDate == nil {
+		v.PtrDate = new(civil.Date)
+	}
+	return []any{types.Integer(&v.ID), ewkb.Scanner(&v.GeoPoint), types.JSONUnmarshaler(&v.PtrGeo), types.TextUnmarshaler(v.PtrDate)}
 }
 func (AutoPkLocation) InsertPlaceholders(row int) string {
 	return "(?,?,?)"

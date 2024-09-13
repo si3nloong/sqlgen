@@ -1,7 +1,10 @@
 package mysql
 
 import (
+	"database/sql"
 	"fmt"
+	"strconv"
+	"unsafe"
 
 	"github.com/si3nloong/sqlgen/codegen/dialect"
 )
@@ -14,77 +17,77 @@ func (s *mysqlDriver) ColumnDataTypes() map[string]*dialect.ColumnType {
 			Scanner:  "{{addrOfGoPath}}",
 		},
 		"string": {
-			DataType: s.columnDataType("VARCHAR(255)"),
+			DataType: s.columnDataType("VARCHAR(255)", ""),
 			Valuer:   "string({{goPath}})",
 			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.String({{addrOfGoPath}})",
 		},
 		"bool": {
-			DataType: s.columnDataType("BOOL"),
+			DataType: s.columnDataType("BOOL", false),
 			Valuer:   "bool({{goPath}})",
 			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Bool({{addrOfGoPath}})",
 		},
 		"int": {
-			DataType: s.columnDataType("INTEGER"),
+			DataType: s.columnDataType("INTEGER", int64(0)),
 			Valuer:   "int64({{goPath}})",
 			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Integer({{addrOfGoPath}})",
 		},
 		"int8": {
-			DataType: s.columnDataType("TINYINT"),
+			DataType: s.columnDataType("TINYINT", int64(0)),
 			Valuer:   "int64({{goPath}})",
 			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Integer({{addrOfGoPath}})",
 		},
 		"int16": {
-			DataType: s.columnDataType("SMALLINT"),
+			DataType: s.columnDataType("SMALLINT", int64(0)),
 			Valuer:   "int64({{goPath}})",
 			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Integer({{addrOfGoPath}})",
 		},
 		"int32": {
-			DataType: s.columnDataType("MEDIUMINT"),
+			DataType: s.columnDataType("MEDIUMINT", int64(0)),
 			Valuer:   "int64({{goPath}})",
 			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Integer({{addrOfGoPath}})",
 		},
 		"int64": {
-			DataType: s.columnDataType("BIGINT"),
+			DataType: s.columnDataType("BIGINT", int64(0)),
 			Valuer:   "int64({{goPath}})",
 			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Integer({{addrOfGoPath}})",
 		},
 		"uint": {
-			DataType: s.columnDataType("INTEGER UNSIGNED"),
+			DataType: s.columnDataType("INTEGER UNSIGNED", int64(0)),
 			Valuer:   "int64({{goPath}})",
 			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Integer({{addrOfGoPath}})",
 		},
 		"uint8": {
-			DataType: s.columnDataType("TINYINT UNSIGNED"),
+			DataType: s.columnDataType("TINYINT UNSIGNED", int64(0)),
 			Valuer:   "int64({{goPath}})",
 			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Integer({{addrOfGoPath}})",
 		},
 		"uint16": {
-			DataType: s.columnDataType("SMALLINT UNSIGNED"),
+			DataType: s.columnDataType("SMALLINT UNSIGNED", int64(0)),
 			Valuer:   "int64({{goPath}})",
 			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Integer({{addrOfGoPath}})",
 		},
 		"uint32": {
-			DataType: s.columnDataType("MEDIUMINT UNSIGNED"),
+			DataType: s.columnDataType("MEDIUMINT UNSIGNED", int64(0)),
 			Valuer:   "int64({{goPath}})",
 			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Integer({{addrOfGoPath}})",
 		},
 		"uint64": {
-			DataType: s.columnDataType("BIGINT UNSIGNED"),
+			DataType: s.columnDataType("BIGINT UNSIGNED", int64(0)),
 			Valuer:   "int64({{goPath}})",
 			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Integer({{addrOfGoPath}})",
 		},
 		"float32": {
-			DataType: s.columnDataType("FLOAT"),
+			DataType: s.columnDataType("FLOAT", int64(0)),
 			Valuer:   "float64({{goPath}})",
 			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Float({{addrOfGoPath}})",
 		},
 		"float64": {
-			DataType: s.columnDataType("FLOAT"),
+			DataType: s.columnDataType("FLOAT", int64(0)),
 			Valuer:   "float64({{goPath}})",
 			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Float({{addrOfGoPath}})",
 		},
 		"time.Time": {
-			DataType: s.columnDataType("TIMESTAMP"),
+			DataType: s.columnDataType("TIMESTAMP", sql.RawBytes(`NOW()`)),
 			Valuer:   "time.Time({{goPath}})",
 			Scanner:  "(*time.Time)({{addrOfGoPath}})",
 		},
@@ -190,15 +193,15 @@ func (s *mysqlDriver) ColumnDataTypes() map[string]*dialect.ColumnType {
 			Valuer:  "string({{goPath}}[:])",
 			Scanner: "github.com/si3nloong/sqlgen/sequel/types.FixedSizeBytes({{goPath}}[:],{{len}})",
 		},
-		"[]byte": {
-			DataType: s.columnDataType("BLOB"),
-			Valuer:   "string({{goPath}})",
-			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.String({{addrOfGoPath}})",
-		},
 		"[]string": {
 			DataType: s.columnDataType("JSON"),
 			Valuer:   "github.com/si3nloong/sqlgen/sequel/encoding.MarshalStringList({{goPath}})",
 			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.StringList({{addrOfGoPath}})",
+		},
+		"[]byte": {
+			DataType: s.columnDataType("BLOB"),
+			Valuer:   "string({{goPath}})",
+			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.String({{addrOfGoPath}})",
 		},
 		"[]bool": {
 			DataType: s.columnDataType("JSON"),
@@ -273,17 +276,41 @@ func (s *mysqlDriver) ColumnDataTypes() map[string]*dialect.ColumnType {
 	}
 }
 
-func (*mysqlDriver) columnDataType(dataType string) func(dialect.GoColumn) string {
+func (*mysqlDriver) columnDataType(dataType string, defaultValue ...any) func(dialect.GoColumn) string {
 	return func(column dialect.GoColumn) string {
+		str := dataType
 		if !column.Nullable() {
-			dataType += " NOT NULL"
+			str += " NOT NULL"
 		}
-		// if c.defaultValue != nil {
-		// dataType += " DEFAULT " + format(c.defaultValue)
-		// }
+		if len(defaultValue) > 0 {
+			str += " DEFAULT " + format(defaultValue[0])
+		}
 		// if c.extra != "" {
 		// 	str += " " + c.extra
 		// }
-		return dataType
+		return str
+	}
+}
+
+func format(v any) string {
+	switch vi := v.(type) {
+	case string:
+		return "'" + vi + "'"
+	case bool:
+		return strconv.FormatBool(vi)
+	case int:
+		return strconv.Itoa(vi)
+	case int64:
+		return strconv.FormatInt(vi, 10)
+	case uint64:
+		return strconv.FormatUint(vi, 10)
+	case float32:
+		return strconv.FormatFloat(float64(vi), 'f', -1, 64)
+	case float64:
+		return strconv.FormatFloat(vi, 'f', -1, 64)
+	case sql.RawBytes:
+		return unsafe.String(unsafe.SliceData(vi), len(vi))
+	default:
+		panic(fmt.Sprintf("unsupported data type %T", vi))
 	}
 }

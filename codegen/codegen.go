@@ -688,8 +688,14 @@ func parseGoPackage(
 			goto nextDir
 		}
 
-		if err := gen.generate(pkg, dir, typeInferred, schemas); err != nil {
+		if err := gen.genModels(pkg, dir, typeInferred, schemas); err != nil {
 			return err
+		}
+
+		if gen.config.Migration != nil {
+			if err := gen.genMigrations(schemas); err != nil {
+				return err
+			}
 		}
 
 	nextDir:

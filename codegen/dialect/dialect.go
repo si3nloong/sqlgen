@@ -29,7 +29,7 @@ type Dialect interface {
 
 	ColumnDataTypes() map[string]*ColumnType
 
-	// CreateTableStmt(Writer, Schema) error
+	CreateTableStmt(Writer, Schema) error
 	// AlterTableStmt(Schema) string
 }
 
@@ -37,13 +37,18 @@ type Schema interface {
 	DBName() string
 	TableName() string
 	Columns() []string
+	Keys() []string
+	ColumnGoType(i int) GoColumn
 	Indexes() []string
 }
 
 type GoColumn interface {
 	Name() string
+	DataType() string
+	GoName() string
 	Size() int
-	Path() string
+	GoPath() string
+	GoType() string
 	// Type() types.Type
 	Nullable() bool
 

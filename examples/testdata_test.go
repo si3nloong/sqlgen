@@ -27,7 +27,7 @@ func TestAll(t *testing.T) {
 		},
 		DataTypes: map[string]codegen.DataType{
 			"github.com/paulmach/orb.Point": {
-				DataType:   "POINT",
+				DataType:   "POINT NOT NULL",
 				SQLScanner: `ST_AsBinary({{.}}, 4326)`,
 				Scanner:    `github.com/paulmach/orb/encoding/ewkb.Scanner({{.}})`,
 				SQLValuer:  `ST_GeomFromEWKB({{.}})`,

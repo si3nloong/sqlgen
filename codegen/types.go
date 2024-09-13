@@ -51,7 +51,7 @@ func (b *tableInfo) GoName() string {
 	return b.goName
 }
 
-func (b *tableInfo) DatabaseName() string {
+func (b *tableInfo) DBName() string {
 	return b.dbName
 }
 
@@ -64,22 +64,31 @@ func (b *tableInfo) Keys() []string {
 		return c.columnName
 	})
 }
+
 func (b *tableInfo) Columns() []string {
 	return lo.Map(b.columns, func(c *columnInfo, _ int) string {
 		return c.columnName
 	})
 }
+
+func (b *tableInfo) ColumnGoType(i int) dialect.GoColumn {
+	return b.columns[i]
+}
+
 func (b *tableInfo) Indexes() []string {
 	return lo.Map(b.indexes, func(c *indexInfo, _ int) string {
 		return strings.Join(c.columns, ",")
 	})
 }
+
 func (b *tableInfo) Implements(T *types.Interface) (*types.Func, bool) {
 	return types.MissingMethod(b.t, T, true)
 }
+
 func (b *tableInfo) PtrImplements(T *types.Interface) (*types.Func, bool) {
 	return types.MissingMethod(types.NewPointer(b.t), T, true)
 }
+
 func (b *tableInfo) colsWithoutAutoIncrPK() []*columnInfo {
 	return lo.Filter(b.columns, func(v *columnInfo, _ int) bool {
 		return !v.AutoIncr()
@@ -101,6 +110,8 @@ type goTag struct {
 	value string
 }
 
+// Column info contain go actual type information
+// Some of the default behaviour is not able to override, such as go size, go enum, go tags, go path, go name, go nullable
 type columnInfo struct {
 	goName     string
 	goPath     string
@@ -111,6 +122,44 @@ type columnInfo struct {
 	enums      *enum
 	tags       []goTag
 	mapper     *dialect.ColumnType
+}
+
+func (c *columnInfo) ColumnName() string {
+	return c.columnName
+}
+
+func (c *columnInfo) ColumnPos() int {
+	return c.columnPos
+}
+
+func (c *columnInfo) GoName() string {
+	return c.goName
+}
+
+func (c *columnInfo) GoPath() string {
+	return c.goPath
+}
+
+func (c *columnInfo) Type() types.Type {
+	return c.t
+}
+
+func (c *columnInfo) Nullable() bool {
+	switch c.t.(type) {
+	case *types.Pointer,
+		*types.Map,
+		*types.Chan,
+		*types.Interface,
+		*types.Slice:
+		return true
+	default:
+		return false
+	}
+}
+
+func (c *columnInfo) Implements(T *types.Interface) (wrongType bool) {
+	_, wrongType = types.MissingMethod(c.t, T, true)
+	return
 }
 
 func (c *columnInfo) hasOption(k string) bool {
@@ -130,29 +179,16 @@ func (c *columnInfo) getOption(k string) (string, bool) {
 	return "", false
 }
 
-func (c *columnInfo) Nullable() bool {
-	switch c.t.(type) {
-	case *types.Pointer,
-		*types.Map,
-		*types.Chan,
-		*types.Interface,
-		*types.Slice:
-		return true
-	default:
-		return false
-	}
+func (c *columnInfo) DataType() string {
+	return c.mapper.DataType(c)
 }
 
-func (c columnInfo) GoName() string {
-	return c.goName
+func (c columnInfo) Name() string {
+	return c.columnName
 }
 
-func (c columnInfo) GoPath() string {
-	return c.goPath
-}
-
-func (c *columnInfo) Type() types.Type {
-	return c.t
+func (c columnInfo) GoType() string {
+	return c.t.String()
 }
 
 func (c *columnInfo) AutoIncr() bool {
@@ -164,17 +200,8 @@ func (c *columnInfo) AutoIncr() bool {
 	return false
 }
 
-func (c columnInfo) ColumnName() string {
-	return c.columnName
-}
-
-func (c *columnInfo) ColumnPos() int {
-	return c.columnPos
-}
-
-func (c *columnInfo) Implements(T *types.Interface) (wrongType bool) {
-	_, wrongType = types.MissingMethod(c.t, T, true)
-	return
+func (c columnInfo) Size() int {
+	return 1
 }
 
 func (i *columnInfo) sqlValuer() (func(string) string, bool) {
