@@ -47,8 +47,6 @@ var (
 	tableNameType = typeOfTable.PkgPath() + "." + typeOfTable.Name()
 )
 
-const fileMode = 0o755
-
 const (
 	TagOptionAutoIncrement = "auto_increment"
 	TagOptionBinary        = "binary"

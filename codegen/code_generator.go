@@ -304,9 +304,11 @@ func (g *Generator) genModels(pkg *packages.Package, dstDir string, typeInferred
 	// }
 	// err = (&printer.Config{Mode: printer.TabIndent | printer.UseSpaces, Tabwidth: 8}).Fprint(g, fset, fileAST)
 
-	os.MkdirAll(dstDir, fileMode)
+	if err := os.MkdirAll(dstDir, os.ModePerm); err != nil {
+		return err
+	}
 	fileDest := filepath.Join(dstDir, g.config.Exec.Filename)
-	f, err := os.OpenFile(fileDest, os.O_RDWR|os.O_CREATE|os.O_TRUNC, fileMode)
+	f, err := os.OpenFile(fileDest, os.O_RDWR|os.O_CREATE|os.O_TRUNC, os.ModePerm)
 	if err != nil {
 		return err
 	}
@@ -615,7 +617,7 @@ func (g *Generator) genMigrations(schemas []*tableInfo) error {
 
 func (g *Generator) genMigration(unix int64, t *tableInfo) error {
 	fileDest := fmt.Sprintf("%s/%d_%s.sql", g.config.Migration.Dir, unix, t.TableName())
-	f, err := os.OpenFile(fileDest, os.O_RDWR|os.O_CREATE|os.O_TRUNC, fileMode)
+	f, err := os.OpenFile(fileDest, os.O_RDWR|os.O_CREATE|os.O_TRUNC, os.ModePerm)
 	if err != nil {
 		return err
 	}

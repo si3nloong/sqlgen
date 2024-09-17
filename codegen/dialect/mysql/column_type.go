@@ -87,7 +87,7 @@ func (s *mysqlDriver) ColumnDataTypes() map[string]*dialect.ColumnType {
 			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Float({{addrOfGoPath}})",
 		},
 		"time.Time": {
-			DataType: s.columnDataType("TIMESTAMP", sql.RawBytes(`NOW()`)),
+			DataType: s.columnDataType("TIMESTAMP", sql.RawBytes("CURRENT_TIMESTAMP")),
 			Valuer:   "time.Time({{goPath}})",
 			Scanner:  "(*time.Time)({{addrOfGoPath}})",
 		},
