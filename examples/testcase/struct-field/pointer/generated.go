@@ -23,7 +23,73 @@ func (v Ptr) Values() []any {
 	return []any{int64(v.ID), types.String(v.Str), types.String(v.Bytes), types.Bool(v.Bool), types.Integer(v.Int), types.Integer(v.Int8), types.Integer(v.Int16), types.Integer(v.Int32), types.Integer(v.Int64), types.Integer(v.Uint), types.Integer(v.Uint8), types.Integer(v.Uint16), types.Integer(v.Uint32), types.Integer(v.Uint64), types.Float(v.F32), types.Float(v.F64), types.Time(v.Time)}
 }
 func (v *Ptr) Addrs() []any {
-	return []any{types.Integer(&v.ID), types.PtrOfString(&v.Str), types.PtrOfString(&v.Bytes), types.PtrOfBool(&v.Bool), types.PtrOfInt(&v.Int), types.PtrOfInt(&v.Int8), types.PtrOfInt(&v.Int16), types.PtrOfInt(&v.Int32), types.PtrOfInt(&v.Int64), types.PtrOfInt(&v.Uint), types.PtrOfInt(&v.Uint8), types.PtrOfInt(&v.Uint16), types.PtrOfInt(&v.Uint32), types.PtrOfInt(&v.Uint64), types.PtrOfFloat(&v.F32), types.PtrOfFloat(&v.F64), types.PtrOfTime(&v.Time)}
+	addrs := make([]any, 17)
+	addrs[0] = types.Integer(&v.ID)
+	if v.Str == nil {
+		v.Str = new(string)
+	}
+	addrs[1] = types.PtrOfString(&v.Str)
+	if v.Bytes == nil {
+		v.Bytes = new([]byte)
+	}
+	addrs[2] = types.PtrOfString(&v.Bytes)
+	if v.Bool == nil {
+		v.Bool = new(bool)
+	}
+	addrs[3] = types.PtrOfBool(&v.Bool)
+	if v.Int == nil {
+		v.Int = new(int)
+	}
+	addrs[4] = types.PtrOfInt(&v.Int)
+	if v.Int8 == nil {
+		v.Int8 = new(int8)
+	}
+	addrs[5] = types.PtrOfInt(&v.Int8)
+	if v.Int16 == nil {
+		v.Int16 = new(int16)
+	}
+	addrs[6] = types.PtrOfInt(&v.Int16)
+	if v.Int32 == nil {
+		v.Int32 = new(int32)
+	}
+	addrs[7] = types.PtrOfInt(&v.Int32)
+	if v.Int64 == nil {
+		v.Int64 = new(int64)
+	}
+	addrs[8] = types.PtrOfInt(&v.Int64)
+	if v.Uint == nil {
+		v.Uint = new(uint)
+	}
+	addrs[9] = types.PtrOfInt(&v.Uint)
+	if v.Uint8 == nil {
+		v.Uint8 = new(uint8)
+	}
+	addrs[10] = types.PtrOfInt(&v.Uint8)
+	if v.Uint16 == nil {
+		v.Uint16 = new(uint16)
+	}
+	addrs[11] = types.PtrOfInt(&v.Uint16)
+	if v.Uint32 == nil {
+		v.Uint32 = new(uint32)
+	}
+	addrs[12] = types.PtrOfInt(&v.Uint32)
+	if v.Uint64 == nil {
+		v.Uint64 = new(uint64)
+	}
+	addrs[13] = types.PtrOfInt(&v.Uint64)
+	if v.F32 == nil {
+		v.F32 = new(float32)
+	}
+	addrs[14] = types.PtrOfFloat(&v.F32)
+	if v.F64 == nil {
+		v.F64 = new(float64)
+	}
+	addrs[15] = types.PtrOfFloat(&v.F64)
+	if v.Time == nil {
+		v.Time = new(time.Time)
+	}
+	addrs[16] = types.PtrOfTime(&v.Time)
+	return addrs
 }
 func (Ptr) InsertPlaceholders(row int) string {
 	return "(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"

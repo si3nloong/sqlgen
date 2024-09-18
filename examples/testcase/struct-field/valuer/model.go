@@ -1,11 +1,13 @@
 package valuer
 
-import "database/sql/driver"
+import (
+	"database/sql/driver"
+)
 
 type anyType struct{}
 
 func (anyType) Value() (driver.Value, error) {
-	return nil, nil
+	return "any", nil
 }
 
 type B struct {

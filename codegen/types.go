@@ -144,6 +144,11 @@ func (c *columnInfo) Type() types.Type {
 	return c.t
 }
 
+func (c *columnInfo) isPtr() bool {
+	_, ok := c.t.(*types.Pointer)
+	return ok
+}
+
 func (c *columnInfo) Nullable() bool {
 	switch c.t.(type) {
 	case *types.Pointer,

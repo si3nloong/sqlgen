@@ -17,7 +17,15 @@ func (v B) Values() []any {
 	return []any{int64(v.ID), (driver.Valuer)(v.Value), (driver.Valuer)(v.PtrValue), string(v.N)}
 }
 func (v *B) Addrs() []any {
-	return []any{types.Integer(&v.ID), types.JSONUnmarshaler(&v.Value), types.JSONUnmarshaler(&v.PtrValue), types.String(&v.N)}
+	addrs := make([]any, 4)
+	addrs[0] = types.Integer(&v.ID)
+	addrs[1] = types.JSONUnmarshaler(&v.Value)
+	if v.PtrValue == nil {
+		v.PtrValue = new(anyType)
+	}
+	addrs[2] = types.JSONUnmarshaler(&v.PtrValue)
+	addrs[3] = types.String(&v.N)
+	return addrs
 }
 func (B) InsertPlaceholders(row int) string {
 	return "(?,?,?,?)"

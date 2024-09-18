@@ -691,6 +691,10 @@ func parseGoPackage(
 		}
 
 		if gen.config.Migration != nil {
+			if err := os.MkdirAll(gen.config.Migration.Dir, os.ModePerm); err != nil {
+				return err
+			}
+
 			if err := gen.genMigrations(schemas); err != nil {
 				return err
 			}

@@ -13,6 +13,5 @@ type Location struct {
 type AutoPkLocation struct {
 	ID       uint64 `sql:",pk,auto_increment"`
 	GeoPoint orb.Point
-	PtrGeo   *orb.Point
 	PtrDate  *civil.Date
 }

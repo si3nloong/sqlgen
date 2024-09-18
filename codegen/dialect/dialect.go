@@ -49,6 +49,7 @@ type GoColumn interface {
 	Size() int
 	GoPath() string
 	GoType() string
+	AutoIncr() bool
 	// Type() types.Type
 	Nullable() bool
 

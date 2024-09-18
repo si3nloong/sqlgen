@@ -356,7 +356,25 @@ func (g *Generator) buildCompositeKeys(importPkgs *Package, table *tableInfo) {
 }
 
 func (g *Generator) buildValuer(importPkgs *Package, table *tableInfo) {
+	// ptrs := lo.Filter(table.columns, func(v *columnInfo, _ int) bool {
+	// 	return v.isPtr()
+	// })
 	g.L("func (v " + table.goName + ") Values() []any {")
+	// if len(ptrs) > 0 {
+	// 	g.L("values := make([]any, ", len(table.columns), ")")
+	// 	for _, f := range table.columns {
+	// 		if f.isPtr() {
+	// 			g.L("if v." + f.goPath + " == nil {")
+	// 			log.Println(f.t.Underlying().String(), f.columnPos)
+	// 			g.L("values[", f.columnPos, "] = nil")
+	// 			g.L("}")
+	// 		} else {
+	// 			g.L("values[", f.columnPos, "] = ", g.valuer(importPkgs, "v."+f.GoPath(), f.Type()))
+	// 		}
+	// 	}
+	// 	g.L("return values")
+	// } else {
+	// }
 	g.WriteString("return []any{")
 	for i, f := range table.columns {
 		if i > 0 {
@@ -369,15 +387,33 @@ func (g *Generator) buildValuer(importPkgs *Package, table *tableInfo) {
 }
 
 func (g *Generator) buildScanner(importPkgs *Package, table *tableInfo) {
+	ptrs := lo.Filter(table.columns, func(v *columnInfo, _ int) bool {
+		return v.isPtr()
+	})
 	g.L("func (v *" + table.goName + ") Addrs() []any {")
-	g.WriteString("return []any{")
-	for i, f := range table.columns {
-		if i > 0 {
-			g.WriteByte(',')
+	if len(ptrs) > 0 {
+		g.L("addrs := make([]any, ", len(table.columns), ")")
+		for _, f := range table.columns {
+			if f.isPtr() {
+				g.L("if v." + f.goPath + " == nil {")
+				g.L("v."+f.goPath+" = new(", Expr(strings.TrimPrefix(f.t.String(), "*")).Format(importPkgs, ExprParams{}), ")")
+				g.L("}")
+				g.L("addrs[", f.columnPos, "] = ", g.scanner(importPkgs, "v."+f.GoPath(), f.Type()))
+			} else {
+				g.L("addrs[", f.columnPos, "] = ", g.scanner(importPkgs, "&v."+f.GoPath(), f.Type()))
+			}
 		}
-		g.WriteString(g.scanner(importPkgs, "&v."+f.GoPath(), f.Type()))
+		g.L("return addrs")
+	} else {
+		g.WriteString("return []any{")
+		for i, f := range table.columns {
+			if i > 0 {
+				g.WriteByte(',')
+			}
+			g.WriteString(g.scanner(importPkgs, "&v."+f.GoPath(), f.Type()))
+		}
+		g.WriteString("}\n")
 	}
-	g.WriteString("}\n")
 	g.L("}")
 }
 
@@ -554,26 +590,37 @@ func (g *Generator) buildUpdateByPK(importPkgs *Package, t *tableInfo) {
 }
 
 func (g *Generator) valuer(importPkgs *Package, goPath string, t types.Type) string {
+	utype, isPtr := underlyingType(t)
 	if columnType, ok := g.columnTypes[t.String()]; ok {
 		return Expr(columnType.Valuer).Format(importPkgs, ExprParams{GoPath: goPath})
-	} else if _, wrong := types.MissingMethod(t, goSqlValuer, true); wrong {
+	} else if _, wrong := types.MissingMethod(utype, goSqlValuer, true); wrong {
+		if isPtr {
+			return Expr("(database/sql/driver.Valuer)({{goPath}})").Format(importPkgs, ExprParams{GoPath: goPath})
+		}
 		return Expr("(database/sql/driver.Valuer)({{goPath}})").Format(importPkgs, ExprParams{GoPath: goPath})
 	} else if columnType, ok := g.columnDataType(t); ok && columnType.Valuer != "" {
 		return Expr(columnType.Valuer).Format(importPkgs, ExprParams{GoPath: goPath, Len: arraySize(t)})
-	} else if isImplemented(t, textMarshaler) {
+	} else if isImplemented(utype, textMarshaler) {
 		return Expr("github.com/si3nloong/sqlgen/sequel/types.TextMarshaler({{goPath}})").Format(importPkgs, ExprParams{GoPath: goPath})
 	}
 	return Expr(g.defaultColumnTypes["*"].Valuer).Format(importPkgs, ExprParams{GoPath: goPath})
 }
 
 func (g *Generator) scanner(importPkgs *Package, goPath string, t types.Type) string {
+	ptr, isPtr := pointerType(t)
 	if columnType, ok := g.columnTypes[t.String()]; ok && columnType.Scanner != "" {
 		return Expr(columnType.Scanner).Format(importPkgs, ExprParams{GoPath: goPath})
-	} else if types.Implements(newPointer(t), goSqlScanner) {
+	} else if isImplemented(ptr, goSqlScanner) {
+		if isPtr {
+			return Expr("(database/sql.Scanner)({{goPath}})").Format(importPkgs, ExprParams{GoPath: goPath})
+		}
 		return Expr("(database/sql.Scanner)({{addrOfGoPath}})").Format(importPkgs, ExprParams{GoPath: goPath})
 	} else if columnType, ok := g.columnDataType(t); ok && columnType.Scanner != "" {
 		return Expr(columnType.Scanner).Format(importPkgs, ExprParams{GoPath: goPath, Len: arraySize(t)})
-	} else if isImplemented(newPointer(t), textUnmarshaler) {
+	} else if isImplemented(ptr, textUnmarshaler) {
+		if isPtr {
+			return Expr("github.com/si3nloong/sqlgen/sequel/types.TextUnmarshaler({{goPath}})").Format(importPkgs, ExprParams{GoPath: goPath})
+		}
 		return Expr("github.com/si3nloong/sqlgen/sequel/types.TextUnmarshaler({{addrOfGoPath}})").Format(importPkgs, ExprParams{GoPath: goPath})
 	}
 	return Expr(g.defaultColumnTypes["*"].Scanner).Format(importPkgs, ExprParams{GoPath: goPath})
