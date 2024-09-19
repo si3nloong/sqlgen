@@ -6,15 +6,15 @@ import (
 	"strings"
 )
 
-type strList[T ~string] struct {
+type strSlice[T ~string] struct {
 	v *[]T
 }
 
-func StringList[T ~string](v *[]T) strList[T] {
-	return strList[T]{v: v}
+func StringList[T ~string](v *[]T) strSlice[T] {
+	return strSlice[T]{v: v}
 }
 
-func (s strList[T]) Scan(v any) error {
+func (s strSlice[T]) Scan(v any) error {
 	switch vi := v.(type) {
 	case []byte:
 		if bytes.Equal(vi, nullBytes) {

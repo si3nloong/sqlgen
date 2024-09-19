@@ -44,12 +44,6 @@ func (b boolLike[T]) Value() (driver.Value, error) {
 func (b boolLike[T]) Scan(v any) error {
 	var val T
 	switch vi := v.(type) {
-	case []byte:
-		f, err := strconv.ParseBool(unsafe.String(unsafe.SliceData(vi), len(vi)))
-		if err != nil {
-			return err
-		}
-		val = T(f)
 	case bool:
 		val = T(vi)
 	case int64:
@@ -60,6 +54,12 @@ func (b boolLike[T]) Scan(v any) error {
 		}
 
 		switch vi := v.(type) {
+		case []byte:
+			f, err := strconv.ParseBool(unsafe.String(unsafe.SliceData(vi), len(vi)))
+			if err != nil {
+				return err
+			}
+			val = T(f)
 		case string:
 			f, err := strconv.ParseBool(vi)
 			if err != nil {

@@ -13,82 +13,82 @@ func (s *mysqlDriver) ColumnDataTypes() map[string]*dialect.ColumnType {
 	return map[string]*dialect.ColumnType{
 		"rune": {
 			DataType: s.columnDataType("CHAR(1)"),
-			Valuer:   "string({{goPath}})",
+			Valuer:   "(string)({{goPath}})",
 			Scanner:  "{{addrOfGoPath}}",
 		},
 		"string": {
 			DataType: s.columnDataType("VARCHAR(255)", ""),
-			Valuer:   "string({{goPath}})",
+			Valuer:   "(string)({{goPath}})",
 			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.String({{addrOfGoPath}})",
 		},
 		"bool": {
 			DataType: s.columnDataType("BOOL", false),
-			Valuer:   "bool({{goPath}})",
+			Valuer:   "(bool)({{goPath}})",
 			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Bool({{addrOfGoPath}})",
 		},
 		"int": {
 			DataType: s.columnDataType("INTEGER", int64(0)),
-			Valuer:   "int64({{goPath}})",
+			Valuer:   "(int64)({{goPath}})",
 			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Integer({{addrOfGoPath}})",
 		},
 		"int8": {
 			DataType: s.columnDataType("TINYINT", int64(0)),
-			Valuer:   "int64({{goPath}})",
+			Valuer:   "(int64)({{goPath}})",
 			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Integer({{addrOfGoPath}})",
 		},
 		"int16": {
 			DataType: s.columnDataType("SMALLINT", int64(0)),
-			Valuer:   "int64({{goPath}})",
+			Valuer:   "(int64)({{goPath}})",
 			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Integer({{addrOfGoPath}})",
 		},
 		"int32": {
 			DataType: s.columnDataType("MEDIUMINT", int64(0)),
-			Valuer:   "int64({{goPath}})",
+			Valuer:   "(int64)({{goPath}})",
 			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Integer({{addrOfGoPath}})",
 		},
 		"int64": {
 			DataType: s.columnDataType("BIGINT", int64(0)),
-			Valuer:   "int64({{goPath}})",
+			Valuer:   "(int64)({{goPath}})",
 			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Integer({{addrOfGoPath}})",
 		},
 		"uint": {
 			DataType: s.columnDataType("INTEGER UNSIGNED", int64(0)),
-			Valuer:   "int64({{goPath}})",
+			Valuer:   "(int64)({{goPath}})",
 			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Integer({{addrOfGoPath}})",
 		},
 		"uint8": {
 			DataType: s.columnDataType("TINYINT UNSIGNED", int64(0)),
-			Valuer:   "int64({{goPath}})",
+			Valuer:   "(int64)({{goPath}})",
 			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Integer({{addrOfGoPath}})",
 		},
 		"uint16": {
 			DataType: s.columnDataType("SMALLINT UNSIGNED", int64(0)),
-			Valuer:   "int64({{goPath}})",
+			Valuer:   "(int64)({{goPath}})",
 			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Integer({{addrOfGoPath}})",
 		},
 		"uint32": {
 			DataType: s.columnDataType("MEDIUMINT UNSIGNED", int64(0)),
-			Valuer:   "int64({{goPath}})",
+			Valuer:   "(int64)({{goPath}})",
 			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Integer({{addrOfGoPath}})",
 		},
 		"uint64": {
 			DataType: s.columnDataType("BIGINT UNSIGNED", int64(0)),
-			Valuer:   "int64({{goPath}})",
+			Valuer:   "(int64)({{goPath}})",
 			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Integer({{addrOfGoPath}})",
 		},
 		"float32": {
 			DataType: s.columnDataType("FLOAT", int64(0)),
-			Valuer:   "float64({{goPath}})",
+			Valuer:   "(float64)({{goPath}})",
 			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Float({{addrOfGoPath}})",
 		},
 		"float64": {
 			DataType: s.columnDataType("FLOAT", int64(0)),
-			Valuer:   "float64({{goPath}})",
+			Valuer:   "(float64)({{goPath}})",
 			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Float({{addrOfGoPath}})",
 		},
 		"time.Time": {
 			DataType: s.columnDataType("TIMESTAMP", sql.RawBytes("CURRENT_TIMESTAMP")),
-			Valuer:   "time.Time({{goPath}})",
+			Valuer:   "(time.Time)({{goPath}})",
 			Scanner:  "(*time.Time)({{addrOfGoPath}})",
 		},
 		"*string": {
@@ -176,7 +176,7 @@ func (s *mysqlDriver) ColumnDataTypes() map[string]*dialect.ColumnType {
 		},
 		"encoding/json.RawMessage": {
 			DataType: s.columnDataType("JSON"),
-			Valuer:   "string({{goPath}})",
+			Valuer:   "(string)({{goPath}})",
 			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.String({{addrOfGoPath}})",
 		},
 		"[...]rune": {
@@ -195,7 +195,7 @@ func (s *mysqlDriver) ColumnDataTypes() map[string]*dialect.ColumnType {
 		},
 		"[]string": {
 			DataType: s.columnDataType("JSON"),
-			Valuer:   "github.com/si3nloong/sqlgen/sequel/encoding.MarshalStringList({{goPath}})",
+			Valuer:   "github.com/si3nloong/sqlgen/sequel/encoding.MarshalStringSlice({{goPath}})",
 			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.StringList({{addrOfGoPath}})",
 		},
 		"[]byte": {
@@ -210,62 +210,62 @@ func (s *mysqlDriver) ColumnDataTypes() map[string]*dialect.ColumnType {
 		},
 		"[]int": {
 			DataType: s.columnDataType("JSON"),
-			Valuer:   "github.com/si3nloong/sqlgen/sequel/encoding.MarshalSignedIntList({{goPath}})",
+			Valuer:   "github.com/si3nloong/sqlgen/sequel/encoding.MarshalIntSlice({{goPath}})",
 			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.IntList({{addrOfGoPath}})",
 		},
 		"[]int8": {
 			DataType: s.columnDataType("JSON"),
-			Valuer:   "github.com/si3nloong/sqlgen/sequel/encoding.MarshalSignedIntList({{goPath}})",
+			Valuer:   "github.com/si3nloong/sqlgen/sequel/encoding.MarshalIntSlice({{goPath}})",
 			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.IntList({{addrOfGoPath}})",
 		},
 		"[]int16": {
 			DataType: s.columnDataType("JSON"),
-			Valuer:   "github.com/si3nloong/sqlgen/sequel/encoding.MarshalSignedIntList({{goPath}})",
+			Valuer:   "github.com/si3nloong/sqlgen/sequel/encoding.MarshalIntSlice({{goPath}})",
 			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.IntList({{addrOfGoPath}})",
 		},
 		"[]int32": {
 			DataType: s.columnDataType("JSON"),
-			Valuer:   "github.com/si3nloong/sqlgen/sequel/encoding.MarshalSignedIntList({{goPath}})",
+			Valuer:   "github.com/si3nloong/sqlgen/sequel/encoding.MarshalIntSlice({{goPath}})",
 			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.IntList({{addrOfGoPath}})",
 		},
 		"[]int64": {
 			DataType: s.columnDataType("JSON"),
-			Valuer:   "github.com/si3nloong/sqlgen/sequel/encoding.MarshalSignedIntList({{goPath}})",
+			Valuer:   "github.com/si3nloong/sqlgen/sequel/encoding.MarshalIntSlice({{goPath}})",
 			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.IntList({{addrOfGoPath}})",
 		},
 		"[]uint": {
 			DataType: s.columnDataType("JSON"),
-			Valuer:   "github.com/si3nloong/sqlgen/sequel/encoding.MarshalUnsignedIntList({{goPath}})",
+			Valuer:   "github.com/si3nloong/sqlgen/sequel/encoding.MarshalUintSlice({{goPath}})",
 			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.UintList({{addrOfGoPath}})",
 		},
 		"[]uint8": {
 			DataType: s.columnDataType("JSON"),
-			Valuer:   "github.com/si3nloong/sqlgen/sequel/encoding.MarshalUnsignedIntList({{goPath}})",
+			Valuer:   "github.com/si3nloong/sqlgen/sequel/encoding.MarshalUintSlice({{goPath}})",
 			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.UintList({{addrOfGoPath}})",
 		},
 		"[]uint16": {
 			DataType: s.columnDataType("JSON"),
-			Valuer:   "github.com/si3nloong/sqlgen/sequel/encoding.MarshalUnsignedIntList({{goPath}})",
+			Valuer:   "github.com/si3nloong/sqlgen/sequel/encoding.MarshalUintSlice({{goPath}})",
 			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.UintList({{addrOfGoPath}})",
 		},
 		"[]uint32": {
 			DataType: s.columnDataType("JSON"),
-			Valuer:   "github.com/si3nloong/sqlgen/sequel/encoding.MarshalUnsignedIntList({{goPath}})",
+			Valuer:   "github.com/si3nloong/sqlgen/sequel/encoding.MarshalUintSlice({{goPath}})",
 			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.UintList({{addrOfGoPath}})",
 		},
 		"[]uint64": {
 			DataType: s.columnDataType("JSON"),
-			Valuer:   "github.com/si3nloong/sqlgen/sequel/encoding.MarshalUnsignedIntList({{goPath}})",
+			Valuer:   "github.com/si3nloong/sqlgen/sequel/encoding.MarshalUintSlice({{goPath}})",
 			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.UintList({{addrOfGoPath}})",
 		},
 		"[]float32": {
 			DataType: s.columnDataType("JSON"),
-			Valuer:   "github.com/si3nloong/sqlgen/sequel/encoding.MarshalFloatList({{goPath}})",
+			Valuer:   "github.com/si3nloong/sqlgen/sequel/encoding.MarshalFloatList({{goPath}},-1)",
 			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.FloatList({{addrOfGoPath}})",
 		},
 		"[]float64": {
 			DataType: s.columnDataType("JSON"),
-			Valuer:   "github.com/si3nloong/sqlgen/sequel/encoding.MarshalFloatList({{goPath}})",
+			Valuer:   "github.com/si3nloong/sqlgen/sequel/encoding.MarshalFloatList({{goPath}},-1)",
 			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.FloatList({{addrOfGoPath}})",
 		},
 		"*": {

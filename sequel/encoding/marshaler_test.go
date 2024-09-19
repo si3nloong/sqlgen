@@ -6,28 +6,32 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestMarshalStringList(t *testing.T) {
-	t.Run("MarshalStringList using []byte", func(t *testing.T) {
-		require.Equal(t, `["a","b"]`, MarshalStringList([][]byte{[]byte("a"), []byte("b")}))
+func TestMarshalStringSlice(t *testing.T) {
+	t.Run("MarshalStringSlice using []byte", func(t *testing.T) {
+		require.Equal(t, `["a","b"]`, MarshalStringSlice([][]byte{[]byte("a"), []byte("b")}))
 	})
 
-	t.Run("MarshalStringList using string", func(t *testing.T) {
-		require.Equal(t, `["a","b"]`, MarshalStringList([]string{"a", "b"}))
+	t.Run("MarshalStringSlice using string", func(t *testing.T) {
+		require.Equal(t, `["a","b"]`, MarshalStringSlice([]string{"a", "b"}))
 	})
 
-	t.Run("MarshalStringList using custom string", func(t *testing.T) {
+	t.Run("MarshalStringSlice using custom string", func(t *testing.T) {
 		type CustomStr string
-		require.Equal(t, `["a","b","z"]`, MarshalStringList([]CustomStr{"a", "b", "z"}))
+		require.Equal(t, `["a","b","z"]`, MarshalStringSlice([]CustomStr{"a", "b", "z"}))
+	})
+
+	t.Run("MarshalStringSlice with custom enclose", func(t *testing.T) {
+		require.Equal(t, `{"a","b"}`, MarshalStringSlice([][]byte{[]byte("a"), []byte("b")}, [2]byte{'{', '}'}))
 	})
 }
 
 func TestMarshalIntList(t *testing.T) {
 	t.Run("MarshalIntList using int", func(t *testing.T) {
-		require.Equal(t, `[-1,-6,11,88,100]`, MarshalSignedIntList([]int{-1, -6, 11, 88, 100}))
+		require.Equal(t, `[-1,-6,11,88,100]`, MarshalIntSlice([]int{-1, -6, 11, 88, 100}))
 	})
 
 	t.Run("MarshalIntList using uint", func(t *testing.T) {
-		require.Equal(t, `[1,5,10]`, MarshalUnsignedIntList([]uint{1, 5, 10}))
+		require.Equal(t, `[1,5,10]`, MarshalUintSlice([]uint{1, 5, 10}))
 	})
 
 	t.Run("MarshalIntList using iota", func(t *testing.T) {
@@ -38,19 +42,18 @@ func TestMarshalIntList(t *testing.T) {
 			failed
 			pending
 		)
-		require.Equal(t, `[1,2,3]`, MarshalSignedIntList([]enum{success, failed, pending}))
+		require.Equal(t, `[1,2,3]`, MarshalIntSlice([]enum{success, failed, pending}))
 	})
 }
 
 func TestMarshalBoolList(t *testing.T) {
 	t.Run("MarshalBoolList using bool", func(t *testing.T) {
-		require.Equal(t, `[1,0,1]`, MarshalBoolList([]bool{true, false, true}))
+		require.Equal(t, `[true,false,true]`, MarshalBoolList([]bool{true, false, true}))
 	})
 
 	t.Run("MarshalBoolList using custom bool", func(t *testing.T) {
 		type Flag bool
-
-		require.Equal(t, `[0,0,1]`, MarshalBoolList([]Flag{false, false, true}))
+		require.Equal(t, `[false,false,true]`, MarshalBoolList([]Flag{false, false, true}))
 	})
 }
 
