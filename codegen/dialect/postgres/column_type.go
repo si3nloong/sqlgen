@@ -88,7 +88,7 @@ func (s *postgresDriver) ColumnDataTypes() map[string]*dialect.ColumnType {
 			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Float({{addrOfGoPath}})",
 		},
 		"time.Time": {
-			DataType: s.columnDataType("timestamp(6) with time zone"),
+			DataType: s.columnDataType("timestamp(6) with time zone", sql.RawBytes(`NOW()`)),
 			Valuer:   "(time.Time)({{goPath}})",
 			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Time({{addrOfGoPath}})",
 		},
@@ -190,7 +190,7 @@ func (s *postgresDriver) ColumnDataTypes() map[string]*dialect.ColumnType {
 		"[]uint64": {
 			DataType: s.columnDataType("int8[]"),
 			Valuer:   "github.com/lib/pq.Int64Array({{goPath}})",
-			Scanner:  "github.com/lib/pq.Array{{addrOfGoPath}})",
+			Scanner:  "github.com/lib/pq.Array({{addrOfGoPath}})",
 		},
 		"*": {
 			DataType: s.columnDataType("json"),
