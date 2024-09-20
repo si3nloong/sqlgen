@@ -113,7 +113,7 @@ func (g *Generator) genModels(pkg *packages.Package, dstDir string, typeInferred
 			g.LogError(fmt.Errorf(`sqlgen: struct %q has function "DatabaseName" but wrong footprint`, t.goName))
 		} else if method != nil && !wrongType && t.dbName != "" {
 			g.L("func (" + t.goName + ") DatabaseName() string {")
-			g.L(`return ` + g.Quote(t.dbName))
+			g.L(`return ` + g.Quote(g.QuoteIdentifier(t.dbName)))
 			g.L("}")
 		}
 
@@ -122,7 +122,7 @@ func (g *Generator) genModels(pkg *packages.Package, dstDir string, typeInferred
 			g.LogError(fmt.Errorf(`sqlgen: struct %q has function "TableName" but wrong footprint`, t.goName))
 		} else if method != nil && !wrongType {
 			g.L("func (" + t.goName + ") TableName() string {")
-			g.L(`return ` + g.Quote(t.tableName))
+			g.L(`return ` + g.Quote(g.QuoteIdentifier(t.tableName)))
 			g.L("}")
 		} else {
 			// TODO: we need to do something when table name is declare by user
@@ -139,7 +139,7 @@ func (g *Generator) genModels(pkg *packages.Package, dstDir string, typeInferred
 			} else {
 				pk := t.keys[0]
 				g.L("func (v " + t.goName + ") PK() (string, int, any) {")
-				g.L(`return `, g.Quote(pk.ColumnName()), ", ", pk.ColumnPos(), ", ", g.valuer(importPkgs, "v."+pk.GoPath(), pk.Type()))
+				g.L(`return `, g.Quote(g.QuoteIdentifier(pk.ColumnName())), ", ", pk.ColumnPos(), ", ", g.valuer(importPkgs, "v."+pk.GoPath(), pk.Type()))
 				g.L("}")
 			}
 		}
@@ -154,7 +154,7 @@ func (g *Generator) genModels(pkg *packages.Package, dstDir string, typeInferred
 				if i > 0 {
 					g.WriteByte(',')
 				}
-				g.WriteString(g.Quote(f.ColumnName()))
+				g.WriteString(g.Quote(g.QuoteIdentifier(f.ColumnName())))
 			}
 			g.WriteString("}\n")
 			g.L("}")
@@ -244,16 +244,16 @@ func (g *Generator) genModels(pkg *packages.Package, dstDir string, typeInferred
 					matches := sqlFuncRegexp.FindStringSubmatch(sqlValuer("{}"))
 					if len(matches) > 4 {
 						g.L("func (v "+t.goName+") ", g.config.Getter.Prefix+f.GoName(), "() sequel.SQLColumnValuer[", typeStr, "] {")
-						g.L(`return sequel.SQLColumn`+specificType+`(`, g.Quote(f.ColumnName()), `, v.`, f.GoPath()+",", fmt.Sprintf(`func(placeholder string) string { return %q+ placeholder + %q}`, matches[1]+matches[2], matches[4]+matches[5]), `, func(val `, typeStr, `) driver.Value { return `, g.valuer(importPkgs, "val", f.Type()), ` })`)
+						g.L(`return sequel.SQLColumn`+specificType+`(`, g.Quote(g.QuoteIdentifier(f.ColumnName())), `, v.`, f.GoPath()+",", fmt.Sprintf(`func(placeholder string) string { return %q+ placeholder + %q}`, matches[1]+matches[2], matches[4]+matches[5]), `, func(val `, typeStr, `) driver.Value { return `, g.valuer(importPkgs, "val", f.Type()), ` })`)
 						g.L("}")
 					} else {
 						g.L("func (v "+t.goName+") ", g.config.Getter.Prefix+f.GoName(), "() sequel.ColumnValuer[", typeStr, "] {")
-						g.L(`return sequel.Column`, specificType, `(`, g.Quote(f.ColumnName()), `, v.`, f.GoPath(), `, func(val `, typeStr, `) driver.Value { return `, g.valuer(importPkgs, "val", f.Type()), ` })`)
+						g.L(`return sequel.Column`, specificType, `(`, g.Quote(g.QuoteIdentifier(f.ColumnName())), `, v.`, f.GoPath(), `, func(val `, typeStr, `) driver.Value { return `, g.valuer(importPkgs, "val", f.Type()), ` })`)
 						g.L("}")
 					}
 				} else {
 					g.L("func (v "+t.goName+") ", g.config.Getter.Prefix+f.GoName(), "() sequel.ColumnValuer[", typeStr, "] {")
-					g.L("return sequel.Column", specificType, "(", g.Quote(f.ColumnName()), ", v.", f.GoPath(), ", func(val ", typeStr, `) driver.Value { return `, g.valuer(importPkgs, "val", f.Type()), ` })`)
+					g.L("return sequel.Column", specificType, "(", g.Quote(g.QuoteIdentifier(f.ColumnName())), ", v.", f.GoPath(), ", func(val ", typeStr, `) driver.Value { return `, g.valuer(importPkgs, "val", f.Type()), ` })`)
 					g.L("}")
 				}
 			}
@@ -440,7 +440,7 @@ func (g *Generator) buildFindByPK(importPkgs *Package, t *tableInfo) {
 	if len(t.keys) > 1 {
 		// Composite primary key
 		keyCols := lo.Map(t.keys, func(v *columnInfo, _ int) string {
-			return v.ColumnName()
+			return g.QuoteIdentifier(v.ColumnName())
 		})
 		buf.WriteString("(" + strings.Join(keyCols, ",") + ")" + " = ")
 		buf.WriteByte('(')
@@ -456,7 +456,7 @@ func (g *Generator) buildFindByPK(importPkgs *Package, t *tableInfo) {
 			if i > 0 {
 				buf.WriteString(" AND ")
 			}
-			buf.WriteString(f.ColumnName() + " = " + g.dialect.QuoteVar(i+1))
+			buf.WriteString(g.QuoteIdentifier(f.ColumnName()) + " = " + g.dialect.QuoteVar(i+1))
 		}
 	}
 	buf.WriteString(" LIMIT 1;")
@@ -483,7 +483,7 @@ func (g *Generator) buildInsertOne(importPkgs *Package, t *tableInfo) {
 	if method, wrongType := t.Implements(sqlTabler); wrongType {
 		g.LogError(fmt.Errorf(`sqlgen: struct %q has function "TableName" but wrong footprint`, t.goName))
 	} else if method != nil {
-		buf.WriteString("INSERT INTO " + t.tableName)
+		buf.WriteString("INSERT INTO " + g.QuoteIdentifier(t.tableName))
 	} else {
 		query = g.Quote("INSERT INTO ") + "+ v.TableName() +"
 	}
@@ -492,7 +492,7 @@ func (g *Generator) buildInsertOne(importPkgs *Package, t *tableInfo) {
 		if i > 0 {
 			buf.WriteByte(',')
 		}
-		buf.WriteString(f.ColumnName())
+		buf.WriteString(g.QuoteIdentifier(f.ColumnName()))
 	}
 	buf.WriteString(") VALUES (")
 	for i, f := range columns {
@@ -550,12 +550,12 @@ func (g *Generator) buildUpdateByPK(importPkgs *Package, t *tableInfo) {
 		if i > 0 {
 			buf.WriteByte(',')
 		}
-		buf.WriteString(f.ColumnName() + " = " + g.sqlValuer(f, i))
+		buf.WriteString(g.QuoteIdentifier(f.ColumnName()) + " = " + g.sqlValuer(f, i))
 	}
 	buf.WriteString(" WHERE ")
 	if len(t.keys) > 1 {
 		keyCols := lo.Map(t.keys, func(v *columnInfo, _ int) string {
-			return v.ColumnName()
+			return g.QuoteIdentifier(v.ColumnName())
 		})
 		buf.WriteString("(" + strings.Join(keyCols, ",") + ")" + " = ")
 		buf.WriteByte('(')
@@ -571,7 +571,7 @@ func (g *Generator) buildUpdateByPK(importPkgs *Package, t *tableInfo) {
 			if i > 0 {
 				buf.WriteString(" AND ")
 			}
-			buf.WriteString(k.ColumnName() + " = " + g.sqlValuer(k, i+len(columns)))
+			buf.WriteString(g.QuoteIdentifier(k.ColumnName()) + " = " + g.sqlValuer(k, i+len(columns)))
 		}
 	}
 	buf.WriteByte(';')
@@ -591,7 +591,7 @@ func (g *Generator) buildUpdateByPK(importPkgs *Package, t *tableInfo) {
 
 func (g *Generator) valuer(importPkgs *Package, goPath string, t types.Type) string {
 	utype, isPtr := underlyingType(t)
-	if columnType, ok := g.columnTypes[t.String()]; ok {
+	if columnType, ok := g.columnTypes[t.String()]; ok && columnType.Valuer != "" {
 		return Expr(columnType.Valuer).Format(importPkgs, ExprParams{GoPath: goPath})
 	} else if _, wrong := types.MissingMethod(utype, goSqlValuer, true); wrong {
 		if isPtr {
@@ -630,12 +630,12 @@ func (g *Generator) sqlScanner(f *columnInfo) string {
 	if sqlScanner, ok := f.sqlScanner(); ok {
 		matches := sqlFuncRegexp.FindStringSubmatch(sqlScanner("{}"))
 		if len(matches) > 4 {
-			return matches[1] + matches[2] + f.ColumnName() + matches[4] + matches[5]
+			return matches[1] + matches[2] + g.QuoteIdentifier(f.ColumnName()) + matches[4] + matches[5]
 		} else {
-			return f.ColumnName()
+			return g.QuoteIdentifier(f.ColumnName())
 		}
 	}
-	return f.ColumnName()
+	return g.QuoteIdentifier(f.ColumnName())
 }
 
 func (g *Generator) sqlValuer(f *columnInfo, idx int) string {

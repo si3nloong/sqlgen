@@ -10,7 +10,7 @@ type strSlice[T ~string] struct {
 	v *[]T
 }
 
-func StringList[T ~string](v *[]T) strSlice[T] {
+func StringSlice[T ~string](v *[]T) strSlice[T] {
 	return strSlice[T]{v: v}
 }
 
@@ -32,7 +32,7 @@ func (s strSlice[T]) Scan(v any) error {
 		b := bytes.Split(vi, []byte{','})
 		values := make([]T, len(b))
 		for i := range b {
-			values[i] = T(bytes.Trim(b[i], `"`))
+			values[i] = (T)(bytes.Trim(b[i], `"`))
 		}
 		*s.v = values
 	case string:
@@ -51,7 +51,7 @@ func (s strSlice[T]) Scan(v any) error {
 		b := strings.Split(vi, ",")
 		values := make([]T, len(b))
 		for i := range b {
-			values[i] = T(strings.Trim(b[i], `"`))
+			values[i] = (T)(strings.Trim(b[i], `"`))
 		}
 		*s.v = values
 	default:

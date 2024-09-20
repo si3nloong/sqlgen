@@ -14,7 +14,7 @@ type uintList[T constraints.Unsigned] struct {
 	v *[]T
 }
 
-func UintList[T constraints.Unsigned](v *[]T) uintList[T] {
+func UintSlice[T constraints.Unsigned](v *[]T) uintList[T] {
 	return uintList[T]{v: v}
 }
 

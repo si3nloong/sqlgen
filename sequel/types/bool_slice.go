@@ -22,7 +22,7 @@ var (
 	_ sql.Scanner   = boolList[bool]{}
 )
 
-func BoolList[T ~bool](v *[]T) boolList[T] {
+func BoolSlice[T ~bool](v *[]T) boolList[T] {
 	return boolList[T]{v: v}
 }
 
@@ -32,7 +32,7 @@ func (s boolList[T]) Value() (driver.Value, error) {
 		copy(val, nullBytes)
 		return val, nil
 	}
-	return encoding.MarshalBoolList(*(s.v)), nil
+	return encoding.MarshalBoolSlice(*(s.v)), nil
 }
 
 func (s boolList[T]) Scan(v any) error {

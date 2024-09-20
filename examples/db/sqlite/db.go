@@ -357,7 +357,7 @@ type PaginateStmt struct {
 	Select    []string
 	FromTable string
 	Where     sequel.WhereClause
-	OrderBy   []sequel.ColumnOrder
+	OrderBy   []sequel.OrderByClause
 	Limit     uint16
 }
 
@@ -762,7 +762,7 @@ type SelectStmt struct {
 	Select    []string
 	FromTable string
 	Where     sequel.WhereClause
-	OrderBy   []sequel.ColumnOrder
+	OrderBy   []sequel.OrderByClause
 	GroupBy   []string
 	Offset    uint64
 	Limit     uint16
@@ -870,7 +870,7 @@ type SelectOneStmt struct {
 	Select    []string
 	FromTable string
 	Where     sequel.WhereClause
-	OrderBy   []sequel.ColumnOrder
+	OrderBy   []sequel.OrderByClause
 	GroupBy   []string
 }
 
@@ -950,14 +950,14 @@ type UpdateStmt struct {
 	Table   string
 	Set     []sequel.SetClause
 	Where   sequel.WhereClause
-	OrderBy []sequel.ColumnOrder
+	OrderBy []sequel.OrderByClause
 	Limit   uint16
 }
 
 type DeleteStmt struct {
 	FromTable string
 	Where     sequel.WhereClause
-	OrderBy   []sequel.ColumnOrder
+	OrderBy   []sequel.OrderByClause
 	Limit     uint16
 }
 

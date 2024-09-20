@@ -76,7 +76,7 @@ func MarshalUintSlice[V constraints.Unsigned](list []V, enclose ...[2]byte) stri
 	return blr.String()
 }
 
-func MarshalBoolList[V ~bool](list []V, enclose ...[2]byte) string {
+func MarshalBoolSlice[V ~bool](list []V, enclose ...[2]byte) string {
 	blr := strpool.AcquireString()
 	defer strpool.ReleaseString(blr)
 	if len(enclose) > 0 {

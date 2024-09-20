@@ -14,7 +14,7 @@ type intList[T constraints.Signed] struct {
 	v *[]T
 }
 
-func IntList[T constraints.Signed](v *[]T) intList[T] {
+func IntSlice[T constraints.Signed](v *[]T) intList[T] {
 	return intList[T]{v: v}
 }
 

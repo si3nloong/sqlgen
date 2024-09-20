@@ -9,7 +9,7 @@ import (
 func TestBoolSlice(t *testing.T) {
 	t.Run("primitive bool", func(t *testing.T) {
 		var bList = []bool{true, false, true}
-		var v = BoolList(&bList)
+		var v = BoolSlice(&bList)
 		require.NoError(t, v.Scan(nullBytes))
 		value, err := v.Value()
 		require.NoError(t, err)

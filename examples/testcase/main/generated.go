@@ -48,7 +48,7 @@ func (v HouseUnit) Values() []any {
 	return []any{(int64)(v.No), (time.Time)(v.BuildTime), types.JSONMarshaler(v.Address), (int64)(v.Kind), (int64)(v.Type), (int64)(v.Chan), types.JSONMarshaler(v.Inner), types.JSONMarshaler(v.Arr), encoding.MarshalFloatList(v.Slice, -1), types.JSONMarshaler(v.Map)}
 }
 func (v *HouseUnit) Addrs() []any {
-	return []any{types.Integer(&v.No), (*time.Time)(&v.BuildTime), types.JSONUnmarshaler(&v.Address), types.Integer(&v.Kind), types.Integer(&v.Type), types.Integer(&v.Chan), types.JSONUnmarshaler(&v.Inner), types.JSONUnmarshaler(&v.Arr), types.FloatList(&v.Slice), types.JSONUnmarshaler(&v.Map)}
+	return []any{types.Integer(&v.No), (*time.Time)(&v.BuildTime), types.JSONUnmarshaler(&v.Address), types.Integer(&v.Kind), types.Integer(&v.Type), types.Integer(&v.Chan), types.JSONUnmarshaler(&v.Inner), types.JSONUnmarshaler(&v.Arr), types.FloatSlice(&v.Slice), types.JSONUnmarshaler(&v.Map)}
 }
 func (HouseUnit) InsertPlaceholders(row int) string {
 	return "(?,?,?,?,?,?,?,?,?,?)"

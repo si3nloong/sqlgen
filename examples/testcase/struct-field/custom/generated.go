@@ -19,7 +19,7 @@ func (Address) Columns() []string {
 	return []string{"line_1", "line_2", "city", "post_code", "state_code", "geo_point", "country_code"}
 }
 func (Address) SQLColumns() []string {
-	return []string{"line_1", "line_2", "city", "post_code", "state_code", "ST_AsBinary(geo_point, 4326)", "country_code"}
+	return []string{"line_1", "line_2", "city", "post_code", "state_code", "ST_AsBinary(geo_point,4326)", "country_code"}
 }
 func (v Address) Values() []any {
 	return []any{(string)(v.Line1), (driver.Valuer)(v.Line2), (string)(v.City), (int64)(v.PostCode), (string)(v.StateCode), ewkb.Value(v.GeoPoint, 4326), (string)(v.CountryCode)}
@@ -65,7 +65,7 @@ func (v Customer) Values() []any {
 	return []any{(int64)(v.ID), (int64)(v.Age), (driver.Valuer)(v.Name), (driver.Valuer)(v.Address), encoding.MarshalStringSlice(v.Nicknames), (string)(v.Status), (time.Time)(v.JoinAt)}
 }
 func (v *Customer) Addrs() []any {
-	return []any{types.Integer(&v.ID), types.Integer(&v.Age), (sql.Scanner)(&v.Name), types.JSONUnmarshaler(&v.Address), types.StringList(&v.Nicknames), types.String(&v.Status), (*time.Time)(&v.JoinAt)}
+	return []any{types.Integer(&v.ID), types.Integer(&v.Age), (sql.Scanner)(&v.Name), types.JSONUnmarshaler(&v.Address), types.StringSlice(&v.Nicknames), types.String(&v.Status), (*time.Time)(&v.JoinAt)}
 }
 func (Customer) InsertPlaceholders(row int) string {
 	return "(?,?,?,?,?,?,?)"

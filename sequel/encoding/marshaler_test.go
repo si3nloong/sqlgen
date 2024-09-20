@@ -25,16 +25,16 @@ func TestMarshalStringSlice(t *testing.T) {
 	})
 }
 
-func TestMarshalIntList(t *testing.T) {
-	t.Run("MarshalIntList using int", func(t *testing.T) {
+func TestMarshalIntSlice(t *testing.T) {
+	t.Run("MarshalIntSlice using int", func(t *testing.T) {
 		require.Equal(t, `[-1,-6,11,88,100]`, MarshalIntSlice([]int{-1, -6, 11, 88, 100}))
 	})
 
-	t.Run("MarshalIntList using uint", func(t *testing.T) {
+	t.Run("MarshalIntSlice using uint", func(t *testing.T) {
 		require.Equal(t, `[1,5,10]`, MarshalUintSlice([]uint{1, 5, 10}))
 	})
 
-	t.Run("MarshalIntList using iota", func(t *testing.T) {
+	t.Run("MarshalIntSlice using iota", func(t *testing.T) {
 		type enum int
 
 		const (
@@ -46,14 +46,14 @@ func TestMarshalIntList(t *testing.T) {
 	})
 }
 
-func TestMarshalBoolList(t *testing.T) {
-	t.Run("MarshalBoolList using bool", func(t *testing.T) {
-		require.Equal(t, `[true,false,true]`, MarshalBoolList([]bool{true, false, true}))
+func TestMarshalBoolSlice(t *testing.T) {
+	t.Run("MarshalBoolSlice using bool", func(t *testing.T) {
+		require.Equal(t, `[true,false,true]`, MarshalBoolSlice([]bool{true, false, true}))
 	})
 
-	t.Run("MarshalBoolList using custom bool", func(t *testing.T) {
+	t.Run("MarshalBoolSlice using custom bool", func(t *testing.T) {
 		type Flag bool
-		require.Equal(t, `[false,false,true]`, MarshalBoolList([]Flag{false, false, true}))
+		require.Equal(t, `[false,false,true]`, MarshalBoolSlice([]Flag{false, false, true}))
 	})
 }
 

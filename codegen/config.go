@@ -177,6 +177,7 @@ func (c *Config) initIfEmpty() {
 }
 
 func (c *Config) Merge(mapCfg *Config) *Config {
+	c.QuoteIdentifier = mapCfg.QuoteIdentifier
 	if mapCfg.Source != nil {
 		c.Source = append([]string{}, mapCfg.Source...)
 	}

@@ -754,7 +754,7 @@ type PaginateStmt struct {
 	Select    []string
 	FromTable string
 	Where     sequel.WhereClause
-	OrderBy   []sequel.ColumnOrder
+	OrderBy   []sequel.OrderByClause
 	Limit     uint16
 }
 
@@ -1159,7 +1159,7 @@ type SelectStmt struct {
 	Select    []string
 	FromTable string
 	Where     sequel.WhereClause
-	OrderBy   []sequel.ColumnOrder
+	OrderBy   []sequel.OrderByClause
 	GroupBy	  []string
 	Offset	  uint64
 	Limit     uint16
@@ -1267,7 +1267,7 @@ type SelectOneStmt struct {
 	Select    []string
 	FromTable string
 	Where     sequel.WhereClause
-	OrderBy   []sequel.ColumnOrder
+	OrderBy   []sequel.OrderByClause
 	GroupBy   []string
 }
 
@@ -1347,14 +1347,14 @@ type UpdateStmt struct {
 	Table	string
 	Set		[]sequel.SetClause
 	Where	sequel.WhereClause
-	OrderBy []sequel.ColumnOrder
+	OrderBy []sequel.OrderByClause
 	Limit	uint16
 }
 
 type DeleteStmt struct {
 	FromTable string
 	Where     sequel.WhereClause
-	OrderBy   []sequel.ColumnOrder
+	OrderBy   []sequel.OrderByClause
 	Limit     uint16
 }
 
@@ -1520,7 +1520,11 @@ func (s *sqlStmt) Format(f fmt.State, verb rune) {
 	copy(args, s.args)
 
 	for {
+		{{ if isStaticVar -}}
 		idx = strings.Index(str, "?")
+		{{ else -}}
+		idx = strings.Index(str, wrapVar(i))
+		{{ end -}}
 		if idx < 0 {
 			f.Write(unsafe.Slice(unsafe.StringData(str), len(str)))
 			break
