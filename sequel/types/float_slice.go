@@ -14,7 +14,7 @@ type floatList[T constraints.Float] struct {
 	v *[]T
 }
 
-func FloatList[T constraints.Float](v *[]T) floatList[T] {
+func FloatSlice[T constraints.Float](v *[]T) floatList[T] {
 	return floatList[T]{v: v}
 }
 
