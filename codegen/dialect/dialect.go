@@ -50,6 +50,8 @@ type GoColumn interface {
 	GoPath() string
 	GoType() string
 	AutoIncr() bool
+	// Key is to identify whether column is primary or foreign key
+	Key() bool
 	// Type() types.Type
 	Nullable() bool
 

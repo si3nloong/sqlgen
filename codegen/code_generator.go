@@ -216,7 +216,7 @@ func (g *Generator) genModels(pkg *packages.Package, dstDir string, typeInferred
 						g.WriteString(fmt.Sprintf(`%q+ strconv.Itoa((row * noOfColumn) + %d)`, string(g.dialect.VarRune()), i+1))
 					}
 				}
-				g.WriteString(`+")"` + "\n")
+				g.WriteString(`+")"`)
 				g.L("}")
 			}
 		}

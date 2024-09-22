@@ -188,6 +188,14 @@ func (c *columnInfo) DataType() string {
 	return c.mapper.DataType(c)
 }
 
+func (c *columnInfo) Key() bool {
+	_, ok1 := c.getOption(TagOptionPKAlias)
+	_, ok2 := c.getOption(TagOptionFK)
+	_, ok3 := c.getOption(TagOptionPK)
+	_, ok4 := c.getOption(TagOptionAutoIncrement)
+	return ok1 || ok2 || ok3 || ok4
+}
+
 func (c columnInfo) Name() string {
 	return c.columnName
 }

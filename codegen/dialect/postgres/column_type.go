@@ -18,7 +18,7 @@ func (s *postgresDriver) ColumnDataTypes() map[string]*dialect.ColumnType {
 			Scanner:  "{{addrOfGoPath}}",
 		},
 		"string": {
-			DataType: s.columnDataType("varchar(255)"),
+			DataType: s.columnDataType("varchar(255)", ""),
 			Valuer:   "(string)({{goPath}})",
 			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.String({{addrOfGoPath}})",
 		},
@@ -90,7 +90,7 @@ func (s *postgresDriver) ColumnDataTypes() map[string]*dialect.ColumnType {
 		"time.Time": {
 			DataType: s.columnDataType("timestamp(6) with time zone", sql.RawBytes(`NOW()`)),
 			Valuer:   "(time.Time)({{goPath}})",
-			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Time({{addrOfGoPath}})",
+			Scanner:  "(*time.Time)({{addrOfGoPath}})",
 		},
 		"*time.Time": {
 			DataType: s.columnDataType("timestamp(6) with time zone"),
@@ -222,7 +222,9 @@ func (s *postgresDriver) intDataType(dataType string, defaultValue ...any) func(
 		}
 		// Auto increment cannot has default value
 		if !column.AutoIncr() && len(defaultValue) > 0 {
-			str += " DEFAULT " + format(defaultValue[0])
+			if !column.Key() {
+				str += " DEFAULT " + format(defaultValue[0])
+			}
 			switch any(defaultValue[0]).(type) {
 			case uint64:
 				str += " CHECK (" + s.QuoteIdentifier(column.Name()) + " >= 0)"
@@ -242,7 +244,8 @@ func (*postgresDriver) columnDataType(dataType string, defaultValue ...any) func
 		if !column.Nullable() {
 			str += " NOT NULL"
 		}
-		if len(defaultValue) > 0 {
+		// If it's not primary key or foreign key
+		if !column.Key() && len(defaultValue) > 0 {
 			// PRIMARY KEY cannot have default value
 			str += " DEFAULT " + format(defaultValue[0])
 		}
