@@ -83,6 +83,7 @@ type GetterConfig struct {
 }
 
 type MigrationConfig struct {
+	DSN      string `yaml:"dsn"`
 	Package  string `yaml:"package"`
 	Dir      string `yaml:"dir"`
 	Filename string `yaml:"filename"`

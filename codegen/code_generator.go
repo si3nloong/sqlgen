@@ -2,6 +2,8 @@ package codegen
 
 import (
 	"bytes"
+	"context"
+	"errors"
 	"fmt"
 	"go/types"
 	"io"
@@ -9,6 +11,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 	"unsafe"
 
@@ -139,7 +142,7 @@ func (g *Generator) genModels(pkg *packages.Package, dstDir string, typeInferred
 			} else {
 				pk := t.keys[0]
 				g.L("func (v " + t.goName + ") PK() (string, int, any) {")
-				g.L(`return `, g.Quote(g.QuoteIdentifier(pk.ColumnName())), ", ", pk.ColumnPos(), ", ", g.valuer(importPkgs, "v."+pk.GoPath(), pk.Type()))
+				g.L(`return `, g.Quote(g.QuoteIdentifier(pk.ColumnName())), ", ", pk.ColumnPos(), ", ", g.valuer(importPkgs, "v."+pk.GoPath(), pk.t))
 				g.L("}")
 			}
 		}
@@ -154,7 +157,7 @@ func (g *Generator) genModels(pkg *packages.Package, dstDir string, typeInferred
 				if i > 0 {
 					g.WriteByte(',')
 				}
-				g.WriteString(g.Quote(g.QuoteIdentifier(f.ColumnName())))
+				g.WriteString(g.Quote(g.QuoteIdentifier(f.columnName)))
 			}
 			g.WriteString("}\n")
 			g.L("}")
@@ -231,7 +234,7 @@ func (g *Generator) genModels(pkg *packages.Package, dstDir string, typeInferred
 
 		if !g.config.OmitGetters {
 			for _, f := range t.columns {
-				typeStr := f.Type().String()
+				typeStr := f.GoType().String()
 				if idx := strings.Index(typeStr, "."); idx > 0 {
 					typeStr = Expr(typeStr).Format(importPkgs)
 				}
@@ -244,16 +247,16 @@ func (g *Generator) genModels(pkg *packages.Package, dstDir string, typeInferred
 					matches := sqlFuncRegexp.FindStringSubmatch(sqlValuer("{}"))
 					if len(matches) > 4 {
 						g.L("func (v "+t.goName+") ", g.config.Getter.Prefix+f.GoName(), "() sequel.SQLColumnValuer[", typeStr, "] {")
-						g.L(`return sequel.SQLColumn`+specificType+`(`, g.Quote(g.QuoteIdentifier(f.ColumnName())), `, v.`, f.GoPath()+",", fmt.Sprintf(`func(placeholder string) string { return %q+ placeholder + %q}`, matches[1]+matches[2], matches[4]+matches[5]), `, func(val `, typeStr, `) driver.Value { return `, g.valuer(importPkgs, "val", f.Type()), ` })`)
+						g.L(`return sequel.SQLColumn`+specificType+`(`, g.Quote(g.QuoteIdentifier(f.ColumnName())), `, v.`, f.GoPath()+",", fmt.Sprintf(`func(placeholder string) string { return %q+ placeholder + %q}`, matches[1]+matches[2], matches[4]+matches[5]), `, func(val `, typeStr, `) driver.Value { return `, g.valuer(importPkgs, "val", f.t), ` })`)
 						g.L("}")
 					} else {
 						g.L("func (v "+t.goName+") ", g.config.Getter.Prefix+f.GoName(), "() sequel.ColumnValuer[", typeStr, "] {")
-						g.L(`return sequel.Column`, specificType, `(`, g.Quote(g.QuoteIdentifier(f.ColumnName())), `, v.`, f.GoPath(), `, func(val `, typeStr, `) driver.Value { return `, g.valuer(importPkgs, "val", f.Type()), ` })`)
+						g.L(`return sequel.Column`, specificType, `(`, g.Quote(g.QuoteIdentifier(f.ColumnName())), `, v.`, f.GoPath(), `, func(val `, typeStr, `) driver.Value { return `, g.valuer(importPkgs, "val", f.t), ` })`)
 						g.L("}")
 					}
 				} else {
 					g.L("func (v "+t.goName+") ", g.config.Getter.Prefix+f.GoName(), "() sequel.ColumnValuer[", typeStr, "] {")
-					g.L("return sequel.Column", specificType, "(", g.Quote(g.QuoteIdentifier(f.ColumnName())), ", v.", f.GoPath(), ", func(val ", typeStr, `) driver.Value { return `, g.valuer(importPkgs, "val", f.Type()), ` })`)
+					g.L("return sequel.Column", specificType, "(", g.Quote(g.QuoteIdentifier(f.ColumnName())), ", v.", f.GoPath(), ", func(val ", typeStr, `) driver.Value { return `, g.valuer(importPkgs, "val", f.t), ` })`)
 					g.L("}")
 				}
 			}
@@ -342,14 +345,14 @@ func (g *Generator) buildCompositeKeys(importPkgs *Package, table *tableInfo) {
 		if i > 0 {
 			g.WriteByte(',')
 		}
-		g.WriteString(strconv.Itoa(f.ColumnPos()))
+		g.WriteString(strconv.Itoa(f.columnPos))
 	}
 	g.WriteString("}, []any{")
 	for i, f := range table.keys {
 		if i > 0 {
 			g.WriteByte(',')
 		}
-		g.WriteString(g.valuer(importPkgs, "v."+f.GoPath(), f.Type()))
+		g.WriteString(g.valuer(importPkgs, "v."+f.GoPath(), f.t))
 	}
 	g.WriteString("}\n")
 	g.L("}")
@@ -369,7 +372,7 @@ func (g *Generator) buildValuer(importPkgs *Package, table *tableInfo) {
 	// 			g.L("values[", f.columnPos, "] = nil")
 	// 			g.L("}")
 	// 		} else {
-	// 			g.L("values[", f.columnPos, "] = ", g.valuer(importPkgs, "v."+f.GoPath(), f.Type()))
+	// 			g.L("values[", f.columnPos, "] = ", g.valuer(importPkgs, "v."+f.GoPath(), f.GoType()))
 	// 		}
 	// 	}
 	// 	g.L("return values")
@@ -380,7 +383,7 @@ func (g *Generator) buildValuer(importPkgs *Package, table *tableInfo) {
 		if i > 0 {
 			g.WriteByte(',')
 		}
-		g.WriteString(g.valuer(importPkgs, "v."+f.GoPath(), f.Type()))
+		g.WriteString(g.valuer(importPkgs, "v."+f.goPath, f.t))
 	}
 	g.WriteString("}\n")
 	g.L("}")
@@ -398,9 +401,9 @@ func (g *Generator) buildScanner(importPkgs *Package, table *tableInfo) {
 				g.L("if v." + f.goPath + " == nil {")
 				g.L("v."+f.goPath+" = new(", Expr(strings.TrimPrefix(f.t.String(), "*")).Format(importPkgs, ExprParams{}), ")")
 				g.L("}")
-				g.L("addrs[", f.columnPos, "] = ", g.scanner(importPkgs, "v."+f.GoPath(), f.Type()))
+				g.L("addrs[", f.columnPos, "] = ", g.scanner(importPkgs, "v."+f.goPath, f.t))
 			} else {
-				g.L("addrs[", f.columnPos, "] = ", g.scanner(importPkgs, "&v."+f.GoPath(), f.Type()))
+				g.L("addrs[", f.columnPos, "] = ", g.scanner(importPkgs, "&v."+f.goPath, f.t))
 			}
 		}
 		g.L("return addrs")
@@ -410,7 +413,7 @@ func (g *Generator) buildScanner(importPkgs *Package, table *tableInfo) {
 			if i > 0 {
 				g.WriteByte(',')
 			}
-			g.WriteString(g.scanner(importPkgs, "&v."+f.GoPath(), f.Type()))
+			g.WriteString(g.scanner(importPkgs, "&v."+f.goPath, f.t))
 		}
 		g.WriteString("}\n")
 	}
@@ -467,7 +470,7 @@ func (g *Generator) buildFindByPK(importPkgs *Package, t *tableInfo) {
 		if i > 0 {
 			g.WriteByte(',')
 		}
-		g.WriteString(g.valuer(importPkgs, "v."+f.GoPath(), f.Type()))
+		g.WriteString(g.valuer(importPkgs, "v."+f.GoPath(), f.t))
 	}
 	g.WriteString("}\n")
 	g.L("}")
@@ -525,7 +528,7 @@ func (g *Generator) buildInsertOne(importPkgs *Package, t *tableInfo) {
 			if i > 0 {
 				g.WriteByte(',')
 			}
-			g.WriteString(g.valuer(importPkgs, "v."+f.GoPath(), f.Type()))
+			g.WriteString(g.valuer(importPkgs, "v."+f.GoPath(), f.t))
 		}
 		g.WriteString("}\n")
 	}
@@ -582,7 +585,7 @@ func (g *Generator) buildUpdateByPK(importPkgs *Package, t *tableInfo) {
 		if i > 0 {
 			g.WriteByte(',')
 		}
-		g.WriteString(g.valuer(importPkgs, "v."+f.GoPath(), f.Type()))
+		g.WriteString(g.valuer(importPkgs, "v."+f.GoPath(), f.t))
 	}
 	g.WriteString("}\n")
 	g.L("}")
@@ -655,14 +658,14 @@ func (g *Generator) genMigrations(schemas []*tableInfo) error {
 	unix := time.Now().Unix()
 	for i := range schemas {
 		// Each schema should have one migration files
-		if err := g.genMigration(unix, schemas[i]); err != nil {
+		if err := g.genMigration(context.Background(), unix, schemas[i]); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (g *Generator) genMigration(unix int64, t *tableInfo) error {
+func (g *Generator) genMigration(ctx context.Context, unix int64, t *tableInfo) error {
 	fileDest := fmt.Sprintf("%s/%d_%s.sql", g.config.Migration.Dir, unix, t.TableName())
 	f, err := os.OpenFile(fileDest, os.O_RDWR|os.O_CREATE|os.O_TRUNC, os.ModePerm)
 	if err != nil {
@@ -670,7 +673,10 @@ func (g *Generator) genMigration(unix int64, t *tableInfo) error {
 	}
 	defer f.Close()
 
-	if err := g.dialect.CreateTableStmt(f, t); err != nil {
+	if err := g.dialect.Migrate(ctx, g.config.Migration.DSN, f, t); errors.Is(err, dialect.ErrNoNewMigration) {
+		_ = syscall.Unlink(fileDest)
+		return nil
+	} else if err != nil {
 		return err
 	}
 	return nil

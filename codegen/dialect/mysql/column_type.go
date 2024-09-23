@@ -279,7 +279,7 @@ func (s *mysqlDriver) ColumnDataTypes() map[string]*dialect.ColumnType {
 func (*mysqlDriver) columnDataType(dataType string, defaultValue ...any) func(dialect.GoColumn) string {
 	return func(column dialect.GoColumn) string {
 		str := dataType
-		if !column.Nullable() {
+		if !column.GoNullable() {
 			str += " NOT NULL"
 		}
 		if len(defaultValue) > 0 {

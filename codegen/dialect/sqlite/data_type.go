@@ -81,7 +81,7 @@ func (s *sqliteDriver) ColumnDataTypes() map[string]*dialect.ColumnType {
 
 func (*sqliteDriver) columnDataType(dataType string) func(dialect.GoColumn) string {
 	return func(column dialect.GoColumn) string {
-		if !column.Nullable() {
+		if !column.GoNullable() {
 			dataType += " NOT NULL"
 		}
 		return dataType

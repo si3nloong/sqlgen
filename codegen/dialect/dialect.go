@@ -1,6 +1,10 @@
 package dialect
 
 import (
+	"context"
+	"database/sql/driver"
+	"errors"
+	"go/types"
 	"io"
 	"sync"
 )
@@ -8,6 +12,8 @@ import (
 var (
 	dialectMap     = new(sync.Map)
 	defaultDialect = "mysql"
+
+	ErrNoNewMigration = errors.New("no migration needed")
 )
 
 type Writer interface {
@@ -27,10 +33,18 @@ type Dialect interface {
 	// Quote rune can be ' or " or `
 	QuoteRune() rune
 
+	// Column data types
 	ColumnDataTypes() map[string]*ColumnType
 
-	CreateTableStmt(Writer, Schema) error
-	// AlterTableStmt(Schema) string
+	Migrate(ctx context.Context, dsn string, w Writer, schema Schema) error
+}
+
+type ColumnType struct {
+	DataType   func(col GoColumn) string
+	Scanner    string
+	Valuer     string
+	SQLScanner string
+	SQLValuer  string
 }
 
 type Schema interface {
@@ -43,17 +57,37 @@ type Schema interface {
 }
 
 type GoColumn interface {
-	Name() string
-	DataType() string
+	// Go field name
 	GoName() string
-	Size() int
+
+	// Go field path
+	//	eg. A.nested.Field
 	GoPath() string
-	GoType() string
+
+	// Go actual type
+	GoType() types.Type
+
+	// Is it a go nullable type? such as
+	// pointer, slice, map or chan
+	GoNullable() bool
+
+	// SQL column name
+	ColumnName() string
+
+	// SQL data type
+	DataType() string
+
+	// SQL default value, this can be
+	// string, bool, int64, float64, sql.RawBytes
+	Default() (driver.Value, bool)
+
+	// Determine whether this column is auto increment or not
 	AutoIncr() bool
+
+	Size() int
+
 	// Key is to identify whether column is primary or foreign key
 	Key() bool
-	// Type() types.Type
-	Nullable() bool
 
 	// Implements(*types.Interface) (*types.Func, bool)
 }

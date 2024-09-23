@@ -9,6 +9,7 @@ require (
 	github.com/go-playground/validator/v10 v10.22.1
 	github.com/goccy/go-yaml v1.12.0
 	github.com/jackc/pgx/v5 v5.7.1
+	github.com/lib/pq v1.10.9
 	github.com/samber/lo v1.47.0
 	github.com/spf13/cobra v1.8.1
 	github.com/stretchr/testify v1.9.0

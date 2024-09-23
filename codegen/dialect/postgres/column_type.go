@@ -217,19 +217,19 @@ func (s *postgresDriver) intDataType(dataType string, defaultValue ...any) func(
 				str = strings.ReplaceAll(str, "int", "serial")
 			}
 		}
-		if !column.Nullable() {
-			str += " NOT NULL"
-		}
-		// Auto increment cannot has default value
-		if !column.AutoIncr() && len(defaultValue) > 0 {
-			if !column.Key() {
-				str += " DEFAULT " + format(defaultValue[0])
-			}
-			switch any(defaultValue[0]).(type) {
-			case uint64:
-				str += " CHECK (" + s.QuoteIdentifier(column.Name()) + " >= 0)"
-			}
-		}
+		// if !column.GoNullable() {
+		// 	str += " NOT NULL"
+		// }
+		// // Auto increment cannot has default value
+		// if !column.AutoIncr() && len(defaultValue) > 0 {
+		// 	if !column.Key() {
+		// 		str += " DEFAULT " + format(defaultValue[0])
+		// 	}
+		// 	switch any(defaultValue[0]).(type) {
+		// 	case uint64:
+		// 		str += " CHECK (" + s.QuoteIdentifier(column.ColumnName()) + " >= 0)"
+		// 	}
+		// }
 
 		// if c.extra != "" {
 		// 	str += " " + c.extra
@@ -241,14 +241,14 @@ func (s *postgresDriver) intDataType(dataType string, defaultValue ...any) func(
 func (*postgresDriver) columnDataType(dataType string, defaultValue ...any) func(dialect.GoColumn) string {
 	return func(column dialect.GoColumn) string {
 		str := dataType
-		if !column.Nullable() {
-			str += " NOT NULL"
-		}
-		// If it's not primary key or foreign key
-		if !column.Key() && len(defaultValue) > 0 {
-			// PRIMARY KEY cannot have default value
-			str += " DEFAULT " + format(defaultValue[0])
-		}
+		// if !column.GoNullable() {
+		// 	str += " NOT NULL"
+		// }
+		// // If it's not primary key or foreign key
+		// if !column.Key() && len(defaultValue) > 0 {
+		// 	// PRIMARY KEY cannot have default value
+		// 	str += " DEFAULT " + format(defaultValue[0])
+		// }
 		// if c.extra != "" {
 		// 	str += " " + c.extra
 		// }

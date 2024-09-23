@@ -1,6 +1,7 @@
 package codegen
 
 import (
+	"database/sql/driver"
 	"go/types"
 	"reflect"
 	"strings"
@@ -124,6 +125,10 @@ type columnInfo struct {
 	mapper     *dialect.ColumnType
 }
 
+func (c *columnInfo) Column() string {
+	return c.columnName
+}
+
 func (c *columnInfo) ColumnName() string {
 	return c.columnName
 }
@@ -140,13 +145,26 @@ func (c *columnInfo) GoPath() string {
 	return c.goPath
 }
 
-func (c *columnInfo) Type() types.Type {
+func (c *columnInfo) GoType() types.Type {
 	return c.t
 }
 
 func (c *columnInfo) isPtr() bool {
 	_, ok := c.t.(*types.Pointer)
 	return ok
+}
+
+func (c *columnInfo) GoNullable() bool {
+	switch c.t.(type) {
+	case *types.Pointer,
+		*types.Map,
+		*types.Chan,
+		*types.Interface,
+		*types.Slice:
+		return true
+	default:
+		return false
+	}
 }
 
 func (c *columnInfo) Nullable() bool {
@@ -188,6 +206,10 @@ func (c *columnInfo) DataType() string {
 	return c.mapper.DataType(c)
 }
 
+func (c *columnInfo) Default() (driver.Value, bool) {
+	return nil, false
+}
+
 func (c *columnInfo) Key() bool {
 	_, ok1 := c.getOption(TagOptionPKAlias)
 	_, ok2 := c.getOption(TagOptionFK)
@@ -198,10 +220,6 @@ func (c *columnInfo) Key() bool {
 
 func (c columnInfo) Name() string {
 	return c.columnName
-}
-
-func (c columnInfo) GoType() string {
-	return c.t.String()
 }
 
 func (c *columnInfo) AutoIncr() bool {
