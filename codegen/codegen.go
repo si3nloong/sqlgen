@@ -71,17 +71,17 @@ type typeQueue struct {
 }
 
 func Generate(c *Config) error {
-	cfg := DefaultConfig()
-	if c != nil {
-		cfg = cfg.Merge(c)
-	}
-
 	vldr := validator.New()
 	if err := vldr.Struct(c); err != nil {
 		return err
 	}
 
-	dialect, ok := dialect.GetDialect(string(cfg.Driver))
+	cfg := DefaultConfig()
+	if c != nil {
+		cfg = cfg.Merge(c)
+	}
+
+	dialect, ok := dialect.GetDialect((string)(cfg.Driver))
 	if !ok {
 		return fmt.Errorf("sqlgen: missing dialect, please register your dialect first")
 	}
