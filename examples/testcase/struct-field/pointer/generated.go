@@ -28,67 +28,67 @@ func (v *Ptr) Addrs() []any {
 	if v.Str == nil {
 		v.Str = new(string)
 	}
-	addrs[1] = types.PtrOfString(&v.Str)
+	addrs[1] = types.String(v.Str)
 	if v.Bytes == nil {
 		v.Bytes = new([]byte)
 	}
-	addrs[2] = types.PtrOfString(&v.Bytes)
+	addrs[2] = types.String(v.Bytes)
 	if v.Bool == nil {
 		v.Bool = new(bool)
 	}
-	addrs[3] = types.PtrOfBool(&v.Bool)
+	addrs[3] = types.Bool(v.Bool)
 	if v.Int == nil {
 		v.Int = new(int)
 	}
-	addrs[4] = types.PtrOfInt(&v.Int)
+	addrs[4] = types.Integer(v.Int)
 	if v.Int8 == nil {
 		v.Int8 = new(int8)
 	}
-	addrs[5] = types.PtrOfInt(&v.Int8)
+	addrs[5] = types.Integer(v.Int8)
 	if v.Int16 == nil {
 		v.Int16 = new(int16)
 	}
-	addrs[6] = types.PtrOfInt(&v.Int16)
+	addrs[6] = types.Integer(v.Int16)
 	if v.Int32 == nil {
 		v.Int32 = new(int32)
 	}
-	addrs[7] = types.PtrOfInt(&v.Int32)
+	addrs[7] = types.Integer(v.Int32)
 	if v.Int64 == nil {
 		v.Int64 = new(int64)
 	}
-	addrs[8] = types.PtrOfInt(&v.Int64)
+	addrs[8] = types.Integer(v.Int64)
 	if v.Uint == nil {
 		v.Uint = new(uint)
 	}
-	addrs[9] = types.PtrOfInt(&v.Uint)
+	addrs[9] = types.Integer(v.Uint)
 	if v.Uint8 == nil {
 		v.Uint8 = new(uint8)
 	}
-	addrs[10] = types.PtrOfInt(&v.Uint8)
+	addrs[10] = types.Integer(v.Uint8)
 	if v.Uint16 == nil {
 		v.Uint16 = new(uint16)
 	}
-	addrs[11] = types.PtrOfInt(&v.Uint16)
+	addrs[11] = types.Integer(v.Uint16)
 	if v.Uint32 == nil {
 		v.Uint32 = new(uint32)
 	}
-	addrs[12] = types.PtrOfInt(&v.Uint32)
+	addrs[12] = types.Integer(v.Uint32)
 	if v.Uint64 == nil {
 		v.Uint64 = new(uint64)
 	}
-	addrs[13] = types.PtrOfInt(&v.Uint64)
+	addrs[13] = types.Integer(v.Uint64)
 	if v.F32 == nil {
 		v.F32 = new(float32)
 	}
-	addrs[14] = types.PtrOfFloat(&v.F32)
+	addrs[14] = types.Float(v.F32)
 	if v.F64 == nil {
 		v.F64 = new(float64)
 	}
-	addrs[15] = types.PtrOfFloat(&v.F64)
+	addrs[15] = types.Float(v.F64)
 	if v.Time == nil {
 		v.Time = new(time.Time)
 	}
-	addrs[16] = types.PtrOfTime(&v.Time)
+	addrs[16] = types.Time(v.Time)
 	return addrs
 }
 func (Ptr) InsertPlaceholders(row int) string {

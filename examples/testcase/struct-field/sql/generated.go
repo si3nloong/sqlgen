@@ -36,7 +36,7 @@ func (v *AutoPkLocation) Addrs() []any {
 	if v.PtrGeoPoint == nil {
 		v.PtrGeoPoint = new(orb.Point)
 	}
-	addrs[2] = types.JSONUnmarshaler(&v.PtrGeoPoint)
+	addrs[2] = types.JSONUnmarshaler(v.PtrGeoPoint)
 	if v.PtrUUID == nil {
 		v.PtrUUID = new(uuid.UUID)
 	}

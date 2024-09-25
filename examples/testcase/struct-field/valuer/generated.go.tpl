@@ -23,7 +23,7 @@ func (v *B) Addrs() []any {
 	if v.PtrValue == nil {
 		v.PtrValue = new(anyType)
 	}
-	addrs[2] = types.JSONUnmarshaler(&v.PtrValue)
+	addrs[2] = types.JSONUnmarshaler(v.PtrValue)
 	addrs[3] = types.String(&v.N)
 	return addrs
 }

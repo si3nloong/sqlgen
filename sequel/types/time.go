@@ -4,8 +4,15 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"fmt"
+	"regexp"
 	"time"
 	"unsafe"
+)
+
+var (
+	ddmmyyyy         = regexp.MustCompile(`^\d{4}\-\d{2}\-\d{2}$`)
+	ddmmyyyyhhmmss   = regexp.MustCompile(`^\d{4}\-\d{2}\-\d{2}\s\d{2}\:\d{2}:\d{2}$`)
+	ddmmyyyyhhmmsstz = regexp.MustCompile(`^\d{4}\-\d{2}\-\d{2}\s\d{2}\:\d{2}:\d{2}\.\d+$`)
 )
 
 type datetime[T time.Time] struct {
@@ -64,4 +71,22 @@ func (s datetime[T]) Scan(v any) error {
 	}
 	*s.addr = val
 	return nil
+}
+
+func parseTime(str string) (time.Time, error) {
+	var (
+		t   time.Time
+		err error
+	)
+	switch {
+	case ddmmyyyy.MatchString(str):
+		t, err = time.Parse("2006-01-02", str)
+	case ddmmyyyyhhmmss.MatchString(str):
+		t, err = time.Parse("2006-01-02 15:04:05", str)
+	case ddmmyyyyhhmmsstz.MatchString(str):
+		t, err = time.Parse("2006-01-02 15:04:05.999999", str)
+	default:
+		t, err = time.Parse(time.RFC3339Nano, str)
+	}
+	return t, err
 }
