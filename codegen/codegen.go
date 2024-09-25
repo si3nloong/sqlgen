@@ -638,7 +638,7 @@ func parseGoPackage(
 					return fmt.Errorf("sqlgen: struct %q has duplicate column name %q in directory %q", s.name, column.columnName, dir)
 				}
 
-				if v, ok := column.getOption(TagOptionSize); ok {
+				if v, ok := column.getOptionValue(TagOptionSize); ok {
 					column.size, err = strconv.Atoi(v)
 					if err != nil {
 						return fmt.Errorf(`sqlgen: invalid size value %q %w`, v, err)

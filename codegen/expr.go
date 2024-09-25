@@ -31,6 +31,7 @@ type ExprParams struct {
 	// You may pass `&v.Path` or `v.Path` or any relevant go path,
 	// we will check whether it's addr of the go path
 	GoPath string
+	IsPtr  bool
 	Len    int64
 }
 
@@ -52,6 +53,9 @@ func (e Expr) Format(pkg *Package, args ...ExprParams) string {
 			return params.GoPath
 		},
 		"addrOfGoPath": func() string {
+			if params.IsPtr {
+				return params.GoPath
+			}
 			return "&" + params.GoPath
 		},
 	}

@@ -47,13 +47,21 @@ type ColumnType struct {
 	SQLValuer  string
 }
 
+type Index interface {
+	// Indexed columns
+	Columns() []string
+
+	// Whether the index is unique
+	Unique() bool
+}
+
 type Schema interface {
 	DBName() string
 	TableName() string
 	Columns() []string
 	Keys() []string
 	ColumnGoType(i int) GoColumn
-	Indexes() []string
+	RangeIndex(func(Index, int))
 }
 
 type GoColumn interface {
@@ -84,12 +92,11 @@ type GoColumn interface {
 	// Determine whether this column is auto increment or not
 	AutoIncr() bool
 
-	Size() int
-
 	// Key is to identify whether column is primary or foreign key
 	Key() bool
 
-	// Implements(*types.Interface) (*types.Func, bool)
+	// Column size that declared by user
+	Size() int
 }
 
 func RegisterDialect(name string, d Dialect) {

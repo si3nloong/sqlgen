@@ -2,9 +2,24 @@ package postgres
 
 import (
 	"context"
+	"crypto/md5"
 	"database/sql"
+	"encoding/hex"
+	"strings"
+	"unsafe"
 
 	"github.com/lib/pq"
+)
+
+//go:generate stringer --type indexType --linecomment
+type indexType uint8
+
+const (
+	bTree  indexType = iota // BTREE
+	hash                    // HASH
+	brin                    // BRIN
+	unique                  // UNIQUE
+	pk
 )
 
 type index struct {
@@ -46,4 +61,17 @@ GROUP BY index_name, is_pk;`, tableName)
 		idxs = append(idxs, idx)
 	}
 	return idxs, rows.Err()
+}
+
+func indexName(columns []string, idxType indexType) string {
+	str := strings.Join(columns, ",")
+	hash := md5.Sum(unsafe.Slice(unsafe.StringData(str), len(str)))
+	prefix := "IX"
+	switch idxType {
+	case unique:
+		prefix = "UQ"
+	case pk:
+		prefix = "PK"
+	}
+	return prefix + "_" + hex.EncodeToString(hash[:])
 }

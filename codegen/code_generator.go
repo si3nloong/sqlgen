@@ -595,38 +595,38 @@ func (g *Generator) buildUpdateByPK(importPkgs *Package, t *tableInfo) {
 func (g *Generator) valuer(importPkgs *Package, goPath string, t types.Type) string {
 	utype, isPtr := underlyingType(t)
 	if columnType, ok := g.columnTypes[t.String()]; ok && columnType.Valuer != "" {
-		return Expr(columnType.Valuer).Format(importPkgs, ExprParams{GoPath: goPath})
+		return Expr(columnType.Valuer).Format(importPkgs, ExprParams{GoPath: goPath, IsPtr: isPtr})
 	} else if _, wrong := types.MissingMethod(utype, goSqlValuer, true); wrong {
 		if isPtr {
-			return Expr("(database/sql/driver.Valuer)({{goPath}})").Format(importPkgs, ExprParams{GoPath: goPath})
+			return Expr("(database/sql/driver.Valuer)({{goPath}})").Format(importPkgs, ExprParams{GoPath: goPath, IsPtr: isPtr})
 		}
-		return Expr("(database/sql/driver.Valuer)({{goPath}})").Format(importPkgs, ExprParams{GoPath: goPath})
+		return Expr("(database/sql/driver.Valuer)({{goPath}})").Format(importPkgs, ExprParams{GoPath: goPath, IsPtr: isPtr})
 	} else if columnType, ok := g.columnDataType(t); ok && columnType.Valuer != "" {
-		return Expr(columnType.Valuer).Format(importPkgs, ExprParams{GoPath: goPath, Len: arraySize(t)})
+		return Expr(columnType.Valuer).Format(importPkgs, ExprParams{GoPath: goPath, IsPtr: isPtr, Len: arraySize(t)})
 	} else if isImplemented(utype, textMarshaler) {
-		return Expr("github.com/si3nloong/sqlgen/sequel/types.TextMarshaler({{goPath}})").Format(importPkgs, ExprParams{GoPath: goPath})
+		return Expr("github.com/si3nloong/sqlgen/sequel/types.TextMarshaler({{goPath}})").Format(importPkgs, ExprParams{GoPath: goPath, IsPtr: isPtr})
 	}
-	return Expr(g.defaultColumnTypes["*"].Valuer).Format(importPkgs, ExprParams{GoPath: goPath})
+	return Expr(g.defaultColumnTypes["*"].Valuer).Format(importPkgs, ExprParams{GoPath: goPath, IsPtr: isPtr})
 }
 
 func (g *Generator) scanner(importPkgs *Package, goPath string, t types.Type) string {
 	ptr, isPtr := pointerType(t)
 	if columnType, ok := g.columnTypes[t.String()]; ok && columnType.Scanner != "" {
-		return Expr(columnType.Scanner).Format(importPkgs, ExprParams{GoPath: goPath})
+		return Expr(columnType.Scanner).Format(importPkgs, ExprParams{GoPath: goPath, IsPtr: isPtr})
 	} else if isImplemented(ptr, goSqlScanner) {
 		if isPtr {
-			return Expr("(database/sql.Scanner)({{goPath}})").Format(importPkgs, ExprParams{GoPath: goPath})
+			return Expr("(database/sql.Scanner)({{goPath}})").Format(importPkgs, ExprParams{GoPath: goPath, IsPtr: isPtr})
 		}
-		return Expr("(database/sql.Scanner)({{addrOfGoPath}})").Format(importPkgs, ExprParams{GoPath: goPath})
+		return Expr("(database/sql.Scanner)({{addrOfGoPath}})").Format(importPkgs, ExprParams{GoPath: goPath, IsPtr: isPtr})
 	} else if columnType, ok := g.columnDataType(t); ok && columnType.Scanner != "" {
-		return Expr(columnType.Scanner).Format(importPkgs, ExprParams{GoPath: goPath, Len: arraySize(t)})
+		return Expr(columnType.Scanner).Format(importPkgs, ExprParams{GoPath: goPath, IsPtr: isPtr, Len: arraySize(t)})
 	} else if isImplemented(ptr, textUnmarshaler) {
 		if isPtr {
-			return Expr("github.com/si3nloong/sqlgen/sequel/types.TextUnmarshaler({{goPath}})").Format(importPkgs, ExprParams{GoPath: goPath})
+			return Expr("github.com/si3nloong/sqlgen/sequel/types.TextUnmarshaler({{goPath}})").Format(importPkgs, ExprParams{GoPath: goPath, IsPtr: isPtr})
 		}
-		return Expr("github.com/si3nloong/sqlgen/sequel/types.TextUnmarshaler({{addrOfGoPath}})").Format(importPkgs, ExprParams{GoPath: goPath})
+		return Expr("github.com/si3nloong/sqlgen/sequel/types.TextUnmarshaler({{addrOfGoPath}})").Format(importPkgs, ExprParams{GoPath: goPath, IsPtr: isPtr})
 	}
-	return Expr(g.defaultColumnTypes["*"].Scanner).Format(importPkgs, ExprParams{GoPath: goPath})
+	return Expr(g.defaultColumnTypes["*"].Scanner).Format(importPkgs, ExprParams{GoPath: goPath, IsPtr: isPtr})
 }
 
 func (g *Generator) sqlScanner(f *columnInfo) string {

@@ -18,14 +18,19 @@ type column struct {
 	DatetimePrecision  sql.NullInt64
 }
 
+func (c column) Equal(v column) bool {
+	return c.Name == v.Name &&
+		c.IsNullable == v.IsNullable
+}
+
 func (c column) ColumnType() string {
 	switch c.DataType {
 	case "varchar":
-		if c.CharacterMaxLength.Valid {
+		if c.CharacterMaxLength.Valid && c.CharacterMaxLength.Int64 > 0 {
 			return fmt.Sprintf("%s(%d)", c.DataType, c.CharacterMaxLength.Int64)
 		}
 	case "timestamptz":
-		if c.DatetimePrecision.Valid {
+		if c.DatetimePrecision.Valid && c.DatetimePrecision.Int64 > 0 {
 			return fmt.Sprintf("%s(%d)", c.DataType, c.DatetimePrecision.Int64)
 		}
 	}
@@ -44,7 +49,7 @@ func (s *postgresDriver) tableColumns(ctx context.Context, sqlConn *sql.DB, dbNa
 FROM 
 	information_schema.columns
 WHERE
-	table_schema = $1 AND 
+	table_catalog = $1 AND 
 	table_name = $2
 ORDER BY
 	ordinal_position;`, dbName, tableName)

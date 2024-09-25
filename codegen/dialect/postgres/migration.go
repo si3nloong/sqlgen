@@ -18,7 +18,16 @@ func (s *postgresDriver) Migrate(ctx context.Context, dsn string, w dialect.Writ
 	}
 	defer sqlConn.Close()
 
-	existedColumns, err := s.tableColumns(ctx, sqlConn, "public", schema.TableName())
+	if err := sqlConn.PingContext(ctx); err != nil {
+		return err
+	}
+
+	var dbName string
+	if err := sqlConn.QueryRowContext(ctx, `SELECT CURRENT_DATABASE();`).Scan(&dbName); err != nil {
+		return err
+	}
+
+	existedColumns, err := s.tableColumns(ctx, sqlConn, dbName, schema.TableName())
 	if err != nil {
 		return err
 	}
@@ -68,11 +77,22 @@ func (s *postgresDriver) Migrate(ctx context.Context, dsn string, w dialect.Writ
 		}
 		w.WriteString(")")
 	}
-	// if indexes := schema.Indexes(); len(indexes) > 0 {
-	// 	for i := range indexes {
-	// 		log.Println(indexes[i])
-	// 	}
-	// }
+
+	schema.RangeIndex(func(idx dialect.Index, _ int) {
+		if idx.Unique() {
+			w.WriteString("ADD CONSTRAINT " + indexName(idx.Columns(), unique) + " UNIQUE (")
+		} else {
+			w.WriteString("ADD CONSTRAINT " + indexName(idx.Columns(), bTree) + " INDEX (")
+		}
+		for i, col := range idx.Columns() {
+			if i > 0 {
+				w.WriteString("," + s.QuoteIdentifier(col))
+			} else {
+				w.WriteString(s.QuoteIdentifier(col))
+			}
+		}
+		w.WriteString(")")
+	})
 	w.WriteString("\n);")
 
 	var up, down strings.Builder
@@ -124,11 +144,12 @@ func (s *postgresDriver) Migrate(ctx context.Context, dsn string, w dialect.Writ
 	if err != nil {
 		return err
 	}
+
 	keys := schema.Keys()
-	if existedIndex, idx, ok := lo.FindIndexOf(existedIndexes, func(v index) bool {
+	if existedIndex, _, ok := lo.FindIndexOf(existedIndexes, func(v index) bool {
 		return v.IsPK
 	}); !ok && len(keys) > 0 {
-		up.WriteString(",\n\tADD PRIMARY KEY (")
+		up.WriteString(",\n\tADD CONSTRAINT " + s.QuoteIdentifier(indexName(keys, pk)) + " PRIMARY KEY (")
 		for i := range keys {
 			if i > 0 {
 				up.WriteString("," + s.QuoteIdentifier(keys[i]))
@@ -137,12 +158,13 @@ func (s *postgresDriver) Migrate(ctx context.Context, dsn string, w dialect.Writ
 			}
 		}
 		up.WriteByte(')')
-		down.WriteString("DROP PRIMARY KEY")
+		down.WriteString(",\n\tDROP PRIMARY KEY")
 	} else {
-		existedIndexes = append(existedIndexes[:idx], existedIndexes[idx+1:]...)
+		// log.Println(existedIndexes, len(existedIndexes))
+		// existedIndexes = append(existedIndexes[:idx], existedIndexes[idx+1:]...)
 		up.WriteString(",\n\tDROP CONSTRAINT " + s.QuoteIdentifier(existedIndex.Name))
 		if len(keys) > 0 {
-			up.WriteString(",\n\tADD PRIMARY KEY (")
+			up.WriteString(",\n\tADD " + s.QuoteIdentifier(indexName(keys, pk)) + " PRIMARY KEY (")
 			for i := range keys {
 				if i > 0 {
 					up.WriteString("," + s.QuoteIdentifier(keys[i]))
@@ -152,7 +174,7 @@ func (s *postgresDriver) Migrate(ctx context.Context, dsn string, w dialect.Writ
 			}
 			up.WriteByte(')')
 		}
-		down.WriteString(",\n\tADD PRIMARY KEY ()")
+		// down.WriteString(",\n\tADD PRIMARY KEY ()")
 	}
 	if len(existedColumns) > 0 {
 		for i := range existedColumns {
@@ -165,15 +187,22 @@ func (s *postgresDriver) Migrate(ctx context.Context, dsn string, w dialect.Writ
 		}
 		clear(existedColumns)
 	}
-	if len(existedIndexes) > 0 {
-		for i := range existedIndexes {
-			idx := existedIndexes[i]
-			up.WriteString(",\n\tDROP CONSTRAINT " + s.QuoteIdentifier(idx.Name))
-			down.WriteString(",\n\tADD CONSTRAINT " + s.QuoteIdentifier(idx.Name) + "(" + strings.Join(idx.Columns, ",") + ")")
-		}
-		clear(existedIndexes)
-	}
-
+	// if len(existedIndexes) > 0 {
+	// 	for i := range existedIndexes {
+	// 		idx := existedIndexes[i]
+	// 		up.WriteString(",\n\tDROP CONSTRAINT " + s.QuoteIdentifier(idx.Name))
+	// 		down.WriteString(",\n\tADD CONSTRAINT " + s.QuoteIdentifier(idx.Name) + " (")
+	// 		for j := range idx.Columns {
+	// 			if j > 0 {
+	// 				down.WriteString("," + s.QuoteIdentifier(idx.Columns[j]))
+	// 			} else {
+	// 				down.WriteString(s.QuoteIdentifier(idx.Columns[j]))
+	// 			}
+	// 		}
+	// 		down.WriteByte(')')
+	// 	}
+	// 	clear(existedIndexes)
+	// }
 	up.WriteString(";")
 	down.WriteString(";")
 

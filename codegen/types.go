@@ -45,7 +45,6 @@ type tableInfo struct {
 	autoIncrKey *columnInfo
 	keys        []*columnInfo
 	columns     []*columnInfo
-	indexes     []*indexInfo
 }
 
 func (b *tableInfo) GoName() string {
@@ -76,10 +75,27 @@ func (b *tableInfo) ColumnGoType(i int) dialect.GoColumn {
 	return b.columns[i]
 }
 
-func (b *tableInfo) Indexes() []string {
-	return lo.Map(b.indexes, func(c *indexInfo, _ int) string {
-		return strings.Join(c.columns, ",")
-	})
+func (b *tableInfo) RangeIndex(rangeFunc func(dialect.Index, int)) {
+	var (
+		optMap = make(map[string]*indexInfo)
+		key    string
+	)
+	for _, col := range b.columns {
+		switch {
+		case col.hasOption(TagOptionIndex):
+			key, _ = col.getOptionValue(TagOptionIndex)
+		case col.hasOption(TagOptionUnique):
+			key, _ = col.getOptionValue(TagOptionIndex)
+		default:
+			continue
+		}
+
+		if _, ok := optMap[key]; !ok {
+			optMap[key] = &indexInfo{}
+		}
+
+		optMap[key].columns = append(optMap[key].columns, col.columnName)
+	}
 }
 
 func (b *tableInfo) Implements(T *types.Interface) (*types.Func, bool) {
@@ -192,7 +208,7 @@ func (c *columnInfo) hasOption(k string) bool {
 	return ok
 }
 
-func (c *columnInfo) getOption(k string) (string, bool) {
+func (c *columnInfo) getOptionValue(k string) (string, bool) {
 	tag, _, ok := lo.FindLastIndexOf(c.tags, func(v goTag) bool {
 		return v.key == k
 	})
@@ -211,10 +227,10 @@ func (c *columnInfo) Default() (driver.Value, bool) {
 }
 
 func (c *columnInfo) Key() bool {
-	_, ok1 := c.getOption(TagOptionPKAlias)
-	_, ok2 := c.getOption(TagOptionFK)
-	_, ok3 := c.getOption(TagOptionPK)
-	_, ok4 := c.getOption(TagOptionAutoIncrement)
+	_, ok1 := c.getOptionValue(TagOptionPKAlias)
+	_, ok2 := c.getOptionValue(TagOptionFK)
+	_, ok3 := c.getOptionValue(TagOptionPK)
+	_, ok4 := c.getOptionValue(TagOptionAutoIncrement)
 	return ok1 || ok2 || ok3 || ok4
 }
 
@@ -232,7 +248,7 @@ func (c *columnInfo) AutoIncr() bool {
 }
 
 func (c columnInfo) Size() int {
-	return 1
+	return c.size
 }
 
 func (i *columnInfo) sqlValuer() (func(string) string, bool) {
@@ -254,14 +270,14 @@ func (i columnInfo) sqlScanner() (func(string) string, bool) {
 }
 
 type indexInfo struct {
-	columns   []string
-	indexType string
+	columns []string
+	unique  bool
 }
 
 func (i indexInfo) Columns() []string {
 	return i.columns
 }
 
-func (i indexInfo) Type() string {
-	return i.indexType
+func (i indexInfo) Unique() bool {
+	return i.unique
 }
