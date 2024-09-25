@@ -98,6 +98,32 @@ func (s *postgresDriver) ColumnDataTypes() map[string]*dialect.ColumnType {
 			Valuer:   "(time.Time)({{goPath}})",
 			Scanner:  "(*time.Time)({{addrOfGoPath}})",
 		},
+		"*string": {
+			DataType: func(col dialect.GoColumn) string {
+				size := 255
+				if n := col.Size(); n > 0 {
+					size = n
+				}
+				return fmt.Sprintf("varchar(%d)", size)
+			},
+			Valuer:  "github.com/si3nloong/sqlgen/sequel/types.String({{addrOfGoPath}})",
+			Scanner: "github.com/si3nloong/sqlgen/sequel/types.String({{addrOfGoPath}})",
+		},
+		"*bool": {
+			DataType: s.columnDataType("bool", false),
+			Valuer:   "github.com/si3nloong/sqlgen/sequel/types.Bool({{addrOfGoPath}})",
+			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Bool({{addrOfGoPath}})",
+		},
+		"*float32": {
+			DataType: s.columnDataType("real"),
+			Valuer:   "github.com/si3nloong/sqlgen/sequel/types.Float({{addrOfGoPath}})",
+			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Float({{addrOfGoPath}})",
+		},
+		"*float64": {
+			DataType: s.columnDataType("double precision"),
+			Valuer:   "github.com/si3nloong/sqlgen/sequel/types.Float({{addrOfGoPath}})",
+			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Float({{addrOfGoPath}})",
+		},
 		"*time.Time": {
 			DataType: s.columnDataType("timestamptz(6)"),
 			Valuer:   "github.com/si3nloong/sqlgen/sequel/types.Time({{goPath}})",
