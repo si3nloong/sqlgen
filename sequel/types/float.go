@@ -21,12 +21,12 @@ var (
 )
 
 // Float returns a sql.Scanner
-func Float[T constraints.Float](addr *T, strict ...bool) floatLike[T] {
+func Float[T constraints.Float](addr *T, strict ...bool) *floatLike[T] {
 	var strictType bool
 	if len(strict) > 0 {
 		strictType = strict[0]
 	}
-	return floatLike[T]{addr: addr, strictType: strictType}
+	return &floatLike[T]{addr: addr, strictType: strictType}
 }
 
 func (f floatLike[T]) Interface() T {
@@ -43,27 +43,30 @@ func (f floatLike[T]) Value() (driver.Value, error) {
 	return float64(*f.addr), nil
 }
 
-func (f floatLike[T]) Scan(v any) error {
+func (f *floatLike[T]) Scan(v any) error {
 	var val T
 	switch vi := v.(type) {
-	case []byte:
-		f, err := strconv.ParseFloat(unsafe.String(unsafe.SliceData(vi), len(vi)), 64)
-		if err != nil {
-			return err
-		}
-		val = T(f)
 	case float64:
 		val = T(vi)
 	case int64:
 		val = T(vi)
 	case uint64:
 		val = T(vi)
+	case nil:
+		f.addr = nil
+		return nil
 	default:
 		if f.strictType {
 			return fmt.Errorf(`sequel/types: unable to scan %T to ~float`, vi)
 		}
 
 		switch vi := v.(type) {
+		case []byte:
+			f, err := strconv.ParseFloat(unsafe.String(unsafe.SliceData(vi), len(vi)), 64)
+			if err != nil {
+				return err
+			}
+			val = T(f)
 		case string:
 			f, err := strconv.ParseFloat(vi, 64)
 			if err != nil {

@@ -20,12 +20,12 @@ var (
 	_ driver.Valuer = (*intLike[int])(nil)
 )
 
-func Integer[T constraints.Integer](addr *T, strict ...bool) intLike[T] {
+func Integer[T constraints.Integer](addr *T, strict ...bool) *intLike[T] {
 	var strictType bool
 	if len(strict) > 0 {
 		strictType = strict[0]
 	}
-	return intLike[T]{addr: addr, strictType: strictType}
+	return &intLike[T]{addr: addr, strictType: strictType}
 }
 
 func (i intLike[T]) Interface() T {

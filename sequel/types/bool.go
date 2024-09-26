@@ -19,12 +19,12 @@ var (
 )
 
 // Bool returns a sql.Scanner
-func Bool[T ~bool](addr *T, strict ...bool) boolLike[T] {
+func Bool[T ~bool](addr *T, strict ...bool) *boolLike[T] {
 	var strictType bool
 	if len(strict) > 0 {
 		strictType = strict[0]
 	}
-	return boolLike[T]{addr: addr, strictType: strictType}
+	return &boolLike[T]{addr: addr, strictType: strictType}
 }
 
 func (b boolLike[T]) Interface() T {
@@ -41,13 +41,16 @@ func (b boolLike[T]) Value() (driver.Value, error) {
 	return bool(*b.addr), nil
 }
 
-func (b boolLike[T]) Scan(v any) error {
+func (b *boolLike[T]) Scan(v any) error {
 	var val T
 	switch vi := v.(type) {
 	case bool:
 		val = T(vi)
 	case int64:
 		val = T(vi != 0)
+	case nil:
+		b.addr = nil
+		return nil
 	default:
 		if b.strictType {
 			return fmt.Errorf(`sequel/types: unable to scan %T to ~bool`, vi)

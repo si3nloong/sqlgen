@@ -33,7 +33,7 @@ func (s boolList[T]) Value() (driver.Value, error) {
 	return encoding.MarshalBoolSlice(*s.v), nil
 }
 
-func (s *boolList[T]) Scan(v any) error {
+func (s boolList[T]) Scan(v any) error {
 	switch vi := v.(type) {
 	case []byte:
 		if bytes.Equal(vi, nullBytes) {

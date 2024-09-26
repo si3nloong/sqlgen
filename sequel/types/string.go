@@ -21,12 +21,12 @@ var (
 	_ driver.Valuer = (*strLike[string])(nil)
 )
 
-func String[T StringLikeType](addr *T, strict ...bool) strLike[T] {
+func String[T StringLikeType](addr *T, strict ...bool) *strLike[T] {
 	var strictType bool
 	if len(strict) > 0 {
 		strictType = strict[0]
 	}
-	return strLike[T]{addr: addr, strictType: strictType}
+	return &strLike[T]{addr: addr, strictType: strictType}
 }
 
 func (s strLike[T]) Interface() T {
