@@ -53,6 +53,8 @@ func (i intLike[T]) Scan(v any) error {
 		val = T(m)
 	case int64:
 		val = T(vi)
+	case nil:
+		return nil
 
 	default:
 		if i.strictType {
