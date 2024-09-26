@@ -166,12 +166,12 @@ func (c *Config) initIfEmpty() {
 	if c.Database.Operator.Filename == "" {
 		c.Database.Operator.Filename = "operator.go"
 	}
-	if c.Migration == nil {
-		c.Migration = new(MigrationConfig)
-	}
-	c.Migration.Dir = "migrate"
-	c.Migration.Package = "migrate"
-	c.Migration.Filename = "migrate.go"
+	// if c.Migration == nil {
+	// 	c.Migration = new(MigrationConfig)
+	// }
+	// c.Migration.Dir = "migrate"
+	// c.Migration.Package = "migrate"
+	// c.Migration.Filename = "migrate.go"
 	if c.DataTypes == nil {
 		c.DataTypes = make(map[string]DataType)
 	}

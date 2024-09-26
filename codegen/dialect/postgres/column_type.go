@@ -17,6 +17,11 @@ func (s *postgresDriver) ColumnDataTypes() map[string]*dialect.ColumnType {
 			Valuer:   "(string)({{goPath}})",
 			Scanner:  "{{addrOfGoPath}}",
 		},
+		"byte": {
+			DataType: s.columnDataType("char(1)"),
+			Valuer:   "(string)({{goPath}})",
+			Scanner:  "{{addrOfGoPath}}",
+		},
 		"string": {
 			DataType: func(col dialect.GoColumn) string {
 				size := 255

@@ -23,6 +23,19 @@ import (
 	"golang.org/x/tools/imports"
 )
 
+// The minimum go type we need to map
+var goTypes = []string{
+	"byte",
+	"rune",
+	"bool",
+	"string",
+	"float32", "float64",
+	"int", "int8", "int16", "int32", "int64",
+	"uint", "uint8", "uint16", "uint32", "uint64",
+	"time.Time",
+	// "any", "sql.RawBytes", "json.RawMessage"
+}
+
 type Generator struct {
 	*bytes.Buffer
 	config             *Config
@@ -34,7 +47,7 @@ type Generator struct {
 	errs               []error
 }
 
-func newGenerator(cfg *Config, d dialect.Dialect) *Generator {
+func newGenerator(cfg *Config, d dialect.Dialect) (*Generator, error) {
 	gen := new(Generator)
 	gen.Buffer = new(bytes.Buffer)
 	gen.config = cfg
@@ -44,11 +57,17 @@ func newGenerator(cfg *Config, d dialect.Dialect) *Generator {
 	case '`':
 		gen.quoteRune = '"'
 	default:
-		gen.quoteRune = '"'
+		return nil, fmt.Errorf(`sqlgen: invalid quote character %q for string`, d.QuoteRune())
 	}
 	gen.dialect = d
 	gen.staticVar = d.QuoteVar(1) == d.QuoteVar(0)
 	gen.defaultColumnTypes = d.ColumnDataTypes()
+	// Check the dialect cover the basic go types
+	for _, t := range goTypes {
+		if _, ok := gen.defaultColumnTypes[t]; !ok {
+			return nil, fmt.Errorf(`sqlgen: SQL dialect %q missing column type mapping for type %q`, d.Driver(), t)
+		}
+	}
 	gen.columnTypes = make(map[string]*dialect.ColumnType)
 	for k, decl := range cfg.DataTypes {
 		gen.columnTypes[k] = &dialect.ColumnType{
@@ -61,7 +80,7 @@ func newGenerator(cfg *Config, d dialect.Dialect) *Generator {
 			SQLValuer:  decl.SQLValuer,
 		}
 	}
-	return gen
+	return gen, nil
 }
 
 func (g *Generator) LogError(err error) {

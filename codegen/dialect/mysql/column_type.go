@@ -16,6 +16,11 @@ func (s *mysqlDriver) ColumnDataTypes() map[string]*dialect.ColumnType {
 			Valuer:   "(string)({{goPath}})",
 			Scanner:  "{{addrOfGoPath}}",
 		},
+		"byte": {
+			DataType: s.columnDataType("CHAR(1)"),
+			Valuer:   "(string)({{goPath}})",
+			Scanner:  "{{addrOfGoPath}}",
+		},
 		"string": {
 			DataType: s.columnDataType("VARCHAR(255)", ""),
 			Valuer:   "(string)({{goPath}})",

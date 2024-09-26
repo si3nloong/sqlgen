@@ -1,15 +1,33 @@
 package sqlite
 
 import (
+	"fmt"
+
 	"github.com/si3nloong/sqlgen/codegen/dialect"
 )
 
 func (s *sqliteDriver) ColumnDataTypes() map[string]*dialect.ColumnType {
 	return map[string]*dialect.ColumnType{
+		"rune": {
+			DataType: s.columnDataType("CHAR(1)"),
+			Valuer:   "(string)({{goPath}})",
+			Scanner:  "{{addrOfGoPath}}",
+		},
+		"byte": {
+			DataType: s.columnDataType("CHAR(1)"),
+			Valuer:   "(string)({{goPath}})",
+			Scanner:  "{{addrOfGoPath}}",
+		},
 		"string": {
-			DataType: s.columnDataType("TEXT"),
-			Valuer:   "string({{goPath}})",
-			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.String({{addrOfGoPath}})",
+			DataType: func(col dialect.GoColumn) string {
+				size := 255
+				if n := col.Size(); n > 0 {
+					size = n
+				}
+				return fmt.Sprintf("VARCHAR(%d)", size)
+			},
+			Valuer:  "string({{goPath}})",
+			Scanner: "github.com/si3nloong/sqlgen/sequel/types.String({{addrOfGoPath}})",
 		},
 		"bool": {
 			DataType: s.columnDataType("INTEGER"),
@@ -75,6 +93,11 @@ func (s *sqliteDriver) ColumnDataTypes() map[string]*dialect.ColumnType {
 			DataType: s.columnDataType("REAL"),
 			Valuer:   "float64({{goPath}})",
 			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Float({{addrOfGoPath}})",
+		},
+		"time.Time": {
+			DataType: s.columnDataType("TEXT"),
+			Valuer:   "(time.Time)({{goPath}})",
+			Scanner:  "(*time.Time)({{addrOfGoPath}})",
 		},
 	}
 }

@@ -86,12 +86,15 @@ func Generate(c *Config) error {
 		return fmt.Errorf("sqlgen: missing dialect, please register your dialect first")
 	}
 
-	var (
-		srcDir    string
-		sources   = make([]string, len(cfg.Source))
-		generator = newGenerator(cfg, dialect)
-	)
+	generator, err := newGenerator(cfg, dialect)
+	if err != nil {
+		return err
+	}
 
+	var (
+		srcDir  string
+		sources = make([]string, len(cfg.Source))
+	)
 	copy(sources, cfg.Source)
 
 	// Resolve every source provided

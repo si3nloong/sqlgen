@@ -23,7 +23,6 @@ func TestAll(t *testing.T) {
 			Package: "mysqldb",
 			Dir:     "./db/mysql",
 		},
-		Migration: &codegen.MigrationConfig{},
 		// QuoteIdentifier: true,
 		Exec: codegen.ExecConfig{
 			SkipEmpty: false,
