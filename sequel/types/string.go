@@ -43,13 +43,16 @@ func (s strLike[T]) Value() (driver.Value, error) {
 	return string(*s.addr), nil
 }
 
-func (s strLike[T]) Scan(v any) error {
+func (s *strLike[T]) Scan(v any) error {
 	var val T
 	switch vi := v.(type) {
 	case string:
 		val = T(vi)
 	case []byte:
 		val = T(vi)
+	case nil:
+		s.addr = nil
+		return nil
 	default:
 		if s.strictType {
 			return fmt.Errorf(`sequel/types: unable to scan %T to ~string`, vi)

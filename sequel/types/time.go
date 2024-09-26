@@ -15,39 +15,39 @@ var (
 	ddmmyyyyhhmmsstz = regexp.MustCompile(`^\d{4}\-\d{2}\-\d{2}\s\d{2}\:\d{2}:\d{2}\.\d+$`)
 )
 
-type datetime[T time.Time] struct {
+type timestamp[T time.Time] struct {
 	addr       *T
 	strictType bool
 }
 
 var (
-	_ sql.Scanner   = (*datetime[time.Time])(nil)
-	_ driver.Valuer = (*datetime[time.Time])(nil)
+	_ sql.Scanner   = (*timestamp[time.Time])(nil)
+	_ driver.Valuer = (*timestamp[time.Time])(nil)
 )
 
-func Time[T time.Time](addr *T, strict ...bool) datetime[T] {
+func Time[T time.Time](addr *T, strict ...bool) timestamp[T] {
 	var strictType bool
 	if len(strict) > 0 {
 		strictType = strict[0]
 	}
-	return datetime[T]{addr: addr, strictType: strictType}
+	return timestamp[T]{addr: addr, strictType: strictType}
 }
 
-func (dt datetime[T]) Interface() T {
-	if dt.addr == nil {
+func (t timestamp[T]) Interface() T {
+	if t.addr == nil {
 		return *new(T)
 	}
-	return *dt.addr
+	return *t.addr
 }
 
-func (dt datetime[T]) Value() (driver.Value, error) {
-	if dt.addr == nil {
+func (t timestamp[T]) Value() (driver.Value, error) {
+	if t.addr == nil {
 		return nil, nil
 	}
-	return time.Time(*dt.addr), nil
+	return time.Time(*t.addr), nil
 }
 
-func (s datetime[T]) Scan(v any) error {
+func (t *timestamp[T]) Scan(v any) error {
 	var val T
 	switch vi := v.(type) {
 	case []byte:
@@ -66,18 +66,17 @@ func (s datetime[T]) Scan(v any) error {
 		val = T(vi)
 	case int64:
 		val = T(time.Unix(vi, 0))
+	case nil:
+		t.addr = nil
+		return nil
 	default:
 		return fmt.Errorf(`sequel/types: unsupported scan type %T for time.Time`, vi)
 	}
-	*s.addr = val
+	*t.addr = val
 	return nil
 }
 
-func parseTime(str string) (time.Time, error) {
-	var (
-		t   time.Time
-		err error
-	)
+func parseTime(str string) (t time.Time, err error) {
 	switch {
 	case ddmmyyyy.MatchString(str):
 		t, err = time.Parse("2006-01-02", str)

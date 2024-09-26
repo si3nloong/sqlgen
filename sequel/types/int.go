@@ -42,18 +42,13 @@ func (i intLike[T]) Value() (driver.Value, error) {
 	return int64(*i.addr), nil
 }
 
-func (i intLike[T]) Scan(v any) error {
+func (i *intLike[T]) Scan(v any) error {
 	var val T
 	switch vi := v.(type) {
-	case []byte:
-		m, err := strconv.ParseInt(unsafe.String(unsafe.SliceData(vi), len(vi)), 10, 64)
-		if err != nil {
-			return err
-		}
-		val = T(m)
 	case int64:
 		val = T(vi)
 	case nil:
+		i.addr = nil
 		return nil
 
 	default:
@@ -62,6 +57,12 @@ func (i intLike[T]) Scan(v any) error {
 		}
 
 		switch vi := v.(type) {
+		case []byte:
+			m, err := strconv.ParseInt(unsafe.String(unsafe.SliceData(vi), len(vi)), 10, 64)
+			if err != nil {
+				return err
+			}
+			val = T(m)
 		case string:
 			m, err := strconv.ParseInt(string(vi), 10, 64)
 			if err != nil {

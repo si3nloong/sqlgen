@@ -2,11 +2,14 @@ package types
 
 import (
 	"bytes"
+	"database/sql"
+	"database/sql/driver"
 	"fmt"
 	"strconv"
 	"strings"
 	"unsafe"
 
+	"github.com/si3nloong/sqlgen/sequel/encoding"
 	"golang.org/x/exp/constraints"
 )
 
@@ -14,11 +17,25 @@ type floatList[T constraints.Float] struct {
 	v *[]T
 }
 
+var (
+	_ driver.Valuer = (*floatList[float32])(nil)
+	_ sql.Scanner   = (*floatList[float32])(nil)
+	_ driver.Valuer = (*floatList[float64])(nil)
+	_ sql.Scanner   = (*floatList[float64])(nil)
+)
+
 func FloatSlice[T constraints.Float](v *[]T) floatList[T] {
 	return floatList[T]{v: v}
 }
 
-func (s floatList[T]) Scan(v any) error {
+func (s floatList[T]) Value() (driver.Value, error) {
+	if s.v == nil || *s.v == nil {
+		return nil, nil
+	}
+	return encoding.MarshalFloatList(*s.v, 64), nil
+}
+
+func (s *floatList[T]) Scan(v any) error {
 	switch vi := v.(type) {
 	case []byte:
 		if bytes.Equal(vi, nullBytes) {
@@ -74,6 +91,8 @@ func (s floatList[T]) Scan(v any) error {
 			values[i] = T(f64)
 		}
 		*s.v = values
+	case nil:
+		*s.v = nil
 	default:
 		return fmt.Errorf(`sequel/types: unsupported scan type %T for []~float`, vi)
 	}

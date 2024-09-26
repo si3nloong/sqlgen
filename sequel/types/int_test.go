@@ -44,4 +44,22 @@ func TestInteger(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, int64(88), value)
 	})
+
+	t.Run("Integer with new(int)", func(t *testing.T) {
+		var ptr = new(int)
+		v := Integer(ptr)
+
+		t.Run("Value", func(t *testing.T) {
+			value, err := v.Value()
+			require.NoError(t, err)
+			require.Empty(t, value)
+		})
+
+		t.Run("Scan", func(t *testing.T) {
+			require.NoError(t, v.Scan(nil))
+			value, err := v.Value()
+			require.NoError(t, err)
+			require.Nil(t, value)
+		})
+	})
 }

@@ -18,8 +18,8 @@ type boolList[T ~bool] struct {
 }
 
 var (
-	_ driver.Valuer = boolList[bool]{}
-	_ sql.Scanner   = boolList[bool]{}
+	_ driver.Valuer = (*boolList[bool])(nil)
+	_ sql.Scanner   = (*boolList[bool])(nil)
 )
 
 func BoolSlice[T ~bool](v *[]T) boolList[T] {
@@ -27,15 +27,13 @@ func BoolSlice[T ~bool](v *[]T) boolList[T] {
 }
 
 func (s boolList[T]) Value() (driver.Value, error) {
-	if (*s.v) == nil {
-		val := make([]byte, len(nullBytes))
-		copy(val, nullBytes)
-		return val, nil
+	if s.v == nil || *s.v == nil {
+		return nil, nil
 	}
-	return encoding.MarshalBoolSlice(*(s.v)), nil
+	return encoding.MarshalBoolSlice(*s.v), nil
 }
 
-func (s boolList[T]) Scan(v any) error {
+func (s *boolList[T]) Scan(v any) error {
 	switch vi := v.(type) {
 	case []byte:
 		if bytes.Equal(vi, nullBytes) {
@@ -80,17 +78,17 @@ func (s boolList[T]) Scan(v any) error {
 		var (
 			paths  = strings.Split(vi, ",")
 			values = make([]T, len(paths))
-			b      string
 		)
 		for i := range paths {
-			b = strings.TrimSpace(paths[i])
-			flag, err := strconv.ParseBool(b)
+			flag, err := strconv.ParseBool(strings.TrimSpace(paths[i]))
 			if err != nil {
 				return err
 			}
 			values[i] = T(flag)
 		}
 		*s.v = values
+	case nil:
+		*s.v = nil
 	default:
 		return fmt.Errorf(`sequel/types: unsupported scan type %T for []~bool`, vi)
 	}
