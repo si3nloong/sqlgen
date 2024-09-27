@@ -25,7 +25,7 @@ var (
 	_ driver.Valuer = (*timestamp[time.Time])(nil)
 )
 
-func Time[T time.Time](addr *T, strict ...bool) *timestamp[T] {
+func Time[T time.Time](addr *T, strict ...bool) ValueScanner[T] {
 	var strictType bool
 	if len(strict) > 0 {
 		strictType = strict[0]

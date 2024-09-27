@@ -1,7 +1,6 @@
 package types
 
 import (
-	"database/sql"
 	"database/sql/driver"
 	"fmt"
 	"strconv"
@@ -15,12 +14,7 @@ type intLike[T constraints.Integer] struct {
 	strictType bool
 }
 
-var (
-	_ sql.Scanner   = (*intLike[int])(nil)
-	_ driver.Valuer = (*intLike[int])(nil)
-)
-
-func Integer[T constraints.Integer](addr *T, strict ...bool) *intLike[T] {
+func Integer[T constraints.Integer](addr *T, strict ...bool) ValueScanner[T] {
 	var strictType bool
 	if len(strict) > 0 {
 		strictType = strict[0]
@@ -45,6 +39,12 @@ func (i intLike[T]) Value() (driver.Value, error) {
 func (i *intLike[T]) Scan(v any) error {
 	var val T
 	switch vi := v.(type) {
+	case []byte:
+		m, err := strconv.ParseInt(unsafe.String(unsafe.SliceData(vi), len(vi)), 10, 64)
+		if err != nil {
+			return err
+		}
+		val = T(m)
 	case int64:
 		val = T(vi)
 	case nil:
@@ -57,12 +57,6 @@ func (i *intLike[T]) Scan(v any) error {
 		}
 
 		switch vi := v.(type) {
-		case []byte:
-			m, err := strconv.ParseInt(unsafe.String(unsafe.SliceData(vi), len(vi)), 10, 64)
-			if err != nil {
-				return err
-			}
-			val = T(m)
 		case string:
 			m, err := strconv.ParseInt(string(vi), 10, 64)
 			if err != nil {

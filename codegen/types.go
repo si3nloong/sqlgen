@@ -59,7 +59,7 @@ func (b *tableInfo) TableName() string {
 	return b.tableName
 }
 
-func (b *tableInfo) Keys() []string {
+func (b *tableInfo) PK() []string {
 	return lo.Map(b.keys, func(c *columnInfo, _ int) string {
 		return c.columnName
 	})
@@ -71,7 +71,7 @@ func (b *tableInfo) Columns() []string {
 	})
 }
 
-func (b *tableInfo) ColumnGoType(i int) dialect.GoColumn {
+func (b *tableInfo) ColumnByIndex(i int) dialect.GoColumn {
 	return b.columns[i]
 }
 

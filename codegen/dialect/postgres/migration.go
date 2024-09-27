@@ -11,7 +11,7 @@ import (
 	"github.com/si3nloong/sqlgen/internal/sqltype"
 )
 
-func (s *postgresDriver) Migrate(ctx context.Context, dsn string, w dialect.Writer, schema dialect.Schema) error {
+func (s *postgresDriver) Migrate(ctx context.Context, dsn string, w dialect.Writer, schema dialect.TableMigrator) error {
 	sqlConn, err := sql.Open("pgx", dsn)
 	if err != nil {
 		return err
@@ -35,15 +35,27 @@ func (s *postgresDriver) Migrate(ctx context.Context, dsn string, w dialect.Writ
 	// Check existing columns and new columns is not matching
 	// If it's not matching then we need to do alter table
 	columns := schema.Columns()
+	// log.Println(existedColumns)
+	// log.Println(reflect.DeepEqual(existedColumns, lo.Map(columns, func(_ string, i int) column {
+	// 	field := schema.ColumnByIndex(i)
+	// 	return column{
+	// 		Name:       field.ColumnName(),
+	// 		DataType:   field.DataType(),
+	// 		IsNullable: sqltype.Bool(field.GoNullable()),
+	// 		// CharacterMaxLength: toNullInt64(field.CharacterMaxLength()),
+	// 		// NumericPrecision:   toNullInt64(field.NumericPrecision()),
+	// 		// DatetimePrecision:  toNullInt64(field.DatetimePrecision()),
+	// 	}
+	// })))
 	if reflect.DeepEqual(existedColumns, lo.Map(columns, func(_ string, i int) column {
-		field := schema.ColumnGoType(i)
+		field := schema.ColumnByIndex(i)
 		return column{
-			Name:               field.ColumnName(),
-			DataType:           field.DataType(),
-			IsNullable:         sqltype.Bool(field.GoNullable()),
-			CharacterMaxLength: sql.NullInt64{},
-			NumericPrecision:   sql.NullInt64{},
-			DatetimePrecision:  sql.NullInt64{},
+			Name:       field.ColumnName(),
+			DataType:   field.DataType(),
+			IsNullable: sqltype.Bool(field.GoNullable()),
+			// CharacterMaxLength: toNullInt64(field.CharacterMaxLength()),
+			// NumericPrecision:   toNullInt64(field.NumericPrecision()),
+			// DatetimePrecision:  toNullInt64(field.DatetimePrecision()),
 		}
 	})) {
 		return dialect.ErrNoNewMigration
@@ -56,7 +68,7 @@ func (s *postgresDriver) Migrate(ctx context.Context, dsn string, w dialect.Writ
 		if i > 0 {
 			w.WriteString(",\n")
 		}
-		column := schema.ColumnGoType(i)
+		column := schema.ColumnByIndex(i)
 		w.WriteString("\t" + s.QuoteIdentifier(column.ColumnName()) + " " + column.DataType())
 		if !column.GoNullable() {
 			w.WriteString(" NOT NULL")
@@ -66,13 +78,14 @@ func (s *postgresDriver) Migrate(ctx context.Context, dsn string, w dialect.Writ
 		}
 	}
 
-	if keys := schema.Keys(); len(keys) > 0 {
-		w.WriteString(",\n\tPRIMARY KEY (")
-		for i := range keys {
+	pks := schema.PK()
+	if len(pks) > 0 {
+		w.WriteString(",\n\tCONSTRAINT " + s.QuoteIdentifier(indexName(pks, pk)) + " PRIMARY KEY (")
+		for i := range pks {
 			if i > 0 {
-				w.WriteString("," + s.QuoteIdentifier(keys[i]))
+				w.WriteString("," + s.QuoteIdentifier(pks[i]))
 			} else {
-				w.WriteString(s.QuoteIdentifier(keys[i]))
+				w.WriteString(s.QuoteIdentifier(pks[i]))
 			}
 		}
 		w.WriteString(")")
@@ -105,7 +118,7 @@ func (s *postgresDriver) Migrate(ctx context.Context, dsn string, w dialect.Writ
 			down.WriteString(",\n")
 		}
 
-		col := schema.ColumnGoType(i)
+		col := schema.ColumnByIndex(i)
 		if prevColumn, idx, _ := lo.FindIndexOf(existedColumns, func(v column) bool {
 			return v.Name == col.ColumnName()
 		}); idx < 0 {
@@ -145,31 +158,33 @@ func (s *postgresDriver) Migrate(ctx context.Context, dsn string, w dialect.Writ
 		return err
 	}
 
-	keys := schema.Keys()
-	if existedIndex, _, ok := lo.FindIndexOf(existedIndexes, func(v index) bool {
+	if pkIndex, _, ok := lo.FindIndexOf(existedIndexes, func(v index) bool {
 		return v.IsPK
-	}); !ok && len(keys) > 0 {
-		up.WriteString(",\n\tADD CONSTRAINT " + s.QuoteIdentifier(indexName(keys, pk)) + " PRIMARY KEY (")
-		for i := range keys {
+	}); !ok && len(pks) > 0 {
+		up.WriteString(",\n\tADD CONSTRAINT " + s.QuoteIdentifier(indexName(pks, pk)) + " PRIMARY KEY (")
+		for i := range pks {
 			if i > 0 {
-				up.WriteString("," + s.QuoteIdentifier(keys[i]))
+				up.WriteString("," + s.QuoteIdentifier(pks[i]))
 			} else {
-				up.WriteString(s.QuoteIdentifier(keys[i]))
+				up.WriteString(s.QuoteIdentifier(pks[i]))
 			}
 		}
 		up.WriteByte(')')
 		down.WriteString(",\n\tDROP PRIMARY KEY")
 	} else {
 		// log.Println(existedIndexes, len(existedIndexes))
+
 		// existedIndexes = append(existedIndexes[:idx], existedIndexes[idx+1:]...)
-		up.WriteString(",\n\tDROP CONSTRAINT " + s.QuoteIdentifier(existedIndex.Name))
-		if len(keys) > 0 {
-			up.WriteString(",\n\tADD " + s.QuoteIdentifier(indexName(keys, pk)) + " PRIMARY KEY (")
-			for i := range keys {
+		up.WriteString(",\n\tDROP CONSTRAINT " + s.QuoteIdentifier(pkIndex.Name))
+		// If the current primary key index name is not similar to the previous one
+		// we definitely need to replace it
+		if len(pks) > 0 && indexName(pks, pk) != pkIndex.Name {
+			up.WriteString(",\n\tADD " + s.QuoteIdentifier(indexName(pks, pk)) + " PRIMARY KEY (")
+			for i := range pks {
 				if i > 0 {
-					up.WriteString("," + s.QuoteIdentifier(keys[i]))
+					up.WriteString("," + s.QuoteIdentifier(pks[i]))
 				} else {
-					up.WriteString(s.QuoteIdentifier(keys[i]))
+					up.WriteString(s.QuoteIdentifier(pks[i]))
 				}
 			}
 			up.WriteByte(')')
@@ -211,4 +226,8 @@ func (s *postgresDriver) Migrate(ctx context.Context, dsn string, w dialect.Writ
 	w.WriteString("\n-- SQL section 'Down' is executed when this migration is rolled back")
 	w.WriteString(down.String())
 	return nil
+}
+
+func toNullInt64(n int64, ok bool) sql.NullInt64 {
+	return sql.NullInt64{Int64: n, Valid: ok}
 }

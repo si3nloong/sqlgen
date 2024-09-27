@@ -36,7 +36,7 @@ type Dialect interface {
 	// Column data types
 	ColumnDataTypes() map[string]*ColumnType
 
-	Migrate(ctx context.Context, dsn string, w Writer, schema Schema) error
+	Migrate(ctx context.Context, dsn string, w Writer, m TableMigrator) error
 }
 
 type ColumnType struct {
@@ -55,12 +55,20 @@ type Index interface {
 	Unique() bool
 }
 
-type Schema interface {
+type TableMigrator interface {
 	DBName() string
+
+	// Table name
 	TableName() string
+
+	// Return the columns of the table
 	Columns() []string
-	Keys() []string
-	ColumnGoType(i int) GoColumn
+
+	// Return the table primary key
+	PK() []string
+
+	ColumnByIndex(i int) GoColumn
+
 	RangeIndex(func(Index, int))
 }
 
@@ -86,7 +94,7 @@ type GoColumn interface {
 	DataType() string
 
 	// SQL default value, this can be
-	// string, bool, int64, float64, sql.RawBytes
+	// 	string, []byte, bool, int64, float64, sql.RawBytes
 	Default() (driver.Value, bool)
 
 	// Determine whether this column is auto increment or not
@@ -97,6 +105,12 @@ type GoColumn interface {
 
 	// Column size that declared by user
 	Size() int
+
+	// CharacterMaxLength() (int64, bool)
+
+	// NumericPrecision() (int64, bool)
+
+	// DatetimePrecision() (int64, bool)
 }
 
 func RegisterDialect(name string, d Dialect) {

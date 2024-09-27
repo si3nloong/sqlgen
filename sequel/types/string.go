@@ -1,7 +1,6 @@
 package types
 
 import (
-	"database/sql"
 	"database/sql/driver"
 	"fmt"
 	"strconv"
@@ -16,12 +15,7 @@ type strLike[T StringLikeType] struct {
 	strictType bool
 }
 
-var (
-	_ sql.Scanner   = (*strLike[string])(nil)
-	_ driver.Valuer = (*strLike[string])(nil)
-)
-
-func String[T StringLikeType](addr *T, strict ...bool) *strLike[T] {
+func String[T StringLikeType](addr *T, strict ...bool) ValueScanner[T] {
 	var strictType bool
 	if len(strict) > 0 {
 		strictType = strict[0]
