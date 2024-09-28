@@ -408,7 +408,12 @@ func parseGoPackage(
 					// If the field is embedded struct
 					// `Type` can be either *ast.Ident or *ast.SelectorExpr
 					if fi.Names == nil {
-						switch vi := fi.Type.(type) {
+						t := fi.Type
+						// If it's an embedded struct with pointer
+						if ut := assertAsPtr[ast.StarExpr](fi.Type); ut != nil {
+							t = ut.X
+						}
+						switch vi := t.(type) {
 						// Local struct
 						case *ast.Ident:
 							// Object is nil when it's not found in current scope (different file)

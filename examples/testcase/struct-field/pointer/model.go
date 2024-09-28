@@ -20,4 +20,14 @@ type Ptr struct {
 	F32    *float32
 	F64    *float64
 	Time   *time.Time `sql:",size:6"`
+	Nested *nested
+	*embeded
+}
+
+type nested struct {
+	ID *int64
+}
+
+type embeded struct {
+	EmbededTime *time.Time
 }

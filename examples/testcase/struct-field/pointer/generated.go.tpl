@@ -17,13 +17,13 @@ func (v Ptr) PK() (string, int, any) {
 	return "id", 0, (int64)(v.ID)
 }
 func (Ptr) Columns() []string {
-	return []string{"id", "str", "bytes", "bool", "int", "int_8", "int_16", "int_32", "int_64", "uint", "uint_8", "uint_16", "uint_32", "uint_64", "f_32", "f_64", "time"}
+	return []string{"id", "str", "bytes", "bool", "int", "int_8", "int_16", "int_32", "int_64", "uint", "uint_8", "uint_16", "uint_32", "uint_64", "f_32", "f_64", "time", "nested", "embeded_time"}
 }
 func (v Ptr) Values() []any {
-	return []any{(int64)(v.ID), types.String(v.Str), types.String(v.Bytes), types.Bool(v.Bool), types.Integer(v.Int), types.Integer(v.Int8), types.Integer(v.Int16), types.Integer(v.Int32), types.Integer(v.Int64), types.Integer(v.Uint), types.Integer(v.Uint8), types.Integer(v.Uint16), types.Integer(v.Uint32), types.Integer(v.Uint64), types.Float32(v.F32), types.Float64(v.F64), types.Time(v.Time)}
+	return []any{(int64)(v.ID), types.String(v.Str), types.String(v.Bytes), types.Bool(v.Bool), types.Integer(v.Int), types.Integer(v.Int8), types.Integer(v.Int16), types.Integer(v.Int32), types.Integer(v.Int64), types.Integer(v.Uint), types.Integer(v.Uint8), types.Integer(v.Uint16), types.Integer(v.Uint32), types.Integer(v.Uint64), types.Float32(v.F32), types.Float64(v.F64), types.Time(v.Time), types.JSONMarshaler(v.Nested), types.Time(v.embeded.EmbededTime)}
 }
 func (v *Ptr) Addrs() []any {
-	addrs := make([]any, 17)
+	addrs := make([]any, 19)
 	addrs[0] = types.Integer(&v.ID)
 	if v.Str == nil {
 		v.Str = new(string)
@@ -89,19 +89,27 @@ func (v *Ptr) Addrs() []any {
 		v.Time = new(time.Time)
 	}
 	addrs[16] = types.Time(v.Time)
+	if v.Nested == nil {
+		v.Nested = new(nested)
+	}
+	addrs[17] = types.JSONUnmarshaler(v.Nested)
+	if v.embeded.EmbededTime == nil {
+		v.embeded.EmbededTime = new(time.Time)
+	}
+	addrs[18] = types.Time(v.embeded.EmbededTime)
 	return addrs
 }
 func (Ptr) InsertPlaceholders(row int) string {
-	return "(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+	return "(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
 }
 func (v Ptr) InsertOneStmt() (string, []any) {
-	return "INSERT INTO ptr (str,bytes,bool,int,int_8,int_16,int_32,int_64,uint,uint_8,uint_16,uint_32,uint_64,f_32,f_64,time) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);", []any{types.String(v.Str), types.String(v.Bytes), types.Bool(v.Bool), types.Integer(v.Int), types.Integer(v.Int8), types.Integer(v.Int16), types.Integer(v.Int32), types.Integer(v.Int64), types.Integer(v.Uint), types.Integer(v.Uint8), types.Integer(v.Uint16), types.Integer(v.Uint32), types.Integer(v.Uint64), types.Float32(v.F32), types.Float64(v.F64), types.Time(v.Time)}
+	return "INSERT INTO ptr (str,bytes,bool,int,int_8,int_16,int_32,int_64,uint,uint_8,uint_16,uint_32,uint_64,f_32,f_64,time,nested,embeded_time) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);", []any{types.String(v.Str), types.String(v.Bytes), types.Bool(v.Bool), types.Integer(v.Int), types.Integer(v.Int8), types.Integer(v.Int16), types.Integer(v.Int32), types.Integer(v.Int64), types.Integer(v.Uint), types.Integer(v.Uint8), types.Integer(v.Uint16), types.Integer(v.Uint32), types.Integer(v.Uint64), types.Float32(v.F32), types.Float64(v.F64), types.Time(v.Time), types.JSONMarshaler(v.Nested), types.Time(v.embeded.EmbededTime)}
 }
 func (v Ptr) FindOneByPKStmt() (string, []any) {
-	return "SELECT id,str,bytes,bool,int,int_8,int_16,int_32,int_64,uint,uint_8,uint_16,uint_32,uint_64,f_32,f_64,time FROM ptr WHERE id = ? LIMIT 1;", []any{(int64)(v.ID)}
+	return "SELECT id,str,bytes,bool,int,int_8,int_16,int_32,int_64,uint,uint_8,uint_16,uint_32,uint_64,f_32,f_64,time,nested,embeded_time FROM ptr WHERE id = ? LIMIT 1;", []any{(int64)(v.ID)}
 }
 func (v Ptr) UpdateOneByPKStmt() (string, []any) {
-	return "UPDATE ptr SET str = ?,bytes = ?,bool = ?,int = ?,int_8 = ?,int_16 = ?,int_32 = ?,int_64 = ?,uint = ?,uint_8 = ?,uint_16 = ?,uint_32 = ?,uint_64 = ?,f_32 = ?,f_64 = ?,time = ? WHERE id = ?;", []any{types.String(v.Str), types.String(v.Bytes), types.Bool(v.Bool), types.Integer(v.Int), types.Integer(v.Int8), types.Integer(v.Int16), types.Integer(v.Int32), types.Integer(v.Int64), types.Integer(v.Uint), types.Integer(v.Uint8), types.Integer(v.Uint16), types.Integer(v.Uint32), types.Integer(v.Uint64), types.Float32(v.F32), types.Float64(v.F64), types.Time(v.Time), (int64)(v.ID)}
+	return "UPDATE ptr SET str = ?,bytes = ?,bool = ?,int = ?,int_8 = ?,int_16 = ?,int_32 = ?,int_64 = ?,uint = ?,uint_8 = ?,uint_16 = ?,uint_32 = ?,uint_64 = ?,f_32 = ?,f_64 = ?,time = ?,nested = ?,embeded_time = ? WHERE id = ?;", []any{types.String(v.Str), types.String(v.Bytes), types.Bool(v.Bool), types.Integer(v.Int), types.Integer(v.Int8), types.Integer(v.Int16), types.Integer(v.Int32), types.Integer(v.Int64), types.Integer(v.Uint), types.Integer(v.Uint8), types.Integer(v.Uint16), types.Integer(v.Uint32), types.Integer(v.Uint64), types.Float32(v.F32), types.Float64(v.F64), types.Time(v.Time), types.JSONMarshaler(v.Nested), types.Time(v.embeded.EmbededTime), (int64)(v.ID)}
 }
 func (v Ptr) GetID() sequel.ColumnValuer[int64] {
 	return sequel.Column("id", v.ID, func(val int64) driver.Value { return (int64)(val) })
@@ -153,4 +161,10 @@ func (v Ptr) GetF64() sequel.ColumnValuer[*float64] {
 }
 func (v Ptr) GetTime() sequel.ColumnValuer[*time.Time] {
 	return sequel.Column("time", v.Time, func(val *time.Time) driver.Value { return types.Time(val) })
+}
+func (v Ptr) GetNested() sequel.ColumnValuer[*nested] {
+	return sequel.Column("nested", v.Nested, func(val *nested) driver.Value { return types.JSONMarshaler(val) })
+}
+func (v Ptr) GetEmbededTime() sequel.ColumnValuer[*time.Time] {
+	return sequel.Column("embeded_time", v.embeded.EmbededTime, func(val *time.Time) driver.Value { return types.Time(val) })
 }
