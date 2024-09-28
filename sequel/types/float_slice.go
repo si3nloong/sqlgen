@@ -14,7 +14,8 @@ import (
 )
 
 type floatList[T constraints.Float] struct {
-	v *[]T
+	v    *[]T
+	prec int
 }
 
 var (
@@ -24,8 +25,12 @@ var (
 	_ sql.Scanner   = (*floatList[float64])(nil)
 )
 
-func FloatSlice[T constraints.Float](v *[]T) floatList[T] {
-	return floatList[T]{v: v}
+func Float32Slice[T constraints.Float](v *[]T) floatList[T] {
+	return floatList[T]{v: v, prec: 32}
+}
+
+func Float64Slice[T constraints.Float](v *[]T) floatList[T] {
+	return floatList[T]{v: v, prec: 64}
 }
 
 func (s floatList[T]) Value() (driver.Value, error) {
@@ -57,11 +62,11 @@ func (s *floatList[T]) Scan(v any) error {
 		)
 		for i := range paths {
 			b = bytes.TrimSpace(paths[i])
-			f64, err := strconv.ParseFloat(unsafe.String(unsafe.SliceData(b), len(b)), 64)
+			f, err := strconv.ParseFloat(unsafe.String(unsafe.SliceData(b), len(b)), s.prec)
 			if err != nil {
 				return err
 			}
-			values[i] = T(f64)
+			values[i] = T(f)
 		}
 		*s.v = values
 	case string:
@@ -84,11 +89,11 @@ func (s *floatList[T]) Scan(v any) error {
 		)
 		for i := range paths {
 			b = strings.TrimSpace(paths[i])
-			f64, err := strconv.ParseFloat(b, 64)
+			f, err := strconv.ParseFloat(b, s.prec)
 			if err != nil {
 				return err
 			}
-			values[i] = T(f64)
+			values[i] = T(f)
 		}
 		*s.v = values
 	case nil:

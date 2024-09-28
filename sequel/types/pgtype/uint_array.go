@@ -1,7 +1,6 @@
 package pgtype
 
 import (
-	"database/sql"
 	"database/sql/driver"
 
 	"golang.org/x/exp/constraints"
@@ -9,33 +8,16 @@ import (
 
 // Uint64Array represents a one-dimensional array of the PostgreSQL integer types.
 type (
-	UintArray[T ~uint]     []T
-	Uint8Array[T ~uint8]   []T
-	Uint16Array[T ~uint16] []T
-	Uint32Array[T ~uint32] []T
-	Uint64Array[T ~uint64] []T
+	UintArray[T constraints.Unsigned] []T
+	Uint8Array[T ~uint8]              []T
+	Uint16Array[T ~uint16]            []T
+	Uint32Array[T ~uint32]            []T
+	Uint64Array[T ~uint64]            []T
 )
 
-func UintArrayValue[T constraints.Unsigned](a []T) driver.Valuer {
-	return uintArray[T]{v: &a}
-}
-
-func UintArrayScanner[T constraints.Unsigned](a *[]T) sql.Scanner {
-	return uintArray[T]{v: a}
-}
-
-type uintArray[T constraints.Unsigned] struct {
-	v *[]T
-}
-
 // Value implements the driver.Valuer interface.
-func (a uintArray[T]) Value() (driver.Value, error) {
-	return uintArrayValue(*a.v)
-}
-
-// Scan implements the sql.Scanner interface.
-func (a uintArray[T]) Scan(src any) error {
-	return arrayScan(a.v, src, "UintArray")
+func (a UintArray[T]) Value() (driver.Value, error) {
+	return uintArrayValue(a)
 }
 
 // Scan implements the sql.Scanner interface.
@@ -44,7 +26,7 @@ func (a *UintArray[T]) Scan(src any) error {
 }
 
 // Value implements the driver.Valuer interface.
-func (a UintArray[T]) Value() (driver.Value, error) {
+func (a Uint8Array[T]) Value() (driver.Value, error) {
 	return uintArrayValue(a)
 }
 
@@ -54,7 +36,7 @@ func (a *Uint8Array[T]) Scan(src any) error {
 }
 
 // Value implements the driver.Valuer interface.
-func (a Uint8Array[T]) Value() (driver.Value, error) {
+func (a Uint16Array[T]) Value() (driver.Value, error) {
 	return uintArrayValue(a)
 }
 
@@ -64,7 +46,7 @@ func (a *Uint16Array[T]) Scan(src any) error {
 }
 
 // Value implements the driver.Valuer interface.
-func (a Uint16Array[T]) Value() (driver.Value, error) {
+func (a Uint32Array[T]) Value() (driver.Value, error) {
 	return uintArrayValue(a)
 }
 
@@ -74,16 +56,11 @@ func (a *Uint32Array[T]) Scan(src any) error {
 }
 
 // Value implements the driver.Valuer interface.
-func (a Uint32Array[T]) Value() (driver.Value, error) {
+func (a Uint64Array[T]) Value() (driver.Value, error) {
 	return uintArrayValue(a)
 }
 
 // Scan implements the sql.Scanner interface.
 func (a *Uint64Array[T]) Scan(src any) error {
 	return arrayScan(a, src, "Uint64Array")
-}
-
-// Value implements the driver.Valuer interface.
-func (a Uint64Array[T]) Value() (driver.Value, error) {
-	return uintArrayValue(a)
 }

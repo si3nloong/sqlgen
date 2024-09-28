@@ -2,6 +2,7 @@ package pgtype
 
 import (
 	"bytes"
+	"database/sql"
 	"database/sql/driver"
 	"encoding/hex"
 	"fmt"
@@ -9,46 +10,16 @@ import (
 )
 
 // ByteaArray represents a one-dimensional array of the PostgreSQL bytea type.
-type ByteaArray [][]byte
+type ByteaArray[T ~[]byte] []T
 
-// Scan implements the sql.Scanner interface.
-func (a *ByteaArray) Scan(src interface{}) error {
-	switch src := src.(type) {
-	case []byte:
-		return a.scanBytes(src)
-	case string:
-		return a.scanBytes([]byte(src))
-	case nil:
-		*a = nil
-		return nil
-	}
-
-	return fmt.Errorf("pq: cannot convert %T to ByteaArray", src)
-}
-
-func (a *ByteaArray) scanBytes(src []byte) error {
-	elems, err := scanLinearArray(src, []byte{','}, "ByteaArray")
-	if err != nil {
-		return err
-	}
-	if *a != nil && len(elems) == 0 {
-		*a = (*a)[:0]
-	} else {
-		b := make(ByteaArray, len(elems))
-		for i, v := range elems {
-			b[i], err = parseBytea(v)
-			if err != nil {
-				return fmt.Errorf("could not parse bytea array index %d: %s", i, err.Error())
-			}
-		}
-		*a = b
-	}
-	return nil
-}
+var (
+	_ sql.Scanner   = (*ByteaArray[[]byte])(nil)
+	_ driver.Valuer = (*ByteaArray[[]byte])(nil)
+)
 
 // Value implements the driver.Valuer interface. It uses the "hex" format which
 // is only supported on PostgreSQL 9.0 or newer.
-func (a ByteaArray) Value() (driver.Value, error) {
+func (a ByteaArray[T]) Value() (driver.Value, error) {
 	if a == nil {
 		return nil, nil
 	}
@@ -75,8 +46,42 @@ func (a ByteaArray) Value() (driver.Value, error) {
 
 		return string(b), nil
 	}
-
 	return "{}", nil
+}
+
+// Scan implements the sql.Scanner interface.
+func (a *ByteaArray[T]) Scan(src any) error {
+	switch src := src.(type) {
+	case []byte:
+		return a.scanBytes(src)
+	case string:
+		return a.scanBytes([]byte(src))
+	case nil:
+		*a = nil
+		return nil
+	}
+
+	return fmt.Errorf("pq: cannot convert %T to ByteaArray", src)
+}
+
+func (a *ByteaArray[T]) scanBytes(src []byte) error {
+	elems, err := scanLinearArray(src, []byte{','}, "ByteaArray")
+	if err != nil {
+		return err
+	}
+	if *a != nil && len(elems) == 0 {
+		*a = (*a)[:0]
+	} else {
+		b := make(ByteaArray[T], len(elems))
+		for i, v := range elems {
+			b[i], err = parseBytea(v)
+			if err != nil {
+				return fmt.Errorf("could not parse bytea array index %d: %s", i, err.Error())
+			}
+		}
+		*a = b
+	}
+	return nil
 }
 
 // Parse a bytea value received from the server.  Both "hex" and the legacy

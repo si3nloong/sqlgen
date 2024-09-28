@@ -41,62 +41,62 @@ func (s *postgresDriver) ColumnDataTypes() map[string]*dialect.ColumnType {
 		"int8": {
 			DataType: s.intDataType("int2", int64(0)),
 			Valuer:   "(int64)({{goPath}})",
-			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Integer({{addrOfGoPath}})",
+			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Int8({{addrOfGoPath}})",
 		},
 		"int16": {
 			DataType: s.intDataType("int2", int64(0)),
 			Valuer:   "(int64)({{goPath}})",
-			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Integer({{addrOfGoPath}})",
+			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Int16({{addrOfGoPath}})",
 		},
 		"int32": {
 			DataType: s.intDataType("int4", int64(0)),
 			Valuer:   "(int64)({{goPath}})",
-			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Integer({{addrOfGoPath}})",
+			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Int32({{addrOfGoPath}})",
 		},
 		"int64": {
 			DataType: s.columnDataType("bigint", int64(0)),
 			Valuer:   "(int64)({{goPath}})",
-			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Integer({{addrOfGoPath}})",
+			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Int64({{addrOfGoPath}})",
 		},
 		"int": {
 			DataType: s.intDataType("int4", int64(0)),
 			Valuer:   "(int64)({{goPath}})",
-			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Integer({{addrOfGoPath}})",
+			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Int({{addrOfGoPath}})",
 		},
 		"uint8": {
 			DataType: s.intDataType("int2", uint64(0)),
 			Valuer:   "(int64)({{goPath}})",
-			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Integer({{addrOfGoPath}})",
+			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Uint8({{addrOfGoPath}})",
 		},
 		"uint16": {
 			DataType: s.intDataType("int2", uint64(0)),
 			Valuer:   "(int64)({{goPath}})",
-			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Integer({{addrOfGoPath}})",
+			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Uint16({{addrOfGoPath}})",
 		},
 		"uint32": {
 			DataType: s.intDataType("int4", uint64(0)),
 			Valuer:   "(int64)({{goPath}})",
-			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Integer({{addrOfGoPath}})",
+			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Uint32({{addrOfGoPath}})",
 		},
 		"uint64": {
 			DataType: s.intDataType("bigint", uint64(0)),
 			Valuer:   "(int64)({{goPath}})",
-			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Integer({{addrOfGoPath}})",
+			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Uint64({{addrOfGoPath}})",
 		},
 		"uint": {
 			DataType: s.intDataType("int4", uint64(0)),
 			Valuer:   "(int64)({{goPath}})",
-			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Integer({{addrOfGoPath}})",
+			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Uint({{addrOfGoPath}})",
 		},
 		"float32": {
 			DataType: s.columnDataType("real"),
 			Valuer:   "(float64)({{goPath}})",
-			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Float({{addrOfGoPath}})",
+			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Float32({{addrOfGoPath}})",
 		},
 		"float64": {
 			DataType: s.columnDataType("double precision"),
 			Valuer:   "(float64)({{goPath}})",
-			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Float({{addrOfGoPath}})",
+			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Float64({{addrOfGoPath}})",
 		},
 		"time.Time": {
 			DataType: s.columnDataType("timestamptz(6)", sql.RawBytes(`NOW()`)),
@@ -119,15 +119,65 @@ func (s *postgresDriver) ColumnDataTypes() map[string]*dialect.ColumnType {
 			Valuer:   "github.com/si3nloong/sqlgen/sequel/types.Bool({{addrOfGoPath}})",
 			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Bool({{addrOfGoPath}})",
 		},
+		"*int8": {
+			DataType: s.intDataType("int2", int64(0)),
+			Valuer:   "github.com/si3nloong/sqlgen/sequel/types.Integer({{goPath}})",
+			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Int8({{addrOfGoPath}})",
+		},
+		"*int16": {
+			DataType: s.intDataType("int2", int64(0)),
+			Valuer:   "github.com/si3nloong/sqlgen/sequel/types.Integer({{goPath}})",
+			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Int16({{addrOfGoPath}})",
+		},
+		"*int32": {
+			DataType: s.intDataType("int4", int64(0)),
+			Valuer:   "github.com/si3nloong/sqlgen/sequel/types.Integer({{goPath}})",
+			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Int32({{addrOfGoPath}})",
+		},
+		"*int64": {
+			DataType: s.columnDataType("bigint", int64(0)),
+			Valuer:   "github.com/si3nloong/sqlgen/sequel/types.Integer({{goPath}})",
+			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Int64({{addrOfGoPath}})",
+		},
+		"*int": {
+			DataType: s.intDataType("int4", int64(0)),
+			Valuer:   "github.com/si3nloong/sqlgen/sequel/types.Integer({{goPath}})",
+			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Integer({{addrOfGoPath}})",
+		},
+		"*uint8": {
+			DataType: s.intDataType("int2", uint64(0)),
+			Valuer:   "github.com/si3nloong/sqlgen/sequel/types.Integer({{goPath}})",
+			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Uint8({{addrOfGoPath}})",
+		},
+		"*uint16": {
+			DataType: s.intDataType("int2", uint64(0)),
+			Valuer:   "github.com/si3nloong/sqlgen/sequel/types.Integer({{goPath}})",
+			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Uint16({{addrOfGoPath}})",
+		},
+		"*uint32": {
+			DataType: s.intDataType("int4", uint64(0)),
+			Valuer:   "github.com/si3nloong/sqlgen/sequel/types.Integer({{goPath}})",
+			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Uint32({{addrOfGoPath}})",
+		},
+		"*uint64": {
+			DataType: s.intDataType("bigint", uint64(0)),
+			Valuer:   "github.com/si3nloong/sqlgen/sequel/types.Integer({{goPath}})",
+			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Uint64({{addrOfGoPath}})",
+		},
+		"*uint": {
+			DataType: s.intDataType("int4", uint64(0)),
+			Valuer:   "github.com/si3nloong/sqlgen/sequel/types.Integer({{goPath}})",
+			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Uint({{addrOfGoPath}})",
+		},
 		"*float32": {
 			DataType: s.columnDataType("real"),
-			Valuer:   "github.com/si3nloong/sqlgen/sequel/types.Float({{addrOfGoPath}})",
-			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Float({{addrOfGoPath}})",
+			Valuer:   "github.com/si3nloong/sqlgen/sequel/types.Float32({{addrOfGoPath}})",
+			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Float32({{addrOfGoPath}})",
 		},
 		"*float64": {
 			DataType: s.columnDataType("double precision"),
-			Valuer:   "github.com/si3nloong/sqlgen/sequel/types.Float({{addrOfGoPath}})",
-			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Float({{addrOfGoPath}})",
+			Valuer:   "github.com/si3nloong/sqlgen/sequel/types.Float64({{addrOfGoPath}})",
+			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Float64({{addrOfGoPath}})",
 		},
 		"*time.Time": {
 			DataType: s.columnDataType("timestamptz(6)"),
@@ -161,7 +211,7 @@ func (s *postgresDriver) ColumnDataTypes() map[string]*dialect.ColumnType {
 		"[]string": {
 			DataType: s.columnDataType("text[]"),
 			Valuer:   "github.com/si3nloong/sqlgen/sequel/types/pgtype.StringArray[{{elemType}}]({{goPath}})",
-			Scanner:  "github.com/si3nloong/sqlgen/sequel/types/pgtype.StringArrayScanner({{addrOfGoPath}})",
+			Scanner:  "(*github.com/si3nloong/sqlgen/sequel/types/pgtype.StringArray[{{elemType}}])({{addrOfGoPath}})",
 		},
 		"[]rune": {
 			DataType: s.columnDataType("text"),
@@ -176,7 +226,7 @@ func (s *postgresDriver) ColumnDataTypes() map[string]*dialect.ColumnType {
 		"[]bool": {
 			DataType: s.columnDataType("bool[]"),
 			Valuer:   "github.com/si3nloong/sqlgen/sequel/types/pgtype.BoolArray[{{elemType}}]({{goPath}})",
-			Scanner:  "github.com/si3nloong/sqlgen/sequel/types/pgtype.BoolArrayScanner({{addrOfGoPath}})",
+			Scanner:  "(*github.com/si3nloong/sqlgen/sequel/types/pgtype.BoolArray[{{elemType}}])({{addrOfGoPath}})",
 		},
 		"[][]byte": {
 			DataType: s.columnDataType("bytea"),
@@ -196,52 +246,52 @@ func (s *postgresDriver) ColumnDataTypes() map[string]*dialect.ColumnType {
 		"[]int": {
 			DataType: s.columnDataType("int4[]"),
 			Valuer:   "github.com/si3nloong/sqlgen/sequel/types/pgtype.IntArrayValue({{goPath}})",
-			Scanner:  "github.com/si3nloong/sqlgen/sequel/types/pgtype.IntArrayScanner({{addrOfGoPath}})",
+			Scanner:  "(*github.com/si3nloong/sqlgen/sequel/types/pgtype.IntArray[{{elemType}}])({{addrOfGoPath}})",
 		},
 		"[]int8": {
 			DataType: s.columnDataType("int2[]"),
 			Valuer:   "github.com/si3nloong/sqlgen/sequel/types/pgtype.IntArrayValue({{goPath}})",
-			Scanner:  "github.com/si3nloong/sqlgen/sequel/types/pgtype.IntArrayScanner({{addrOfGoPath}})",
+			Scanner:  "(*github.com/si3nloong/sqlgen/sequel/types/pgtype.IntArray[{{elemType}}])({{addrOfGoPath}})",
 		},
 		"[]int16": {
 			DataType: s.columnDataType("int2[]"),
 			Valuer:   "github.com/si3nloong/sqlgen/sequel/types/pgtype.Int16Array[{{elemType}}]({{goPath}})",
-			Scanner:  "github.com/si3nloong/sqlgen/sequel/types/pgtype.IntArrayScanner({{addrOfGoPath}})",
+			Scanner:  "(*github.com/si3nloong/sqlgen/sequel/types/pgtype.IntArray[{{elemType}}])({{addrOfGoPath}})",
 		},
 		"[]int32": {
 			DataType: s.columnDataType("int4[]"),
 			Valuer:   "github.com/si3nloong/sqlgen/sequel/types/pgtype.Int32Array[{{elemType}}]({{goPath}})",
-			Scanner:  "github.com/si3nloong/sqlgen/sequel/types/pgtype.IntArrayScanner({{addrOfGoPath}})",
+			Scanner:  "(*github.com/si3nloong/sqlgen/sequel/types/pgtype.IntArray[{{elemType}}])({{addrOfGoPath}})",
 		},
 		"[]int64": {
 			DataType: s.columnDataType("int8[]"),
 			Valuer:   "github.com/si3nloong/sqlgen/sequel/types/pgtype.Int64Array[{{elemType}}]({{goPath}})",
-			Scanner:  "github.com/si3nloong/sqlgen/sequel/types/pgtype.IntArrayScanner({{addrOfGoPath}})",
+			Scanner:  "(*github.com/si3nloong/sqlgen/sequel/types/pgtype.IntArray[{{elemType}}])({{addrOfGoPath}})",
 		},
 		"[]uint": {
 			DataType: s.columnDataType("int4[]"),
-			Valuer:   "github.com/si3nloong/sqlgen/sequel/types/pgtype.UintArrayValue({{goPath}})",
-			Scanner:  "github.com/si3nloong/sqlgen/sequel/types/pgtype.UintArrayScanner({{addrOfGoPath}})",
+			Valuer:   "(github.com/si3nloong/sqlgen/sequel/types/pgtype.UintArray[{{elemType}}])({{goPath}})",
+			Scanner:  "(*github.com/si3nloong/sqlgen/sequel/types/pgtype.UintArray[{{elemType}}])({{addrOfGoPath}})",
 		},
 		"[]uint8": {
 			DataType: s.columnDataType("int2[]"),
-			Valuer:   "github.com/si3nloong/sqlgen/sequel/types/pgtype.UintArrayValue({{goPath}})",
-			Scanner:  "github.com/si3nloong/sqlgen/sequel/types/pgtype.UintArrayScanner({{addrOfGoPath}})",
+			Valuer:   "(github.com/si3nloong/sqlgen/sequel/types/pgtype.UintArray[{{elemType}}])({{goPath}})",
+			Scanner:  "(*github.com/si3nloong/sqlgen/sequel/types/pgtype.Uint8Array[{{elemType}}])({{addrOfGoPath}})",
 		},
 		"[]uint16": {
 			DataType: s.columnDataType("int2[]"),
-			Valuer:   "github.com/si3nloong/sqlgen/sequel/types/pgtype.UintArrayValue({{goPath}})",
-			Scanner:  "github.com/si3nloong/sqlgen/sequel/types/pgtype.UintArrayScanner({{addrOfGoPath}})",
+			Valuer:   "(github.com/si3nloong/sqlgen/sequel/types/pgtype.Uint16Array[{{elemType}}])({{goPath}})",
+			Scanner:  "(*github.com/si3nloong/sqlgen/sequel/types/pgtype.Uint16Array[{{elemType}}])({{addrOfGoPath}})",
 		},
 		"[]uint32": {
 			DataType: s.columnDataType("int4[]"),
-			Valuer:   "github.com/si3nloong/sqlgen/sequel/types/pgtype.UintArrayValue({{goPath}})",
-			Scanner:  "github.com/si3nloong/sqlgen/sequel/types/pgtype.UintArrayScanner({{addrOfGoPath}})",
+			Valuer:   "(github.com/si3nloong/sqlgen/sequel/types/pgtype.Uint32Array[{{elemType}}])({{goPath}})",
+			Scanner:  "(*github.com/si3nloong/sqlgen/sequel/types/pgtype.Uint32Array[{{elemType}}])({{addrOfGoPath}})",
 		},
 		"[]uint64": {
 			DataType: s.columnDataType("int8[]"),
-			Valuer:   "github.com/si3nloong/sqlgen/sequel/types/pgtype.UintArrayValue({{goPath}})",
-			Scanner:  "github.com/si3nloong/sqlgen/sequel/types/pgtype.UintArrayScanner({{addrOfGoPath}})",
+			Valuer:   "(github.com/si3nloong/sqlgen/sequel/types/pgtype.Uint64Array[{{elemType}}])({{goPath}})",
+			Scanner:  "(*github.com/si3nloong/sqlgen/sequel/types/pgtype.Uint64Array[{{elemType}}])({{addrOfGoPath}})",
 		},
 		"*": {
 			DataType: s.columnDataType("json"),
@@ -249,33 +299,7 @@ func (s *postgresDriver) ColumnDataTypes() map[string]*dialect.ColumnType {
 			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.JSONUnmarshaler({{addrOfGoPath}})",
 		},
 	}
-	s.mapIntegers(dataTypes)
 	return dataTypes
-}
-
-func (s *postgresDriver) mapIntegers(dict map[string]*dialect.ColumnType) {
-	types := [][2]string{
-		{"int", "int4"}, {"int8", "int2"}, {"int16", "int2"}, {"int32", "int4"}, {"int64", "bigint"},
-		{"uint", "int4"}, {"uint8", "int2"}, {"uint16", "int2"}, {"uint32", "int4"}, {"uint64", "bigint"},
-	}
-	for _, t := range types {
-		dict[t[0]] = &dialect.ColumnType{
-			DataType: s.intDataType(t[1], int64(0)),
-			Valuer:   "(int64)({{goPath}})",
-			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Integer({{addrOfGoPath}})",
-		}
-	}
-	types = [][2]string{
-		{"*int", "int4"}, {"*int8", "int2"}, {"*int16", "int2"}, {"*int32", "int4"}, {"*int64", "bigint"},
-		{"*uint", "int4"}, {"*uint8", "int2"}, {"*uint16", "int2"}, {"*uint32", "int4"}, {"*uint64", "bigint"},
-	}
-	for _, t := range types {
-		dict[t[0]] = &dialect.ColumnType{
-			DataType: s.intDataType(t[1], int64(0)),
-			Valuer:   "github.com/si3nloong/sqlgen/sequel/types.Integer({{addrOfGoPath}})",
-			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Integer({{addrOfGoPath}})",
-		}
-	}
 }
 
 func (s *postgresDriver) intDataType(dataType string, defaultValue ...any) func(dialect.GoColumn) string {

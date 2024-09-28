@@ -30,14 +30,10 @@ func MarshalStringSlice[V ~[]byte | ~string](list []V, enclose ...[2]byte) strin
 	return blr.String()
 }
 
-func MarshalIntSlice[V constraints.Signed](list []V, enclose ...[2]byte) string {
+func MarshalIntSlice[V constraints.Signed](list []V) string {
 	blr := strpool.AcquireString()
 	defer strpool.ReleaseString(blr)
-	if len(enclose) > 0 {
-		blr.WriteByte(enclose[0][0])
-	} else {
-		blr.WriteByte('[')
-	}
+	blr.WriteByte('[')
 	for i := range list {
 		if i > 0 {
 			blr.WriteString("," + strconv.FormatInt((int64)(list[i]), 10))
@@ -45,11 +41,7 @@ func MarshalIntSlice[V constraints.Signed](list []V, enclose ...[2]byte) string 
 			blr.WriteString(strconv.FormatInt((int64)(list[i]), 10))
 		}
 	}
-	if len(enclose) > 0 {
-		blr.WriteByte(enclose[0][1])
-	} else {
-		blr.WriteByte(']')
-	}
+	blr.WriteByte(']')
 	return blr.String()
 }
 

@@ -1,7 +1,6 @@
 package pgtype
 
 import (
-	"database/sql"
 	"database/sql/driver"
 	"fmt"
 	"strconv"
@@ -19,26 +18,9 @@ type (
 	Int64Array[T ~int64] []T
 )
 
-func IntArrayValue[T constraints.Signed](a []T) driver.Valuer {
-	return intArray[T]{v: &a}
-}
-
-func IntArrayScanner[T constraints.Signed](a *[]T) sql.Scanner {
-	return intArray[T]{v: a}
-}
-
-type intArray[T constraints.Signed] struct {
-	v *[]T
-}
-
 // Value implements the driver.Valuer interface.
-func (a intArray[T]) Value() (driver.Value, error) {
-	return intArrayValue(*a.v)
-}
-
-// Scan implements the sql.Scanner interface.
-func (a intArray[T]) Scan(src any) error {
-	return arrayScan(a.v, src, "IntArray")
+func (a IntArray[T]) Value() (driver.Value, error) {
+	return intArrayValue(a)
 }
 
 // Scan implements the sql.Scanner interface.
@@ -47,7 +29,7 @@ func (a *IntArray[T]) Scan(src any) error {
 }
 
 // Value implements the driver.Valuer interface.
-func (a IntArray[T]) Value() (driver.Value, error) {
+func (a Int8Array[T]) Value() (driver.Value, error) {
 	return intArrayValue(a)
 }
 
@@ -57,7 +39,7 @@ func (a *Int8Array[T]) Scan(src any) error {
 }
 
 // Value implements the driver.Valuer interface.
-func (a Int8Array[T]) Value() (driver.Value, error) {
+func (a Int16Array[T]) Value() (driver.Value, error) {
 	return intArrayValue(a)
 }
 
@@ -67,7 +49,7 @@ func (a *Int16Array[T]) Scan(src any) error {
 }
 
 // Value implements the driver.Valuer interface.
-func (a Int16Array[T]) Value() (driver.Value, error) {
+func (a Int32Array[T]) Value() (driver.Value, error) {
 	return intArrayValue(a)
 }
 
@@ -77,18 +59,13 @@ func (a *Int32Array[T]) Scan(src any) error {
 }
 
 // Value implements the driver.Valuer interface.
-func (a Int32Array[T]) Value() (driver.Value, error) {
+func (a Int64Array[T]) Value() (driver.Value, error) {
 	return intArrayValue(a)
 }
 
 // Scan implements the sql.Scanner interface.
 func (a *Int64Array[T]) Scan(src any) error {
 	return arrayScan(a, src, "Int64Array")
-}
-
-// Value implements the driver.Valuer interface.
-func (a Int64Array[T]) Value() (driver.Value, error) {
-	return intArrayValue(a)
 }
 
 func scanBytes[T constraints.Integer, Arr interface{ ~[]T }](a *Arr, src []byte, t string) error {

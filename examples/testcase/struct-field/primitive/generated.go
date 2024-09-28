@@ -18,7 +18,7 @@ func (v Primitive) Values() []any {
 	return []any{(string)(v.Str), string(v.Bytes), (bool)(v.Bool), (int64)(v.Int), (int64)(v.Int8), (int64)(v.Int16), (int64)(v.Int32), (int64)(v.Int64), (int64)(v.Uint), (int64)(v.Uint8), (int64)(v.Uint16), (int64)(v.Uint32), (int64)(v.Uint64), (float64)(v.F32), (float64)(v.F64), (time.Time)(v.Time)}
 }
 func (v *Primitive) Addrs() []any {
-	return []any{types.String(&v.Str), types.String(&v.Bytes), types.Bool(&v.Bool), types.Integer(&v.Int), types.Integer(&v.Int8), types.Integer(&v.Int16), types.Integer(&v.Int32), types.Integer(&v.Int64), types.Integer(&v.Uint), types.Integer(&v.Uint8), types.Integer(&v.Uint16), types.Integer(&v.Uint32), types.Integer(&v.Uint64), types.Float(&v.F32), types.Float(&v.F64), (*time.Time)(&v.Time)}
+	return []any{types.String(&v.Str), types.String(&v.Bytes), types.Bool(&v.Bool), types.Integer(&v.Int), types.Integer(&v.Int8), types.Integer(&v.Int16), types.Integer(&v.Int32), types.Integer(&v.Int64), types.Integer(&v.Uint), types.Integer(&v.Uint8), types.Integer(&v.Uint16), types.Integer(&v.Uint32), types.Integer(&v.Uint64), types.Float32(&v.F32), types.Float64(&v.F64), (*time.Time)(&v.Time)}
 }
 func (Primitive) InsertPlaceholders(row int) string {
 	return "(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
