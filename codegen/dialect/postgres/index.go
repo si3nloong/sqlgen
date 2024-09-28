@@ -8,7 +8,7 @@ import (
 	"strings"
 	"unsafe"
 
-	"github.com/lib/pq"
+	"github.com/si3nloong/sqlgen/sequel/types/pgtype"
 )
 
 //go:generate stringer --type indexType --linecomment
@@ -25,7 +25,7 @@ const (
 type index struct {
 	Name    string
 	IsPK    bool
-	Columns pq.StringArray
+	Columns pgtype.StringArray[string]
 }
 
 func (s *postgresDriver) tableIndexes(ctx context.Context, sqlConn *sql.DB, tableName string) ([]index, error) {

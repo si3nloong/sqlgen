@@ -205,8 +205,8 @@ func (s *postgresDriver) ColumnDataTypes() map[string]*dialect.ColumnType {
 		},
 		"[...]bool": {
 			DataType: s.columnDataType("bool[{{len}}]"),
-			Valuer:   "github.com/lib/pq.BoolArray({{goPath}}[:])",
-			Scanner:  "github.com/lib/pq.Array(({{addrOfGoPath}})[:])",
+			Valuer:   "github.com/si3nloong/sqlgen/sequel/types/pgtype.BoolArray[{{elemType}}]({{goPath}}[:])",
+			Scanner:  "(*github.com/si3nloong/sqlgen/sequel/types/pgtype.BoolArray[{{elemType}}])({{addrOfGoPath}}[:])",
 		},
 		"[]string": {
 			DataType: s.columnDataType("text[]"),
