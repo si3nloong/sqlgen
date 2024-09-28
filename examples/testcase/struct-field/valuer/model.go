@@ -4,9 +4,12 @@ import (
 	"database/sql/driver"
 )
 
-type anyType struct{}
+type anyType struct{ ptr bool }
 
-func (anyType) Value() (driver.Value, error) {
+func (a anyType) Value() (driver.Value, error) {
+	if a.ptr {
+		return "ptr", nil
+	}
 	return "any", nil
 }
 

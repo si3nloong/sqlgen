@@ -27,7 +27,19 @@ func (AutoPkLocation) SQLColumns() []string {
 	return []string{"id", "ST_AsBinary(geo_point,4326)", "ptr_geo_point", "ptr_uuid", "ptr_date"}
 }
 func (v AutoPkLocation) Values() []any {
-	return []any{(int64)(v.ID), ewkb.Value(v.GeoPoint, 4326), types.JSONMarshaler(v.PtrGeoPoint), (driver.Valuer)(v.PtrUUID), types.TextMarshaler(v.PtrDate)}
+	values := make([]any, 5)
+	values[0] = (int64)(v.ID)
+	values[1] = ewkb.Value(v.GeoPoint, 4326)
+	if v.PtrGeoPoint != nil {
+		values[2] = ewkb.Value(*v.PtrGeoPoint, 4326)
+	}
+	if v.PtrUUID != nil {
+		values[3] = (driver.Valuer)(*v.PtrUUID)
+	}
+	if v.PtrDate != nil {
+		values[4] = types.TextMarshaler(*v.PtrDate)
+	}
+	return values
 }
 func (v *AutoPkLocation) Addrs() []any {
 	addrs := make([]any, 5)

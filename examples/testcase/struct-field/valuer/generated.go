@@ -14,7 +14,14 @@ func (B) Columns() []string {
 	return []string{"id", "value", "ptr_value", "n"}
 }
 func (v B) Values() []any {
-	return []any{(int64)(v.ID), (driver.Valuer)(v.Value), (driver.Valuer)(v.PtrValue), (string)(v.N)}
+	values := make([]any, 4)
+	values[0] = (int64)(v.ID)
+	values[1] = (driver.Valuer)(v.Value)
+	if v.PtrValue != nil {
+		values[2] = (driver.Valuer)(*v.PtrValue)
+	}
+	values[3] = (string)(v.N)
+	return values
 }
 func (v *B) Addrs() []any {
 	addrs := make([]any, 4)

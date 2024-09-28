@@ -20,7 +20,63 @@ func (Ptr) Columns() []string {
 	return []string{"id", "str", "bytes", "bool", "int", "int_8", "int_16", "int_32", "int_64", "uint", "uint_8", "uint_16", "uint_32", "uint_64", "f_32", "f_64", "time", "nested", "embeded_time"}
 }
 func (v Ptr) Values() []any {
-	return []any{(int64)(v.ID), types.String(v.Str), types.String(v.Bytes), types.Bool(v.Bool), types.Integer(v.Int), types.Integer(v.Int8), types.Integer(v.Int16), types.Integer(v.Int32), types.Integer(v.Int64), types.Integer(v.Uint), types.Integer(v.Uint8), types.Integer(v.Uint16), types.Integer(v.Uint32), types.Integer(v.Uint64), types.Float32(v.F32), types.Float64(v.F64), types.Time(v.Time), types.JSONMarshaler(v.Nested), types.Time(v.embeded.EmbededTime)}
+	values := make([]any, 19)
+	values[0] = (int64)(v.ID)
+	if v.Str != nil {
+		values[1] = (string)(*v.Str)
+	}
+	if v.Bytes != nil {
+		values[2] = string(*v.Bytes)
+	}
+	if v.Bool != nil {
+		values[3] = (bool)(*v.Bool)
+	}
+	if v.Int != nil {
+		values[4] = (int64)(*v.Int)
+	}
+	if v.Int8 != nil {
+		values[5] = (int64)(*v.Int8)
+	}
+	if v.Int16 != nil {
+		values[6] = (int64)(*v.Int16)
+	}
+	if v.Int32 != nil {
+		values[7] = (int64)(*v.Int32)
+	}
+	if v.Int64 != nil {
+		values[8] = (int64)(*v.Int64)
+	}
+	if v.Uint != nil {
+		values[9] = (int64)(*v.Uint)
+	}
+	if v.Uint8 != nil {
+		values[10] = (int64)(*v.Uint8)
+	}
+	if v.Uint16 != nil {
+		values[11] = (int64)(*v.Uint16)
+	}
+	if v.Uint32 != nil {
+		values[12] = (int64)(*v.Uint32)
+	}
+	if v.Uint64 != nil {
+		values[13] = (int64)(*v.Uint64)
+	}
+	if v.F32 != nil {
+		values[14] = (float64)(*v.F32)
+	}
+	if v.F64 != nil {
+		values[15] = (float64)(*v.F64)
+	}
+	if v.Time != nil {
+		values[16] = (time.Time)(*v.Time)
+	}
+	if v.Nested != nil {
+		values[17] = types.JSONMarshaler(*v.Nested)
+	}
+	if v.embeded.EmbededTime != nil {
+		values[18] = (time.Time)(*v.embeded.EmbededTime)
+	}
+	return values
 }
 func (v *Ptr) Addrs() []any {
 	addrs := make([]any, 19)

@@ -178,7 +178,7 @@ func (g *Generator) genModels(pkg *packages.Package, dstDir string, typeInferred
 				}
 				g.WriteString(g.Quote(g.QuoteIdentifier(f.columnName)))
 			}
-			g.WriteString("}\n")
+			g.L("}")
 			g.L("}")
 		}
 
@@ -198,7 +198,7 @@ func (g *Generator) genModels(pkg *packages.Package, dstDir string, typeInferred
 					}
 					g.WriteString(g.Quote(g.sqlScanner(f)))
 				}
-				g.WriteString("}\n")
+				g.L("}")
 				g.L("}")
 			}
 		}
@@ -373,38 +373,37 @@ func (g *Generator) buildCompositeKeys(importPkgs *Package, table *tableInfo) {
 		}
 		g.WriteString(g.valuer(importPkgs, "v."+f.GoPath(), f.t))
 	}
-	g.WriteString("}\n")
+	g.L("}")
 	g.L("}")
 }
 
 func (g *Generator) buildValuer(importPkgs *Package, table *tableInfo) {
-	// ptrs := lo.Filter(table.columns, func(v *columnInfo, _ int) bool {
-	// 	return v.isPtr()
-	// })
+	ptrs := lo.Filter(table.columns, func(v *columnInfo, _ int) bool {
+		return v.isPtr()
+	})
 	g.L("func (v " + table.goName + ") Values() []any {")
-	// if len(ptrs) > 0 {
-	// 	g.L("values := make([]any, ", len(table.columns), ")")
-	// 	for _, f := range table.columns {
-	// 		if f.isPtr() {
-	// 			g.L("if v." + f.goPath + " == nil {")
-	// 			log.Println(f.t.Underlying().String(), f.columnPos)
-	// 			g.L("values[", f.columnPos, "] = nil")
-	// 			g.L("}")
-	// 		} else {
-	// 			g.L("values[", f.columnPos, "] = ", g.valuer(importPkgs, "v."+f.GoPath(), f.GoType()))
-	// 		}
-	// 	}
-	// 	g.L("return values")
-	// } else {
-	// }
-	g.WriteString("return []any{")
-	for i, f := range table.columns {
-		if i > 0 {
-			g.WriteByte(',')
+	if len(ptrs) > 0 {
+		g.L("values := make([]any,", len(table.columns), ")")
+		for _, f := range table.columns {
+			if f.isPtr() {
+				g.L("if v." + f.goPath + " != nil {")
+				g.L("values[", f.columnPos, "] = ", g.valuer(importPkgs, "*v."+f.GoPath(), assertAsPtr[types.Pointer](f.GoType()).Elem()))
+				g.L("}")
+			} else {
+				g.L("values[", f.columnPos, "] = ", g.valuer(importPkgs, "v."+f.GoPath(), f.GoType()))
+			}
 		}
-		g.WriteString(g.valuer(importPkgs, "v."+f.goPath, f.t))
+		g.L("return values")
+	} else {
+		g.WriteString("return []any{")
+		for i, f := range table.columns {
+			if i > 0 {
+				g.WriteByte(',')
+			}
+			g.WriteString(g.valuer(importPkgs, "v."+f.goPath, f.t))
+		}
+		g.L("}")
 	}
-	g.WriteString("}\n")
 	g.L("}")
 }
 
