@@ -1,7 +1,6 @@
 package types
 
 import (
-	"database/sql"
 	"database/sql/driver"
 	"fmt"
 	"regexp"
@@ -19,11 +18,6 @@ type timestamp[T time.Time] struct {
 	addr       *T
 	strictType bool
 }
-
-var (
-	_ sql.Scanner   = (*timestamp[time.Time])(nil)
-	_ driver.Valuer = (*timestamp[time.Time])(nil)
-)
 
 func Time[T time.Time](addr *T, strict ...bool) ValueScanner[T] {
 	var strictType bool

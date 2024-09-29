@@ -17,9 +17,10 @@ type structType struct {
 }
 
 type structFieldType struct {
-	name     string
-	index    []int
-	path     string
+	name  string
+	index []int
+	// path     string
+	paths    []string
 	t        types.Type
 	enums    *enum
 	exported bool
@@ -131,7 +132,7 @@ type goTag struct {
 // Some of the default behaviour is not able to override, such as go size, go enum, go tags, go path, go name, go nullable
 type columnInfo struct {
 	goName     string
-	goPath     string
+	goPaths    []string
 	columnName string
 	columnPos  int
 	size       int
@@ -158,7 +159,27 @@ func (c *columnInfo) GoName() string {
 }
 
 func (c *columnInfo) GoPath() string {
-	return c.goPath
+	return strings.Join(lo.Map(c.goPaths, func(v string, _ int) string {
+		if v[0] == '*' {
+			return v[1:]
+		}
+		return v
+	}), ".")
+}
+
+func (c *columnInfo) GoPaths() []string {
+	var goPath string
+	paths := []string{}
+	for _, path := range c.goPaths {
+		if path[0] == '*' {
+			paths = append(paths, goPath+path[1:])
+			goPath = ""
+			continue
+		}
+		goPath += path
+	}
+	paths = append(paths, goPath)
+	return paths
 }
 
 func (c *columnInfo) GoType() types.Type {

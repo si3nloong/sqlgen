@@ -61,7 +61,7 @@ func (s *postgresDriver) ColumnDataTypes() map[string]*dialect.ColumnType {
 		"int": {
 			DataType: s.intDataType("int4", int64(0)),
 			Valuer:   "(int64)({{goPath}})",
-			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Int({{addrOfGoPath}})",
+			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Integer({{addrOfGoPath}})",
 		},
 		"uint8": {
 			DataType: s.intDataType("int2", uint64(0)),

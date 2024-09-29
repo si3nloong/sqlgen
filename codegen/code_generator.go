@@ -386,9 +386,23 @@ func (g *Generator) buildValuer(importPkgs *Package, table *tableInfo) {
 		g.L("values := make([]any,", len(table.columns), ")")
 		for _, f := range table.columns {
 			if f.isPtr() {
-				g.L("if v." + f.goPath + " != nil {")
-				g.L("values[", f.columnPos, "] = ", g.valuer(importPkgs, "*v."+f.GoPath(), assertAsPtr[types.Pointer](f.GoType()).Elem()))
-				g.L("}")
+				paths := f.GoPaths()
+				goPath := "v."
+				queue := []string{}
+				for i := range paths {
+					if i > 0 {
+						goPath += "." + paths[i]
+					} else {
+						goPath += paths[i]
+					}
+					g.L("if " + goPath + " != nil {")
+					queue = append(queue, "}")
+				}
+				g.L("values[", f.columnPos, "] = ", g.valuer(importPkgs, "*"+goPath, assertAsPtr[types.Pointer](f.GoType()).Elem()))
+				for len(queue) > 0 {
+					g.L(queue[0])
+					queue = queue[1:]
+				}
 			} else {
 				g.L("values[", f.columnPos, "] = ", g.valuer(importPkgs, "v."+f.GoPath(), f.GoType()))
 			}
@@ -400,7 +414,7 @@ func (g *Generator) buildValuer(importPkgs *Package, table *tableInfo) {
 			if i > 0 {
 				g.WriteByte(',')
 			}
-			g.WriteString(g.valuer(importPkgs, "v."+f.goPath, f.t))
+			g.WriteString(g.valuer(importPkgs, "v."+f.GoPath(), f.t))
 		}
 		g.L("}")
 	}
@@ -416,12 +430,12 @@ func (g *Generator) buildScanner(importPkgs *Package, table *tableInfo) {
 		g.L("addrs := make([]any, ", len(table.columns), ")")
 		for _, f := range table.columns {
 			if f.isPtr() {
-				g.L("if v." + f.goPath + " == nil {")
-				g.L("v."+f.goPath+" = new(", Expr(strings.TrimPrefix(f.t.String(), "*")).Format(importPkgs, ExprParams{}), ")")
+				g.L("if v." + f.GoPath() + " == nil {")
+				g.L("v."+f.GoPath()+" = new(", Expr(strings.TrimPrefix(f.t.String(), "*")).Format(importPkgs, ExprParams{}), ")")
 				g.L("}")
-				g.L("addrs[", f.columnPos, "] = ", g.scanner(importPkgs, "v."+f.goPath, f.t))
+				g.L("addrs[", f.columnPos, "] = ", g.scanner(importPkgs, "v."+f.GoPath(), f.t))
 			} else {
-				g.L("addrs[", f.columnPos, "] = ", g.scanner(importPkgs, "&v."+f.goPath, f.t))
+				g.L("addrs[", f.columnPos, "] = ", g.scanner(importPkgs, "&v."+f.GoPath(), f.t))
 			}
 		}
 		g.L("return addrs")
@@ -431,7 +445,7 @@ func (g *Generator) buildScanner(importPkgs *Package, table *tableInfo) {
 			if i > 0 {
 				g.WriteByte(',')
 			}
-			g.WriteString(g.scanner(importPkgs, "&v."+f.goPath, f.t))
+			g.WriteString(g.scanner(importPkgs, "&v."+f.GoPath(), f.t))
 		}
 		g.WriteString("}\n")
 	}

@@ -4,6 +4,7 @@ import (
 	"database/sql/driver"
 	"fmt"
 	"strconv"
+	"unsafe"
 )
 
 // Float32Array represents a one-dimensional array of the PostgreSQL double
@@ -27,8 +28,8 @@ func (a Float32Array[T]) Value() (driver.Value, error) {
 			b = append(b, ',')
 			b = strconv.AppendFloat(b, (float64)(a[i]), 'f', -1, 32)
 		}
-
-		return string(append(b, '}')), nil
+		b = append(b, '}')
+		return unsafe.String(unsafe.SliceData(b), len(b)), nil
 	}
 	return "{}", nil
 }

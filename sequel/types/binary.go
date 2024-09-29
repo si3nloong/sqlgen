@@ -1,6 +1,7 @@
 package types
 
 import (
+	"database/sql"
 	"database/sql/driver"
 	"encoding"
 	"fmt"
@@ -14,7 +15,7 @@ type binaryMarshaler[T interface {
 
 func BinaryMarshaler[T interface {
 	encoding.BinaryMarshaler
-}](addr T) binaryMarshaler[T] {
+}](addr T) driver.Valuer {
 	return binaryMarshaler[T]{v: addr}
 }
 
@@ -32,7 +33,7 @@ type binaryUnmarshaler[T any, Ptr interface {
 func BinaryUnmarshaler[T any, Ptr interface {
 	*T
 	encoding.BinaryUnmarshaler
-}](addr Ptr) binaryUnmarshaler[T, Ptr] {
+}](addr Ptr) sql.Scanner {
 	return binaryUnmarshaler[T, Ptr]{v: addr}
 }
 

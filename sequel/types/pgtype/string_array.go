@@ -3,6 +3,7 @@ package pgtype
 import (
 	"database/sql/driver"
 	"fmt"
+	"unsafe"
 )
 
 // StringArray represents a one-dimensional array of the PostgreSQL character types.
@@ -25,8 +26,8 @@ func (a StringArray[T]) Value() (driver.Value, error) {
 			b = append(b, ',')
 			b = appendArrayQuotedBytes(b, []byte(a[i]))
 		}
-
-		return string(append(b, '}')), nil
+		b = append(b, '}')
+		return unsafe.String(unsafe.SliceData(b), len(b)), nil
 	}
 	return "{}", nil
 }

@@ -64,10 +64,11 @@ const (
 )
 
 type typeQueue struct {
-	path string
-	idx  []int
-	t    *ast.StructType
-	pkg  *packages.Package
+	// path  string
+	paths []string
+	idx   []int
+	t     *ast.StructType
+	pkg   *packages.Package
 }
 
 func Generate(c *Config) error {
@@ -363,7 +364,6 @@ func parseGoPackage(
 						structCaches = append(structCaches, structCache{name: typeSpec.Name, t: v, pkg: importPkg})
 					}
 				}
-
 				return true
 			})
 		}
@@ -408,11 +408,18 @@ func parseGoPackage(
 					// If the field is embedded struct
 					// `Type` can be either *ast.Ident or *ast.SelectorExpr
 					if fi.Names == nil {
-						t := fi.Type
+						var (
+							t    = fi.Type
+							path string
+						)
+
 						// If it's an embedded struct with pointer
+						// we need to get the underlying type
 						if ut := assertAsPtr[ast.StarExpr](fi.Type); ut != nil {
+							path = "*"
 							t = ut.X
 						}
+
 						switch vi := t.(type) {
 						// Local struct
 						case *ast.Ident:
@@ -433,12 +440,12 @@ func parseGoPackage(
 								continue
 							}
 
-							path := types.ExprString(vi)
-							if f.path != "" {
-								path = f.path + "." + path
-							}
+							path += types.ExprString(vi)
+							// if f.path != "" {
+							// 	path = f.path + "." + path
+							// }
 							t := obj.Decl.(*ast.TypeSpec)
-							q = append(q, typeQueue{path: path, idx: append(f.idx, i), t: t.Type.(*ast.StructType), pkg: f.pkg})
+							q = append(q, typeQueue{paths: append(f.paths, path), idx: append(f.idx, i), t: t.Type.(*ast.StructType), pkg: f.pkg})
 
 							structFields = append(structFields, &structFieldType{
 								index:    append(f.idx, i),
@@ -446,8 +453,9 @@ func parseGoPackage(
 								embedded: true,
 								name:     types.ExprString(vi),
 								tag:      tag,
-								path:     path,
-								t:        f.pkg.TypesInfo.TypeOf(fi.Type),
+								// path:     path,
+								paths: append(f.paths, path),
+								t:     f.pkg.TypesInfo.TypeOf(fi.Type),
 							})
 							continue
 
@@ -478,14 +486,15 @@ func parseGoPackage(
 								continue
 							}
 
-							path := types.ExprString(vi.Sel)
-							if f.path != "" {
-								path = f.path + "." + path
-							}
+							path += types.ExprString(vi.Sel)
+							// if f.path != "" {
+							// 	path = f.path + "." + path
+							// }
 
 							// If it's a embedded struct, we continue on next loop
 							if st := assertAsPtr[ast.StructType](decl.Type); st != nil {
-								q = append(q, typeQueue{path: path, idx: append(f.idx, i), t: st, pkg: importPkg})
+								paths := append(f.paths, path)
+								q = append(q, typeQueue{paths: paths, idx: append(f.idx, i), t: st, pkg: importPkg})
 
 								structFields = append(structFields, &structFieldType{
 									index:    append(f.idx, i),
@@ -493,8 +502,9 @@ func parseGoPackage(
 									embedded: true,
 									name:     types.ExprString(vi.Sel),
 									tag:      tag,
-									path:     path,
-									t:        f.pkg.TypesInfo.TypeOf(fi.Type),
+									// path:     path,
+									paths: paths,
+									t:     f.pkg.TypesInfo.TypeOf(fi.Type),
 								})
 							}
 							continue
@@ -528,9 +538,9 @@ func parseGoPackage(
 
 					for j, n := range fi.Names {
 						path := types.ExprString(n)
-						if f.path != "" {
-							path = f.path + "." + path
-						}
+						// if f.path != "" {
+						// 	path = f.path + "." + path
+						// }
 
 						structFields = append(structFields, &structFieldType{
 							index:    append(f.idx, i+j),
@@ -538,8 +548,9 @@ func parseGoPackage(
 							name:     types.ExprString(n),
 							tag:      tag,
 							enums:    goEnum,
-							path:     path,
-							t:        f.pkg.TypesInfo.TypeOf(fi.Type),
+							// path:     path,
+							paths: append(f.paths, path),
+							t:     f.pkg.TypesInfo.TypeOf(fi.Type),
 						})
 					}
 				}
@@ -592,7 +603,7 @@ func parseGoPackage(
 			for _, f := range s.fields {
 				column := new(columnInfo)
 				column.goName = f.name
-				column.goPath = f.path
+				column.goPaths = f.paths
 				column.t = f.t
 				column.columnName = rename(f.name)
 				column.columnPos = pos

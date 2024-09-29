@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"fmt"
+	"unsafe"
 )
 
 // BoolArray represents a one-dimensional array of the PostgreSQL boolean type.
@@ -36,8 +37,7 @@ func (a BoolArray[T]) Value() (driver.Value, error) {
 
 		b[0] = '{'
 		b[2*n] = '}'
-
-		return string(b), nil
+		return unsafe.String(unsafe.SliceData(b), len(b)), nil
 	}
 	return "{}", nil
 }
