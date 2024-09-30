@@ -9,6 +9,10 @@ import (
 	"golang.org/x/exp/constraints"
 )
 
+func Uint[T ~uint](addr *T, strict ...bool) ValueScanner[T] {
+	return newFixedSizeUint(addr, strconv.IntSize, strict...)
+}
+
 func Uint8[T ~uint8](addr *T, strict ...bool) ValueScanner[T] {
 	return newFixedSizeUint(addr, 8, strict...)
 }
