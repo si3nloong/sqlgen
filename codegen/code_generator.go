@@ -387,14 +387,10 @@ func (g *Generator) buildValuer(importPkgs *Package, table *tableInfo) {
 		for _, f := range table.columns {
 			if f.isPtr() {
 				paths := f.GoPaths()
-				goPath := "v."
+				goPath := "v"
 				queue := []string{}
 				for i := range paths {
-					if i > 0 {
-						goPath += "." + paths[i]
-					} else {
-						goPath += paths[i]
-					}
+					goPath += "." + paths[i]
 					g.L("if " + goPath + " != nil {")
 					queue = append(queue, "}")
 				}

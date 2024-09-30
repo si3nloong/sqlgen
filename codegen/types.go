@@ -176,7 +176,11 @@ func (c *columnInfo) GoPaths() []string {
 			goPath = ""
 			continue
 		}
-		goPath += path
+		if goPath != "" {
+			goPath += "." + path
+		} else {
+			goPath += path
+		}
 	}
 	paths = append(paths, goPath)
 	return paths
