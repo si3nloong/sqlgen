@@ -3,6 +3,7 @@ package mysqldb
 import (
 	"context"
 	"database/sql"
+	"database/sql/driver"
 	"errors"
 	"fmt"
 	"iter"
@@ -1097,7 +1098,7 @@ func (s *sqlStmt) Format(f fmt.State, verb rune) {
 	var (
 		args = make([]any, len(s.args))
 		idx  int
-		i    int
+		i    = 1
 	)
 
 	copy(args, s.args)
@@ -1110,7 +1111,7 @@ func (s *sqlStmt) Format(f fmt.State, verb rune) {
 		}
 
 		f.Write([]byte(str[:idx]))
-		v := toStr(args[0])
+		v := strf(args[0])
 		f.Write(unsafe.Slice(unsafe.StringData(v), len(v)))
 		str = str[idx+1:]
 		args = args[1:]
@@ -1145,7 +1146,7 @@ func dbName(model any) string {
 	return ""
 }
 
-func toStr(v any) string {
+func strf(v any) string {
 	switch vi := v.(type) {
 	case string:
 		return strconv.Quote(vi)
@@ -1161,6 +1162,9 @@ func toStr(v any) string {
 		return strconv.Quote(vi.Format(time.RFC3339))
 	case sql.RawBytes:
 		return unsafe.String(unsafe.SliceData(vi), len(vi))
+	case driver.Valuer:
+		val, _ := vi.Value()
+		return strf(val)
 	default:
 		panic("unreachable")
 	}

@@ -1,5 +1,6 @@
 {{- reserveImport "context" }}
 {{- reserveImport "database/sql" }}
+{{- reserveImport "database/sql/driver" }}
 {{- reserveImport "strings" }}
 {{- reserveImport "strconv" }}
 {{- reserveImport "sync" }}
@@ -1514,7 +1515,7 @@ func (s *sqlStmt) Format(f fmt.State, verb rune) {
 	var (
 		args = make([]any, len(s.args))
 		idx  int
-		i    int
+		i    = 1
 	)
 
 	copy(args, s.args)
@@ -1523,7 +1524,8 @@ func (s *sqlStmt) Format(f fmt.State, verb rune) {
 		{{ if isStaticVar -}}
 		idx = strings.Index(str, "?")
 		{{ else -}}
-		idx = strings.Index(str, wrapVar(i))
+		placeholder := wrapVar(i)
+		idx = strings.Index(str, placeholder)
 		{{ end -}}
 		if idx < 0 {
 			f.Write(unsafe.Slice(unsafe.StringData(str), len(str)))
@@ -1531,9 +1533,13 @@ func (s *sqlStmt) Format(f fmt.State, verb rune) {
 		}
 
 		f.Write([]byte(str[:idx]))
-		v := toStr(args[0])
+		v := strf(args[0])
 		f.Write(unsafe.Slice(unsafe.StringData(v), len(v)))
+		{{ if isStaticVar -}}
 		str = str[idx+1:]
+		{{ else -}}
+		str = str[idx+len(placeholder):]
+		{{ end -}}
 		args = args[1:]
 		i++
 	}
@@ -1572,7 +1578,7 @@ func wrapVar(i int) string {
 }
 {{ end }}
 
-func toStr(v any) string {
+func strf(v any) string {
 	switch vi := v.(type) {
 	case string:
 		return strconv.Quote(vi)
@@ -1588,6 +1594,9 @@ func toStr(v any) string {
 		return strconv.Quote(vi.Format(time.RFC3339))
 	case sql.RawBytes:
 		return unsafe.String(unsafe.SliceData(vi), len(vi))
+	case driver.Valuer:
+		val, _ := vi.Value()
+		return strf(val)
 	default:
 		panic("unreachable")
 	}

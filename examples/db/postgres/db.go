@@ -3,6 +3,7 @@ package postgresdb
 import (
 	"context"
 	"database/sql"
+	"database/sql/driver"
 	"fmt"
 	"iter"
 	"strconv"
@@ -1215,22 +1216,23 @@ func (s *sqlStmt) Format(f fmt.State, verb rune) {
 	var (
 		args = make([]any, len(s.args))
 		idx  int
-		i    int
+		i    = 1
 	)
 
 	copy(args, s.args)
 
 	for {
-		idx = strings.Index(str, wrapVar(i))
+		placeholder := wrapVar(i)
+		idx = strings.Index(str, placeholder)
 		if idx < 0 {
 			f.Write(unsafe.Slice(unsafe.StringData(str), len(str)))
 			break
 		}
 
 		f.Write([]byte(str[:idx]))
-		v := toStr(args[0])
+		v := strf(args[0])
 		f.Write(unsafe.Slice(unsafe.StringData(v), len(v)))
-		str = str[idx+1:]
+		str = str[idx+len(placeholder):]
 		args = args[1:]
 		i++
 	}
@@ -1267,7 +1269,7 @@ func wrapVar(i int) string {
 	return `$` + strconv.Itoa(i)
 }
 
-func toStr(v any) string {
+func strf(v any) string {
 	switch vi := v.(type) {
 	case string:
 		return strconv.Quote(vi)
@@ -1283,6 +1285,9 @@ func toStr(v any) string {
 		return strconv.Quote(vi.Format(time.RFC3339))
 	case sql.RawBytes:
 		return unsafe.String(unsafe.SliceData(vi), len(vi))
+	case driver.Valuer:
+		val, _ := vi.Value()
+		return strf(val)
 	default:
 		panic("unreachable")
 	}
