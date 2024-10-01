@@ -17,15 +17,19 @@ type structType struct {
 }
 
 type structFieldType struct {
-	name  string
-	index []int
-	// path     string
+	name     string
+	index    []int
 	paths    []string
 	t        types.Type
 	enums    *enum
 	exported bool
 	embedded bool
+	parent   *structFieldType
 	tag      reflect.StructTag
+}
+
+type goPath struct {
+	t types.Type
 }
 
 type enum struct {

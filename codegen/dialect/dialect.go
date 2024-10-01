@@ -13,7 +13,7 @@ var (
 	dialectMap     = new(sync.Map)
 	defaultDialect = "mysql"
 
-	ErrNoNewMigration = errors.New("no migration needed")
+	ErrNoNewMigration = errors.New("no migration required")
 )
 
 type Writer interface {
@@ -28,14 +28,17 @@ type Dialect interface {
 	QuoteVar(n int) string
 	VarRune() rune
 	Var() string
+
 	// Character to escape table, column name
 	QuoteIdentifier(v string) string
+
 	// Quote rune can be ' or " or `
 	QuoteRune() rune
 
 	// Column data types
 	ColumnDataTypes() map[string]*ColumnType
 
+	// To create migration
 	Migrate(ctx context.Context, dsn string, w Writer, m TableMigrator) error
 }
 

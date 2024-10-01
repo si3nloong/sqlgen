@@ -4,6 +4,7 @@ import (
 	"database/sql/driver"
 	"fmt"
 	"strconv"
+	"time"
 )
 
 type StringLikeType interface {
@@ -40,13 +41,13 @@ func (s strLike[T]) Value() (driver.Value, error) {
 func (s *strLike[T]) Scan(v any) error {
 	var val T
 	switch vi := v.(type) {
+	case nil:
+		s.addr = nil
+		return nil
 	case string:
 		val = T(vi)
 	case []byte:
 		val = T(vi)
-	case nil:
-		s.addr = nil
-		return nil
 	default:
 		if s.strictType {
 			return fmt.Errorf(`sequel/types: unable to scan %T to ~string`, vi)
@@ -57,6 +58,10 @@ func (s *strLike[T]) Scan(v any) error {
 			val = T(strconv.FormatBool(vi))
 		case int64:
 			val = T(strconv.FormatInt(vi, 10))
+		case float64:
+			val = T(strconv.FormatFloat(vi, 'f', -1, 64))
+		case time.Time:
+			val = T(vi.String())
 		default:
 			return fmt.Errorf(`sequel/types: unable to scan %T to ~string`, vi)
 		}

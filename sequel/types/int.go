@@ -4,6 +4,7 @@ import (
 	"database/sql/driver"
 	"fmt"
 	"strconv"
+	"time"
 	"unsafe"
 
 	"golang.org/x/exp/constraints"
@@ -120,6 +121,9 @@ func (i fixedSizeIntLike[T]) Value() (driver.Value, error) {
 func (i *fixedSizeIntLike[T]) Scan(v any) error {
 	var val T
 	switch vi := v.(type) {
+	case nil:
+		i.addr = nil
+		return nil
 	case []byte:
 		m, err := strconv.ParseInt(unsafe.String(unsafe.SliceData(vi), len(vi)), 10, i.bitSize)
 		if err != nil {
@@ -128,9 +132,6 @@ func (i *fixedSizeIntLike[T]) Scan(v any) error {
 		val = T(m)
 	case int64:
 		val = T(vi)
-	case nil:
-		i.addr = nil
-		return nil
 
 	default:
 		if i.strictType {
@@ -146,6 +147,8 @@ func (i *fixedSizeIntLike[T]) Scan(v any) error {
 			val = T(m)
 		case float64:
 			val = T(vi)
+		case time.Time:
+			val = T(vi.Unix())
 		default:
 			return fmt.Errorf(`sequel/types: unable to scan %T to ~int`, vi)
 		}

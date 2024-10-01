@@ -38,7 +38,7 @@ func (t timestamp[T]) Value() (driver.Value, error) {
 	if t.addr == nil {
 		return nil, nil
 	}
-	return time.Time(*t.addr), nil
+	return (time.Time)(*t.addr), nil
 }
 
 func (t *timestamp[T]) Scan(v any) error {

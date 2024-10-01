@@ -3,35 +3,35 @@ package postgres
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	"github.com/si3nloong/sqlgen/internal/sqltype"
 )
 
 type column struct {
-	Name       string
-	DataType   string
-	Default    sql.RawBytes
-	IsNullable sqltype.Bool
-	// CharacterMaxLength sql.NullInt64
-	// NumericPrecision   sql.NullInt64
-	// DatetimePrecision  sql.NullInt64
+	ColumnName         string
+	DataType           string
+	Default            sql.NullString
+	IsNullable         sqltype.Bool
+	CharacterMaxLength sql.NullInt64
+	NumericPrecision   sql.NullInt64
+	DatetimePrecision  sql.NullInt64
+	IntervalPrecision  sql.NullInt64
 }
 
 func (c column) Equal(v column) bool {
-	return c.Name == v.Name &&
+	return c.ColumnName == v.ColumnName &&
 		c.IsNullable == v.IsNullable
 }
 
-func (c column) ColumnType() string {
-	switch c.DataType {
-	case "varchar":
-		// if c.CharacterMaxLength.Valid && c.CharacterMaxLength.Int64 > 0 {
-		// 	return fmt.Sprintf("%s(%d)", c.DataType, c.CharacterMaxLength.Int64)
-		// }
-	case "timestamptz":
-		// if c.DatetimePrecision.Valid && c.DatetimePrecision.Int64 > 0 {
-		// 	return fmt.Sprintf("%s(%d)", c.DataType, c.DatetimePrecision.Int64)
-		// }
+func (c column) ColumnDataType() string {
+	switch {
+	case c.CharacterMaxLength.Valid && c.CharacterMaxLength.Int64 > 0:
+		return fmt.Sprintf("%s(%d)", c.DataType, c.CharacterMaxLength.Int64)
+	// case c.NumericPrecision.Valid && c.NumericPrecision.Int64 > 0:
+	// 	return fmt.Sprintf("%s(%d)", c.DataType, c.NumericPrecision.Int64)
+	case c.DatetimePrecision.Valid && c.DatetimePrecision.Int64 > 0:
+		return fmt.Sprintf("%s(%d)", c.DataType, c.DatetimePrecision.Int64)
 	}
 	return c.DataType
 }
@@ -41,10 +41,11 @@ func (s *postgresDriver) tableColumns(ctx context.Context, sqlConn *sql.DB, dbNa
 	column_name,
 	column_default,
 	is_nullable,
-	udt_name
-	-- character_maximum_length,
-	-- numeric_precision,
-	-- datetime_precision
+	udt_name,
+	character_maximum_length,
+	numeric_precision,
+	datetime_precision,
+	interval_precision
 FROM 
 	information_schema.columns
 WHERE
@@ -61,13 +62,14 @@ ORDER BY
 	for rows.Next() {
 		var col column
 		if err := rows.Scan(
-			&col.Name,
+			&col.ColumnName,
 			&col.Default,
 			&col.IsNullable,
 			&col.DataType,
-			// &col.CharacterMaxLength,
-			// &col.NumericPrecision,
-			// &col.DatetimePrecision,
+			&col.CharacterMaxLength,
+			&col.NumericPrecision,
+			&col.DatetimePrecision,
+			&col.IntervalPrecision,
 		); err != nil {
 			return nil, err
 		}

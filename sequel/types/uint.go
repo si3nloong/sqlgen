@@ -54,7 +54,7 @@ func (i fixedSizeUintLike[T]) Value() (driver.Value, error) {
 	if i.addr == nil {
 		return nil, nil
 	}
-	return int64(*i.addr), nil
+	return (int64)(*i.addr), nil
 }
 
 func (i *fixedSizeUintLike[T]) Scan(v any) error {

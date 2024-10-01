@@ -64,9 +64,9 @@ const (
 )
 
 type typeQueue struct {
-	// path  string
 	paths []string
 	idx   []int
+	prev  *structFieldType
 	t     *ast.StructType
 	pkg   *packages.Package
 }
@@ -445,17 +445,24 @@ func parseGoPackage(
 							// 	path = f.path + "." + path
 							// }
 							t := obj.Decl.(*ast.TypeSpec)
-							q = append(q, typeQueue{paths: append(f.paths, path), idx: append(f.idx, i), t: t.Type.(*ast.StructType), pkg: f.pkg})
 
-							structFields = append(structFields, &structFieldType{
+							ft := &structFieldType{
+								name:     types.ExprString(vi),
 								index:    append(f.idx, i),
+								paths:    append(f.paths, path),
+								t:        f.pkg.TypesInfo.TypeOf(fi.Type),
 								exported: vi.IsExported(),
 								embedded: true,
-								name:     types.ExprString(vi),
 								tag:      tag,
-								// path:     path,
+							}
+							structFields = append(structFields, ft)
+
+							q = append(q, typeQueue{
 								paths: append(f.paths, path),
-								t:     f.pkg.TypesInfo.TypeOf(fi.Type),
+								idx:   append(f.idx, i),
+								prev:  ft,
+								t:     t.Type.(*ast.StructType),
+								pkg:   f.pkg,
 							})
 							continue
 
@@ -487,25 +494,29 @@ func parseGoPackage(
 							}
 
 							path += types.ExprString(vi.Sel)
-							// if f.path != "" {
-							// 	path = f.path + "." + path
-							// }
 
 							// If it's a embedded struct, we continue on next loop
 							if st := assertAsPtr[ast.StructType](decl.Type); st != nil {
 								paths := append(f.paths, path)
-								q = append(q, typeQueue{paths: paths, idx: append(f.idx, i), t: st, pkg: importPkg})
-
-								structFields = append(structFields, &structFieldType{
+								ft := &structFieldType{
+									name:     types.ExprString(vi.Sel),
 									index:    append(f.idx, i),
+									paths:    paths,
+									t:        f.pkg.TypesInfo.TypeOf(fi.Type),
 									exported: vi.Sel.IsExported(),
 									embedded: true,
-									name:     types.ExprString(vi.Sel),
+									parent:   f.prev,
 									tag:      tag,
-									// path:     path,
+								}
+
+								q = append(q, typeQueue{
 									paths: paths,
-									t:     f.pkg.TypesInfo.TypeOf(fi.Type),
+									idx:   append(f.idx, i),
+									t:     st,
+									prev:  ft,
+									pkg:   importPkg,
 								})
+								structFields = append(structFields, ft)
 							}
 							continue
 						}
@@ -538,19 +549,16 @@ func parseGoPackage(
 
 					for j, n := range fi.Names {
 						path := types.ExprString(n)
-						// if f.path != "" {
-						// 	path = f.path + "." + path
-						// }
 
 						structFields = append(structFields, &structFieldType{
-							index:    append(f.idx, i+j),
-							exported: n.IsExported(),
 							name:     types.ExprString(n),
-							tag:      tag,
+							index:    append(f.idx, i+j),
+							paths:    append(f.paths, path),
+							t:        f.pkg.TypesInfo.TypeOf(fi.Type),
 							enums:    goEnum,
-							// path:     path,
-							paths: append(f.paths, path),
-							t:     f.pkg.TypesInfo.TypeOf(fi.Type),
+							exported: n.IsExported(),
+							parent:   f.prev,
+							tag:      tag,
 						})
 					}
 				}
