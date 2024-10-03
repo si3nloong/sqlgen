@@ -317,15 +317,17 @@ func UpsertOne[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Co
 		for i := range opt.omitFields {
 			omitDict[opt.omitFields[i]] = struct{}{}
 		}
+		first := true
 		for i := 0; i < noOfCols; i++ {
 			if _, ok := omitDict[columns[i]]; ok {
 				continue
 			}
-			if i < noOfCols-1 {
-				stmt.WriteString(columns[i] + " = EXCLUDED." + columns[i] + ",")
-			} else {
+			if first {
 				stmt.WriteString(columns[i] + " = EXCLUDED." + columns[i])
+			} else {
+				stmt.WriteString(","+ columns[i] + " = EXCLUDED." + columns[i])
 			}
+			first = false
 		}
 		clear(omitDict)
 	}
@@ -435,15 +437,17 @@ func Upsert[T interface {
 		for i := range opt.omitFields {
 			omitDict[opt.omitFields[i]] = struct{}{}
 		}
+		first := true
 		for i := 0; i < noOfCols; i++ {
 			if _, ok := omitDict[columns[i]]; ok {
 				continue
 			}
-			if i < noOfCols-1 {
-				stmt.WriteString(columns[i] + " = EXCLUDED." + columns[i] + ",")
-			} else {
+			if first {
 				stmt.WriteString(columns[i] + " = EXCLUDED." + columns[i])
+			} else {
+				stmt.WriteString(","+ columns[i] + " = EXCLUDED." + columns[i])
 			}
+			first = false
 		}
 		clear(omitDict)
 	}
@@ -479,15 +483,17 @@ func UpsertOne[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Co
 			}
 			noOfCols := len(columns)
 			stmt.WriteString("INSERT INTO " + DbTable(model) + " (" + strings.Join(columns, ",") + ") VALUES (" + strings.Repeat(",?", noOfCols)[1:] + ") ON DUPLICATE KEY UPDATE ")
+			first := true
 			for i := range columns {
 				if _, ok := omitDict[columns[i]]; ok {
 					continue
 				}
-				if i < noOfCols-1 {
-					stmt.WriteString(columns[i] + " =VALUES(" + columns[i] + "),")
-				} else {
+				if first {
 					stmt.WriteString(columns[i] + " =VALUES(" + columns[i] + ")")
+				} else {
+					stmt.WriteString(","+ columns[i] + " =VALUES(" + columns[i] + ")")
 				}
+				first = false
 			}
 			clear(omitDict)
 		}
@@ -634,15 +640,17 @@ func Upsert[T interface {
 			omitDict[omittedFields[i]] = struct{}{}
 		}
 		noOfCols = len(columns)
+		first := true
 		for i := range columns {
 			if _, ok := omitDict[columns[i]]; ok {
 				continue
 			}
-			if i < noOfCols-1 {
-				stmt.WriteString(columns[i] + "=VALUES(" + columns[i] + "),")
-			} else {
+			if first {
 				stmt.WriteString(columns[i] + "=VALUES(" + columns[i] + ")")
+			} else {
+				stmt.WriteString(","+ columns[i] + "=VALUES(" + columns[i] + ")")
 			}
+			first = false
 		}
 		clear(omitDict)
 	}
