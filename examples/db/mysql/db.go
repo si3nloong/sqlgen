@@ -3,6 +3,7 @@ package mysqldb
 import (
 	"context"
 	"database/sql"
+	"database/sql/driver"
 	"errors"
 	"fmt"
 	"iter"
@@ -128,15 +129,17 @@ func UpsertOne[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Co
 			}
 			noOfCols := len(columns)
 			stmt.WriteString("INSERT INTO " + DbTable(model) + " (" + strings.Join(columns, ",") + ") VALUES (" + strings.Repeat(",?", noOfCols)[1:] + ") ON DUPLICATE KEY UPDATE ")
+			first := true
 			for i := range columns {
 				if _, ok := omitDict[columns[i]]; ok {
 					continue
 				}
-				if i < noOfCols-1 {
-					stmt.WriteString(columns[i] + " =VALUES(" + columns[i] + "),")
-				} else {
+				if first {
 					stmt.WriteString(columns[i] + " =VALUES(" + columns[i] + ")")
+				} else {
+					stmt.WriteString("," + columns[i] + " =VALUES(" + columns[i] + ")")
 				}
+				first = false
 			}
 			clear(omitDict)
 		}
@@ -283,15 +286,17 @@ func Upsert[T interface {
 			omitDict[omittedFields[i]] = struct{}{}
 		}
 		noOfCols = len(columns)
+		first := true
 		for i := range columns {
 			if _, ok := omitDict[columns[i]]; ok {
 				continue
 			}
-			if i < noOfCols-1 {
-				stmt.WriteString(columns[i] + "=VALUES(" + columns[i] + "),")
-			} else {
+			if first {
 				stmt.WriteString(columns[i] + "=VALUES(" + columns[i] + ")")
+			} else {
+				stmt.WriteString("," + columns[i] + "=VALUES(" + columns[i] + ")")
 			}
+			first = false
 		}
 		clear(omitDict)
 	}
@@ -357,7 +362,7 @@ type PaginateStmt struct {
 	Select    []string
 	FromTable string
 	Where     sequel.WhereClause
-	OrderBy   []sequel.ColumnOrder
+	OrderBy   []sequel.OrderByClause
 	Limit     uint16
 }
 
@@ -762,7 +767,7 @@ type SelectStmt struct {
 	Select    []string
 	FromTable string
 	Where     sequel.WhereClause
-	OrderBy   []sequel.ColumnOrder
+	OrderBy   []sequel.OrderByClause
 	GroupBy   []string
 	Offset    uint64
 	Limit     uint16
@@ -870,7 +875,7 @@ type SelectOneStmt struct {
 	Select    []string
 	FromTable string
 	Where     sequel.WhereClause
-	OrderBy   []sequel.ColumnOrder
+	OrderBy   []sequel.OrderByClause
 	GroupBy   []string
 }
 
@@ -950,14 +955,14 @@ type UpdateStmt struct {
 	Table   string
 	Set     []sequel.SetClause
 	Where   sequel.WhereClause
-	OrderBy []sequel.ColumnOrder
+	OrderBy []sequel.OrderByClause
 	Limit   uint16
 }
 
 type DeleteStmt struct {
 	FromTable string
 	Where     sequel.WhereClause
-	OrderBy   []sequel.ColumnOrder
+	OrderBy   []sequel.OrderByClause
 	Limit     uint16
 }
 
@@ -1097,7 +1102,7 @@ func (s *sqlStmt) Format(f fmt.State, verb rune) {
 	var (
 		args = make([]any, len(s.args))
 		idx  int
-		i    int
+		i    = 1
 	)
 
 	copy(args, s.args)
@@ -1110,7 +1115,7 @@ func (s *sqlStmt) Format(f fmt.State, verb rune) {
 		}
 
 		f.Write([]byte(str[:idx]))
-		v := toStr(args[0])
+		v := strf(args[0])
 		f.Write(unsafe.Slice(unsafe.StringData(v), len(v)))
 		str = str[idx+1:]
 		args = args[1:]
@@ -1145,7 +1150,7 @@ func dbName(model any) string {
 	return ""
 }
 
-func toStr(v any) string {
+func strf(v any) string {
 	switch vi := v.(type) {
 	case string:
 		return strconv.Quote(vi)
@@ -1161,6 +1166,9 @@ func toStr(v any) string {
 		return strconv.Quote(vi.Format(time.RFC3339))
 	case sql.RawBytes:
 		return unsafe.String(unsafe.SliceData(vi), len(vi))
+	case driver.Valuer:
+		val, _ := vi.Value()
+		return strf(val)
 	default:
 		panic("unreachable")
 	}

@@ -148,7 +148,7 @@ type SQLColumnValuer[T any] interface {
 	SQLValue(placeholder string) string
 }
 
-type ColumnOrder interface {
+type OrderByClause interface {
 	ColumnName() string
 	Asc() bool
 }

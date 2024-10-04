@@ -31,7 +31,9 @@ type ExprParams struct {
 	// You may pass `&v.Path` or `v.Path` or any relevant go path,
 	// we will check whether it's addr of the go path
 	GoPath string
+	IsPtr  bool
 	Len    int64
+	Type   types.Type
 }
 
 func (e Expr) Format(pkg *Package, args ...ExprParams) string {
@@ -51,7 +53,19 @@ func (e Expr) Format(pkg *Package, args ...ExprParams) string {
 		"goPath": func() string {
 			return params.GoPath
 		},
+		"elemType": func() string {
+			switch t := params.Type.(type) {
+			case *types.Array:
+				return importPkgIfNeeded(pkg, t.Elem().String())
+			case *types.Slice:
+				return importPkgIfNeeded(pkg, t.Elem().String())
+			}
+			return ""
+		},
 		"addrOfGoPath": func() string {
+			if params.IsPtr {
+				return params.GoPath
+			}
 			return "&" + params.GoPath
 		},
 	}
@@ -71,14 +85,19 @@ func (e Expr) Format(pkg *Package, args ...ExprParams) string {
 		panic(err)
 	}
 	str = buf.String()
-	matches := pkgRegexp.FindStringSubmatch(str)
+	str = importPkgIfNeeded(pkg, str)
+	return str
+}
+
+func importPkgIfNeeded(pkg *Package, importPath string) string {
+	matches := pkgRegexp.FindStringSubmatch(importPath)
 	if len(matches) > 0 {
 		p, _ := pkg.Import(types.NewPackage(matches[1], filepath.Base(matches[1])))
 		if p != nil {
-			str = strings.Replace(str, matches[1], p.Name(), -1)
+			importPath = strings.Replace(importPath, matches[1], p.Name(), -1)
 		} else {
-			str = strings.Replace(str, matches[1]+".", "", -1)
+			importPath = strings.Replace(importPath, matches[1]+".", "", -1)
 		}
 	}
-	return str
+	return importPath
 }

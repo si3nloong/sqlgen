@@ -3,6 +3,7 @@ package postgresdb
 import (
 	"context"
 	"database/sql"
+	"database/sql/driver"
 	"fmt"
 	"iter"
 	"strconv"
@@ -225,15 +226,17 @@ func UpsertOne[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Co
 		for i := range opt.omitFields {
 			omitDict[opt.omitFields[i]] = struct{}{}
 		}
+		first := true
 		for i := 0; i < noOfCols; i++ {
 			if _, ok := omitDict[columns[i]]; ok {
 				continue
 			}
-			if i < noOfCols-1 {
-				stmt.WriteString(columns[i] + " = EXCLUDED." + columns[i] + ",")
-			} else {
+			if first {
 				stmt.WriteString(columns[i] + " = EXCLUDED." + columns[i])
+			} else {
+				stmt.WriteString("," + columns[i] + " = EXCLUDED." + columns[i])
 			}
+			first = false
 		}
 		clear(omitDict)
 	}
@@ -343,15 +346,17 @@ func Upsert[T interface {
 		for i := range opt.omitFields {
 			omitDict[opt.omitFields[i]] = struct{}{}
 		}
+		first := true
 		for i := 0; i < noOfCols; i++ {
 			if _, ok := omitDict[columns[i]]; ok {
 				continue
 			}
-			if i < noOfCols-1 {
-				stmt.WriteString(columns[i] + " = EXCLUDED." + columns[i] + ",")
-			} else {
+			if first {
 				stmt.WriteString(columns[i] + " = EXCLUDED." + columns[i])
+			} else {
+				stmt.WriteString("," + columns[i] + " = EXCLUDED." + columns[i])
 			}
+			first = false
 		}
 		clear(omitDict)
 	}
@@ -463,7 +468,7 @@ type PaginateStmt struct {
 	Select    []string
 	FromTable string
 	Where     sequel.WhereClause
-	OrderBy   []sequel.ColumnOrder
+	OrderBy   []sequel.OrderByClause
 	Limit     uint16
 }
 
@@ -868,7 +873,7 @@ type SelectStmt struct {
 	Select    []string
 	FromTable string
 	Where     sequel.WhereClause
-	OrderBy   []sequel.ColumnOrder
+	OrderBy   []sequel.OrderByClause
 	GroupBy   []string
 	Offset    uint64
 	Limit     uint16
@@ -976,7 +981,7 @@ type SelectOneStmt struct {
 	Select    []string
 	FromTable string
 	Where     sequel.WhereClause
-	OrderBy   []sequel.ColumnOrder
+	OrderBy   []sequel.OrderByClause
 	GroupBy   []string
 }
 
@@ -1056,14 +1061,14 @@ type UpdateStmt struct {
 	Table   string
 	Set     []sequel.SetClause
 	Where   sequel.WhereClause
-	OrderBy []sequel.ColumnOrder
+	OrderBy []sequel.OrderByClause
 	Limit   uint16
 }
 
 type DeleteStmt struct {
 	FromTable string
 	Where     sequel.WhereClause
-	OrderBy   []sequel.ColumnOrder
+	OrderBy   []sequel.OrderByClause
 	Limit     uint16
 }
 
@@ -1215,22 +1220,23 @@ func (s *sqlStmt) Format(f fmt.State, verb rune) {
 	var (
 		args = make([]any, len(s.args))
 		idx  int
-		i    int
+		i    = 1
 	)
 
 	copy(args, s.args)
 
 	for {
-		idx = strings.Index(str, "?")
+		placeholder := wrapVar(i)
+		idx = strings.Index(str, placeholder)
 		if idx < 0 {
 			f.Write(unsafe.Slice(unsafe.StringData(str), len(str)))
 			break
 		}
 
 		f.Write([]byte(str[:idx]))
-		v := toStr(args[0])
+		v := strf(args[0])
 		f.Write(unsafe.Slice(unsafe.StringData(v), len(v)))
-		str = str[idx+1:]
+		str = str[idx+len(placeholder):]
 		args = args[1:]
 		i++
 	}
@@ -1267,7 +1273,7 @@ func wrapVar(i int) string {
 	return `$` + strconv.Itoa(i)
 }
 
-func toStr(v any) string {
+func strf(v any) string {
 	switch vi := v.(type) {
 	case string:
 		return strconv.Quote(vi)
@@ -1283,6 +1289,9 @@ func toStr(v any) string {
 		return strconv.Quote(vi.Format(time.RFC3339))
 	case sql.RawBytes:
 		return unsafe.String(unsafe.SliceData(vi), len(vi))
+	case driver.Valuer:
+		val, _ := vi.Value()
+		return strf(val)
 	default:
 		panic("unreachable")
 	}

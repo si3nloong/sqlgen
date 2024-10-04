@@ -2,23 +2,45 @@ package types
 
 import (
 	"bytes"
+	"database/sql"
+	"database/sql/driver"
 	"fmt"
 	"strconv"
 	"strings"
 	"unsafe"
 
+	"github.com/si3nloong/sqlgen/sequel/encoding"
 	"golang.org/x/exp/constraints"
 )
 
 type floatList[T constraints.Float] struct {
-	v *[]T
+	v    *[]T
+	prec int
 }
 
-func FloatList[T constraints.Float](v *[]T) floatList[T] {
-	return floatList[T]{v: v}
+var (
+	_ driver.Valuer = (*floatList[float32])(nil)
+	_ sql.Scanner   = (*floatList[float32])(nil)
+	_ driver.Valuer = (*floatList[float64])(nil)
+	_ sql.Scanner   = (*floatList[float64])(nil)
+)
+
+func Float32Slice[T constraints.Float](v *[]T) floatList[T] {
+	return floatList[T]{v: v, prec: 32}
 }
 
-func (s floatList[T]) Scan(v any) error {
+func Float64Slice[T constraints.Float](v *[]T) floatList[T] {
+	return floatList[T]{v: v, prec: 64}
+}
+
+func (s floatList[T]) Value() (driver.Value, error) {
+	if s.v == nil || *s.v == nil {
+		return nil, nil
+	}
+	return encoding.MarshalFloatList(*s.v, 64), nil
+}
+
+func (s *floatList[T]) Scan(v any) error {
 	switch vi := v.(type) {
 	case []byte:
 		if bytes.Equal(vi, nullBytes) {
@@ -40,11 +62,11 @@ func (s floatList[T]) Scan(v any) error {
 		)
 		for i := range paths {
 			b = bytes.TrimSpace(paths[i])
-			f64, err := strconv.ParseFloat(unsafe.String(unsafe.SliceData(b), len(b)), 64)
+			f, err := strconv.ParseFloat(unsafe.String(unsafe.SliceData(b), len(b)), s.prec)
 			if err != nil {
 				return err
 			}
-			values[i] = T(f64)
+			values[i] = T(f)
 		}
 		*s.v = values
 	case string:
@@ -67,13 +89,15 @@ func (s floatList[T]) Scan(v any) error {
 		)
 		for i := range paths {
 			b = strings.TrimSpace(paths[i])
-			f64, err := strconv.ParseFloat(b, 64)
+			f, err := strconv.ParseFloat(b, s.prec)
 			if err != nil {
 				return err
 			}
-			values[i] = T(f64)
+			values[i] = T(f)
 		}
 		*s.v = values
+	case nil:
+		*s.v = nil
 	default:
 		return fmt.Errorf(`sequel/types: unsupported scan type %T for []~float`, vi)
 	}

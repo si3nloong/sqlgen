@@ -1,10 +1,10 @@
 package types
 
 import (
-	"database/sql"
 	"database/sql/driver"
 	"fmt"
 	"strconv"
+	"time"
 )
 
 type StringLikeType interface {
@@ -16,17 +16,12 @@ type strLike[T StringLikeType] struct {
 	strictType bool
 }
 
-var (
-	_ sql.Scanner   = (*strLike[string])(nil)
-	_ driver.Valuer = (*strLike[string])(nil)
-)
-
-func String[T StringLikeType](addr *T, strict ...bool) strLike[T] {
+func String[T StringLikeType](addr *T, strict ...bool) ValueScanner[T] {
 	var strictType bool
 	if len(strict) > 0 {
 		strictType = strict[0]
 	}
-	return strLike[T]{addr: addr, strictType: strictType}
+	return &strLike[T]{addr: addr, strictType: strictType}
 }
 
 func (s strLike[T]) Interface() T {
@@ -43,9 +38,12 @@ func (s strLike[T]) Value() (driver.Value, error) {
 	return string(*s.addr), nil
 }
 
-func (s strLike[T]) Scan(v any) error {
+func (s *strLike[T]) Scan(v any) error {
 	var val T
 	switch vi := v.(type) {
+	case nil:
+		s.addr = nil
+		return nil
 	case string:
 		val = T(vi)
 	case []byte:
@@ -60,6 +58,10 @@ func (s strLike[T]) Scan(v any) error {
 			val = T(strconv.FormatBool(vi))
 		case int64:
 			val = T(strconv.FormatInt(vi, 10))
+		case float64:
+			val = T(strconv.FormatFloat(vi, 'f', -1, 64))
+		case time.Time:
+			val = T(vi.String())
 		default:
 			return fmt.Errorf(`sequel/types: unable to scan %T to ~string`, vi)
 		}

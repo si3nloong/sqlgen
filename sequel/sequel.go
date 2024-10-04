@@ -9,7 +9,7 @@ import (
 )
 
 // For rename table name
-type Table struct{}
+type TableName struct{}
 
 type (
 	ConvertFunc[T any] func(T) driver.Value
@@ -148,7 +148,7 @@ type SQLColumnValuer[T any] interface {
 	SQLValue(placeholder string) string
 }
 
-type ColumnOrder interface {
+type OrderByClause interface {
 	ColumnName() string
 	Asc() bool
 }

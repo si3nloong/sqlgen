@@ -1,11 +1,16 @@
 package valuer
 
-import "database/sql/driver"
+import (
+	"database/sql/driver"
+)
 
-type anyType struct{}
+type anyType struct{ ptr bool }
 
-func (anyType) Value() (driver.Value, error) {
-	return nil, nil
+func (a anyType) Value() (driver.Value, error) {
+	if a.ptr {
+		return "ptr", nil
+	}
+	return "any", nil
 }
 
 type B struct {

@@ -83,6 +83,7 @@ type GetterConfig struct {
 }
 
 type MigrationConfig struct {
+	DSN      string `yaml:"dsn"`
 	Package  string `yaml:"package"`
 	Dir      string `yaml:"dir"`
 	Filename string `yaml:"filename"`
@@ -165,18 +166,24 @@ func (c *Config) initIfEmpty() {
 	if c.Database.Operator.Filename == "" {
 		c.Database.Operator.Filename = "operator.go"
 	}
-	if c.Migration == nil {
-		c.Migration = new(MigrationConfig)
+	if c.Migration != nil {
+		if c.Migration.Dir == "" {
+			c.Migration.Dir = "migrate"
+		}
+		if c.Migration.Package == "" {
+			c.Migration.Package = "migrate"
+		}
+		if c.Migration.Filename == "" {
+			c.Migration.Filename = "migrate.go"
+		}
 	}
-	c.Migration.Dir = "migrate"
-	c.Migration.Package = "migrate"
-	c.Migration.Filename = "migrate.go"
 	if c.DataTypes == nil {
 		c.DataTypes = make(map[string]DataType)
 	}
 }
 
 func (c *Config) Merge(mapCfg *Config) *Config {
+	c.QuoteIdentifier = mapCfg.QuoteIdentifier
 	if mapCfg.Source != nil {
 		c.Source = append([]string{}, mapCfg.Source...)
 	}
@@ -222,6 +229,14 @@ func (c *Config) Merge(mapCfg *Config) *Config {
 	}
 	if mapCfg.SkipModTidy {
 		c.SkipModTidy = true
+	}
+	if mapCfg.Migration != nil {
+		c.Migration = &MigrationConfig{
+			DSN:      mapCfg.Migration.DSN,
+			Package:  mapCfg.Migration.Package,
+			Dir:      mapCfg.Migration.Dir,
+			Filename: mapCfg.Migration.Filename,
+		}
 	}
 	if mapCfg.DataTypes != nil {
 		maps.Copy(c.DataTypes, mapCfg.DataTypes)

@@ -96,10 +96,18 @@ func isImplemented(t types.Type, iv *types.Interface) bool {
 	return method == nil && !wrongType
 }
 
-func newPointer(t types.Type) *types.Pointer {
+func pointerType(t types.Type) (*types.Pointer, bool) {
 	v, ok := t.(*types.Pointer)
 	if ok {
-		return v
+		return v, true
 	}
-	return types.NewPointer(t)
+	return types.NewPointer(t), false
+}
+
+func underlyingType(t types.Type) (types.Type, bool) {
+	v, ok := t.(*types.Pointer)
+	if ok {
+		return v.Elem(), true
+	}
+	return t, false
 }

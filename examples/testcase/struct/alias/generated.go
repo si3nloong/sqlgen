@@ -37,7 +37,7 @@ func (C) Columns() []string {
 	return []string{"string", "valid"}
 }
 func (v C) Values() []any {
-	return []any{string(v.String), bool(v.Valid)}
+	return []any{(string)(v.String), (bool)(v.Valid)}
 }
 func (v *C) Addrs() []any {
 	return []any{types.String(&v.String), types.Bool(&v.Valid)}
@@ -49,8 +49,8 @@ func (v C) InsertOneStmt() (string, []any) {
 	return "INSERT INTO c (string,valid) VALUES (?,?);", v.Values()
 }
 func (v C) GetString() sequel.ColumnValuer[string] {
-	return sequel.Column("string", v.String, func(val string) driver.Value { return string(val) })
+	return sequel.Column("string", v.String, func(val string) driver.Value { return (string)(val) })
 }
 func (v C) GetValid() sequel.ColumnValuer[bool] {
-	return sequel.Column("valid", v.Valid, func(val bool) driver.Value { return bool(val) })
+	return sequel.Column("valid", v.Valid, func(val bool) driver.Value { return (bool)(val) })
 }

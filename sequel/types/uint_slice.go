@@ -14,11 +14,11 @@ type uintList[T constraints.Unsigned] struct {
 	v *[]T
 }
 
-func UintList[T constraints.Unsigned](v *[]T) uintList[T] {
+func UintSlice[T constraints.Unsigned](v *[]T) uintList[T] {
 	return uintList[T]{v: v}
 }
 
-func (s uintList[T]) Scan(v any) error {
+func (s *uintList[T]) Scan(v any) error {
 	switch vi := v.(type) {
 	case []byte:
 		if bytes.Equal(vi, nullBytes) {
@@ -74,6 +74,8 @@ func (s uintList[T]) Scan(v any) error {
 			values[i] = T(u64)
 		}
 		*s.v = values
+	case nil:
+		*s.v = nil
 	default:
 		return fmt.Errorf(`sequel/types: unsupported scan type %T for []~uint`, vi)
 	}

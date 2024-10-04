@@ -5,7 +5,17 @@
 // This package is a helper library to prevent the value being fallback using reflection in `database/sql`.
 package types
 
-import "unsafe"
+import (
+	"database/sql"
+	"database/sql/driver"
+	"unsafe"
+)
+
+type ValueScanner[T any] interface {
+	driver.Valuer
+	sql.Scanner
+	Interface() T
+}
 
 const nullStr = "null"
 
