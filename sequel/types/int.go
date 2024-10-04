@@ -40,6 +40,8 @@ func (i *intLike[T]) Scan(v any) error {
 		val = T(m)
 	case int64:
 		val = T(vi)
+	case uint64:
+		val = T(vi)
 	case nil:
 		i.addr = nil
 		return nil
@@ -132,7 +134,8 @@ func (i *fixedSizeIntLike[T]) Scan(v any) error {
 		val = T(m)
 	case int64:
 		val = T(vi)
-
+	case uint64:
+		val = T(vi)
 	default:
 		if i.strictType {
 			return fmt.Errorf(`sequel/types: unable to scan %T to ~int`, vi)

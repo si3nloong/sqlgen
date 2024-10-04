@@ -60,6 +60,9 @@ func (i fixedSizeUintLike[T]) Value() (driver.Value, error) {
 func (i *fixedSizeUintLike[T]) Scan(v any) error {
 	var val T
 	switch vi := v.(type) {
+	case nil:
+		i.addr = nil
+		return nil
 	case []byte:
 		m, err := strconv.ParseUint(unsafe.String(unsafe.SliceData(vi), len(vi)), 10, i.bitSize)
 		if err != nil {
@@ -67,11 +70,12 @@ func (i *fixedSizeUintLike[T]) Scan(v any) error {
 		}
 		val = T(m)
 	case int64:
+		if vi < 0 {
+			return fmt.Errorf(`sequel/types: cannot scan to ~uint with negative value %d`, vi)
+		}
 		val = T(vi)
-	case nil:
-		i.addr = nil
-		return nil
-
+	case uint64:
+		val = T(vi)
 	default:
 		if i.strictType {
 			return fmt.Errorf(`sequel/types: unable to scan %T to ~uint`, vi)
