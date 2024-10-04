@@ -43,7 +43,7 @@ var (
 	go121         = lo.Must1(semver.NewConstraint(">= 1.2.1"))
 	goTagRegexp   = regexp.MustCompile(`(?i)^([a-z][a-z_]*[a-z])(\:(\w+))?$`)
 	sqlFuncRegexp = regexp.MustCompile(`(?i)\s*(\w+\()(\w+\s*\,\s*)?(\{\})(\s*\,\s*\w+)?(\))\s*`)
-	typeOfTable   = reflect.TypeOf(sequel.Table{})
+	typeOfTable   = reflect.TypeOf(sequel.TableName{})
 	tableNameType = typeOfTable.PkgPath() + "." + typeOfTable.Name()
 )
 

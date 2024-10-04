@@ -9,7 +9,7 @@ import (
 )
 
 // For rename table name
-type Table struct{}
+type TableName struct{}
 
 type (
 	ConvertFunc[T any] func(T) driver.Value
