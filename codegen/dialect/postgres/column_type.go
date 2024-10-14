@@ -245,12 +245,12 @@ func (s *postgresDriver) ColumnDataTypes() map[string]*dialect.ColumnType {
 		},
 		"[]int": {
 			DataType: s.columnDataType("int4[]"),
-			Valuer:   "github.com/si3nloong/sqlgen/sequel/types/pgtype.IntArrayValue({{goPath}})",
+			Valuer:   "github.com/si3nloong/sqlgen/sequel/types/pgtype.IntArray[{{elemType}}]({{goPath}})",
 			Scanner:  "(*github.com/si3nloong/sqlgen/sequel/types/pgtype.IntArray[{{elemType}}])({{addrOfGoPath}})",
 		},
 		"[]int8": {
 			DataType: s.columnDataType("int2[]"),
-			Valuer:   "github.com/si3nloong/sqlgen/sequel/types/pgtype.IntArrayValue({{goPath}})",
+			Valuer:   "github.com/si3nloong/sqlgen/sequel/types/pgtype.Int8Array[{{elemType}}]({{goPath}})",
 			Scanner:  "(*github.com/si3nloong/sqlgen/sequel/types/pgtype.IntArray[{{elemType}}])({{addrOfGoPath}})",
 		},
 		"[]int16": {
