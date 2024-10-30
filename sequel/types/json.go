@@ -56,12 +56,12 @@ func (j *jsonUnmarshaler[T, Ptr]) Scan(v any) error {
 			return vj.UnmarshalJSON(vi)
 		case string:
 			return vj.UnmarshalJSON(unsafe.Slice(unsafe.StringData(vi), len(vi)))
-		case nil:
-			j.v = nil
-			return nil
 		}
 	default:
 		switch vi := v.(type) {
+		case nil:
+			j.v = nil
+			return nil
 		case []byte:
 			return json.NewDecoder(bytes.NewBuffer(vi)).Decode(j.v)
 		case json.RawMessage:
