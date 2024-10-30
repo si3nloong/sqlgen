@@ -7,6 +7,7 @@ require (
 	github.com/Masterminds/semver/v3 v3.3.0
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/go-playground/validator/v10 v10.22.1
+	github.com/go-sql-driver/mysql v1.8.1
 	github.com/goccy/go-yaml v1.12.0
 	github.com/jackc/pgx/v5 v5.7.1
 	github.com/samber/lo v1.47.0
@@ -17,6 +18,7 @@ require (
 )
 
 require (
+	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fatih/color v1.10.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.3 // indirect

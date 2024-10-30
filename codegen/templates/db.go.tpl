@@ -677,16 +677,16 @@ func FindByPK[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Con
 		{{ else -}}
 		stmt := strpool.AcquireString()
 		defer strpool.ReleaseString(stmt)
-		stmt.WriteString("SELECT " + strings.Join(columns, ",") + " FROM " + DbTable(model) + " WHERE ")
+		stmt.WriteString("SELECT " + strings.Join(columns, ",") + " FROM " + DbTable(model) + " WHERE ("+ strings.Join(names, ",") +") = (")
 		noOfKey := len(names)
-		for i := 0; i < noOfKey; i++ {
-			if i > 0 {
-				stmt.WriteString(" AND " + names[i] + " = " + wrapVar(i+1))
+		for i := 1; i <= noOfKey; i++ {
+			if i > 1 {
+				stmt.WriteString(","+ wrapVar(i))
 			} else {
-				stmt.WriteString(names[i] + " = " + wrapVar(i+1))
+				stmt.WriteString(wrapVar(i))
 			}
 		}
-		stmt.WriteString(" LIMIT 1;")
+		stmt.WriteString(") LIMIT 1;")
 		return sqlConn.QueryRowContext(ctx, stmt.String(), keys...).Scan(model.Addrs()...)
 		{{ end -}}
 	default:

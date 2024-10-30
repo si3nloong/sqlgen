@@ -43,7 +43,7 @@ func JSONUnmarshaler[T any, Ptr interface {
 	return jsonUnmarshaler[T, Ptr]{v: addr}
 }
 
-func (j jsonUnmarshaler[T, Ptr]) Scan(v any) error {
+func (j *jsonUnmarshaler[T, Ptr]) Scan(v any) error {
 	switch vj := any(j.v).(type) {
 	case json.Unmarshaler:
 		switch vi := v.(type) {
@@ -56,6 +56,9 @@ func (j jsonUnmarshaler[T, Ptr]) Scan(v any) error {
 		}
 	default:
 		switch vi := v.(type) {
+		case nil:
+			j.v = nil
+			return nil
 		case []byte:
 			return json.NewDecoder(bytes.NewBuffer(vi)).Decode(j.v)
 		case json.RawMessage:

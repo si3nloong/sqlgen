@@ -479,7 +479,7 @@ func (g *Generator) buildFindByPK(importPkgs *Package, t *tableInfo) {
 			if i > 0 {
 				buf.WriteByte(',')
 			}
-			buf.WriteString(g.sqlValuer(k, i+1))
+			buf.WriteString(g.sqlValuer(k, i))
 		}
 		buf.WriteByte(')')
 	} else {
