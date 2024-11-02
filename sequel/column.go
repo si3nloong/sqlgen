@@ -59,7 +59,7 @@ func (c orderByCol) Asc() bool {
 	return c.asc
 }
 
-func OrderByColumn(columnName string, asc bool) ColumnOrder {
+func OrderByColumn(columnName string, asc bool) OrderByClause {
 	return orderByCol{
 		colName: columnName,
 		asc:     asc,

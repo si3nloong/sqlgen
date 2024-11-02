@@ -2,19 +2,35 @@ package types
 
 import (
 	"bytes"
+	"database/sql"
+	"database/sql/driver"
 	"fmt"
 	"strings"
+
+	"github.com/si3nloong/sqlgen/sequel/encoding"
 )
 
-type strList[T ~string] struct {
+type strSlice[T ~string] struct {
 	v *[]T
 }
 
-func StringList[T ~string](v *[]T) strList[T] {
-	return strList[T]{v: v}
+var (
+	_ driver.Valuer = (*strSlice[string])(nil)
+	_ sql.Scanner   = (*strSlice[string])(nil)
+)
+
+func StringSlice[T ~string](v *[]T) strSlice[T] {
+	return strSlice[T]{v: v}
 }
 
-func (s strList[T]) Scan(v any) error {
+func (s strSlice[T]) Value() (driver.Value, error) {
+	if s.v == nil || *s.v == nil {
+		return nil, nil
+	}
+	return encoding.MarshalStringSlice(*s.v), nil
+}
+
+func (s *strSlice[T]) Scan(v any) error {
 	switch vi := v.(type) {
 	case []byte:
 		if bytes.Equal(vi, nullBytes) {
@@ -32,7 +48,7 @@ func (s strList[T]) Scan(v any) error {
 		b := bytes.Split(vi, []byte{','})
 		values := make([]T, len(b))
 		for i := range b {
-			values[i] = T(bytes.Trim(b[i], `"`))
+			values[i] = (T)(bytes.Trim(b[i], `"`))
 		}
 		*s.v = values
 	case string:
@@ -51,9 +67,11 @@ func (s strList[T]) Scan(v any) error {
 		b := strings.Split(vi, ",")
 		values := make([]T, len(b))
 		for i := range b {
-			values[i] = T(strings.Trim(b[i], `"`))
+			values[i] = (T)(strings.Trim(b[i], `"`))
 		}
 		*s.v = values
+	case nil:
+		*s.v = nil
 	default:
 		return fmt.Errorf(`sequel/types: unsupported scan type %T for []~string`, vi)
 	}

@@ -2,6 +2,7 @@ package types
 
 import (
 	"bytes"
+	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
@@ -12,12 +13,14 @@ type jsonMarshaler[T any] struct {
 	v T
 }
 
-func JSONMarshaler[T any](addr T) jsonMarshaler[T] {
+func JSONMarshaler[T any](addr T) driver.Valuer {
 	return jsonMarshaler[T]{v: addr}
 }
 
 func (j jsonMarshaler[T]) Value() (driver.Value, error) {
 	switch vj := any(j.v).(type) {
+	case nil:
+		return []byte(`null`), nil
 	case json.RawMessage:
 		return []byte(vj)[:], nil
 	case json.Marshaler:
@@ -39,11 +42,11 @@ type jsonUnmarshaler[T any, Ptr interface {
 
 func JSONUnmarshaler[T any, Ptr interface {
 	*T
-}](addr Ptr) jsonUnmarshaler[T, Ptr] {
-	return jsonUnmarshaler[T, Ptr]{v: addr}
+}](addr Ptr) sql.Scanner {
+	return &jsonUnmarshaler[T, Ptr]{v: addr}
 }
 
-func (j jsonUnmarshaler[T, Ptr]) Scan(v any) error {
+func (j *jsonUnmarshaler[T, Ptr]) Scan(v any) error {
 	switch vj := any(j.v).(type) {
 	case json.Unmarshaler:
 		switch vi := v.(type) {
@@ -56,6 +59,9 @@ func (j jsonUnmarshaler[T, Ptr]) Scan(v any) error {
 		}
 	default:
 		switch vi := v.(type) {
+		case nil:
+			j.v = nil
+			return nil
 		case []byte:
 			return json.NewDecoder(bytes.NewBuffer(vi)).Decode(j.v)
 		case json.RawMessage:

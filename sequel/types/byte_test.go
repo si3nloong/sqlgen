@@ -23,6 +23,7 @@ func TestBytesArray(t *testing.T) {
 	t.Run("Scan with non-overflow & smaller length string", func(t *testing.T) {
 		const size = 10
 		fsBytes := [size]byte{}
+		require.Equal(t, fsBytes, [10]byte{})
 		bytes := FixedSizeBytes(fsBytes[:], size)
 		require.Equal(t, size, bytes.size)
 
@@ -35,6 +36,7 @@ func TestBytesArray(t *testing.T) {
 	t.Run("Scan with non-overflow & smaller length string", func(t *testing.T) {
 		const size = 10
 		fsBytes := [size]byte{}
+		require.Equal(t, fsBytes, [10]byte{})
 		bytes := FixedSizeBytes(fsBytes[:], size)
 		require.Equal(t, size, bytes.size)
 
@@ -59,5 +61,6 @@ func TestBytesArray(t *testing.T) {
 		require.Equal(t, size, bytes.size)
 
 		require.Error(t, bytes.Scan(`hello world`))
+		// require.Equal(t, fsBytes, [10]byte([]byte(`hello world`)))
 	})
 }

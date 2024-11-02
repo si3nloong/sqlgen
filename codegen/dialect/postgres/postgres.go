@@ -3,6 +3,7 @@ package postgres
 import (
 	"strconv"
 
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/si3nloong/sqlgen/codegen/dialect"
 )
 

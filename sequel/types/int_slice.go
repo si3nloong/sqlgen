@@ -2,11 +2,13 @@ package types
 
 import (
 	"bytes"
+	"database/sql/driver"
 	"fmt"
 	"strconv"
 	"strings"
 	"unsafe"
 
+	"github.com/si3nloong/sqlgen/sequel/encoding"
 	"golang.org/x/exp/constraints"
 )
 
@@ -14,11 +16,18 @@ type intList[T constraints.Signed] struct {
 	v *[]T
 }
 
-func IntList[T constraints.Signed](v *[]T) intList[T] {
+func IntSlice[T constraints.Signed](v *[]T) intList[T] {
 	return intList[T]{v: v}
 }
 
-func (s intList[T]) Scan(v any) error {
+func (s intList[T]) Value() (driver.Value, error) {
+	if s.v == nil || *s.v == nil {
+		return nil, nil
+	}
+	return encoding.MarshalIntSlice(*s.v), nil
+}
+
+func (s *intList[T]) Scan(v any) error {
 	switch vi := v.(type) {
 	case []byte:
 		if bytes.Equal(vi, nullBytes) {
@@ -74,6 +83,8 @@ func (s intList[T]) Scan(v any) error {
 			values[i] = T(i64)
 		}
 		*s.v = values
+	case nil:
+		*s.v = nil
 	default:
 		return fmt.Errorf(`sequel/types: unsupported scan type %T for []~int`, vi)
 	}

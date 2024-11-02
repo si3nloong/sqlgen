@@ -3,7 +3,7 @@ package enum
 type Enum int
 
 const (
-	success Enum = iota
+	success Enum = iota + 1
 	failed
 	otherStr longText = "very very very long text"
 	cancelled

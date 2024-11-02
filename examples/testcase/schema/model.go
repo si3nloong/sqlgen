@@ -10,7 +10,7 @@ import (
 type LongText string
 
 type A struct {
-	s.Table   `sql:"Apple"`
+	_         s.TableName `sql:"Apple"`
 	ID        string
 	Text      LongText
 	CreatedAt t.Time

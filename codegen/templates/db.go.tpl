@@ -1,5 +1,6 @@
 {{- reserveImport "context" }}
 {{- reserveImport "database/sql" }}
+{{- reserveImport "database/sql/driver" }}
 {{- reserveImport "strings" }}
 {{- reserveImport "strconv" }}
 {{- reserveImport "sync" }}
@@ -316,15 +317,17 @@ func UpsertOne[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Co
 		for i := range opt.omitFields {
 			omitDict[opt.omitFields[i]] = struct{}{}
 		}
+		first := true
 		for i := 0; i < noOfCols; i++ {
 			if _, ok := omitDict[columns[i]]; ok {
 				continue
 			}
-			if i < noOfCols-1 {
-				stmt.WriteString(columns[i] + " = EXCLUDED." + columns[i] + ",")
-			} else {
+			if first {
 				stmt.WriteString(columns[i] + " = EXCLUDED." + columns[i])
+			} else {
+				stmt.WriteString(","+ columns[i] + " = EXCLUDED." + columns[i])
 			}
+			first = false
 		}
 		clear(omitDict)
 	}
@@ -434,15 +437,17 @@ func Upsert[T interface {
 		for i := range opt.omitFields {
 			omitDict[opt.omitFields[i]] = struct{}{}
 		}
+		first := true
 		for i := 0; i < noOfCols; i++ {
 			if _, ok := omitDict[columns[i]]; ok {
 				continue
 			}
-			if i < noOfCols-1 {
-				stmt.WriteString(columns[i] + " = EXCLUDED." + columns[i] + ",")
-			} else {
+			if first {
 				stmt.WriteString(columns[i] + " = EXCLUDED." + columns[i])
+			} else {
+				stmt.WriteString(","+ columns[i] + " = EXCLUDED." + columns[i])
 			}
+			first = false
 		}
 		clear(omitDict)
 	}
@@ -478,15 +483,17 @@ func UpsertOne[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Co
 			}
 			noOfCols := len(columns)
 			stmt.WriteString("INSERT INTO " + DbTable(model) + " (" + strings.Join(columns, ",") + ") VALUES (" + strings.Repeat(",?", noOfCols)[1:] + ") ON DUPLICATE KEY UPDATE ")
+			first := true
 			for i := range columns {
 				if _, ok := omitDict[columns[i]]; ok {
 					continue
 				}
-				if i < noOfCols-1 {
-					stmt.WriteString(columns[i] + " =VALUES(" + columns[i] + "),")
-				} else {
+				if first {
 					stmt.WriteString(columns[i] + " =VALUES(" + columns[i] + ")")
+				} else {
+					stmt.WriteString(","+ columns[i] + " =VALUES(" + columns[i] + ")")
 				}
+				first = false
 			}
 			clear(omitDict)
 		}
@@ -633,15 +640,17 @@ func Upsert[T interface {
 			omitDict[omittedFields[i]] = struct{}{}
 		}
 		noOfCols = len(columns)
+		first := true
 		for i := range columns {
 			if _, ok := omitDict[columns[i]]; ok {
 				continue
 			}
-			if i < noOfCols-1 {
-				stmt.WriteString(columns[i] + "=VALUES(" + columns[i] + "),")
-			} else {
+			if first {
 				stmt.WriteString(columns[i] + "=VALUES(" + columns[i] + ")")
+			} else {
+				stmt.WriteString(","+ columns[i] + "=VALUES(" + columns[i] + ")")
 			}
+			first = false
 		}
 		clear(omitDict)
 	}
@@ -668,16 +677,16 @@ func FindByPK[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Con
 		{{ else -}}
 		stmt := strpool.AcquireString()
 		defer strpool.ReleaseString(stmt)
-		stmt.WriteString("SELECT " + strings.Join(columns, ",") + " FROM " + DbTable(model) + " WHERE ")
+		stmt.WriteString("SELECT " + strings.Join(columns, ",") + " FROM " + DbTable(model) + " WHERE ("+ strings.Join(names, ",") +") = (")
 		noOfKey := len(names)
-		for i := 0; i < noOfKey; i++ {
-			if i > 0 {
-				stmt.WriteString(" AND " + names[i] + " = " + wrapVar(i+1))
+		for i := 1; i <= noOfKey; i++ {
+			if i > 1 {
+				stmt.WriteString(","+ wrapVar(i))
 			} else {
-				stmt.WriteString(names[i] + " = " + wrapVar(i+1))
+				stmt.WriteString(wrapVar(i))
 			}
 		}
-		stmt.WriteString(" LIMIT 1;")
+		stmt.WriteString(") LIMIT 1;")
 		return sqlConn.QueryRowContext(ctx, stmt.String(), keys...).Scan(model.Addrs()...)
 		{{ end -}}
 	default:
@@ -754,7 +763,7 @@ type PaginateStmt struct {
 	Select    []string
 	FromTable string
 	Where     sequel.WhereClause
-	OrderBy   []sequel.ColumnOrder
+	OrderBy   []sequel.OrderByClause
 	Limit     uint16
 }
 
@@ -1159,7 +1168,7 @@ type SelectStmt struct {
 	Select    []string
 	FromTable string
 	Where     sequel.WhereClause
-	OrderBy   []sequel.ColumnOrder
+	OrderBy   []sequel.OrderByClause
 	GroupBy	  []string
 	Offset	  uint64
 	Limit     uint16
@@ -1267,7 +1276,7 @@ type SelectOneStmt struct {
 	Select    []string
 	FromTable string
 	Where     sequel.WhereClause
-	OrderBy   []sequel.ColumnOrder
+	OrderBy   []sequel.OrderByClause
 	GroupBy   []string
 }
 
@@ -1347,14 +1356,14 @@ type UpdateStmt struct {
 	Table	string
 	Set		[]sequel.SetClause
 	Where	sequel.WhereClause
-	OrderBy []sequel.ColumnOrder
+	OrderBy []sequel.OrderByClause
 	Limit	uint16
 }
 
 type DeleteStmt struct {
 	FromTable string
 	Where     sequel.WhereClause
-	OrderBy   []sequel.ColumnOrder
+	OrderBy   []sequel.OrderByClause
 	Limit     uint16
 }
 
@@ -1514,22 +1523,31 @@ func (s *sqlStmt) Format(f fmt.State, verb rune) {
 	var (
 		args = make([]any, len(s.args))
 		idx  int
-		i    int
+		i    = 1
 	)
 
 	copy(args, s.args)
 
 	for {
+		{{ if isStaticVar -}}
 		idx = strings.Index(str, "?")
+		{{ else -}}
+		placeholder := wrapVar(i)
+		idx = strings.Index(str, placeholder)
+		{{ end -}}
 		if idx < 0 {
 			f.Write(unsafe.Slice(unsafe.StringData(str), len(str)))
 			break
 		}
 
 		f.Write([]byte(str[:idx]))
-		v := toStr(args[0])
+		v := strf(args[0])
 		f.Write(unsafe.Slice(unsafe.StringData(v), len(v)))
+		{{ if isStaticVar -}}
 		str = str[idx+1:]
+		{{ else -}}
+		str = str[idx+len(placeholder):]
+		{{ end -}}
 		args = args[1:]
 		i++
 	}
@@ -1568,7 +1586,7 @@ func wrapVar(i int) string {
 }
 {{ end }}
 
-func toStr(v any) string {
+func strf(v any) string {
 	switch vi := v.(type) {
 	case string:
 		return strconv.Quote(vi)
@@ -1584,6 +1602,9 @@ func toStr(v any) string {
 		return strconv.Quote(vi.Format(time.RFC3339))
 	case sql.RawBytes:
 		return unsafe.String(unsafe.SliceData(vi), len(vi))
+	case driver.Valuer:
+		val, _ := vi.Value()
+		return strf(val)
 	default:
 		panic("unreachable")
 	}

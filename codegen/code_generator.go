@@ -2,6 +2,8 @@ package codegen
 
 import (
 	"bytes"
+	"context"
+	"errors"
 	"fmt"
 	"go/types"
 	"io"
@@ -9,6 +11,8 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"syscall"
+	"time"
 	"unsafe"
 
 	"github.com/samber/lo"
@@ -18,6 +22,19 @@ import (
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/tools/imports"
 )
+
+// The minimum go type we need to map
+var goTypes = []string{
+	"byte",
+	"rune",
+	"bool",
+	"string",
+	"float32", "float64",
+	"int", "int8", "int16", "int32", "int64",
+	"uint", "uint8", "uint16", "uint32", "uint64",
+	"time.Time",
+	// "any", "sql.RawBytes", "json.RawMessage"
+}
 
 type Generator struct {
 	*bytes.Buffer
@@ -30,7 +47,7 @@ type Generator struct {
 	errs               []error
 }
 
-func newGenerator(cfg *Config, d dialect.Dialect) *Generator {
+func newGenerator(cfg *Config, d dialect.Dialect) (*Generator, error) {
 	gen := new(Generator)
 	gen.Buffer = new(bytes.Buffer)
 	gen.config = cfg
@@ -40,11 +57,17 @@ func newGenerator(cfg *Config, d dialect.Dialect) *Generator {
 	case '`':
 		gen.quoteRune = '"'
 	default:
-		gen.quoteRune = '"'
+		return nil, fmt.Errorf(`sqlgen: invalid quote character %q for string`, d.QuoteRune())
 	}
 	gen.dialect = d
 	gen.staticVar = d.QuoteVar(1) == d.QuoteVar(0)
 	gen.defaultColumnTypes = d.ColumnDataTypes()
+	// Check the dialect cover the basic go types
+	for _, t := range goTypes {
+		if _, ok := gen.defaultColumnTypes[t]; !ok {
+			return nil, fmt.Errorf(`sqlgen: SQL dialect %q missing column type mapping for type %q`, d.Driver(), t)
+		}
+	}
 	gen.columnTypes = make(map[string]*dialect.ColumnType)
 	for k, decl := range cfg.DataTypes {
 		gen.columnTypes[k] = &dialect.ColumnType{
@@ -57,7 +80,7 @@ func newGenerator(cfg *Config, d dialect.Dialect) *Generator {
 			SQLValuer:  decl.SQLValuer,
 		}
 	}
-	return gen
+	return gen, nil
 }
 
 func (g *Generator) LogError(err error) {
@@ -94,7 +117,8 @@ func (g *Generator) QuoteIdentifier(str string) string {
 	return g.dialect.QuoteIdentifier(str)
 }
 
-func (g *Generator) generate(pkg *packages.Package, dstDir string, typeInferred bool, schemas []*tableInfo) error {
+// Generate model functions
+func (g *Generator) genModels(pkg *packages.Package, dstDir string, typeInferred bool, schemas []*tableInfo) error {
 	defer g.Reset()
 	importPkgs := NewPackage(pkg.PkgPath, pkg.Name)
 	importPkgs.Import(types.NewPackage("strings", ""))
@@ -111,7 +135,7 @@ func (g *Generator) generate(pkg *packages.Package, dstDir string, typeInferred 
 			g.LogError(fmt.Errorf(`sqlgen: struct %q has function "DatabaseName" but wrong footprint`, t.goName))
 		} else if method != nil && !wrongType && t.dbName != "" {
 			g.L("func (" + t.goName + ") DatabaseName() string {")
-			g.L(`return ` + g.Quote(t.dbName))
+			g.L(`return ` + g.Quote(g.QuoteIdentifier(t.dbName)))
 			g.L("}")
 		}
 
@@ -120,7 +144,7 @@ func (g *Generator) generate(pkg *packages.Package, dstDir string, typeInferred 
 			g.LogError(fmt.Errorf(`sqlgen: struct %q has function "TableName" but wrong footprint`, t.goName))
 		} else if method != nil && !wrongType {
 			g.L("func (" + t.goName + ") TableName() string {")
-			g.L(`return ` + g.Quote(t.tableName))
+			g.L(`return ` + g.Quote(g.QuoteIdentifier(t.tableName)))
 			g.L("}")
 		} else {
 			// TODO: we need to do something when table name is declare by user
@@ -137,7 +161,7 @@ func (g *Generator) generate(pkg *packages.Package, dstDir string, typeInferred 
 			} else {
 				pk := t.keys[0]
 				g.L("func (v " + t.goName + ") PK() (string, int, any) {")
-				g.L(`return `, g.Quote(pk.ColumnName()), ", ", pk.ColumnPos(), ", ", g.valuer(importPkgs, "v."+pk.GoPath(), pk.Type()))
+				g.L(`return `, g.Quote(g.QuoteIdentifier(pk.ColumnName())), ", ", pk.ColumnPos(), ", ", g.valuer(importPkgs, "v."+pk.GoPath(), pk.t))
 				g.L("}")
 			}
 		}
@@ -152,9 +176,9 @@ func (g *Generator) generate(pkg *packages.Package, dstDir string, typeInferred 
 				if i > 0 {
 					g.WriteByte(',')
 				}
-				g.WriteString(g.Quote(f.ColumnName()))
+				g.WriteString(g.Quote(g.QuoteIdentifier(f.columnName)))
 			}
-			g.WriteString("}\n")
+			g.L("}")
 			g.L("}")
 		}
 
@@ -174,7 +198,7 @@ func (g *Generator) generate(pkg *packages.Package, dstDir string, typeInferred 
 					}
 					g.WriteString(g.Quote(g.sqlScanner(f)))
 				}
-				g.WriteString("}\n")
+				g.L("}")
 				g.L("}")
 			}
 		}
@@ -214,7 +238,7 @@ func (g *Generator) generate(pkg *packages.Package, dstDir string, typeInferred 
 						g.WriteString(fmt.Sprintf(`%q+ strconv.Itoa((row * noOfColumn) + %d)`, string(g.dialect.VarRune()), i+1))
 					}
 				}
-				g.WriteString(`+")"` + "\n")
+				g.WriteString(`+")"`)
 				g.L("}")
 			}
 		}
@@ -229,7 +253,7 @@ func (g *Generator) generate(pkg *packages.Package, dstDir string, typeInferred 
 
 		if !g.config.OmitGetters {
 			for _, f := range t.columns {
-				typeStr := f.Type().String()
+				typeStr := f.GoType().String()
 				if idx := strings.Index(typeStr, "."); idx > 0 {
 					typeStr = Expr(typeStr).Format(importPkgs)
 				}
@@ -242,16 +266,16 @@ func (g *Generator) generate(pkg *packages.Package, dstDir string, typeInferred 
 					matches := sqlFuncRegexp.FindStringSubmatch(sqlValuer("{}"))
 					if len(matches) > 4 {
 						g.L("func (v "+t.goName+") ", g.config.Getter.Prefix+f.GoName(), "() sequel.SQLColumnValuer[", typeStr, "] {")
-						g.L(`return sequel.SQLColumn`+specificType+`(`, g.Quote(f.ColumnName()), `, v.`, f.GoPath()+",", fmt.Sprintf(`func(placeholder string) string { return %q+ placeholder + %q}`, matches[1]+matches[2], matches[4]+matches[5]), `, func(val `, typeStr, `) driver.Value { return `, g.valuer(importPkgs, "val", f.Type()), ` })`)
+						g.L(`return sequel.SQLColumn`+specificType+`(`, g.Quote(g.QuoteIdentifier(f.ColumnName())), `, v.`, f.GoPath()+",", fmt.Sprintf(`func(placeholder string) string { return %q+ placeholder + %q}`, matches[1]+matches[2], matches[4]+matches[5]), `, func(val `, typeStr, `) driver.Value { return `, g.valuer(importPkgs, "val", f.t), ` })`)
 						g.L("}")
 					} else {
 						g.L("func (v "+t.goName+") ", g.config.Getter.Prefix+f.GoName(), "() sequel.ColumnValuer[", typeStr, "] {")
-						g.L(`return sequel.Column`, specificType, `(`, g.Quote(f.ColumnName()), `, v.`, f.GoPath(), `, func(val `, typeStr, `) driver.Value { return `, g.valuer(importPkgs, "val", f.Type()), ` })`)
+						g.L(`return sequel.Column`, specificType, `(`, g.Quote(g.QuoteIdentifier(f.ColumnName())), `, v.`, f.GoPath(), `, func(val `, typeStr, `) driver.Value { return `, g.valuer(importPkgs, "val", f.t), ` })`)
 						g.L("}")
 					}
 				} else {
 					g.L("func (v "+t.goName+") ", g.config.Getter.Prefix+f.GoName(), "() sequel.ColumnValuer[", typeStr, "] {")
-					g.L("return sequel.Column", specificType, "(", g.Quote(f.ColumnName()), ", v.", f.GoPath(), ", func(val ", typeStr, `) driver.Value { return `, g.valuer(importPkgs, "val", f.Type()), ` })`)
+					g.L("return sequel.Column", specificType, "(", g.Quote(g.QuoteIdentifier(f.ColumnName())), ", v.", f.GoPath(), ", func(val ", typeStr, `) driver.Value { return `, g.valuer(importPkgs, "val", f.t), ` })`)
 					g.L("}")
 				}
 			}
@@ -288,7 +312,6 @@ func (g *Generator) generate(pkg *packages.Package, dstDir string, typeInferred 
 
 	g.Reset()
 	g.Write(formatted)
-	// panic("stop now!")
 
 	// fset := token.NewFileSet()
 	// fileAST, err := parser.ParseFile(fset, "", g.Bytes(), parser.ParseComments|parser.AllErrors)
@@ -303,9 +326,11 @@ func (g *Generator) generate(pkg *packages.Package, dstDir string, typeInferred 
 	// }
 	// err = (&printer.Config{Mode: printer.TabIndent | printer.UseSpaces, Tabwidth: 8}).Fprint(g, fset, fileAST)
 
-	os.MkdirAll(dstDir, fileMode)
+	if err := os.MkdirAll(dstDir, os.ModePerm); err != nil {
+		return err
+	}
 	fileDest := filepath.Join(dstDir, g.config.Exec.Filename)
-	f, err := os.OpenFile(fileDest, os.O_RDWR|os.O_CREATE|os.O_TRUNC, fileMode)
+	f, err := os.OpenFile(fileDest, os.O_RDWR|os.O_CREATE|os.O_TRUNC, os.ModePerm)
 	if err != nil {
 		return err
 	}
@@ -339,42 +364,87 @@ func (g *Generator) buildCompositeKeys(importPkgs *Package, table *tableInfo) {
 		if i > 0 {
 			g.WriteByte(',')
 		}
-		g.WriteString(strconv.Itoa(f.ColumnPos()))
+		g.WriteString(strconv.Itoa(f.columnPos))
 	}
 	g.WriteString("}, []any{")
 	for i, f := range table.keys {
 		if i > 0 {
 			g.WriteByte(',')
 		}
-		g.WriteString(g.valuer(importPkgs, "v."+f.GoPath(), f.Type()))
+		g.WriteString(g.valuer(importPkgs, "v."+f.GoPath(), f.t))
 	}
-	g.WriteString("}\n")
+	g.L("}")
 	g.L("}")
 }
 
 func (g *Generator) buildValuer(importPkgs *Package, table *tableInfo) {
+	ptrs := lo.Filter(table.columns, func(v *columnInfo, _ int) bool {
+		return v.isPtr()
+	})
 	g.L("func (v " + table.goName + ") Values() []any {")
-	g.WriteString("return []any{")
-	for i, f := range table.columns {
-		if i > 0 {
-			g.WriteByte(',')
+	if len(ptrs) > 0 {
+		g.L("values := make([]any,", len(table.columns), ")")
+		for _, f := range table.columns {
+			if f.isPtr() {
+				paths := f.GoPaths()
+				goPath := "v"
+				queue := []string{}
+				for i := range paths {
+					goPath += "." + paths[i]
+					g.L("if " + goPath + " != nil {")
+					queue = append(queue, "}")
+				}
+				g.L("values[", f.columnPos, "] = ", g.valuer(importPkgs, "*"+goPath, assertAsPtr[types.Pointer](f.GoType()).Elem()))
+				for len(queue) > 0 {
+					g.L(queue[0])
+					queue = queue[1:]
+				}
+			} else {
+				g.L("values[", f.columnPos, "] = ", g.valuer(importPkgs, "v."+f.GoPath(), f.GoType()))
+			}
 		}
-		g.WriteString(g.valuer(importPkgs, "v."+f.GoPath(), f.Type()))
+		g.L("return values")
+	} else {
+		g.WriteString("return []any{")
+		for i, f := range table.columns {
+			if i > 0 {
+				g.WriteByte(',')
+			}
+			g.WriteString(g.valuer(importPkgs, "v."+f.GoPath(), f.t))
+		}
+		g.L("}")
 	}
-	g.WriteString("}\n")
 	g.L("}")
 }
 
 func (g *Generator) buildScanner(importPkgs *Package, table *tableInfo) {
+	ptrs := lo.Filter(table.columns, func(v *columnInfo, _ int) bool {
+		return v.isPtr()
+	})
 	g.L("func (v *" + table.goName + ") Addrs() []any {")
-	g.WriteString("return []any{")
-	for i, f := range table.columns {
-		if i > 0 {
-			g.WriteByte(',')
+	if len(ptrs) > 0 {
+		g.L("addrs := make([]any, ", len(table.columns), ")")
+		for _, f := range table.columns {
+			if f.isPtr() {
+				g.L("if v." + f.GoPath() + " == nil {")
+				g.L("v."+f.GoPath()+" = new(", Expr(strings.TrimPrefix(f.t.String(), "*")).Format(importPkgs, ExprParams{}), ")")
+				g.L("}")
+				g.L("addrs[", f.columnPos, "] = ", g.scanner(importPkgs, "v."+f.GoPath(), f.t))
+			} else {
+				g.L("addrs[", f.columnPos, "] = ", g.scanner(importPkgs, "&v."+f.GoPath(), f.t))
+			}
 		}
-		g.WriteString(g.scanner(importPkgs, "&v."+f.GoPath(), f.Type()))
+		g.L("return addrs")
+	} else {
+		g.WriteString("return []any{")
+		for i, f := range table.columns {
+			if i > 0 {
+				g.WriteByte(',')
+			}
+			g.WriteString(g.scanner(importPkgs, "&v."+f.GoPath(), f.t))
+		}
+		g.WriteString("}\n")
 	}
-	g.WriteString("}\n")
 	g.L("}")
 }
 
@@ -401,7 +471,7 @@ func (g *Generator) buildFindByPK(importPkgs *Package, t *tableInfo) {
 	if len(t.keys) > 1 {
 		// Composite primary key
 		keyCols := lo.Map(t.keys, func(v *columnInfo, _ int) string {
-			return v.ColumnName()
+			return g.QuoteIdentifier(v.ColumnName())
 		})
 		buf.WriteString("(" + strings.Join(keyCols, ",") + ")" + " = ")
 		buf.WriteByte('(')
@@ -409,7 +479,7 @@ func (g *Generator) buildFindByPK(importPkgs *Package, t *tableInfo) {
 			if i > 0 {
 				buf.WriteByte(',')
 			}
-			buf.WriteString(g.sqlValuer(k, i+1))
+			buf.WriteString(g.sqlValuer(k, i))
 		}
 		buf.WriteByte(')')
 	} else {
@@ -417,7 +487,7 @@ func (g *Generator) buildFindByPK(importPkgs *Package, t *tableInfo) {
 			if i > 0 {
 				buf.WriteString(" AND ")
 			}
-			buf.WriteString(f.ColumnName() + " = " + g.dialect.QuoteVar(i+1))
+			buf.WriteString(g.QuoteIdentifier(f.ColumnName()) + " = " + g.dialect.QuoteVar(i+1))
 		}
 	}
 	buf.WriteString(" LIMIT 1;")
@@ -428,7 +498,7 @@ func (g *Generator) buildFindByPK(importPkgs *Package, t *tableInfo) {
 		if i > 0 {
 			g.WriteByte(',')
 		}
-		g.WriteString(g.valuer(importPkgs, "v."+f.GoPath(), f.Type()))
+		g.WriteString(g.valuer(importPkgs, "v."+f.GoPath(), f.t))
 	}
 	g.WriteString("}\n")
 	g.L("}")
@@ -444,7 +514,7 @@ func (g *Generator) buildInsertOne(importPkgs *Package, t *tableInfo) {
 	if method, wrongType := t.Implements(sqlTabler); wrongType {
 		g.LogError(fmt.Errorf(`sqlgen: struct %q has function "TableName" but wrong footprint`, t.goName))
 	} else if method != nil {
-		buf.WriteString("INSERT INTO " + t.tableName)
+		buf.WriteString("INSERT INTO " + g.QuoteIdentifier(t.tableName))
 	} else {
 		query = g.Quote("INSERT INTO ") + "+ v.TableName() +"
 	}
@@ -453,7 +523,7 @@ func (g *Generator) buildInsertOne(importPkgs *Package, t *tableInfo) {
 		if i > 0 {
 			buf.WriteByte(',')
 		}
-		buf.WriteString(f.ColumnName())
+		buf.WriteString(g.QuoteIdentifier(f.ColumnName()))
 	}
 	buf.WriteString(") VALUES (")
 	for i, f := range columns {
@@ -486,7 +556,7 @@ func (g *Generator) buildInsertOne(importPkgs *Package, t *tableInfo) {
 			if i > 0 {
 				g.WriteByte(',')
 			}
-			g.WriteString(g.valuer(importPkgs, "v."+f.GoPath(), f.Type()))
+			g.WriteString(g.valuer(importPkgs, "v."+f.GoPath(), f.t))
 		}
 		g.WriteString("}\n")
 	}
@@ -511,12 +581,12 @@ func (g *Generator) buildUpdateByPK(importPkgs *Package, t *tableInfo) {
 		if i > 0 {
 			buf.WriteByte(',')
 		}
-		buf.WriteString(f.ColumnName() + " = " + g.sqlValuer(f, i))
+		buf.WriteString(g.QuoteIdentifier(f.ColumnName()) + " = " + g.sqlValuer(f, i))
 	}
 	buf.WriteString(" WHERE ")
 	if len(t.keys) > 1 {
 		keyCols := lo.Map(t.keys, func(v *columnInfo, _ int) string {
-			return v.ColumnName()
+			return g.QuoteIdentifier(v.ColumnName())
 		})
 		buf.WriteString("(" + strings.Join(keyCols, ",") + ")" + " = ")
 		buf.WriteByte('(')
@@ -532,7 +602,7 @@ func (g *Generator) buildUpdateByPK(importPkgs *Package, t *tableInfo) {
 			if i > 0 {
 				buf.WriteString(" AND ")
 			}
-			buf.WriteString(k.ColumnName() + " = " + g.sqlValuer(k, i+len(columns)))
+			buf.WriteString(g.QuoteIdentifier(k.ColumnName()) + " = " + g.sqlValuer(k, i+len(columns)))
 		}
 	}
 	buf.WriteByte(';')
@@ -543,7 +613,7 @@ func (g *Generator) buildUpdateByPK(importPkgs *Package, t *tableInfo) {
 		if i > 0 {
 			g.WriteByte(',')
 		}
-		g.WriteString(g.valuer(importPkgs, "v."+f.GoPath(), f.Type()))
+		g.WriteString(g.valuer(importPkgs, "v."+f.GoPath(), f.t))
 	}
 	g.WriteString("}\n")
 	g.L("}")
@@ -551,41 +621,52 @@ func (g *Generator) buildUpdateByPK(importPkgs *Package, t *tableInfo) {
 }
 
 func (g *Generator) valuer(importPkgs *Package, goPath string, t types.Type) string {
-	if columnType, ok := g.columnTypes[t.String()]; ok {
-		return Expr(columnType.Valuer).Format(importPkgs, ExprParams{GoPath: goPath})
-	} else if _, wrong := types.MissingMethod(t, goSqlValuer, true); wrong {
-		return Expr("(database/sql/driver.Valuer)({{goPath}})").Format(importPkgs, ExprParams{GoPath: goPath})
+	utype, isPtr := underlyingType(t)
+	if columnType, ok := g.columnTypes[t.String()]; ok && columnType.Valuer != "" {
+		return Expr(columnType.Valuer).Format(importPkgs, ExprParams{GoPath: goPath, Type: t, IsPtr: isPtr})
+	} else if _, wrong := types.MissingMethod(utype, goSqlValuer, true); wrong {
+		if isPtr {
+			return Expr("(database/sql/driver.Valuer)({{goPath}})").Format(importPkgs, ExprParams{GoPath: goPath, Type: t, IsPtr: isPtr})
+		}
+		return Expr("(database/sql/driver.Valuer)({{goPath}})").Format(importPkgs, ExprParams{GoPath: goPath, Type: t, IsPtr: isPtr})
 	} else if columnType, ok := g.columnDataType(t); ok && columnType.Valuer != "" {
-		return Expr(columnType.Valuer).Format(importPkgs, ExprParams{GoPath: goPath, Len: arraySize(t)})
-	} else if isImplemented(t, textMarshaler) {
-		return Expr("github.com/si3nloong/sqlgen/sequel/types.TextMarshaler({{goPath}})").Format(importPkgs, ExprParams{GoPath: goPath})
+		return Expr(columnType.Valuer).Format(importPkgs, ExprParams{GoPath: goPath, IsPtr: isPtr, Type: t, Len: arraySize(t)})
+	} else if isImplemented(utype, textMarshaler) {
+		return Expr("github.com/si3nloong/sqlgen/sequel/types.TextMarshaler({{goPath}})").Format(importPkgs, ExprParams{GoPath: goPath, Type: t, IsPtr: isPtr})
 	}
-	return Expr(g.defaultColumnTypes["*"].Valuer).Format(importPkgs, ExprParams{GoPath: goPath})
+	return Expr(g.defaultColumnTypes["*"].Valuer).Format(importPkgs, ExprParams{GoPath: goPath, Type: t, IsPtr: isPtr})
 }
 
 func (g *Generator) scanner(importPkgs *Package, goPath string, t types.Type) string {
+	ptr, isPtr := pointerType(t)
 	if columnType, ok := g.columnTypes[t.String()]; ok && columnType.Scanner != "" {
-		return Expr(columnType.Scanner).Format(importPkgs, ExprParams{GoPath: goPath})
-	} else if types.Implements(newPointer(t), goSqlScanner) {
-		return Expr("(database/sql.Scanner)({{addrOfGoPath}})").Format(importPkgs, ExprParams{GoPath: goPath})
+		return Expr(columnType.Scanner).Format(importPkgs, ExprParams{GoPath: goPath, Type: t, IsPtr: isPtr})
+	} else if isImplemented(ptr, goSqlScanner) {
+		if isPtr {
+			return Expr("(database/sql.Scanner)({{goPath}})").Format(importPkgs, ExprParams{GoPath: goPath, Type: t, IsPtr: isPtr})
+		}
+		return Expr("(database/sql.Scanner)({{addrOfGoPath}})").Format(importPkgs, ExprParams{GoPath: goPath, Type: t, IsPtr: isPtr})
 	} else if columnType, ok := g.columnDataType(t); ok && columnType.Scanner != "" {
-		return Expr(columnType.Scanner).Format(importPkgs, ExprParams{GoPath: goPath, Len: arraySize(t)})
-	} else if isImplemented(newPointer(t), textUnmarshaler) {
-		return Expr("github.com/si3nloong/sqlgen/sequel/types.TextUnmarshaler({{addrOfGoPath}})").Format(importPkgs, ExprParams{GoPath: goPath})
+		return Expr(columnType.Scanner).Format(importPkgs, ExprParams{GoPath: goPath, Type: t, IsPtr: isPtr, Len: arraySize(t)})
+	} else if isImplemented(ptr, textUnmarshaler) {
+		if isPtr {
+			return Expr("github.com/si3nloong/sqlgen/sequel/types.TextUnmarshaler({{goPath}})").Format(importPkgs, ExprParams{GoPath: goPath, Type: t, IsPtr: isPtr})
+		}
+		return Expr("github.com/si3nloong/sqlgen/sequel/types.TextUnmarshaler({{addrOfGoPath}})").Format(importPkgs, ExprParams{GoPath: goPath, Type: t, IsPtr: isPtr})
 	}
-	return Expr(g.defaultColumnTypes["*"].Scanner).Format(importPkgs, ExprParams{GoPath: goPath})
+	return Expr(g.defaultColumnTypes["*"].Scanner).Format(importPkgs, ExprParams{GoPath: goPath, Type: t, IsPtr: isPtr})
 }
 
 func (g *Generator) sqlScanner(f *columnInfo) string {
 	if sqlScanner, ok := f.sqlScanner(); ok {
 		matches := sqlFuncRegexp.FindStringSubmatch(sqlScanner("{}"))
 		if len(matches) > 4 {
-			return matches[1] + matches[2] + f.ColumnName() + matches[4] + matches[5]
+			return matches[1] + matches[2] + g.QuoteIdentifier(f.ColumnName()) + matches[4] + matches[5]
 		} else {
-			return f.ColumnName()
+			return g.QuoteIdentifier(f.ColumnName())
 		}
 	}
-	return f.ColumnName()
+	return g.QuoteIdentifier(f.ColumnName())
 }
 
 func (g *Generator) sqlValuer(f *columnInfo, idx int) string {
@@ -598,4 +679,33 @@ func (g *Generator) sqlValuer(f *columnInfo, idx int) string {
 		return g.dialect.QuoteVar(idx + 1)
 	}
 	return g.dialect.QuoteVar(idx + 1)
+}
+
+// Generate migration files for models
+func (g *Generator) genMigrations(schemas []*tableInfo) error {
+	unix := time.Now().Unix()
+	for i := range schemas {
+		// Each schema should have one migration files
+		if err := g.genMigration(context.Background(), unix, schemas[i]); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (g *Generator) genMigration(ctx context.Context, unix int64, t *tableInfo) error {
+	fileDest := fmt.Sprintf("%s/%d_%s.sql", g.config.Migration.Dir, unix, t.TableName())
+	f, err := os.OpenFile(fileDest, os.O_RDWR|os.O_CREATE|os.O_TRUNC, os.ModePerm)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	if err := g.dialect.Migrate(ctx, g.config.Migration.DSN, f, t); errors.Is(err, dialect.ErrNoNewMigration) {
+		_ = syscall.Unlink(fileDest)
+		return nil
+	} else if err != nil {
+		return err
+	}
+	return nil
 }

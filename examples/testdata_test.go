@@ -18,20 +18,25 @@ func TestAll(t *testing.T) {
 	if err := codegen.Generate(&codegen.Config{
 		Source:     []string{rootDir + "/**/*.go"},
 		SkipHeader: true,
+		// Driver:     codegen.Postgres,
 		Database: &codegen.DatabaseConfig{
 			Package: "mysqldb",
 			Dir:     "./db/mysql",
 		},
+		// QuoteIdentifier: true,
 		Exec: codegen.ExecConfig{
 			SkipEmpty: false,
 		},
 		DataTypes: map[string]codegen.DataType{
 			"github.com/paulmach/orb.Point": {
-				DataType:   "POINT",
-				SQLScanner: `ST_AsBinary({{.}}, 4326)`,
+				DataType:   "POINT NOT NULL",
+				SQLScanner: `ST_AsBinary({{.}},4326)`,
 				Scanner:    `github.com/paulmach/orb/encoding/ewkb.Scanner({{.}})`,
 				SQLValuer:  `ST_GeomFromEWKB({{.}})`,
-				Valuer:     `github.com/paulmach/orb/encoding/ewkb.Value({{.}}, 4326)`,
+				Valuer:     `github.com/paulmach/orb/encoding/ewkb.Value({{.}},4326)`,
+			},
+			"github.com/gofrs/uuid/v5.UUID": {
+				DataType: "UUID",
 			},
 			"encoding/json.Number": {
 				DataType: "VARCHAR(20)",

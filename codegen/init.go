@@ -15,7 +15,7 @@ import (
 )
 
 func Init(cfg *Config) error {
-	f, err := os.OpenFile(DefaultConfigFile, os.O_RDWR|os.O_CREATE|os.O_TRUNC, fileMode)
+	f, err := os.OpenFile(DefaultConfigFile, os.O_RDWR|os.O_CREATE|os.O_TRUNC, os.ModePerm)
 	if err != nil {
 		return err
 	}
@@ -94,7 +94,9 @@ func renderTemplate(
 	g.WriteString(blr.String())
 	strpool.ReleaseString(blr)
 
-	os.MkdirAll(dstDir, fileMode)
+	if err := os.MkdirAll(dstDir, os.ModePerm); err != nil {
+		return err
+	}
 	fileDest := filepath.Join(dstDir, dstFilename)
 	// formatted, err := format.Source([]byte(w.String()))
 	// if err != nil {
@@ -107,7 +109,7 @@ func renderTemplate(
 	g.Reset()
 
 	slog.Info("Creating " + fileDest)
-	if err := os.WriteFile(fileDest, formatted, fileMode); err != nil {
+	if err := os.WriteFile(fileDest, formatted, os.ModePerm); err != nil {
 		return err
 	}
 	return nil
