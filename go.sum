@@ -29,8 +29,8 @@ github.com/go-playground/validator/v10 v10.22.1 h1:40JcKH+bBNGFczGuoBYgX4I6m/i27
 github.com/go-playground/validator/v10 v10.22.1/go.mod h1:dbuPbCMFw/DrkbEynArYaCwl3amGuJotoKCe95atGMM=
 github.com/go-sql-driver/mysql v1.8.1 h1:LedoTUt/eveggdHS9qUFC1EFSa8bU2+1pZjSRpvNJ1Y=
 github.com/go-sql-driver/mysql v1.8.1/go.mod h1:wEBSXgmK//2ZFJyE+qWnIsVGmvmEKlqwuVSjsCm7DZg=
-github.com/goccy/go-yaml v1.13.4 h1:XOnLX9GqT+kH/gB7YzCMUiDBFU9B7pm3HZz6kyeDPkk=
-github.com/goccy/go-yaml v1.13.4/go.mod h1:IjYwxUiJDoqpx2RmbdjMUceGHZwYLon3sfOGl5Hi9lc=
+github.com/goccy/go-yaml v1.13.5 h1:/Hh9Q3d1Q2T7E8ECUUS7Uh53FBGKLfetvQoSV7kLViU=
+github.com/goccy/go-yaml v1.13.5/go.mod h1:IjYwxUiJDoqpx2RmbdjMUceGHZwYLon3sfOGl5Hi9lc=
 github.com/google/go-cmp v0.6.0 h1:ofyhxvXcZhMsU5ulbFiLKl/XBFqE1GSq7atu8tAmTRI=
 github.com/google/go-cmp v0.6.0/go.mod h1:17dUlkBOakJ0+DkrSSNjCkIjxS6bF9zb3elmeNGIjoY=
 github.com/hinshun/vt10x v0.0.0-20220119200601-820417d04eec h1:qv2VnGeEQHchGaZ/u7lxST/RaJw+cv273q79D81Xbog=
