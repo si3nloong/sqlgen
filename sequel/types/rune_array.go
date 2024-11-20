@@ -16,6 +16,9 @@ func FixedSizeRunes[T ~rune](v []T, size int) *runeArray[T] {
 
 func (s *runeArray[T]) Scan(v any) error {
 	switch vi := v.(type) {
+	case nil:
+		s.v = make([]T, s.size)
+		return nil
 	case []byte:
 		i := int(0)
 		for len(vi) > 0 {

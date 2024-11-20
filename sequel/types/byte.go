@@ -16,6 +16,9 @@ func FixedSizeBytes[T ~byte](v []T, size int) *byteArray[T] {
 
 func (s *byteArray[T]) Scan(v any) error {
 	switch b := v.(type) {
+	case nil:
+		s.v = make([]T, s.size)
+		return nil
 	case string:
 		bytes := unsafe.Slice(unsafe.StringData(b), len(b))
 		if len(bytes) > s.size {
