@@ -103,6 +103,8 @@ More help to get started:
 
 <img src="./docs/images/orm_benchmark.jpg" />
 
+As you notice, [sqlgen](https://github.com/si3nloong/sqlgen) is perform as fast as native and sqlc.
+
 ## Reporting Issues
 
 If you think you've found a bug, or something isn't behaving the way you think it should, please raise an [issue](https://github.com/si3nloong/sqlgen/issues) on GitHub.

@@ -154,6 +154,10 @@ func (g *Generator) genModels(pkg *packages.Package, dstDir string, typeInferred
 			g.L("func (" + t.goName + ") HasPK() {}")
 			if t.autoIncrKey != nil {
 				g.L("func (" + t.goName + ") IsAutoIncr() {}")
+				g.L("func (v *" + t.goName + ") ScanAutoIncr(val int64) error {")
+				g.L("v." + t.autoIncrKey.goName + " = " + t.autoIncrKey.t.String() + "(val)")
+				g.L("return nil")
+				g.L("}")
 			}
 
 			if len(t.keys) > 1 {
