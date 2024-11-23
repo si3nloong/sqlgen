@@ -17,6 +17,10 @@ func (AutoPkLocation) TableName() string {
 }
 func (AutoPkLocation) HasPK()      {}
 func (AutoPkLocation) IsAutoIncr() {}
+func (v *AutoPkLocation) ScanAutoIncr(val int64) error {
+	v.ID = uint64(val)
+	return nil
+}
 func (v AutoPkLocation) PK() (string, int, any) {
 	return "id", 0, (int64)(v.ID)
 }

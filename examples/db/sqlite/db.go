@@ -19,15 +19,16 @@ import (
 type autoIncrKeyInserter interface {
 	sequel.AutoIncrKeyer
 	sequel.SingleInserter
+	ScanAutoIncr(int64) error
 }
 
 func InsertOne[T sequel.TableColumnValuer, Ptr interface {
 	sequel.TableColumnValuer
 	sequel.PtrScanner[T]
 }](ctx context.Context, sqlConn sequel.DB, model Ptr) (sql.Result, error) {
-	switch v := any(model).(type) {
+	anyv := any(model)
+	switch v := anyv.(type) {
 	case autoIncrKeyInserter:
-		_, idx, _ := v.PK()
 		query, args := v.InsertOneStmt()
 		result, err := sqlConn.ExecContext(ctx, query, args...)
 		if err != nil {
@@ -37,17 +38,7 @@ func InsertOne[T sequel.TableColumnValuer, Ptr interface {
 		if err != nil {
 			return nil, err
 		}
-		switch v := model.Addrs()[idx].(type) {
-		case *int64:
-			*v = i64
-		case sql.Scanner:
-			if err := v.Scan(i64); err != nil {
-				return nil, err
-			}
-		default:
-			return nil, fmt.Errorf(`sqlgen: invalid auto increment data type %T`, v)
-		}
-		return result, nil
+		return result, anyv.(autoIncrKeyInserter).ScanAutoIncr(i64)
 	case sequel.SingleInserter:
 		query, args := v.InsertOneStmt()
 		return sqlConn.ExecContext(ctx, query, args...)
@@ -1044,11 +1035,11 @@ var (
 	}
 )
 
-func AcquireStmt() sequel.Stmt {
+func AcquireStmt() *SqlStmt {
 	return pool.Get().(*SqlStmt)
 }
 
-func ReleaseStmt(stmt sequel.Stmt) {
+func ReleaseStmt(stmt *SqlStmt) {
 	if stmt != nil {
 		stmt.Reset()
 		pool.Put(stmt)

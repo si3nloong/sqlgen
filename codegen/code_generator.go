@@ -245,9 +245,10 @@ func (g *Generator) genModels(pkg *packages.Package, dstDir string, typeInferred
 				g.WriteString(`+")"`)
 				g.L("}")
 			}
+
+			g.buildInsertOne(importPkgs, t)
 		}
 
-		g.buildInsertOne(importPkgs, t)
 		if len(t.keys) > 0 {
 			g.buildFindByPK(importPkgs, t)
 			if !t.hasNoColsExceptPK() {

@@ -12,6 +12,10 @@ func (Model) TableName() string {
 }
 func (Model) HasPK()      {}
 func (Model) IsAutoIncr() {}
+func (v *Model) ScanAutoIncr(val int64) error {
+	v.ID = uint(val)
+	return nil
+}
 func (v Model) PK() (string, int, any) {
 	return "id", 2, (int64)(v.ID)
 }

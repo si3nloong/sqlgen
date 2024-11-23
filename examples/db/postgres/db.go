@@ -13,13 +13,9 @@ import (
 	"unsafe"
 
 	"github.com/si3nloong/sqlgen/sequel"
+	"github.com/si3nloong/sqlgen/sequel/driver/postgres/pgutil"
 	"github.com/si3nloong/sqlgen/sequel/strpool"
 )
-
-type autoIncrKeyInserter interface {
-	sequel.AutoIncrKeyer
-	sequel.SingleInserter
-}
 
 func InsertOne[T sequel.TableColumnValuer, Ptr interface {
 	sequel.TableColumnValuer
@@ -1155,11 +1151,11 @@ var (
 	}
 )
 
-func AcquireStmt() sequel.Stmt {
+func AcquireStmt() *SqlStmt {
 	return pool.Get().(*SqlStmt)
 }
 
-func ReleaseStmt(stmt sequel.Stmt) {
+func ReleaseStmt(stmt *SqlStmt) {
 	if stmt != nil {
 		stmt.Reset()
 		pool.Put(stmt)

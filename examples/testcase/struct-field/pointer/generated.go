@@ -13,6 +13,10 @@ func (Ptr) TableName() string {
 }
 func (Ptr) HasPK()      {}
 func (Ptr) IsAutoIncr() {}
+func (v *Ptr) ScanAutoIncr(val int64) error {
+	v.ID = int64(val)
+	return nil
+}
 func (v Ptr) PK() (string, int, any) {
 	return "id", 0, (int64)(v.ID)
 }

@@ -13,6 +13,10 @@ func (Slice) TableName() string {
 }
 func (Slice) HasPK()      {}
 func (Slice) IsAutoIncr() {}
+func (v *Slice) ScanAutoIncr(val int64) error {
+	v.ID = uint64(val)
+	return nil
+}
 func (v Slice) PK() (string, int, any) {
 	return "id", 0, (int64)(v.ID)
 }
