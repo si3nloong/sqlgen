@@ -74,12 +74,6 @@
        "github.com/si3nloong/sqlgen/sequel/types"
    )
 
-   func (User) CreateTableStmt() string {
-       return "CREATE TABLE IF NOT EXISTS `user` (`id` BIGINT NOT NULL AUTO_INCREMENT,`name` VARCHAR(255) NOT NULL,`age` TINYINT UNSIGNED NOT NULL,`address` VARCHAR(255) NOT NULL,`created` DATETIME NOT NULL,PRIMARY KEY (`id`));"
-   }
-   func (User) AlterTableStmt() string {
-       return "ALTER TABLE `user` MODIFY `id` BIGINT NOT NULL AUTO_INCREMENT,MODIFY `name` VARCHAR(255) NOT NULL AFTER `id`,MODIFY `age` TINYINT UNSIGNED NOT NULL AFTER `name`,MODIFY `address` VARCHAR(255) NOT NULL AFTER `age`,MODIFY `created` DATETIME NOT NULL AFTER `address`;"
-   }
    func (User) TableName() string {
        return "`user`"
    }
