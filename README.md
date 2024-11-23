@@ -103,7 +103,7 @@ More help to get started:
 
 <img src="./docs/images/orm_benchmark.jpg" />
 
-As you notice, [sqlgen](https://github.com/si3nloong/sqlgen) is perform as fast as native and sqlc.
+As you can see, [sqlgen](https://github.com/si3nloong/sqlgen) is perform as close as Raw query, and having low memory allocations.
 
 ## Reporting Issues
 

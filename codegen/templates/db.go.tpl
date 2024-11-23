@@ -1441,11 +1441,11 @@ var (
 	}
 )
 
-func AcquireStmt() sequel.Stmt {
+func AcquireStmt() *SqlStmt {
 	return pool.Get().(*SqlStmt)
 }
 
-func ReleaseStmt(stmt sequel.Stmt) {
+func ReleaseStmt(stmt *SqlStmt) {
 	if stmt != nil {
 		stmt.Reset()
 		pool.Put(stmt)
