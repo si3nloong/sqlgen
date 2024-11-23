@@ -60,7 +60,6 @@ func Insert[T sequel.Inserter, Ptr sequel.PtrScanner[T]](ctx context.Context, sq
 		columns = model.Columns()
 		stmt    = strpool.AcquireString()
 	)
-	defer strpool.ReleaseString(stmt)
 
 	switch v := any(model).(type) {
 	case sequel.AutoIncrKeyer:
@@ -81,6 +80,7 @@ func Insert[T sequel.Inserter, Ptr sequel.PtrScanner[T]](ctx context.Context, sq
 			args = append(args, values...)
 		}
 		stmt.WriteString(" RETURNING " + strings.Join(TableColumns(model), ",") + ";")
+		strpool.ReleaseString(stmt) // Deallocate statement
 		rows, err := sqlConn.QueryContext(ctx, stmt.String(), args...)
 		if err != nil {
 			return nil, err
@@ -109,6 +109,7 @@ func Insert[T sequel.Inserter, Ptr sequel.PtrScanner[T]](ctx context.Context, sq
 		}
 		stmt.WriteString(" RETURNING " + strings.Join(TableColumns(model), ",") + ";")
 		rows, err := sqlConn.QueryContext(ctx, stmt.String(), args...)
+		strpool.ReleaseString(stmt) // Deallocate statement
 		if err != nil {
 			return nil, err
 		}
@@ -267,7 +268,6 @@ func Upsert[T interface {
 	}
 
 	var stmt = strpool.AcquireString()
-	defer strpool.ReleaseString(stmt)
 	switch v := any(model).(type) {
 	case sequel.AutoIncrKeyer:
 		pkName, idx, _ := v.PK()
@@ -362,6 +362,7 @@ func Upsert[T interface {
 	}
 	stmt.WriteString(" RETURNING " + strings.Join(TableColumns(model), ",") + ";")
 	rows, err := sqlConn.QueryContext(ctx, stmt.String(), args...)
+	strpool.ReleaseString(stmt) // Deallocate statement
 	if err != nil {
 		return nil, err
 	}
@@ -390,18 +391,19 @@ func FindByPK[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Con
 		columns := TableColumns(model)
 		names, _, keys := v.CompositeKey()
 		stmt := strpool.AcquireString()
-		defer strpool.ReleaseString(stmt)
-		stmt.WriteString("SELECT " + strings.Join(columns, ",") + " FROM " + DbTable(model) + " WHERE ")
+		stmt.WriteString("SELECT " + strings.Join(columns, ",") + " FROM " + DbTable(model) + " WHERE (" + strings.Join(names, ",") + ") = (")
 		noOfKey := len(names)
-		for i := 0; i < noOfKey; i++ {
-			if i > 0 {
-				stmt.WriteString(" AND " + names[i] + " = " + wrapVar(i+1))
+		for i := 1; i <= noOfKey; i++ {
+			if i > 1 {
+				stmt.WriteString("," + wrapVar(i))
 			} else {
-				stmt.WriteString(names[i] + " = " + wrapVar(i+1))
+				stmt.WriteString(wrapVar(i))
 			}
 		}
-		stmt.WriteString(" LIMIT 1;")
-		return sqlConn.QueryRowContext(ctx, stmt.String(), keys...).Scan(model.Addrs()...)
+		stmt.WriteString(") LIMIT 1;")
+		row := sqlConn.QueryRowContext(ctx, stmt.String(), keys...)
+		strpool.ReleaseString(stmt)
+		return row.Scan(model.Addrs()...)
 	default:
 		panic("unreachable")
 	}
@@ -650,7 +652,7 @@ func (r *Pager[T, Ptr]) Prev(ctx context.Context, sqlConn sequel.DB, cursor ...T
 			// Add one to limit to find next cursor
 			blr.WriteString(" LIMIT " + strconv.FormatUint(uint64(r.stmt.Limit+1), 10) + ";")
 
-			rows, err := sqlConn.QueryContext(ctx, blr.String(), blr.Args()...)
+			rows, err := sqlConn.QueryContext(ctx, blr.Query(), blr.Args()...)
 			if err != nil {
 				if !yield(&Result[T]{err: err}) {
 					return
@@ -829,7 +831,7 @@ func (r *Pager[T, Ptr]) Next(ctx context.Context, sqlConn sequel.DB, cursor ...T
 			// Add one to limit to find next cursor
 			blr.WriteString(" LIMIT " + strconv.FormatUint(uint64(r.stmt.Limit+1), 10) + ";")
 
-			rows, err := sqlConn.QueryContext(ctx, blr.String(), blr.Args()...)
+			rows, err := sqlConn.QueryContext(ctx, blr.Query(), blr.Args()...)
 			if err != nil {
 				if !yield(&Result[T]{err: err}) {
 					return
@@ -879,13 +881,8 @@ type SelectStmt struct {
 	Limit     uint16
 }
 
-type SQLStatement struct {
-	Query     string
-	Arguments []any
-}
-
 func QueryStmt[T any, Ptr sequel.PtrScanner[T], Stmt interface {
-	SelectStmt | SQLStatement
+	SelectStmt | *SqlStmt
 }](ctx context.Context, sqlConn sequel.DB, stmt Stmt) ([]T, error) {
 	var (
 		rows *sql.Rows
@@ -898,7 +895,6 @@ func QueryStmt[T any, Ptr sequel.PtrScanner[T], Stmt interface {
 			blr = AcquireStmt()
 			v   T
 		)
-		defer ReleaseStmt(blr)
 		blr.WriteString("SELECT ")
 		if len(vi.Select) > 0 {
 			blr.WriteString(strings.Join(vi.Select, ","))
@@ -917,6 +913,7 @@ func QueryStmt[T any, Ptr sequel.PtrScanner[T], Stmt interface {
 			case sequel.Tabler:
 				blr.WriteString(" FROM " + DbTable(vj))
 			default:
+				ReleaseStmt(blr)
 				return nil, fmt.Errorf("missing table name for model %T", v)
 			}
 		}
@@ -953,10 +950,11 @@ func QueryStmt[T any, Ptr sequel.PtrScanner[T], Stmt interface {
 			blr.WriteString(" OFFSET " + strconv.FormatUint(vi.Offset, 10))
 		}
 		blr.WriteByte(';')
-		rows, err = sqlConn.QueryContext(ctx, blr.String(), blr.Args()...)
+		rows, err = sqlConn.QueryContext(ctx, blr.Query(), blr.Args()...)
+		ReleaseStmt(blr)
 
-	case SQLStatement:
-		rows, err = sqlConn.QueryContext(ctx, vi.Query, vi.Arguments...)
+	case *SqlStmt:
+		rows, err = sqlConn.QueryContext(ctx, vi.Query(), vi.Args()...)
 	}
 	if err != nil {
 		return nil, err
@@ -986,13 +984,12 @@ type SelectOneStmt struct {
 }
 
 func QueryOneStmt[T any, Ptr sequel.PtrScanner[T], Stmt interface {
-	SelectOneStmt | SQLStatement
+	SelectOneStmt | *SqlStmt
 }](ctx context.Context, sqlConn sequel.DB, stmt Stmt) (Ptr, error) {
 	var v T
 	switch vi := any(stmt).(type) {
 	case SelectOneStmt:
 		var blr = AcquireStmt()
-		defer ReleaseStmt(blr)
 		blr.WriteString("SELECT ")
 		if len(vi.Select) > 0 {
 			blr.WriteString(strings.Join(vi.Select, ","))
@@ -1011,6 +1008,7 @@ func QueryOneStmt[T any, Ptr sequel.PtrScanner[T], Stmt interface {
 			case sequel.Tabler:
 				blr.WriteString(" FROM " + DbTable(vj))
 			default:
+				ReleaseStmt(blr)
 				return nil, fmt.Errorf("missing table name for model %T", v)
 			}
 		}
@@ -1041,13 +1039,15 @@ func QueryOneStmt[T any, Ptr sequel.PtrScanner[T], Stmt interface {
 			}
 		}
 		blr.WriteString(" LIMIT 1;")
-		if err := sqlConn.QueryRowContext(ctx, blr.String(), blr.Args()...).Scan(Ptr(&v).Addrs()...); err != nil {
+		row := sqlConn.QueryRowContext(ctx, blr.Query(), blr.Args()...)
+		ReleaseStmt(blr)
+		if err := row.Scan(Ptr(&v).Addrs()...); err != nil {
 			return nil, err
 		}
 		return &v, nil
 
-	case SQLStatement:
-		if err := sqlConn.QueryRowContext(ctx, vi.Query, vi.Arguments...).Scan(Ptr(&v).Addrs()...); err != nil {
+	case *SqlStmt:
+		if err := sqlConn.QueryRowContext(ctx, vi.Query(), vi.Args()...).Scan(Ptr(&v).Addrs()...); err != nil {
 			return nil, err
 		}
 		return &v, nil
@@ -1144,19 +1144,19 @@ func ExecStmt[T any, Stmt interface {
 		}
 	}
 	blr.WriteByte(';')
-	return sqlConn.ExecContext(ctx, blr.String(), blr.Args()...)
+	return sqlConn.ExecContext(ctx, blr.Query(), blr.Args()...)
 }
 
 var (
 	pool = sync.Pool{
 		New: func() any {
-			return new(sqlStmt)
+			return new(SqlStmt)
 		},
 	}
 )
 
 func AcquireStmt() sequel.Stmt {
-	return pool.Get().(*sqlStmt)
+	return pool.Get().(*SqlStmt)
 }
 
 func ReleaseStmt(stmt sequel.Stmt) {
@@ -1166,23 +1166,23 @@ func ReleaseStmt(stmt sequel.Stmt) {
 	}
 }
 
-type sqlStmt struct {
-	strings.Builder
+type SqlStmt struct {
+	blr  strings.Builder
 	pos  int
 	args []any
 }
 
 var (
-	_ sequel.Stmt = (*sqlStmt)(nil)
+	_ sequel.Stmt = (*SqlStmt)(nil)
 )
 
-func (s *sqlStmt) Var(value any) string {
+func (s *SqlStmt) Var(value any) string {
 	s.pos++
 	s.args = append(s.args, value)
 	return wrapVar(s.pos)
 }
 
-func (s *sqlStmt) Vars(values []any) string {
+func (s *SqlStmt) Vars(values []any) string {
 	noOfLen := len(values)
 	s.args = append(s.args, values...)
 	buf := new(strings.Builder)
@@ -1200,12 +1200,28 @@ func (s *sqlStmt) Vars(values []any) string {
 	return buf.String()
 }
 
-func (s sqlStmt) Args() []any {
+func (s *SqlStmt) Write(p []byte) (int, error) {
+	return s.blr.Write(p)
+}
+
+func (s *SqlStmt) WriteString(v string) (int, error) {
+	return s.blr.WriteString(v)
+}
+
+func (s *SqlStmt) WriteByte(c byte) error {
+	return s.blr.WriteByte(c)
+}
+
+func (s *SqlStmt) Query() string {
+	return s.blr.String()
+}
+
+func (s SqlStmt) Args() []any {
 	return s.args
 }
 
-func (s *sqlStmt) Format(f fmt.State, verb rune) {
-	str := s.String()
+func (s *SqlStmt) Format(f fmt.State, verb rune) {
+	str := s.blr.String()
 	switch verb {
 	case 's':
 		f.Write(unsafe.Slice(unsafe.StringData(str), len(str)))
@@ -1242,10 +1258,10 @@ func (s *sqlStmt) Format(f fmt.State, verb rune) {
 	}
 }
 
-func (s *sqlStmt) Reset() {
+func (s *SqlStmt) Reset() {
 	s.args = nil
 	s.pos = 0
-	s.Builder.Reset()
+	s.blr.Reset()
 }
 
 func DbTable[T sequel.Tabler](model T) string {
@@ -1276,7 +1292,7 @@ func wrapVar(i int) string {
 func strf(v any) string {
 	switch vi := v.(type) {
 	case string:
-		return strconv.Quote(vi)
+		return pgutil.Quote(vi)
 	case []byte:
 		return strconv.Quote(unsafe.String(unsafe.SliceData(vi), len(vi)))
 	case bool:

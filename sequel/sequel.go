@@ -129,8 +129,8 @@ type StmtBuilder interface {
 
 type Stmt interface {
 	StmtBuilder
-	fmt.Stringer
 	fmt.Formatter
+	Query() string
 	Args() []any
 	Reset()
 }

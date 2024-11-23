@@ -8,7 +8,7 @@ import (
 	"strings"
 	"unsafe"
 
-	"github.com/si3nloong/sqlgen/sequel/types/pgtype"
+	"github.com/si3nloong/sqlgen/sequel/driver/postgres/pgtype"
 )
 
 //go:generate stringer --type indexType --linecomment

@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"database/sql/driver"
-	"errors"
 	"fmt"
 	"iter"
 	"strconv"
@@ -46,7 +45,7 @@ func InsertOne[T sequel.TableColumnValuer, Ptr interface {
 				return nil, err
 			}
 		default:
-			return nil, errors.New(`sqlgen: invalid auto increment data type`)
+			return nil, fmt.Errorf(`sqlgen: invalid auto increment data type %T`, v)
 		}
 		return result, nil
 	case sequel.SingleInserter:
@@ -98,7 +97,7 @@ func Insert[T sequel.TableColumnValuer](ctx context.Context, sqlConn sequel.DB, 
 		noOfCols := len(columns)
 		cols := strings.Join(columns, ",")
 		args := make([]any, 0, noOfCols*noOfData)
-		stmt.WriteString("INSERT INTO " + dbName(model) + model.TableName() + " (" + cols + ") VALUES ")
+		stmt.WriteString("INSERT INTO " + DbTable(model) + " (" + cols + ") VALUES ")
 		placeholder := "(" + strings.Repeat(",?", noOfCols)[1:] + ")"
 		for i := range data {
 			if i > 0 {
@@ -114,12 +113,12 @@ func Insert[T sequel.TableColumnValuer](ctx context.Context, sqlConn sequel.DB, 
 }
 
 func UpsertOne[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Context, sqlConn sequel.DB, model Ptr, override bool, omittedFields ...string) (sql.Result, error) {
+	stmt := strpool.AcquireString()
+	defer strpool.ReleaseString(stmt)
 	switch v := any(model).(type) {
 	case sequel.PrimaryKeyer:
 		pkName, idx, _ := v.PK()
 		columns := model.Columns()
-		stmt := strpool.AcquireString()
-		defer strpool.ReleaseString(stmt)
 		if !override {
 			stmt.WriteString("INSERT IGNORE INTO " + DbTable(model) + " (" + strings.Join(columns, ",") + ") VALUES (" + strings.Repeat(",?", len(columns))[1:] + ");")
 		} else {
@@ -160,7 +159,7 @@ func UpsertOne[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Co
 					return nil, err
 				}
 			default:
-				return nil, errors.New(`sqlgen: invalid auto increment data type`)
+				return nil, fmt.Errorf(`sqlgen: invalid auto increment data type %T`, v)
 			}
 			return result, nil
 		}
@@ -168,8 +167,6 @@ func UpsertOne[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Co
 	case sequel.CompositeKeyer:
 		names, idxs, _ := v.CompositeKey()
 		columns := model.Columns()
-		stmt := strpool.AcquireString()
-		defer strpool.ReleaseString(stmt)
 		if !override {
 			stmt.WriteString("INSERT IGNORE INTO " + DbTable(model) + " (" + strings.Join(columns, ",") + ") VALUES (" + strings.Repeat(",?", len(columns))[1:] + ");")
 		} else {
@@ -544,7 +541,7 @@ func (r *Pager[T, Ptr]) Prev(ctx context.Context, sqlConn sequel.DB, cursor ...T
 			// Add one to limit to find next cursor
 			blr.WriteString(" LIMIT " + strconv.FormatUint(uint64(r.stmt.Limit+1), 10) + ";")
 
-			rows, err := sqlConn.QueryContext(ctx, blr.String(), blr.Args()...)
+			rows, err := sqlConn.QueryContext(ctx, blr.Query(), blr.Args()...)
 			if err != nil {
 				if !yield(&Result[T]{err: err}) {
 					return
@@ -723,7 +720,7 @@ func (r *Pager[T, Ptr]) Next(ctx context.Context, sqlConn sequel.DB, cursor ...T
 			// Add one to limit to find next cursor
 			blr.WriteString(" LIMIT " + strconv.FormatUint(uint64(r.stmt.Limit+1), 10) + ";")
 
-			rows, err := sqlConn.QueryContext(ctx, blr.String(), blr.Args()...)
+			rows, err := sqlConn.QueryContext(ctx, blr.Query(), blr.Args()...)
 			if err != nil {
 				if !yield(&Result[T]{err: err}) {
 					return
@@ -773,13 +770,8 @@ type SelectStmt struct {
 	Limit     uint16
 }
 
-type SQLStatement struct {
-	Query     string
-	Arguments []any
-}
-
 func QueryStmt[T any, Ptr sequel.PtrScanner[T], Stmt interface {
-	SelectStmt | SQLStatement
+	SelectStmt | *SqlStmt
 }](ctx context.Context, sqlConn sequel.DB, stmt Stmt) ([]T, error) {
 	var (
 		rows *sql.Rows
@@ -792,7 +784,6 @@ func QueryStmt[T any, Ptr sequel.PtrScanner[T], Stmt interface {
 			blr = AcquireStmt()
 			v   T
 		)
-		defer ReleaseStmt(blr)
 		blr.WriteString("SELECT ")
 		if len(vi.Select) > 0 {
 			blr.WriteString(strings.Join(vi.Select, ","))
@@ -811,6 +802,7 @@ func QueryStmt[T any, Ptr sequel.PtrScanner[T], Stmt interface {
 			case sequel.Tabler:
 				blr.WriteString(" FROM " + DbTable(vj))
 			default:
+				ReleaseStmt(blr)
 				return nil, fmt.Errorf("missing table name for model %T", v)
 			}
 		}
@@ -847,10 +839,11 @@ func QueryStmt[T any, Ptr sequel.PtrScanner[T], Stmt interface {
 			blr.WriteString(" OFFSET " + strconv.FormatUint(vi.Offset, 10))
 		}
 		blr.WriteByte(';')
-		rows, err = sqlConn.QueryContext(ctx, blr.String(), blr.Args()...)
+		rows, err = sqlConn.QueryContext(ctx, blr.Query(), blr.Args()...)
+		ReleaseStmt(blr)
 
-	case SQLStatement:
-		rows, err = sqlConn.QueryContext(ctx, vi.Query, vi.Arguments...)
+	case *SqlStmt:
+		rows, err = sqlConn.QueryContext(ctx, vi.Query(), vi.Args()...)
 	}
 	if err != nil {
 		return nil, err
@@ -880,13 +873,12 @@ type SelectOneStmt struct {
 }
 
 func QueryOneStmt[T any, Ptr sequel.PtrScanner[T], Stmt interface {
-	SelectOneStmt | SQLStatement
+	SelectOneStmt | *SqlStmt
 }](ctx context.Context, sqlConn sequel.DB, stmt Stmt) (Ptr, error) {
 	var v T
 	switch vi := any(stmt).(type) {
 	case SelectOneStmt:
 		var blr = AcquireStmt()
-		defer ReleaseStmt(blr)
 		blr.WriteString("SELECT ")
 		if len(vi.Select) > 0 {
 			blr.WriteString(strings.Join(vi.Select, ","))
@@ -905,6 +897,7 @@ func QueryOneStmt[T any, Ptr sequel.PtrScanner[T], Stmt interface {
 			case sequel.Tabler:
 				blr.WriteString(" FROM " + DbTable(vj))
 			default:
+				ReleaseStmt(blr)
 				return nil, fmt.Errorf("missing table name for model %T", v)
 			}
 		}
@@ -935,13 +928,15 @@ func QueryOneStmt[T any, Ptr sequel.PtrScanner[T], Stmt interface {
 			}
 		}
 		blr.WriteString(" LIMIT 1;")
-		if err := sqlConn.QueryRowContext(ctx, blr.String(), blr.Args()...).Scan(Ptr(&v).Addrs()...); err != nil {
+		row := sqlConn.QueryRowContext(ctx, blr.Query(), blr.Args()...)
+		ReleaseStmt(blr)
+		if err := row.Scan(Ptr(&v).Addrs()...); err != nil {
 			return nil, err
 		}
 		return &v, nil
 
-	case SQLStatement:
-		if err := sqlConn.QueryRowContext(ctx, vi.Query, vi.Arguments...).Scan(Ptr(&v).Addrs()...); err != nil {
+	case *SqlStmt:
+		if err := sqlConn.QueryRowContext(ctx, vi.Query(), vi.Args()...).Scan(Ptr(&v).Addrs()...); err != nil {
 			return nil, err
 		}
 		return &v, nil
@@ -1038,19 +1033,19 @@ func ExecStmt[T any, Stmt interface {
 		}
 	}
 	blr.WriteByte(';')
-	return sqlConn.ExecContext(ctx, blr.String(), blr.Args()...)
+	return sqlConn.ExecContext(ctx, blr.Query(), blr.Args()...)
 }
 
 var (
 	pool = sync.Pool{
 		New: func() any {
-			return new(sqlStmt)
+			return new(SqlStmt)
 		},
 	}
 )
 
 func AcquireStmt() sequel.Stmt {
-	return pool.Get().(*sqlStmt)
+	return pool.Get().(*SqlStmt)
 }
 
 func ReleaseStmt(stmt sequel.Stmt) {
@@ -1060,34 +1055,50 @@ func ReleaseStmt(stmt sequel.Stmt) {
 	}
 }
 
-type sqlStmt struct {
-	strings.Builder
+type SqlStmt struct {
+	blr  strings.Builder
 	pos  int
 	args []any
 }
 
 var (
-	_ sequel.Stmt = (*sqlStmt)(nil)
+	_ sequel.Stmt = (*SqlStmt)(nil)
 )
 
-func (s *sqlStmt) Var(value any) string {
+func (s *SqlStmt) Var(value any) string {
 	s.pos++
 	s.args = append(s.args, value)
 	return `?`
 }
 
-func (s *sqlStmt) Vars(values []any) string {
+func (s *SqlStmt) Vars(values []any) string {
 	noOfLen := len(values)
 	s.args = append(s.args, values...)
 	return "(" + strings.Repeat(",?", noOfLen)[1:] + ")"
 }
 
-func (s sqlStmt) Args() []any {
+func (s *SqlStmt) Write(p []byte) (int, error) {
+	return s.blr.Write(p)
+}
+
+func (s *SqlStmt) WriteString(v string) (int, error) {
+	return s.blr.WriteString(v)
+}
+
+func (s *SqlStmt) WriteByte(c byte) error {
+	return s.blr.WriteByte(c)
+}
+
+func (s *SqlStmt) Query() string {
+	return s.blr.String()
+}
+
+func (s SqlStmt) Args() []any {
 	return s.args
 }
 
-func (s *sqlStmt) Format(f fmt.State, verb rune) {
-	str := s.String()
+func (s *SqlStmt) Format(f fmt.State, verb rune) {
+	str := s.blr.String()
 	switch verb {
 	case 's':
 		f.Write(unsafe.Slice(unsafe.StringData(str), len(str)))
@@ -1123,10 +1134,10 @@ func (s *sqlStmt) Format(f fmt.State, verb rune) {
 	}
 }
 
-func (s *sqlStmt) Reset() {
+func (s *SqlStmt) Reset() {
 	s.args = nil
 	s.pos = 0
-	s.Builder.Reset()
+	s.blr.Reset()
 }
 
 func DbTable[T sequel.Tabler](model T) string {
