@@ -1602,7 +1602,11 @@ func strf(v any) string {
 		return strconv.Quote(vi)
 	{{ end -}}
 	case []byte:
+	{{ if eq driver "postgres" -}}
+		return pgutil.Quote(unsafe.String(unsafe.SliceData(vi), len(vi)))
+	{{ else -}}
 		return strconv.Quote(unsafe.String(unsafe.SliceData(vi), len(vi)))
+	{{ end -}}
 	case bool:
 		return strconv.FormatBool(vi)
 	case int64:
