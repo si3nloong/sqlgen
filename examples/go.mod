@@ -12,7 +12,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.16
 	github.com/paulmach/orb v0.11.1
 	github.com/si3nloong/sqlgen v1.0.0-alpha.3.0.20231118095154-390f9683bb93
-	github.com/stretchr/testify v1.9.0
+	github.com/stretchr/testify v1.10.0
 )
 
 require (
@@ -23,7 +23,7 @@ require (
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-playground/validator/v10 v10.23.0 // indirect
-	github.com/goccy/go-yaml v1.14.3 // indirect
+	github.com/goccy/go-yaml v1.15.1 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
 	github.com/jackc/pgx/v5 v5.7.1 // indirect

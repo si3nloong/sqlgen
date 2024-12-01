@@ -59,6 +59,11 @@ loop:
 	if v, ok := g.defaultColumnTypes[typeStr]; ok {
 		return v, true
 	}
+	if len(typeStr) > 0 && typeStr[0] == '*' {
+		if v, ok := g.defaultColumnTypes[typeStr[1:]]; ok {
+			return v, true
+		}
+	}
 	// Find fixed size array mapper
 	if matches := arrayRegexp.FindStringSubmatch(typeStr); len(matches) > 0 {
 		if v, ok := g.defaultColumnTypes["[...]"+matches[2]]; ok {

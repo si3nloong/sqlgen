@@ -1,35 +1,36 @@
 package main
 
 import (
-	"database/sql"
 	"database/sql/driver"
-
-	"github.com/google/uuid"
-	"github.com/si3nloong/sqlgen/sequel"
-	"github.com/si3nloong/sqlgen/sequel/types"
 )
 
 func (User) TableName() string {
 	return "user"
 }
 func (User) Columns() []string {
-	return []string{"id", "name"}
+	return []string{"id", "name"} // 2
 }
 func (v User) Values() []any {
-	return []any{(driver.Valuer)(v.ID), (string)(v.Name)}
+	return []any{
+		v.ID,   // 0 - id
+		v.Name, // 1 - name
+	}
 }
 func (v *User) Addrs() []any {
-	return []any{(sql.Scanner)(&v.ID), types.String(&v.Name)}
+	return []any{
+		&v.ID,   // 0 - id
+		&v.Name, // 1 - name
+	}
 }
 func (User) InsertPlaceholders(row int) string {
-	return "(?,?)"
+	return "(?,?)" // 2
 }
 func (v User) InsertOneStmt() (string, []any) {
 	return "INSERT INTO user (id,name) VALUES (?,?);", v.Values()
 }
-func (v User) GetID() sequel.ColumnValuer[uuid.UUID] {
-	return sequel.Column("id", v.ID, func(val uuid.UUID) driver.Value { return (driver.Valuer)(val) })
+func (v User) GetID() driver.Value {
+	return v.ID
 }
-func (v User) GetName() sequel.ColumnValuer[string] {
-	return sequel.Column("name", v.Name, func(val string) driver.Value { return (string)(val) })
+func (v User) GetName() driver.Value {
+	return v.Name
 }

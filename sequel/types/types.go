@@ -11,10 +11,13 @@ import (
 	"unsafe"
 )
 
+type addrOrPtr[T any] interface {
+	*T | **T
+}
+
 type ValueScanner[T any] interface {
 	driver.Valuer
 	sql.Scanner
-	Interface() T
 }
 
 const nullStr = "null"

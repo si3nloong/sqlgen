@@ -3,8 +3,7 @@ package uint
 import (
 	"database/sql/driver"
 
-	"github.com/si3nloong/sqlgen/sequel"
-	"github.com/si3nloong/sqlgen/sequel/types"
+	"github.com/si3nloong/sqlgen/sequel/encoding"
 )
 
 func (Model) TableName() string {
@@ -26,11 +25,11 @@ func (v Model) Values() []any {
 	return []any{(int64)(v.ID)}
 }
 func (v *Model) Addrs() []any {
-	return []any{types.Integer(&v.ID)}
+	return []any{encoding.UintScanner[uint](&v.ID)}
 }
 func (v Model) FindOneByPKStmt() (string, []any) {
 	return "SELECT id FROM model WHERE id = ? LIMIT 1;", []any{(int64)(v.ID)}
 }
-func (v Model) GetID() sequel.ColumnValuer[uint] {
-	return sequel.Column("id", v.ID, func(val uint) driver.Value { return (int64)(val) })
+func (v Model) GetID() driver.Value {
+	return (int64)(v.ID)
 }

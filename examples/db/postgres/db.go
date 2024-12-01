@@ -1290,7 +1290,7 @@ func strf(v any) string {
 	case string:
 		return pgutil.Quote(vi)
 	case []byte:
-		return strconv.Quote(unsafe.String(unsafe.SliceData(vi), len(vi)))
+		return pgutil.Quote(unsafe.String(unsafe.SliceData(vi), len(vi)))
 	case bool:
 		return strconv.FormatBool(vi)
 	case int64:

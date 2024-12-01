@@ -8,15 +8,6 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-const pkgMode = packages.NeedName |
-	// packages.NeedFiles |
-	packages.NeedImports |
-	packages.NeedTypes |
-	packages.NeedSyntax |
-	packages.NeedTypesInfo |
-	packages.NeedModule |
-	packages.NeedDeps
-
 type Package struct {
 	pkgPath string
 	name    string

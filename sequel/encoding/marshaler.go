@@ -45,14 +45,10 @@ func MarshalIntSlice[V constraints.Signed](list []V) string {
 	return blr.String()
 }
 
-func MarshalUintSlice[V constraints.Unsigned](list []V, enclose ...[2]byte) string {
+func MarshalUintSlice[V constraints.Unsigned](list []V) string {
 	blr := strpool.AcquireString()
 	defer strpool.ReleaseString(blr)
-	if len(enclose) > 0 {
-		blr.WriteByte(enclose[0][0])
-	} else {
-		blr.WriteByte('[')
-	}
+	blr.WriteByte('[')
 	for i := range list {
 		if i > 0 {
 			blr.WriteString("," + strconv.FormatUint((uint64)(list[i]), 10))
@@ -60,22 +56,14 @@ func MarshalUintSlice[V constraints.Unsigned](list []V, enclose ...[2]byte) stri
 			blr.WriteString(strconv.FormatUint((uint64)(list[i]), 10))
 		}
 	}
-	if len(enclose) > 0 {
-		blr.WriteByte(enclose[0][1])
-	} else {
-		blr.WriteByte(']')
-	}
+	blr.WriteByte(']')
 	return blr.String()
 }
 
-func MarshalBoolSlice[V ~bool](list []V, enclose ...[2]byte) string {
+func MarshalBoolSlice[V ~bool](list []V) string {
 	blr := strpool.AcquireString()
 	defer strpool.ReleaseString(blr)
-	if len(enclose) > 0 {
-		blr.WriteByte(enclose[0][0])
-	} else {
-		blr.WriteByte('[')
-	}
+	blr.WriteByte('[')
 	for i := range list {
 		if i > 0 {
 			blr.WriteByte(',')
@@ -86,45 +74,33 @@ func MarshalBoolSlice[V ~bool](list []V, enclose ...[2]byte) string {
 			blr.WriteString("false")
 		}
 	}
-	if len(enclose) > 0 {
-		blr.WriteByte(enclose[0][1])
-	} else {
-		blr.WriteByte(']')
-	}
+	blr.WriteByte(']')
 	return blr.String()
 }
 
-func MarshalFloatList[V constraints.Float](list []V, prec int, enclose ...[2]byte) string {
+func MarshalFloat64List[V ~float64](list []V, prec ...int) string {
+	var p int
+	if len(prec) > 0 {
+		p = prec[0]
+	}
 	blr := strpool.AcquireString()
 	defer strpool.ReleaseString(blr)
-	if len(enclose) > 0 {
-		blr.WriteByte(enclose[0][0])
-	} else {
-		blr.WriteByte('[')
-	}
+	blr.WriteByte('[')
 	for i := range list {
 		if i > 0 {
-			blr.WriteString("," + strconv.FormatFloat((float64)(list[i]), 'f', prec, 64))
+			blr.WriteString("," + strconv.FormatFloat((float64)(list[i]), 'f', p, 64))
 		} else {
-			blr.WriteString(strconv.FormatFloat((float64)(list[i]), 'f', prec, 64))
+			blr.WriteString(strconv.FormatFloat((float64)(list[i]), 'f', p, 64))
 		}
 	}
-	if len(enclose) > 0 {
-		blr.WriteByte(enclose[0][1])
-	} else {
-		blr.WriteByte(']')
-	}
+	blr.WriteByte(']')
 	return blr.String()
 }
 
-func MarshalTimeList[V time.Time](list []V, enclose ...[2]byte) string {
+func MarshalTimeList[V time.Time](list []V) string {
 	blr := strpool.AcquireString()
 	defer strpool.ReleaseString(blr)
-	if len(enclose) > 0 {
-		blr.WriteByte(enclose[0][0])
-	} else {
-		blr.WriteByte('[')
-	}
+	blr.WriteByte('[')
 	for i := range list {
 		if i > 0 {
 			blr.WriteString("," + (time.Time)(list[i]).Format(strconv.Quote(time.RFC3339)))
@@ -132,10 +108,6 @@ func MarshalTimeList[V time.Time](list []V, enclose ...[2]byte) string {
 			blr.WriteString((time.Time)(list[i]).Format(strconv.Quote(time.RFC3339)))
 		}
 	}
-	if len(enclose) > 0 {
-		blr.WriteByte(enclose[0][1])
-	} else {
-		blr.WriteByte(']')
-	}
+	blr.WriteByte(']')
 	return blr.String()
 }

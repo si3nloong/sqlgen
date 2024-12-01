@@ -59,13 +59,22 @@ func (e Expr) Format(pkg *Package, args ...ExprParams) string {
 				return importPkgIfNeeded(pkg, t.Elem().String())
 			case *types.Slice:
 				return importPkgIfNeeded(pkg, t.Elem().String())
+			case *types.Pointer:
+				return importPkgIfNeeded(pkg, t.Elem().String())
+			default:
+				return importPkgIfNeeded(pkg, params.Type.String())
 			}
-			return ""
 		},
 		"addrOfGoPath": func() string {
 			if params.IsPtr {
 				return params.GoPath
 			}
+			return "&" + params.GoPath
+		},
+		"type": func() string {
+			return importPkgIfNeeded(pkg, params.Type.String())
+		},
+		"addr": func() string {
 			return "&" + params.GoPath
 		},
 	}

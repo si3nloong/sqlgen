@@ -58,18 +58,23 @@ func TestMarshalBoolSlice(t *testing.T) {
 }
 
 func TestMarshalFloatList(t *testing.T) {
-	t.Run("MarshalFloatList using float32", func(t *testing.T) {
-		require.Equal(t, `[10.05,-881.33,100.55]`, MarshalFloatList([]float32{10.05, -881.333, 100.5522}, 2))
-	})
+	// t.Run("MarshalFloatList using float32", func(t *testing.T) {
+	// 	require.Equal(t, `[10.05,-881.33,100.55]`, MarshalFloat64List([]float32{10.05, -881.333, 100.5522}, 2))
+	// })
+
+	// t.Run("MarshalFloatList using custom float32", func(t *testing.T) {
+	// 	type f32 float32
+
+	// 	require.Equal(t, `[12.4526]`, MarshalFloatList([]f32{12.4526}, 4))
+	// })
 
 	t.Run("MarshalFloatList using float64", func(t *testing.T) {
-		require.Equal(t, `[10.05,-881.33,100.55]`, MarshalFloatList([]float64{10.05, -881.333, 100.5522}, 2))
+		require.Equal(t, `[10.05,-881.33,100.55]`, MarshalFloat64List([]float64{10.05, -881.333, 100.5522}, 2))
 	})
 
-	t.Run("MarshalFloatList using custom float32", func(t *testing.T) {
-		type f32 float32
-
-		require.Equal(t, `[12.4526]`, MarshalFloatList([]f32{12.4526}, 4))
+	t.Run("MarshalFloatList using custom float64", func(t *testing.T) {
+		type f64 float64
+		require.Equal(t, `[12.4526]`, MarshalFloat64List([]f64{12.4526}, 4))
 	})
 }
 

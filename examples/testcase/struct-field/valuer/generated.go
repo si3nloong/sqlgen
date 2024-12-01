@@ -3,52 +3,52 @@ package valuer
 import (
 	"database/sql/driver"
 
-	"github.com/si3nloong/sqlgen/sequel"
-	"github.com/si3nloong/sqlgen/sequel/types"
+	"github.com/si3nloong/sqlgen/sequel/encoding"
 )
 
 func (B) TableName() string {
 	return "b"
 }
 func (B) Columns() []string {
-	return []string{"id", "value", "ptr_value", "n"}
+	return []string{"id", "value", "ptr_value", "n"} // 4
 }
 func (v B) Values() []any {
-	values := make([]any, 4)
-	values[0] = (int64)(v.ID)
-	values[1] = (driver.Valuer)(v.Value)
-	if v.PtrValue != nil {
-		values[2] = (driver.Valuer)(*v.PtrValue)
+	return []any{
+		v.ID,            // 0 - id
+		v.Value,         // 1 - value
+		v.GetPtrValue(), // 2 - ptr_value
+		v.N,             // 3 - n
 	}
-	values[3] = (string)(v.N)
-	return values
 }
 func (v *B) Addrs() []any {
-	addrs := make([]any, 4)
-	addrs[0] = types.Integer(&v.ID)
-	addrs[1] = types.JSONUnmarshaler(&v.Value)
 	if v.PtrValue == nil {
 		v.PtrValue = new(anyType)
 	}
-	addrs[2] = types.JSONUnmarshaler(v.PtrValue)
-	addrs[3] = types.String(&v.N)
-	return addrs
+	return []any{
+		&v.ID,                             // 0 - id
+		encoding.JSONScanner(&v.Value),    // 1 - value
+		encoding.JSONScanner(&v.PtrValue), // 2 - ptr_value
+		&v.N,                              // 3 - n
+	}
 }
 func (B) InsertPlaceholders(row int) string {
-	return "(?,?,?,?)"
+	return "(?,?,?,?)" // 4
 }
 func (v B) InsertOneStmt() (string, []any) {
 	return "INSERT INTO b (id,value,ptr_value,n) VALUES (?,?,?,?);", v.Values()
 }
-func (v B) GetID() sequel.ColumnValuer[int64] {
-	return sequel.Column("id", v.ID, func(val int64) driver.Value { return (int64)(val) })
+func (v B) GetID() driver.Value {
+	return v.ID
 }
-func (v B) GetValue() sequel.ColumnValuer[anyType] {
-	return sequel.Column("value", v.Value, func(val anyType) driver.Value { return (driver.Valuer)(val) })
+func (v B) GetValue() driver.Value {
+	return v.Value
 }
-func (v B) GetPtrValue() sequel.ColumnValuer[*anyType] {
-	return sequel.Column("ptr_value", v.PtrValue, func(val *anyType) driver.Value { return (driver.Valuer)(val) })
+func (v B) GetPtrValue() driver.Value {
+	if v.PtrValue != nil {
+		return *v.PtrValue
+	}
+	return nil
 }
-func (v B) GetN() sequel.ColumnValuer[string] {
-	return sequel.Column("n", v.N, func(val string) driver.Value { return (string)(val) })
+func (v B) GetN() driver.Value {
+	return v.N
 }

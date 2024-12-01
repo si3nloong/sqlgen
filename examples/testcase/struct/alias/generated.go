@@ -4,53 +4,64 @@ import (
 	"database/sql/driver"
 
 	"cloud.google.com/go/civil"
-	"github.com/si3nloong/sqlgen/sequel"
-	"github.com/si3nloong/sqlgen/sequel/types"
+	"github.com/si3nloong/sqlgen/sequel/encoding"
 )
 
 func (A) Columns() []string {
-	return []string{"date", "time"}
+	return []string{"date", "time"} // 2
 }
 func (v A) Values() []any {
-	return []any{types.TextMarshaler(v.Date), types.TextMarshaler(v.Time)}
+	return []any{
+		encoding.TextValue(v.Date), // 0 - date
+		encoding.TextValue(v.Time), // 1 - time
+	}
 }
 func (v *A) Addrs() []any {
-	return []any{types.TextUnmarshaler(&v.Date), types.TextUnmarshaler(&v.Time)}
+	return []any{
+		encoding.TextScanner[civil.Date](&v.Date), // 0 - date
+		encoding.TextScanner[civil.Time](&v.Time), // 1 - time
+	}
 }
 func (A) InsertPlaceholders(row int) string {
-	return "(?,?)"
+	return "(?,?)" // 2
 }
 func (v A) InsertOneStmt() (string, []any) {
 	return "INSERT INTO " + v.TableName() + " (date,time) VALUES (?,?);", v.Values()
 }
-func (v A) GetDate() sequel.ColumnValuer[civil.Date] {
-	return sequel.Column("date", v.Date, func(val civil.Date) driver.Value { return types.TextMarshaler(val) })
+func (v A) GetDate() driver.Value {
+	return encoding.TextValue(v.Date)
 }
-func (v A) GetTime() sequel.ColumnValuer[civil.Time] {
-	return sequel.Column("time", v.Time, func(val civil.Time) driver.Value { return types.TextMarshaler(val) })
+func (v A) GetTime() driver.Value {
+	return encoding.TextValue(v.Time)
 }
 
 func (C) TableName() string {
 	return "c"
 }
 func (C) Columns() []string {
-	return []string{"string", "valid"}
+	return []string{"string", "valid"} // 2
 }
 func (v C) Values() []any {
-	return []any{(string)(v.String), (bool)(v.Valid)}
+	return []any{
+		v.String, // 0 - string
+		v.Valid,  // 1 - valid
+	}
 }
 func (v *C) Addrs() []any {
-	return []any{types.String(&v.String), types.Bool(&v.Valid)}
+	return []any{
+		&v.String, // 0 - string
+		&v.Valid,  // 1 - valid
+	}
 }
 func (C) InsertPlaceholders(row int) string {
-	return "(?,?)"
+	return "(?,?)" // 2
 }
 func (v C) InsertOneStmt() (string, []any) {
 	return "INSERT INTO c (string,valid) VALUES (?,?);", v.Values()
 }
-func (v C) GetString() sequel.ColumnValuer[string] {
-	return sequel.Column("string", v.String, func(val string) driver.Value { return (string)(val) })
+func (v C) GetString() driver.Value {
+	return v.String
 }
-func (v C) GetValid() sequel.ColumnValuer[bool] {
-	return sequel.Column("valid", v.Valid, func(val bool) driver.Value { return (bool)(val) })
+func (v C) GetValid() driver.Value {
+	return v.Valid
 }

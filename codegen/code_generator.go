@@ -2,8 +2,7 @@ package codegen
 
 import (
 	"bytes"
-	"context"
-	"errors"
+	"database/sql"
 	"fmt"
 	"go/types"
 	"io"
@@ -11,15 +10,16 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"syscall"
 	"time"
 	"unsafe"
 
 	"github.com/samber/lo"
 	"github.com/si3nloong/sqlgen"
 	"github.com/si3nloong/sqlgen/codegen/dialect"
+	"github.com/si3nloong/sqlgen/internal/compiler"
+	"github.com/si3nloong/sqlgen/internal/goutil"
+	"github.com/si3nloong/sqlgen/sequel/encoding"
 	"github.com/si3nloong/sqlgen/sequel/strpool"
-	"golang.org/x/tools/go/packages"
 	"golang.org/x/tools/imports"
 )
 
@@ -92,9 +92,14 @@ func (g *Generator) LogError(err error) {
 	g.errs = append(g.errs, err)
 }
 
-func (g *Generator) L(str ...any) error {
-	for _, v := range str {
-		g.WriteString(fmt.Sprintf("%v", v))
+func (g *Generator) L(values ...any) error {
+	for i := range values {
+		switch vi := values[i].(type) {
+		case string:
+			g.WriteString(vi)
+		default:
+			g.WriteString(fmt.Sprintf("%v", vi))
+		}
 	}
 	g.WriteByte('\n')
 	return nil
@@ -118,181 +123,220 @@ func (g *Generator) QuoteIdentifier(str string) string {
 }
 
 // Generate model functions
-func (g *Generator) genModels(pkg *packages.Package, dstDir string, typeInferred bool, schemas []*tableInfo) error {
+func (g *Generator) generateModels(
+	dstDir string,
+	schema *compiler.Package,
+) error {
 	defer g.Reset()
-	importPkgs := NewPackage(pkg.PkgPath, pkg.Name)
+	importPkgs := NewPackage(schema.Pkg.PkgPath, schema.Pkg.Name)
 	importPkgs.Import(types.NewPackage("strings", ""))
 	importPkgs.Import(types.NewPackage("strconv", ""))
 	importPkgs.Import(types.NewPackage("database/sql/driver", ""))
 	importPkgs.Import(types.NewPackage("github.com/si3nloong/sqlgen/sequel", ""))
 
-	for len(schemas) > 0 {
-		t := schemas[0]
+	for len(schema.Tables) > 0 {
+		t := schema.Tables[0]
 
 		g.L()
 
-		if method, wrongType := t.Implements(sqlDatabaser); wrongType {
-			g.LogError(fmt.Errorf(`sqlgen: struct %q has function "DatabaseName" but wrong footprint`, t.goName))
-		} else if method != nil && !wrongType && t.dbName != "" {
-			g.L("func (" + t.goName + ") DatabaseName() string {")
-			g.L(`return ` + g.Quote(g.QuoteIdentifier(t.dbName)))
-			g.L("}")
-		}
+		// if method, wrongType := t.Implements(sqlDatabaser); wrongType {
+		// 	g.LogError(fmt.Errorf(`sqlgen: struct %q has function "DatabaseName" but wrong footprint`, t.Name))
+		// } else if method != nil && !wrongType && t.dbName != "" {
+		// 	g.L("func (" + t.GoName + ") DatabaseName() string {")
+		// 	g.L(`return ` + g.Quote(g.QuoteIdentifier(t.dbName)))
+		// 	g.L("}")
+		// }
 
 		// Build the "TableName" function which return the table name
 		if method, wrongType := t.Implements(sqlTabler); wrongType {
-			g.LogError(fmt.Errorf(`sqlgen: struct %q has function "TableName" but wrong footprint`, t.goName))
+			g.LogError(fmt.Errorf(`sqlgen: struct %q has function "TableName" but wrong footprint`, t.Name))
 		} else if method != nil && !wrongType {
-			g.L("func (" + t.goName + ") TableName() string {")
-			g.L(`return ` + g.Quote(g.QuoteIdentifier(t.tableName)))
+			g.L("func (" + t.GoName + ") TableName() string {")
+			g.L(`return ` + g.Quote(g.QuoteIdentifier(t.Name)))
 			g.L("}")
 		} else {
 			// TODO: we need to do something when table name is declare by user
 		}
 
-		if len(t.keys) > 0 {
-			g.L("func (" + t.goName + ") HasPK() {}")
-			if t.autoIncrKey != nil {
-				g.L("func (" + t.goName + ") IsAutoIncr() {}")
-				g.L("func (v *" + t.goName + ") ScanAutoIncr(val int64) error {")
-				g.L("v." + t.autoIncrKey.goName + " = " + t.autoIncrKey.t.String() + "(val)")
+		if t.HasPK() {
+			g.L("func (" + t.GoName + ") HasPK() {}")
+			pk, ok := t.AutoIncrKey()
+			if ok {
+				g.L("func (" + t.GoName + ") IsAutoIncr() {}")
+				g.L("func (v *" + t.GoName + ") ScanAutoIncr(val int64) error {")
+				g.L("v." + pk.GoName + " = " + pk.Type.String() + "(val)")
 				g.L("return nil")
 				g.L("}")
+			} else if len(t.Keys) == 1 {
+				pk = t.Keys[0]
 			}
-
-			if len(t.keys) > 1 {
-				g.buildCompositeKeys(importPkgs, t)
-			} else {
-				pk := t.keys[0]
-				g.L("func (v " + t.goName + ") PK() (string, int, any) {")
-				g.L(`return `, g.Quote(g.QuoteIdentifier(pk.ColumnName())), ", ", pk.ColumnPos(), ", ", g.valuer(importPkgs, "v."+pk.GoPath(), pk.t))
+			if pk != nil {
+				g.L("func (v " + t.GoName + ") PK() (string, int, any) {")
+				g.L(`return `, g.Quote(g.QuoteIdentifier(pk.Name)), ", ", pk.Pos, ", ", g.getOrValue(importPkgs, "v", pk))
 				g.L("}")
+			} else {
+				g.buildCompositeKeys(importPkgs, t)
 			}
-		}
-
-		// Build the "Columns" function which return the column names
-		if method, wrongType := t.Implements(sqlColumner); wrongType {
-			g.LogError(fmt.Errorf(`sqlgen: struct %q has function "Columns" but wrong footprint`, t.goName))
-		} else if method != nil && !wrongType {
-			g.L("func (" + t.goName + ") Columns() []string {")
-			g.WriteString("return []string{")
-			for i, f := range t.columns {
-				if i > 0 {
-					g.WriteByte(',')
-				}
-				g.WriteString(g.Quote(g.QuoteIdentifier(f.columnName)))
-			}
-			g.L("}")
-			g.L("}")
 		}
 
 		// Build the "SQLColumns" function which return the column SQL query
 		if method, wrongType := t.Implements(sqlQueryColumner); wrongType {
-			g.LogError(fmt.Errorf(`sqlgen: struct %q has function "SQLColumns" but wrong footprint`, t.goName))
+			g.LogError(fmt.Errorf(`sqlgen: struct %q has function "SQLColumns" but wrong footprint`, t.Name))
 		} else if method != nil && !wrongType {
-			if _, ok := lo.Find(t.columns, func(v *columnInfo) bool {
-				_, exists := v.sqlScanner()
-				return exists
-			}); ok {
-				g.L("func (" + t.goName + ") SQLColumns() []string {")
-				g.WriteString("return []string{")
-				for i, f := range t.columns {
-					if i > 0 {
-						g.WriteByte(',')
-					}
-					g.WriteString(g.Quote(g.sqlScanner(f)))
+			// if _, ok := lo.Find(t.columns, func(v *columnInfo) bool {
+			// 	_, exists := v.sqlScanner()
+			// 	return exists
+			// }); ok {
+			// 	g.L("func (" + t.goName + ") SQLColumns() []string {")
+			// 	g.WriteString("return []string{")
+			// 	for i, f := range t.columns {
+			// 		if i > 0 {
+			// 			g.WriteByte(',')
+			// 		}
+			// 		g.WriteString(g.Quote(g.sqlScanner(f)))
+			// 	}
+			// 	g.L("}")
+			// 	g.L("}")
+			// }
+		}
+
+		insertColumns := t.InsertColumns()
+		if len(insertColumns) > 0 && len(insertColumns) != len(t.Columns) {
+			g.L("func (" + t.GoName + ") InsertColumns() []string {")
+			g.WriteString("return []string{")
+			for i, col := range insertColumns {
+				if i > 0 {
+					g.WriteByte(',')
 				}
-				g.L("}")
-				g.L("}")
+				g.WriteString(g.Quote(g.QuoteIdentifier(col.Name)))
 			}
+			g.L(fmt.Sprintf("} // %d", len(insertColumns)))
+			g.L("}")
+		}
+
+		// Build the "Columns" function which return the column names
+		if method, wrongType := t.Implements(sqlColumner); wrongType {
+			g.LogError(fmt.Errorf(`sqlgen: struct %q has function "Columns" but wrong footprint`, t.Name))
+		} else if method != nil && !wrongType {
+			g.L("func (" + t.GoName + ") Columns() []string {")
+			g.WriteString("return []string{")
+			for i, col := range t.Columns {
+				if i > 0 {
+					g.WriteByte(',')
+				}
+				g.WriteString(g.Quote(g.QuoteIdentifier(col.Name)))
+			}
+			g.L(fmt.Sprintf("} // %d", len(t.Columns)))
+			g.L("}")
 		}
 
 		// Build the "Values" function which return the column values
 		if method, wrongType := t.Implements(sqlValuer); wrongType {
-			g.LogError(fmt.Errorf(`sqlgen: struct %q has function "Values" but wrong footprint`, t.goName))
+			g.LogError(fmt.Errorf(`sqlgen: struct %q has function "Values" but wrong footprint`, t.Name))
 		} else if method != nil && !wrongType {
 			g.buildValuer(importPkgs, t)
 		}
 
 		// Build the "Addrs" function which return the column addressable values
 		if method, wrongType := t.PtrImplements(sqlScanner); wrongType {
-			g.LogError(fmt.Errorf(`sqlgen: struct %q has function "Addrs" but wrong footprint`, t.goName))
+			g.LogError(fmt.Errorf(`sqlgen: struct %q has function "Addrs" but wrong footprint`, t.Name))
 		} else if method != nil && !wrongType {
 			g.buildScanner(importPkgs, t)
 		}
 
-		if !t.hasNoColsExceptAutoPK() {
+		if len(insertColumns) > 0 {
 			if g.staticVar {
-				g.L("func (" + t.goName + ") InsertPlaceholders(row int) string {")
-				g.L(`return "(` + strings.Repeat(","+g.dialect.QuoteVar(0), len(t.colsWithoutAutoIncrPK()))[1:] + `)"`)
+				g.L("func (" + t.GoName + ") InsertPlaceholders(row int) string {")
+				g.L(`return "(` + strings.Repeat(","+g.dialect.QuoteVar(0), len(insertColumns))[1:] + `)"` + fmt.Sprintf(" // %d", len(insertColumns)))
 				g.L("}")
 			} else {
-				cols := t.colsWithoutAutoIncrPK()
-				g.L("func (" + t.goName + ") InsertPlaceholders(row int) string {")
-				g.L(fmt.Sprintf("const noOfColumn = %d", len(cols)))
-				g.WriteString(`return "("+`)
-				for i, f := range cols {
-					if i > 0 {
-						g.WriteString(`+","+`)
-					}
-					if sqlValuer, ok := f.sqlValuer(); ok {
-						matches := sqlFuncRegexp.FindStringSubmatch(sqlValuer("{}"))
-						g.WriteString(fmt.Sprintf("%q + strconv.Itoa((row * noOfColumn) + %d) +%q", matches[1]+string(g.dialect.VarRune()), i+1, matches[5]))
-					} else {
-						g.WriteString(fmt.Sprintf(`%q+ strconv.Itoa((row * noOfColumn) + %d)`, string(g.dialect.VarRune()), i+1))
-					}
-				}
-				g.WriteString(`+")"`)
-				g.L("}")
+				// 		cols := t.colsWithoutAutoIncrPK()
+				// 		g.L("func (" + t.goName + ") InsertPlaceholders(row int) string {")
+				// 		g.L(fmt.Sprintf("const noOfColumn = %d", len(cols)))
+				// 		g.WriteString(`return "("+`)
+				// 		for i, f := range cols {
+				// 			if i > 0 {
+				// 				g.WriteString(`+","+`)
+				// 			}
+				// 			if sqlValuer, ok := f.sqlValuer(); ok {
+				// 				matches := sqlFuncRegexp.FindStringSubmatch(sqlValuer("{}"))
+				// 				g.WriteString(fmt.Sprintf("%q + strconv.Itoa((row * noOfColumn) + %d) +%q", matches[1]+string(g.dialect.VarRune()), i+1, matches[5]))
+				// 			} else {
+				// 				g.WriteString(fmt.Sprintf(`%q+ strconv.Itoa((row * noOfColumn) + %d)`, string(g.dialect.VarRune()), i+1))
 			}
+		}
+		// 		g.WriteString(`+")"`)
+		// 		g.L("}")
+		// 	}
 
+		if len(insertColumns) > 0 {
 			g.buildInsertOne(importPkgs, t)
 		}
 
-		if len(t.keys) > 0 {
+		if t.HasPK() {
 			g.buildFindByPK(importPkgs, t)
-			if !t.hasNoColsExceptPK() {
+			if len(t.ColumnsWithoutPK()) > 0 {
 				g.buildUpdateByPK(importPkgs, t)
 			}
 		}
 
-		if !g.config.OmitGetters {
-			for _, f := range t.columns {
-				typeStr := f.GoType().String()
-				if idx := strings.Index(typeStr, "."); idx > 0 {
-					typeStr = Expr(typeStr).Format(importPkgs)
-				}
-				var specificType string
-				if !typeInferred {
-					specificType = "[" + typeStr + "]"
-				}
-
-				if sqlValuer, ok := f.sqlValuer(); ok {
-					matches := sqlFuncRegexp.FindStringSubmatch(sqlValuer("{}"))
-					if len(matches) > 4 {
-						g.L("func (v "+t.goName+") ", g.config.Getter.Prefix+f.GoName(), "() sequel.SQLColumnValuer[", typeStr, "] {")
-						g.L(`return sequel.SQLColumn`+specificType+`(`, g.Quote(g.QuoteIdentifier(f.ColumnName())), `, v.`, f.GoPath()+",", fmt.Sprintf(`func(placeholder string) string { return %q+ placeholder + %q}`, matches[1]+matches[2], matches[4]+matches[5]), `, func(val `, typeStr, `) driver.Value { return `, g.valuer(importPkgs, "val", f.t), ` })`)
-						g.L("}")
-					} else {
-						g.L("func (v "+t.goName+") ", g.config.Getter.Prefix+f.GoName(), "() sequel.ColumnValuer[", typeStr, "] {")
-						g.L(`return sequel.Column`, specificType, `(`, g.Quote(g.QuoteIdentifier(f.ColumnName())), `, v.`, f.GoPath(), `, func(val `, typeStr, `) driver.Value { return `, g.valuer(importPkgs, "val", f.t), ` })`)
-						g.L("}")
-					}
-				} else {
-					g.L("func (v "+t.goName+") ", g.config.Getter.Prefix+f.GoName(), "() sequel.ColumnValuer[", typeStr, "] {")
-					g.L("return sequel.Column", specificType, "(", g.Quote(g.QuoteIdentifier(f.ColumnName())), ", v.", f.GoPath(), ", func(val ", typeStr, `) driver.Value { return `, g.valuer(importPkgs, "val", f.t), ` })`)
-					g.L("}")
-				}
+		for _, f := range t.Columns {
+			g.L("func (v "+t.GoName+") ", "Get"+f.GoName, "() driver.Value {")
+			queue := []string{}
+			ptrPaths := f.GoPtrPaths()
+			for _, p := range ptrPaths {
+				g.L("if v" + p.GoPath + " != nil {")
+				// g.L("v" + p.GoPath + " = new(" + assertAsPtr[types.Pointer](f.Type).Elem().String() + ")")
+				queue = append(queue, "}")
 			}
+
+			if f.IsPtr() {
+				g.L("return ", g.valuer(importPkgs, "*v"+f.GoPath, assertAsPtr[types.Pointer](f.Type).Elem()))
+			} else {
+				g.L("return " + g.valuer(importPkgs, "v"+f.GoPath, f.Type))
+			}
+			for len(queue) > 0 {
+				g.L(queue[0])
+				queue = queue[1:]
+			}
+			if len(ptrPaths) > 0 {
+				g.L("return nil")
+			}
+			g.L("}")
+			// 	// 		if idx := strings.Index(typeStr, "."); idx > 0 {
+			// 	// 			typeStr = Expr(typeStr).Format(importPkgs)
+			// 	// 		}
+			// 	// 		var specificType string
+			// 	// 		if !typeInferred {
+			// 	// 			specificType = "[" + typeStr + "]"
+			// 	// 		}
+
+			// 	// 		if sqlValuer, ok := f.sqlValuer(); ok {
+			// 	// 			matches := sqlFuncRegexp.FindStringSubmatch(sqlValuer("{}"))
+			// 	// 			if len(matches) > 4 {
+			// 	// 				g.L("func (v "+t.goName+") ", g.config.Getter.Prefix+f.GoName(), "() sequel.SQLColumnValuer[", typeStr, "] {")
+			// 	// 				g.L(`return sequel.SQLColumn`+specificType+`(`, g.Quote(g.QuoteIdentifier(f.ColumnName())), `, v.`, f.GoPath()+",", fmt.Sprintf(`func(placeholder string) string { return %q+ placeholder + %q}`, matches[1]+matches[2], matches[4]+matches[5]), `, func(val `, typeStr, `) driver.Value { return `, g.valuer(importPkgs, "val", f.t), ` })`)
+			// 	// 				g.L("}")
+			// 	// 			} else {
+			// 	// 				g.L("func (v "+t.goName+") ", g.config.Getter.Prefix+f.GoName(), "() sequel.ColumnValuer[", typeStr, "] {")
+			// 	// 				g.L(`return sequel.Column`, specificType, `(`, g.Quote(g.QuoteIdentifier(f.ColumnName())), `, v.`, f.GoPath(), `, func(val `, typeStr, `) driver.Value { return `, g.valuer(importPkgs, "val", f.t), ` })`)
+			// 	// 				g.L("}")
+			// 	// 			}
+			// 	// 		} else {
+			// 	// 			g.L("func (v "+t.goName+") ", g.config.Getter.Prefix+f.GoName(), "() sequel.ColumnValuer[", typeStr, "] {")
+			// 	// 			g.L("return sequel.Column", specificType, "(", g.Quote(g.QuoteIdentifier(f.ColumnName())), ", v.", f.GoPath(), ", func(val ", typeStr, `) driver.Value { return `, g.valuer(importPkgs, "val", f.t), ` })`)
+			// 	// 			g.L("}")
+			// 	// 		}
+			// }
 		}
 
-		schemas = schemas[1:]
+		schema.Tables = schema.Tables[1:]
 	}
 
 	rmb := g.Buffer
 	g.Buffer = new(bytes.Buffer)
 	g.buildHeader()
-	g.L("package " + pkg.Name)
+	g.L("package " + schema.Pkg.Name)
 	g.L()
 
 	if len(importPkgs.imports) > 0 {
@@ -355,108 +399,69 @@ func (g *Generator) buildHeader() {
 	}
 }
 
-func (g *Generator) buildCompositeKeys(importPkgs *Package, table *tableInfo) {
-	g.L("func (v " + table.goName + ") CompositeKey() ([]string, []int, []any) {")
+func (g *Generator) buildCompositeKeys(importPkgs *Package, table *compiler.Table) {
+	g.L("func (v " + table.GoName + ") CompositeKey() ([]string, []int, []any) {")
 	g.WriteString("return []string{")
-	for i, f := range table.keys {
+	for i, f := range table.Keys {
 		if i > 0 {
 			g.WriteByte(',')
 		}
-		g.WriteString(g.Quote(f.ColumnName()))
+		g.WriteString(g.Quote(f.Name))
 	}
 	g.WriteString("}, []int{")
-	for i, f := range table.keys {
+	for i, f := range table.Keys {
 		if i > 0 {
 			g.WriteByte(',')
 		}
-		g.WriteString(strconv.Itoa(f.columnPos))
+		g.WriteString(strconv.Itoa(f.Pos))
 	}
 	g.WriteString("}, []any{")
-	for i, f := range table.keys {
+	for i, k := range table.Keys {
 		if i > 0 {
 			g.WriteByte(',')
 		}
-		g.WriteString(g.valuer(importPkgs, "v."+f.GoPath(), f.t))
+		g.WriteString(g.getOrValue(importPkgs, "v", k))
 	}
 	g.L("}")
 	g.L("}")
 }
 
-func (g *Generator) buildValuer(importPkgs *Package, table *tableInfo) {
-	ptrs := lo.Filter(table.columns, func(v *columnInfo, _ int) bool {
-		return v.isPtr()
-	})
-	g.L("func (v " + table.goName + ") Values() []any {")
-	if len(ptrs) > 0 {
-		g.L("values := make([]any,", len(table.columns), ")")
-		for _, f := range table.columns {
-			if f.isPtr() {
-				paths := f.GoPaths()
-				goPath := "v"
-				queue := []string{}
-				for i := range paths {
-					goPath += "." + paths[i]
-					g.L("if " + goPath + " != nil {")
-					queue = append(queue, "}")
-				}
-				g.L("values[", f.columnPos, "] = ", g.valuer(importPkgs, "*"+goPath, assertAsPtr[types.Pointer](f.GoType()).Elem()))
-				for len(queue) > 0 {
-					g.L(queue[0])
-					queue = queue[1:]
-				}
-			} else {
-				g.L("values[", f.columnPos, "] = ", g.valuer(importPkgs, "v."+f.GoPath(), f.GoType()))
-			}
-		}
-		g.L("return values")
-	} else {
+func (g *Generator) buildValuer(importPkgs *Package, table *compiler.Table) {
+	columns := table.InsertColumns()
+	if len(columns) > 0 {
+		g.L("func (v " + table.GoName + ") Values() []any {")
 		g.WriteString("return []any{")
-		for i, f := range table.columns {
-			if i > 0 {
-				g.WriteByte(',')
-			}
-			g.WriteString(g.valuer(importPkgs, "v."+f.GoPath(), f.t))
+		tmpl := " // %" + strwidth(len(columns)) + "d - %s"
+		for _, f := range columns {
+			g.WriteString("\n" + g.getOrValue(importPkgs, "v", f) + ",")
+			g.WriteString(fmt.Sprintf(tmpl, f.Pos, f.Name))
 		}
+		g.L("\n}")
 		g.L("}")
 	}
-	g.L("}")
 }
 
-func (g *Generator) buildScanner(importPkgs *Package, table *tableInfo) {
-	ptrs := lo.Filter(table.columns, func(v *columnInfo, _ int) bool {
-		return v.isPtr()
-	})
-	g.L("func (v *" + table.goName + ") Addrs() []any {")
-	if len(ptrs) > 0 {
-		g.L("addrs := make([]any, ", len(table.columns), ")")
-		for _, f := range table.columns {
-			if f.isPtr() {
-				g.L("if v." + f.GoPath() + " == nil {")
-				g.L("v."+f.GoPath()+" = new(", Expr(strings.TrimPrefix(f.t.String(), "*")).Format(importPkgs, ExprParams{}), ")")
-				g.L("}")
-				g.L("addrs[", f.columnPos, "] = ", g.scanner(importPkgs, "v."+f.GoPath(), f.t))
-			} else {
-				g.L("addrs[", f.columnPos, "] = ", g.scanner(importPkgs, "&v."+f.GoPath(), f.t))
-			}
-		}
-		g.L("return addrs")
-	} else {
-		g.WriteString("return []any{")
-		for i, f := range table.columns {
-			if i > 0 {
-				g.WriteByte(',')
-			}
-			g.WriteString(g.scanner(importPkgs, "&v."+f.GoPath(), f.t))
-		}
-		g.WriteString("}\n")
+func (g *Generator) buildScanner(importPkgs *Package, table *compiler.Table) {
+	g.L("func (v *" + table.GoName + ") Addrs() []any {")
+	for _, f := range table.GoPtrPaths() {
+		path := "v" + f.GoPath
+		g.L("if " + path + " == nil {")
+		g.L(path+" = new(", Expr(strings.TrimPrefix(f.Type.String(), "*")).Format(importPkgs, ExprParams{}), ")")
+		g.L("}")
 	}
+	g.WriteString("return []any{")
+	tmpl := " // %" + strwidth(len(table.Columns)) + "d - %s"
+	for _, f := range table.Columns {
+		g.WriteString("\n" + g.scanner(importPkgs, "&v"+f.GoPath, f.Type) + "," + fmt.Sprintf(tmpl, f.Pos, f.Name))
+	}
+	g.WriteString("\n}\n")
 	g.L("}")
 }
 
-func (g *Generator) buildFindByPK(importPkgs *Package, t *tableInfo) {
+func (g *Generator) buildFindByPK(importPkgs *Package, t *compiler.Table) {
 	buf := strpool.AcquireString()
 	buf.WriteString("SELECT ")
-	for i, f := range t.columns {
+	for i, f := range t.Columns {
 		if i > 0 {
 			buf.WriteByte(',')
 		}
@@ -465,70 +470,68 @@ func (g *Generator) buildFindByPK(importPkgs *Package, t *tableInfo) {
 	buf.WriteString(" FROM ")
 	var query string
 	if method, wrongType := t.Implements(sqlTabler); wrongType {
-		g.LogError(fmt.Errorf(`sqlgen: struct %q has function "TableName" but wrong footprint`, t.goName))
+		g.LogError(fmt.Errorf(`sqlgen: struct %q has function "TableName" but wrong footprint`, t.GoName))
 	} else if method != nil {
-		buf.WriteString(g.QuoteIdentifier(t.tableName))
+		buf.WriteString(g.QuoteIdentifier(t.Name))
 	} else {
 		query = g.Quote(buf.String()) + "+ v.TableName() +"
 		buf.Reset()
 	}
 	buf.WriteString(" WHERE ")
-	if len(t.keys) > 1 {
-		// Composite primary key
-		keyCols := lo.Map(t.keys, func(v *columnInfo, _ int) string {
-			return g.QuoteIdentifier(v.ColumnName())
+	if pk, ok := t.AutoIncrKey(); ok {
+		buf.WriteString(g.QuoteIdentifier(pk.Name) + " = " + g.dialect.QuoteVar(1))
+	} else if len(t.Keys) == 1 {
+		pk := t.Keys[0]
+		buf.WriteString(g.QuoteIdentifier(pk.Name) + " = " + g.dialect.QuoteVar(1))
+	} else {
+		keyNames := lo.Map(t.Keys, func(v *compiler.Column, _ int) string {
+			return g.QuoteIdentifier(v.Name)
 		})
-		buf.WriteString("(" + strings.Join(keyCols, ",") + ")" + " = ")
+		buf.WriteString("(" + strings.Join(keyNames, ",") + ")" + " = ")
 		buf.WriteByte('(')
-		for i, k := range t.keys {
+		for i, k := range t.Keys {
 			if i > 0 {
 				buf.WriteByte(',')
 			}
 			buf.WriteString(g.sqlValuer(k, i))
 		}
 		buf.WriteByte(')')
-	} else {
-		for i, f := range t.keys {
-			if i > 0 {
-				buf.WriteString(" AND ")
-			}
-			buf.WriteString(g.QuoteIdentifier(f.ColumnName()) + " = " + g.dialect.QuoteVar(i+1))
-		}
 	}
 	buf.WriteString(" LIMIT 1;")
-	g.L("func (v " + t.goName + ") FindOneByPKStmt() (string, []any) {")
+	g.L("func (v " + t.GoName + ") FindOneByPKStmt() (string, []any) {")
 	g.WriteString("return " + query + g.Quote(buf.String()) + ", []any{")
 	strpool.ReleaseString(buf)
-	for i, f := range t.keys {
-		if i > 0 {
-			g.WriteByte(',')
+	if pk, ok := t.AutoIncrKey(); ok {
+		g.WriteString(g.getOrValue(importPkgs, "v", pk))
+	} else {
+		for i, f := range t.Keys {
+			if i > 0 {
+				g.WriteByte(',')
+			}
+			g.WriteString(getGoPath("v", f))
 		}
-		g.WriteString(g.valuer(importPkgs, "v."+f.GoPath(), f.t))
 	}
 	g.WriteString("}\n")
 	g.L("}")
 }
 
-func (g *Generator) buildInsertOne(importPkgs *Package, t *tableInfo) {
-	// Filter out auto increment key
-	columns := lo.Filter(t.columns, func(col *columnInfo, _ int) bool {
-		return col != t.autoIncrKey
-	})
+func (g *Generator) buildInsertOne(importPkgs *Package, t *compiler.Table) {
 	var query string
 	buf := strpool.AcquireString()
 	if method, wrongType := t.Implements(sqlTabler); wrongType {
-		g.LogError(fmt.Errorf(`sqlgen: struct %q has function "TableName" but wrong footprint`, t.goName))
+		g.LogError(fmt.Errorf(`sqlgen: struct %q has function "TableName" but wrong footprint`, t.GoName))
 	} else if method != nil {
-		buf.WriteString("INSERT INTO " + g.QuoteIdentifier(t.tableName))
+		buf.WriteString("INSERT INTO " + g.QuoteIdentifier(t.Name))
 	} else {
 		query = g.Quote("INSERT INTO ") + "+ v.TableName() +"
 	}
 	buf.WriteString(" (")
+	columns := t.InsertColumns()
 	for i, f := range columns {
 		if i > 0 {
 			buf.WriteByte(',')
 		}
-		buf.WriteString(g.QuoteIdentifier(f.ColumnName()))
+		buf.WriteString(g.QuoteIdentifier(f.Name))
 	}
 	buf.WriteString(") VALUES (")
 	for i, f := range columns {
@@ -540,7 +543,7 @@ func (g *Generator) buildInsertOne(importPkgs *Package, t *tableInfo) {
 	buf.WriteByte(')')
 	if g.config.Driver == Postgres {
 		buf.WriteString(" RETURNING ")
-		for i, f := range t.columns {
+		for i, f := range t.Columns {
 			if i > 0 {
 				buf.WriteByte(',')
 			}
@@ -550,8 +553,8 @@ func (g *Generator) buildInsertOne(importPkgs *Package, t *tableInfo) {
 	buf.WriteByte(';')
 	// If the columns and after filter columns is the same
 	// mean it has no auto increment key
-	g.L("func (v " + t.goName + ") InsertOneStmt() (string, []any) {")
-	if len(columns) == len(t.columns) {
+	g.L("func (v " + t.GoName + ") InsertOneStmt() (string, []any) {")
+	if len(columns) == len(t.Columns) {
 		g.L("return " + query + g.Quote(buf.String()) + ", v.Values()")
 		strpool.ReleaseString(buf)
 	} else {
@@ -561,71 +564,90 @@ func (g *Generator) buildInsertOne(importPkgs *Package, t *tableInfo) {
 			if i > 0 {
 				g.WriteByte(',')
 			}
-			g.WriteString(g.valuer(importPkgs, "v."+f.GoPath(), f.t))
+			g.WriteString(g.getOrValue(importPkgs, "v", f))
 		}
 		g.WriteString("}\n")
 	}
 	g.L("}")
 }
 
-func (g *Generator) buildUpdateByPK(importPkgs *Package, t *tableInfo) {
+func (g *Generator) buildUpdateByPK(importPkgs *Package, t *compiler.Table) {
 	buf := strpool.AcquireString()
 	var query string
 	if method, wrongType := t.Implements(sqlTabler); wrongType {
-		g.LogError(fmt.Errorf(`sqlgen: struct %q has function "TableName" but wrong footprint`, t.goName))
+		g.LogError(fmt.Errorf(`sqlgen: struct %q has function "TableName" but wrong footprint`, t.GoName))
 	} else if method != nil {
-		buf.WriteString("UPDATE " + g.QuoteIdentifier(t.tableName))
+		buf.WriteString("UPDATE " + g.QuoteIdentifier(t.Name))
 	} else {
 		query = g.Quote("UPDATE ") + "+ v.TableName() +"
 	}
 	buf.WriteString(" SET ")
-	columns := lo.Filter(t.columns, func(col *columnInfo, _ int) bool {
-		return !lo.Contains(t.keys, col)
-	})
+	columns := t.ColumnsWithoutPK()
 	for i, f := range columns {
 		if i > 0 {
 			buf.WriteByte(',')
 		}
-		buf.WriteString(g.QuoteIdentifier(f.ColumnName()) + " = " + g.sqlValuer(f, i))
+		buf.WriteString(g.QuoteIdentifier(f.Name) + " = " + g.sqlValuer(f, i))
 	}
 	buf.WriteString(" WHERE ")
-	if len(t.keys) > 1 {
-		keyCols := lo.Map(t.keys, func(v *columnInfo, _ int) string {
-			return g.QuoteIdentifier(v.ColumnName())
+	if pk, ok := t.AutoIncrKey(); ok {
+		buf.WriteString(g.QuoteIdentifier(pk.Name) + " = " + g.dialect.QuoteVar(len(t.Columns)))
+		columns = append(columns, pk)
+	} else if len(t.Keys) == 1 {
+		pk := t.Keys[0]
+		buf.WriteString(g.QuoteIdentifier(pk.Name) + " = " + g.dialect.QuoteVar(len(t.Columns)))
+		columns = append(columns, pk)
+	} else {
+		keyNames := lo.Map(t.Keys, func(v *compiler.Column, _ int) string {
+			return g.QuoteIdentifier(v.Name)
 		})
-		buf.WriteString("(" + strings.Join(keyCols, ",") + ")" + " = ")
+		buf.WriteString("(" + strings.Join(keyNames, ",") + ")" + " = ")
 		buf.WriteByte('(')
-		for i, k := range t.keys {
+		for i, k := range t.Keys {
 			if i > 0 {
 				buf.WriteByte(',')
 			}
 			buf.WriteString(g.sqlValuer(k, i+len(columns)))
 		}
 		buf.WriteByte(')')
-	} else {
-		for i, k := range t.keys {
-			if i > 0 {
-				buf.WriteString(" AND ")
-			}
-			buf.WriteString(g.QuoteIdentifier(k.ColumnName()) + " = " + g.sqlValuer(k, i+len(columns)))
-		}
+		columns = append(columns, t.Keys...)
 	}
 	buf.WriteByte(';')
-	g.L("func (v " + t.goName + ") UpdateOneByPKStmt() (string, []any) {")
+	g.L("func (v " + t.GoName + ") UpdateOneByPKStmt() (string, []any) {")
 	g.WriteString("return " + query + g.Quote(buf.String()) + ", []any{")
 	strpool.ReleaseString(buf)
-	for i, f := range append(columns, t.keys...) {
+	for i, f := range columns {
 		if i > 0 {
 			g.WriteByte(',')
 		}
-		g.WriteString(g.valuer(importPkgs, "v."+f.GoPath(), f.t))
+		g.WriteString(g.getOrValue(importPkgs, "v", f))
 	}
 	g.WriteString("}\n")
 	g.L("}")
 	strpool.ReleaseString(buf)
 }
 
+func (g *Generator) getOrValue(importPkgs *Package, obj string, f *compiler.Column) string {
+	goPath := obj + f.GoPath
+	if f.IsUnderlyingPtr() {
+		return obj + ".Get" + f.GoName + "()"
+	}
+	return g.valuer(importPkgs, goPath, f.Type)
+}
+
 func (g *Generator) valuer(importPkgs *Package, goPath string, t types.Type) string {
+	// This is to prevent auto cast if the value is driver.Value
+	switch tv := t.(type) {
+	case *types.Basic:
+		switch tv.Kind() {
+		case types.String, types.Bool, types.Int64, types.Float64:
+			return goPath
+		}
+	case *types.Named:
+		if tv.String() == typeOfTime {
+			return goPath
+		}
+	}
 	utype, isPtr := underlyingType(t)
 	if columnType, ok := g.columnTypes[t.String()]; ok && columnType.Valuer != "" {
 		return Expr(columnType.Valuer).Format(importPkgs, ExprParams{GoPath: goPath, Type: t, IsPtr: isPtr})
@@ -633,84 +655,105 @@ func (g *Generator) valuer(importPkgs *Package, goPath string, t types.Type) str
 		if isPtr {
 			return Expr("(database/sql/driver.Valuer)({{goPath}})").Format(importPkgs, ExprParams{GoPath: goPath, Type: t, IsPtr: isPtr})
 		}
-		return Expr("(database/sql/driver.Valuer)({{goPath}})").Format(importPkgs, ExprParams{GoPath: goPath, Type: t, IsPtr: isPtr})
+		return goPath
 	} else if columnType, ok := g.columnDataType(t); ok && columnType.Valuer != "" {
 		return Expr(columnType.Valuer).Format(importPkgs, ExprParams{GoPath: goPath, IsPtr: isPtr, Type: t, Len: arraySize(t)})
 	} else if isImplemented(utype, textMarshaler) {
-		return Expr("github.com/si3nloong/sqlgen/sequel/types.TextMarshaler({{goPath}})").Format(importPkgs, ExprParams{GoPath: goPath, Type: t, IsPtr: isPtr})
+		return Expr(goutil.GenericFunc(encoding.TextValue[time.Time], "{{goPath}}")).Format(importPkgs, ExprParams{GoPath: goPath, Type: t, IsPtr: isPtr})
 	}
 	return Expr(g.defaultColumnTypes["*"].Valuer).Format(importPkgs, ExprParams{GoPath: goPath, Type: t, IsPtr: isPtr})
 }
 
 func (g *Generator) scanner(importPkgs *Package, goPath string, t types.Type) string {
+	// This is to prevent auto cast if the value is driver.Value
+	switch tv := t.(type) {
+	case *types.Basic:
+		switch tv.Kind() {
+		case types.String, types.Bool, types.Int64, types.Float64:
+			return goPath
+		}
+	case *types.Named:
+		if tv.String() == typeOfTime {
+			return goPath
+		}
+	}
 	ptr, isPtr := pointerType(t)
 	if columnType, ok := g.columnTypes[t.String()]; ok && columnType.Scanner != "" {
 		return Expr(columnType.Scanner).Format(importPkgs, ExprParams{GoPath: goPath, Type: t, IsPtr: isPtr})
 	} else if isImplemented(ptr, goSqlScanner) {
 		if isPtr {
-			return Expr("(database/sql.Scanner)({{goPath}})").Format(importPkgs, ExprParams{GoPath: goPath, Type: t, IsPtr: isPtr})
+			return Expr(goutil.GenericFunc(encoding.PtrScanner[sql.NullString], "{{addr}}")).Format(importPkgs, ExprParams{GoPath: goPath, Type: t, IsPtr: isPtr})
 		}
-		return Expr("(database/sql.Scanner)({{addrOfGoPath}})").Format(importPkgs, ExprParams{GoPath: goPath, Type: t, IsPtr: isPtr})
+		return goPath
 	} else if columnType, ok := g.columnDataType(t); ok && columnType.Scanner != "" {
 		return Expr(columnType.Scanner).Format(importPkgs, ExprParams{GoPath: goPath, Type: t, IsPtr: isPtr, Len: arraySize(t)})
 	} else if isImplemented(ptr, textUnmarshaler) {
-		if isPtr {
-			return Expr("github.com/si3nloong/sqlgen/sequel/types.TextUnmarshaler({{goPath}})").Format(importPkgs, ExprParams{GoPath: goPath, Type: t, IsPtr: isPtr})
-		}
-		return Expr("github.com/si3nloong/sqlgen/sequel/types.TextUnmarshaler({{addrOfGoPath}})").Format(importPkgs, ExprParams{GoPath: goPath, Type: t, IsPtr: isPtr})
+		return Expr(goutil.GenericFuncName(encoding.TextScanner[time.Time, *time.Time, *time.Time], "{{elemType}}", "{{addr}}")).Format(importPkgs, ExprParams{GoPath: goPath, Type: t, IsPtr: isPtr})
 	}
 	return Expr(g.defaultColumnTypes["*"].Scanner).Format(importPkgs, ExprParams{GoPath: goPath, Type: t, IsPtr: isPtr})
 }
 
-func (g *Generator) sqlScanner(f *columnInfo) string {
-	if sqlScanner, ok := f.sqlScanner(); ok {
-		matches := sqlFuncRegexp.FindStringSubmatch(sqlScanner("{}"))
-		if len(matches) > 4 {
-			return matches[1] + matches[2] + g.QuoteIdentifier(f.ColumnName()) + matches[4] + matches[5]
-		} else {
-			return g.QuoteIdentifier(f.ColumnName())
-		}
-	}
-	return g.QuoteIdentifier(f.ColumnName())
+func (g *Generator) sqlScanner(f *compiler.Column) string {
+	// if sqlScanner, ok := f.sqlScanner(); ok {
+	// 	matches := sqlFuncRegexp.FindStringSubmatch(sqlScanner("{}"))
+	// 	if len(matches) > 4 {
+	// 		return matches[1] + matches[2] + g.QuoteIdentifier(f.ColumnName()) + matches[4] + matches[5]
+	// 	} else {
+	// 		return g.QuoteIdentifier(f.ColumnName())
+	// 	}
+	// }
+	return g.QuoteIdentifier(f.Name)
 }
 
-func (g *Generator) sqlValuer(f *columnInfo, idx int) string {
-	if sqlValuer, ok := f.sqlValuer(); ok {
-		matches := sqlFuncRegexp.FindStringSubmatch(sqlValuer("{}"))
-		// g.WriteString(fmt.Sprintf("%q + strconv.Itoa((row * noOfColumn) + %d) +%q", matches[1]+string(g.dialect.VarRune()), f.ColumnPos(), matches[5]))
-		if len(matches) > 4 {
-			return matches[1] + matches[2] + g.dialect.QuoteVar(idx+1) + matches[4] + matches[5]
-		}
-		return g.dialect.QuoteVar(idx + 1)
-	}
+func (g *Generator) sqlValuer(col *compiler.Column, idx int) string {
+	// if sqlValuer, ok := f.sqlValuer(); ok {
+	// 	matches := sqlFuncRegexp.FindStringSubmatch(sqlValuer("{}"))
+	// 	// g.WriteString(fmt.Sprintf("%q + strconv.Itoa((row * noOfColumn) + %d) +%q", matches[1]+string(g.dialect.VarRune()), f.ColumnPos(), matches[5]))
+	// 	if len(matches) > 4 {
+	// 		return matches[1] + matches[2] + g.dialect.QuoteVar(idx+1) + matches[4] + matches[5]
+	// 	}
+	// 	return g.dialect.QuoteVar(idx + 1)
+	// }
 	return g.dialect.QuoteVar(idx + 1)
 }
 
 // Generate migration files for models
-func (g *Generator) genMigrations(schemas []*tableInfo) error {
-	unix := time.Now().Unix()
-	for i := range schemas {
-		// Each schema should have one migration files
-		if err := g.genMigration(context.Background(), unix, schemas[i]); err != nil {
-			return err
-		}
+// func (g *Generator) genMigrations(schemas []*tableInfo) error {
+// 	unix := time.Now().Unix()
+// 	for i := range schemas {
+// 		// Each schema should have one migration files
+// 		if err := g.genMigration(context.Background(), unix, schemas[i]); err != nil {
+// 			return err
+// 		}
+// 	}
+// 	return nil
+// }
+
+// func (g *Generator) genMigration(ctx context.Context, unix int64, t *tableInfo) error {
+// 	fileDest := fmt.Sprintf("%s/%d_%s.sql", g.config.Migration.Dir, unix, t.TableName())
+// 	f, err := os.OpenFile(fileDest, os.O_RDWR|os.O_CREATE|os.O_TRUNC, os.ModePerm)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	defer f.Close()
+
+// 	if err := g.dialect.Migrate(ctx, g.config.Migration.DSN, f, t); errors.Is(err, dialect.ErrNoNewMigration) {
+// 		_ = syscall.Unlink(fileDest)
+// 		return nil
+// 	} else if err != nil {
+// 		return err
+// 	}
+// 	return nil
+// }
+
+func getGoPath(obj string, c *compiler.Column) string {
+	if c.IsUnderlyingPtr() {
+		return obj + ".Get" + c.GoName + "()"
 	}
-	return nil
+	return obj + c.GoPath
 }
 
-func (g *Generator) genMigration(ctx context.Context, unix int64, t *tableInfo) error {
-	fileDest := fmt.Sprintf("%s/%d_%s.sql", g.config.Migration.Dir, unix, t.TableName())
-	f, err := os.OpenFile(fileDest, os.O_RDWR|os.O_CREATE|os.O_TRUNC, os.ModePerm)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	if err := g.dialect.Migrate(ctx, g.config.Migration.DSN, f, t); errors.Is(err, dialect.ErrNoNewMigration) {
-		_ = syscall.Unlink(fileDest)
-		return nil
-	} else if err != nil {
-		return err
-	}
-	return nil
+func strwidth(n int) string {
+	str := strconv.Itoa(n)
+	return strconv.Itoa(len(str))
 }

@@ -30,6 +30,7 @@ type nested struct {
 
 type embedded struct {
 	EmbeddedTime *time.Time
+	AnyTime      time.Time
 }
 
 type deepNested struct {
