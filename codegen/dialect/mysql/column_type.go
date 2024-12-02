@@ -74,7 +74,7 @@ func (s *mysqlDriver) ColumnDataTypes() map[string]*dialect.ColumnType {
 		"*time.Time": {
 			DataType: s.columnDataType("TIMESTAMP"),
 			Valuer:   "github.com/si3nloong/sqlgen/sequel/types.Time({{goPath}})",
-			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Time({{addrOfGoPath}})",
+			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Time({{addr}})",
 		},
 		"sql.RawBytes": {
 			DataType: s.columnDataType("TEXT"),
