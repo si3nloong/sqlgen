@@ -218,7 +218,7 @@ func (g *Generator) generateModels(
 		if method, wrongType := t.Implements(sqlColumner); wrongType {
 			g.LogError(fmt.Errorf(`sqlgen: struct %q has function "Columns" but wrong footprint`, t.Name))
 		} else if method != nil && !wrongType {
-			g.L("func (" + t.GoName + ") Columns() []string {")
+			g.L("func ("+t.GoName+") ", sqlColumner.Method(0).Name(), "() []string {")
 			g.WriteString("return []string{")
 			for i, col := range t.Columns {
 				if i > 0 {
@@ -250,26 +250,19 @@ func (g *Generator) generateModels(
 				g.L(`return "(` + strings.Repeat(","+g.dialect.QuoteVar(0), len(insertColumns))[1:] + `)"` + fmt.Sprintf(" // %d", len(insertColumns)))
 				g.L("}")
 			} else {
-				// 		cols := t.colsWithoutAutoIncrPK()
-				// 		g.L("func (" + t.goName + ") InsertPlaceholders(row int) string {")
-				// 		g.L(fmt.Sprintf("const noOfColumn = %d", len(cols)))
-				// 		g.WriteString(`return "("+`)
-				// 		for i, f := range cols {
-				// 			if i > 0 {
-				// 				g.WriteString(`+","+`)
-				// 			}
-				// 			if sqlValuer, ok := f.sqlValuer(); ok {
-				// 				matches := sqlFuncRegexp.FindStringSubmatch(sqlValuer("{}"))
-				// 				g.WriteString(fmt.Sprintf("%q + strconv.Itoa((row * noOfColumn) + %d) +%q", matches[1]+string(g.dialect.VarRune()), i+1, matches[5]))
-				// 			} else {
-				// 				g.WriteString(fmt.Sprintf(`%q+ strconv.Itoa((row * noOfColumn) + %d)`, string(g.dialect.VarRune()), i+1))
+				g.L("func (" + t.GoName + ") InsertPlaceholders(row int) string {")
+				g.L(fmt.Sprintf("const noOfColumn = %d", len(insertColumns)))
+				g.WriteString(`return "("+`)
+				for i := range insertColumns {
+					if i > 0 {
+						g.WriteString(`+","+`)
+					}
+					g.WriteString(fmt.Sprintf(`%q+ strconv.Itoa((row * noOfColumn) + %d)`, string(g.dialect.VarRune()), i+1))
+				}
+				g.WriteString(`+")"`)
+				g.L("}")
 			}
-		}
-		// 		g.WriteString(`+")"`)
-		// 		g.L("}")
-		// 	}
 
-		if len(insertColumns) > 0 {
 			g.buildInsertOne(importPkgs, t)
 		}
 
@@ -280,17 +273,19 @@ func (g *Generator) generateModels(
 			}
 		}
 
+		// Build getter
 		for _, f := range t.Columns {
 			g.L("func (v "+t.GoName+") ", "Get"+f.GoName, "() driver.Value {")
 			queue := []string{}
+			// Find all the possible pointer paths
 			ptrPaths := f.GoPtrPaths()
 			for _, p := range ptrPaths {
 				g.L("if v" + p.GoPath + " != nil {")
-				// g.L("v" + p.GoPath + " = new(" + assertAsPtr[types.Pointer](f.Type).Elem().String() + ")")
 				queue = append(queue, "}")
 			}
 
 			if f.IsPtr() {
+				// Deference the pointer value and return it
 				g.L("return ", g.valuer(importPkgs, "*v"+f.GoPath, assertAsPtr[types.Pointer](f.Type).Elem()))
 			} else {
 				g.L("return " + g.valuer(importPkgs, "v"+f.GoPath, f.Type))
@@ -429,7 +424,7 @@ func (g *Generator) buildCompositeKeys(importPkgs *Package, table *compiler.Tabl
 func (g *Generator) buildValuer(importPkgs *Package, table *compiler.Table) {
 	columns := table.InsertColumns()
 	if len(columns) > 0 {
-		g.L("func (v " + table.GoName + ") Values() []any {")
+		g.L("func (v "+table.GoName+") ", sqlValuer.Method(0).Name(), "() []any {")
 		g.WriteString("return []any{")
 		tmpl := " // %" + strwidth(len(columns)) + "d - %s"
 		for _, f := range columns {
@@ -442,7 +437,7 @@ func (g *Generator) buildValuer(importPkgs *Package, table *compiler.Table) {
 }
 
 func (g *Generator) buildScanner(importPkgs *Package, table *compiler.Table) {
-	g.L("func (v *" + table.GoName + ") Addrs() []any {")
+	g.L("func (v *"+table.GoName+") ", sqlScanner.Method(0).Name(), "() []any {")
 	for _, f := range table.GoPtrPaths() {
 		path := "v" + f.GoPath
 		g.L("if " + path + " == nil {")

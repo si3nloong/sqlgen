@@ -204,33 +204,7 @@ func (s *mysqlDriver) ColumnDataTypes() map[string]*dialect.ColumnType {
 			Scanner:  goutil.GenericFunc(encoding.JSONScanner[any], "{{addr}}"),
 		},
 	}
-	// s.mapIntegers(dataTypes)
 	return dataTypes
-}
-
-func (s *mysqlDriver) mapIntegers(dict map[string]*dialect.ColumnType) {
-	types := [][2]string{
-		{"int", "INTEGER"}, {"int8", "TINYINT"}, {"int16", "SMALLINT"}, {"int32", "MEDIUMINT"}, {"int64", "BIGINT"},
-		{"uint", "INTEGER UNSIGNED"}, {"uint8", "TINYINT UNSIGNED"}, {"uint16", "SMALLINT UNSIGNED"}, {"uint32", "MEDIUMINT UNSIGNED"}, {"uint64", "BIGINT UNSIGNED"},
-	}
-	for _, t := range types {
-		dict[t[0]] = &dialect.ColumnType{
-			DataType: s.columnDataType(t[1], int64(0)),
-			Valuer:   "(int64)({{goPath}})",
-			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Integer({{addrOfGoPath}})",
-		}
-	}
-	types = [][2]string{
-		{"*int", "INTEGER"}, {"*int8", "TINYINT"}, {"*int16", "SMALLINT"}, {"*int32", "MEDIUMINT"}, {"*int64", "BIGINT"},
-		{"*uint", "INTEGER UNSIGNED"}, {"*uint8", "TINYINT UNSIGNED"}, {"*uint16", "SMALLINT UNSIGNED"}, {"*uint32", "MEDIUMINT UNSIGNED"}, {"*uint64", "BIGINT UNSIGNED"},
-	}
-	for _, t := range types {
-		dict[t[0]] = &dialect.ColumnType{
-			DataType: s.columnDataType(t[1], int64(0)),
-			Valuer:   "github.com/si3nloong/sqlgen/sequel/types.Integer({{addrOfGoPath}})",
-			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Integer({{addrOfGoPath}})",
-		}
-	}
 }
 
 func (*mysqlDriver) columnDataType(dataType string, defaultValue ...any) func(dialect.GoColumn) string {
