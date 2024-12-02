@@ -271,16 +271,73 @@ func (g *Generator) genModels(pkg *packages.Package, dstDir string, typeInferred
 					matches := sqlFuncRegexp.FindStringSubmatch(sqlValuer("{}"))
 					if len(matches) > 4 {
 						g.L("func (v "+t.goName+") ", g.config.Getter.Prefix+f.GoName(), "() sequel.SQLColumnValuer[", typeStr, "] {")
-						g.L(`return sequel.SQLColumn`+specificType+`(`, g.Quote(g.QuoteIdentifier(f.ColumnName())), `, v.`, f.GoPath()+",", fmt.Sprintf(`func(placeholder string) string { return %q+ placeholder + %q}`, matches[1]+matches[2], matches[4]+matches[5]), `, func(val `, typeStr, `) driver.Value { return `, g.valuer(importPkgs, "val", f.t), ` })`)
+						g.L(`return sequel.SQLColumn`+specificType+`(`, g.Quote(g.QuoteIdentifier(f.ColumnName())), `, v.`, f.GoPath()+",", fmt.Sprintf(`func(placeholder string) string { return %q+ placeholder + %q}`, matches[1]+matches[2], matches[4]+matches[5]), `, func(val `, typeStr, `) driver.Value {`)
+						if f.isPtr() {
+							paths := f.GoPaths()
+							goPath := "v"
+							queue := []string{}
+							for i := range paths {
+								goPath += "." + paths[i]
+								g.L("if " + goPath + " != nil {")
+								queue = append(queue, "}")
+							}
+							g.L("return", g.valuer(importPkgs, "*"+goPath, assertAsPtr[types.Pointer](f.GoType()).Elem()))
+							for len(queue) > 0 {
+								g.L(queue[0])
+								queue = queue[1:]
+							}
+							g.L("return nil")
+						} else {
+							g.L("return ", g.valuer(importPkgs, "val", f.t))
+						}
+						g.L("})")
 						g.L("}")
 					} else {
 						g.L("func (v "+t.goName+") ", g.config.Getter.Prefix+f.GoName(), "() sequel.ColumnValuer[", typeStr, "] {")
-						g.L(`return sequel.Column`, specificType, `(`, g.Quote(g.QuoteIdentifier(f.ColumnName())), `, v.`, f.GoPath(), `, func(val `, typeStr, `) driver.Value { return `, g.valuer(importPkgs, "val", f.t), ` })`)
+						g.L(`return sequel.Column`, specificType, `(`, g.Quote(g.QuoteIdentifier(f.ColumnName())), `, v.`, f.GoPath(), `, func(val `, typeStr, `) driver.Value {`)
+						if f.isPtr() {
+							paths := f.GoPaths()
+							goPath := "v"
+							queue := []string{}
+							for i := range paths {
+								goPath += "." + paths[i]
+								g.L("if " + goPath + " != nil {")
+								queue = append(queue, "}")
+							}
+							g.L("return", g.valuer(importPkgs, "*"+goPath, assertAsPtr[types.Pointer](f.GoType()).Elem()))
+							for len(queue) > 0 {
+								g.L(queue[0])
+								queue = queue[1:]
+							}
+							g.L("return nil")
+						} else {
+							g.L("return ", g.valuer(importPkgs, "val", f.t))
+						}
+						g.L("})")
 						g.L("}")
 					}
 				} else {
 					g.L("func (v "+t.goName+") ", g.config.Getter.Prefix+f.GoName(), "() sequel.ColumnValuer[", typeStr, "] {")
-					g.L("return sequel.Column", specificType, "(", g.Quote(g.QuoteIdentifier(f.ColumnName())), ", v.", f.GoPath(), ", func(val ", typeStr, `) driver.Value { return `, g.valuer(importPkgs, "val", f.t), ` })`)
+					g.L("return sequel.Column", specificType, "(", g.Quote(g.QuoteIdentifier(f.ColumnName())), ", v.", f.GoPath(), ", func(val ", typeStr, `) driver.Value {`)
+					if f.isPtr() {
+						paths := f.GoPaths()
+						goPath := "v"
+						queue := []string{}
+						for i := range paths {
+							goPath += "." + paths[i]
+							g.L("if " + goPath + " != nil {")
+							queue = append(queue, "}")
+						}
+						g.L("return", g.valuer(importPkgs, "*"+goPath, assertAsPtr[types.Pointer](f.GoType()).Elem()))
+						for len(queue) > 0 {
+							g.L(queue[0])
+							queue = queue[1:]
+						}
+						g.L("return nil")
+					} else {
+						g.L("return ", g.valuer(importPkgs, "val", f.t))
+					}
+					g.L("})")
 					g.L("}")
 				}
 			}
