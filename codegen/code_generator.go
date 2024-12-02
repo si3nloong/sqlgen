@@ -461,10 +461,8 @@ func (g *Generator) buildScanner(importPkgs *Package, table *tableInfo) {
 				g.L("if v." + f.GoPath() + " == nil {")
 				g.L("v."+f.GoPath()+" = new(", Expr(strings.TrimPrefix(f.t.String(), "*")).Format(importPkgs, ExprParams{}), ")")
 				g.L("}")
-				g.L("addrs[", f.columnPos, "] = ", g.scanner(importPkgs, "&v."+f.GoPath(), f.t))
-			} else {
-				g.L("addrs[", f.columnPos, "] = ", g.scanner(importPkgs, "&v."+f.GoPath(), f.t))
 			}
+			g.L("addrs[", f.columnPos, "] = ", g.scanner(importPkgs, "&v."+f.GoPath(), f.t))
 		}
 		g.L("return addrs")
 	} else {
