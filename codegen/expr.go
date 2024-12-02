@@ -68,6 +68,9 @@ func (e Expr) Format(pkg *Package, args ...ExprParams) string {
 			}
 			return "&" + params.GoPath
 		},
+		"addr": func() string {
+			return "&" + params.GoPath
+		},
 	}
 	if params.Len > 0 {
 		funcMap["len"] = func() int64 {
