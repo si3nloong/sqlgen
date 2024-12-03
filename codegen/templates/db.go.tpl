@@ -61,7 +61,7 @@ func InsertOne[T sequel.TableColumnValuer, Ptr interface {
 		if err != nil {
 			return nil, err
 		}
-		return result, anyv.(autoIncrKeyInserter).ScanAutoIncr(i64)
+		return result, v.ScanAutoIncr(i64)
 	case sequel.SingleInserter:
 		query, args := v.InsertOneStmt()
 		return sqlConn.ExecContext(ctx, query, args...)
