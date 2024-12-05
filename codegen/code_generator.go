@@ -275,7 +275,7 @@ func (g *Generator) generateModels(
 
 		// Build getter
 		for _, f := range t.Columns {
-			g.L("func (v "+t.GoName+") ", "Get"+f.GoName, "() driver.Value {")
+			g.L("func (v "+t.GoName+") ", valueFunc(f), " driver.Value {")
 			queue := []string{}
 			// Find all the possible pointer paths
 			ptrPaths := f.GoPtrPaths()
@@ -503,7 +503,7 @@ func (g *Generator) buildFindByPK(importPkgs *Package, t *compiler.Table) {
 			if i > 0 {
 				g.WriteByte(',')
 			}
-			g.WriteString(getGoPath("v", f))
+			g.WriteString(g.getOrValue(importPkgs, "v", f))
 		}
 	}
 	g.WriteString("}\n")
@@ -625,7 +625,7 @@ func (g *Generator) buildUpdateByPK(importPkgs *Package, t *compiler.Table) {
 func (g *Generator) getOrValue(importPkgs *Package, obj string, f *compiler.Column) string {
 	goPath := obj + f.GoPath
 	if f.IsUnderlyingPtr() {
-		return obj + ".Get" + f.GoName + "()"
+		return obj + "." + valueFunc(f)
 	}
 	return g.valuer(importPkgs, goPath, f.Type)
 }
@@ -741,11 +741,8 @@ func (g *Generator) sqlValuer(col *compiler.Column, idx int) string {
 // 	return nil
 // }
 
-func getGoPath(obj string, c *compiler.Column) string {
-	if c.IsUnderlyingPtr() {
-		return obj + ".Get" + c.GoName + "()"
-	}
-	return obj + c.GoPath
+func valueFunc(f *compiler.Column) string {
+	return f.GoName + "Value()"
 }
 
 func strwidth(n int) string {
