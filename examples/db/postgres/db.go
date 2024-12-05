@@ -51,12 +51,10 @@ func Insert[T sequel.Inserter, Ptr sequel.PtrScanner[T]](ctx context.Context, sq
 		return new(sequel.EmptyResult), nil
 	}
 
-	var (
-		model   = data[0]
-		columns = model.Columns()
-		stmt    = strpool.AcquireString()
-	)
+	model := data[0]
+	columns := model.Columns()
 
+	stmt := strpool.AcquireString()
 	switch v := any(model).(type) {
 	case sequel.AutoIncrKeyer:
 		_, idx, _ := v.PK()
@@ -76,8 +74,8 @@ func Insert[T sequel.Inserter, Ptr sequel.PtrScanner[T]](ctx context.Context, sq
 			args = append(args, values...)
 		}
 		stmt.WriteString(" RETURNING " + strings.Join(TableColumns(model), ",") + ";")
-		strpool.ReleaseString(stmt) // Deallocate statement
 		rows, err := sqlConn.QueryContext(ctx, stmt.String(), args...)
+		strpool.ReleaseString(stmt) // Deallocate statement
 		if err != nil {
 			return nil, err
 		}
@@ -158,14 +156,11 @@ func UpsertOne[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Co
 		opts[i](&opt)
 	}
 
-	var (
-		stmt     = strpool.AcquireString()
-		columns  = model.Columns()
-		noOfCols = len(columns)
-		values   = model.Values()
-	)
-	defer strpool.ReleaseString(stmt)
+	columns := model.Columns()
+	noOfCols := len(columns)
+	values := model.Values()
 
+	stmt := strpool.AcquireString()
 	switch v := any(model).(type) {
 	case sequel.AutoIncrKeyer:
 		pkName, idx, _ := v.PK()
@@ -238,7 +233,9 @@ func UpsertOne[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Co
 		clear(omitDict)
 	}
 	stmt.WriteString(" RETURNING " + strings.Join(TableColumns(model), ",") + ";")
-	return sqlConn.QueryRowContext(ctx, stmt.String(), values...).Scan(model.Addrs()...)
+	row := sqlConn.QueryRowContext(ctx, stmt.String(), values...)
+	strpool.ReleaseString(stmt)
+	return row.Scan(model.Addrs()...)
 }
 
 // Upsert is a helper function to upsert multiple records.
@@ -418,7 +415,6 @@ func UpdateByPK[T sequel.KeyValuer](ctx context.Context, sqlConn sequel.DB, mode
 		values := model.Values()
 		values = append(values[:pkIdx], append(values[pkIdx+1:], pk)...)
 		stmt := strpool.AcquireString()
-		defer strpool.ReleaseString(stmt)
 		stmt.WriteString("UPDATE " + DbTable(model) + " SET ")
 		for idx := range columns {
 			if idx > 0 {
@@ -427,7 +423,9 @@ func UpdateByPK[T sequel.KeyValuer](ctx context.Context, sqlConn sequel.DB, mode
 			stmt.WriteString(columns[idx] + " = " + wrapVar(idx+1))
 		}
 		stmt.WriteString(" WHERE " + pkName + " = " + wrapVar(len(columns)+2) + ";")
-		return sqlConn.ExecContext(ctx, stmt.String(), append(values, pk)...)
+		result, err := sqlConn.ExecContext(ctx, stmt.String(), append(values, pk)...)
+		strpool.ReleaseString(stmt)
+		return result, err
 	default:
 		panic("unreachable")
 	}
@@ -445,7 +443,6 @@ func DeleteByPK[T sequel.KeyValuer](ctx context.Context, sqlConn sequel.DB, mode
 	case sequel.CompositeKeyer:
 		names, _, keys := v.CompositeKey()
 		stmt := strpool.AcquireString()
-		defer strpool.ReleaseString(stmt)
 		stmt.WriteString("DELETE FROM " + DbTable(model) + " WHERE ")
 		noOfKey := len(names)
 		for i := 0; i < noOfKey; i++ {
@@ -456,7 +453,9 @@ func DeleteByPK[T sequel.KeyValuer](ctx context.Context, sqlConn sequel.DB, mode
 			}
 		}
 		stmt.WriteByte(';')
-		return sqlConn.ExecContext(ctx, stmt.String(), keys...)
+		result, err := sqlConn.ExecContext(ctx, stmt.String(), keys...)
+		strpool.ReleaseString(stmt)
+		return result, err
 	default:
 		panic("unreachable")
 	}

@@ -38,7 +38,7 @@ func InsertOne[T sequel.TableColumnValuer, Ptr interface {
 		if err != nil {
 			return nil, err
 		}
-		return result, anyv.(autoIncrKeyInserter).ScanAutoIncr(i64)
+		return result, v.ScanAutoIncr(i64)
 	case sequel.SingleInserter:
 		query, args := v.InsertOneStmt()
 		return sqlConn.ExecContext(ctx, query, args...)
@@ -56,13 +56,10 @@ func Insert[T sequel.TableColumnValuer](ctx context.Context, sqlConn sequel.DB, 
 		return new(sequel.EmptyResult), nil
 	}
 
-	var (
-		model   = data[0]
-		columns = model.Columns()
-		stmt    = strpool.AcquireString()
-	)
-	defer strpool.ReleaseString(stmt)
+	model := data[0]
+	columns := model.Columns()
 
+	stmt := strpool.AcquireString()
 	switch v := any(model).(type) {
 	case sequel.AutoIncrKeyer:
 		_, idx, _ := v.PK()
@@ -83,7 +80,9 @@ func Insert[T sequel.TableColumnValuer](ctx context.Context, sqlConn sequel.DB, 
 			args = append(args, values...)
 		}
 		stmt.WriteByte(';')
-		return sqlConn.ExecContext(ctx, stmt.String(), args...)
+		result, err := sqlConn.ExecContext(ctx, stmt.String(), args...)
+		strpool.ReleaseString(stmt)
+		return result, err
 	default:
 		noOfCols := len(columns)
 		cols := strings.Join(columns, ",")
@@ -99,7 +98,9 @@ func Insert[T sequel.TableColumnValuer](ctx context.Context, sqlConn sequel.DB, 
 			args = append(args, data[i].Values()...)
 		}
 		stmt.WriteByte(';')
-		return sqlConn.ExecContext(ctx, stmt.String(), args...)
+		result, err := sqlConn.ExecContext(ctx, stmt.String(), args...)
+		strpool.ReleaseString(stmt)
+		return result, err
 	}
 }
 
@@ -199,15 +200,12 @@ func Upsert[T interface {
 		return new(sequel.EmptyResult), nil
 	}
 
-	var (
-		model    = data[0]
-		columns  = model.Columns()
-		noOfCols = len(columns)
-		args     = make([]any, 0, noOfCols*noOfData)
-	)
+	model := data[0]
+	columns := model.Columns()
+	noOfCols := len(columns)
+	args := make([]any, 0, noOfCols*noOfData)
 
-	var stmt = strpool.AcquireString()
-	defer strpool.ReleaseString(stmt)
+	stmt := strpool.AcquireString()
 	switch v := any(model).(type) {
 	case sequel.AutoIncrKeyer:
 		pkName, idx, _ := v.PK()
@@ -289,7 +287,9 @@ func Upsert[T interface {
 		clear(omitDict)
 	}
 	stmt.WriteByte(';')
-	return sqlConn.ExecContext(ctx, stmt.String(), args...)
+	result, err := sqlConn.ExecContext(ctx, stmt.String(), args...)
+	strpool.ReleaseString(stmt)
+	return result, err
 }
 
 // FindByPK is to find single record using primary key.
