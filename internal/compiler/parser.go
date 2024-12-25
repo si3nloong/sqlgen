@@ -203,25 +203,30 @@ func Parse(dir string, cfg *Config) (*Package, error) {
 						}
 
 						t := obj.Decl.(*ast.TypeSpec)
-						ft := &structField{
-							name:  types.ExprString(vi),
-							t:     f.pkg.TypesInfo.TypeOf(fi.Type),
-							index: append(f.idx, i),
-							// paths:    append(f.paths, path),
-							exported: vi.IsExported(),
-							embedded: true,
-							parent:   f.prev,
-							tag:      tag,
-						}
-						structFields = append(structFields, ft)
+						switch t.Type.(type) {
+						case *ast.StructType:
+							ft := &structField{
+								name:  types.ExprString(vi),
+								t:     f.pkg.TypesInfo.TypeOf(fi.Type),
+								index: append(f.idx, i),
+								// paths:    append(f.paths, path),
+								exported: vi.IsExported(),
+								embedded: true,
+								parent:   f.prev,
+								tag:      tag,
+							}
+							structFields = append(structFields, ft)
 
-						q = append(q, typeQueue{
-							idx:  append(f.idx, i),
-							prev: ft,
-							t:    t.Type.(*ast.StructType),
-							pkg:  f.pkg,
-						})
-						continue
+							q = append(q, typeQueue{
+								idx:  append(f.idx, i),
+								prev: ft,
+								t:    t.Type.(*ast.StructType),
+								pkg:  f.pkg,
+							})
+							continue
+						case *ast.ArrayType:
+							continue
+						}
 
 					// Embedded with imported struct
 					case *ast.SelectorExpr:

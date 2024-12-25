@@ -3,8 +3,6 @@ package encoding
 import (
 	"database/sql"
 	"fmt"
-	"log"
-	"reflect"
 	"strconv"
 	"unsafe"
 )
@@ -23,8 +21,6 @@ func Float32Scanner[T ~float32, Addr addrOrPtr[T]](addr Addr, strict ...bool) sq
 
 // Float returns a sql.Scanner
 func Float64Scanner[T ~float64, Addr addrOrPtr[T]](addr Addr, strict ...bool) sql.Scanner {
-	log.Println("Float64Scanner ->", reflect.ValueOf(addr).CanSet())
-	log.Println("Float64Scanner ->", reflect.ValueOf(addr).CanAddr())
 	var strictType bool
 	if len(strict) > 0 {
 		strictType = strict[0]

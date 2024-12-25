@@ -3,7 +3,6 @@ package encoding
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"unsafe"
 )
 
@@ -36,7 +35,6 @@ func (s *byteArrScanner[T]) Scan(v any) error {
 		if len(b) > s.size {
 			return fmt.Errorf(`sequel/types: byte array overflow, should be %d, but it is %d`, s.size, len(b))
 		}
-		log.Println("HERE")
 		for i := range b {
 			s.v[i] = T(b[i])
 		}
