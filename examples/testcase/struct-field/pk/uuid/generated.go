@@ -2,6 +2,9 @@ package main
 
 import (
 	"database/sql/driver"
+
+	"github.com/google/uuid"
+	"github.com/si3nloong/sqlgen/sequel"
 )
 
 func (User) TableName() string {
@@ -28,9 +31,19 @@ func (User) InsertPlaceholders(row int) string {
 func (v User) InsertOneStmt() (string, []any) {
 	return "INSERT INTO user (id,name) VALUES (?,?);", v.Values()
 }
-func (v User) GetID() driver.Value {
+func (v User) IDValue() driver.Value {
 	return v.ID
 }
-func (v User) GetName() driver.Value {
+func (v User) NameValue() driver.Value {
 	return v.Name
+}
+func (v User) GetID() sequel.ColumnValuer[uuid.UUID] {
+	return sequel.Column("id", v.ID, func(val uuid.UUID) driver.Value {
+		return val
+	})
+}
+func (v User) GetName() sequel.ColumnValuer[string] {
+	return sequel.Column("name", v.Name, func(val string) driver.Value {
+		return val
+	})
 }

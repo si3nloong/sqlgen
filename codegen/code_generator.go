@@ -146,12 +146,18 @@ func (g *Generator) generateModels(
 		// 	g.L(`return ` + g.Quote(g.QuoteIdentifier(t.dbName)))
 		// 	g.L("}")
 		// }
+		var readonly bool
+		if method, wrongType := t.PtrImplements(locker); wrongType {
+			g.LogError(fmt.Errorf(`sqlgen: struct %q has function "TableName" but wrong footprint`, t.Name))
+		} else if method == nil && !wrongType {
+			readonly = true
+		}
 
 		// Build the "TableName" function which return the table name
 		if method, wrongType := t.Implements(sqlTabler); wrongType {
 			g.LogError(fmt.Errorf(`sqlgen: struct %q has function "TableName" but wrong footprint`, t.Name))
 		} else if method != nil && !wrongType {
-			g.L("func (" + t.GoName + ") TableName() string {")
+			g.L("func ("+t.GoName+") ", sqlTabler.Method(0).Name(), "() string {")
 			g.L(`return ` + g.Quote(g.QuoteIdentifier(t.Name)))
 			g.L("}")
 		} else {
@@ -200,20 +206,6 @@ func (g *Generator) generateModels(
 			// }
 		}
 
-		insertColumns := t.InsertColumns()
-		if len(insertColumns) > 0 && len(insertColumns) != len(t.Columns) {
-			g.L("func (" + t.GoName + ") InsertColumns() []string {")
-			g.WriteString("return []string{")
-			for i, col := range insertColumns {
-				if i > 0 {
-					g.WriteByte(',')
-				}
-				g.WriteString(g.Quote(g.QuoteIdentifier(col.Name)))
-			}
-			g.L(fmt.Sprintf("} // %d", len(insertColumns)))
-			g.L("}")
-		}
-
 		// Build the "Columns" function which return the column names
 		if method, wrongType := t.Implements(sqlColumner); wrongType {
 			g.LogError(fmt.Errorf(`sqlgen: struct %q has function "Columns" but wrong footprint`, t.Name))
@@ -244,31 +236,47 @@ func (g *Generator) generateModels(
 			g.buildScanner(importPkgs, t)
 		}
 
-		if len(insertColumns) > 0 {
-			if g.staticVar {
-				g.L("func (" + t.GoName + ") InsertPlaceholders(row int) string {")
-				g.L(`return "(` + strings.Repeat(","+g.dialect.QuoteVar(0), len(insertColumns))[1:] + `)"` + fmt.Sprintf(" // %d", len(insertColumns)))
-				g.L("}")
-			} else {
-				g.L("func (" + t.GoName + ") InsertPlaceholders(row int) string {")
-				g.L(fmt.Sprintf("const noOfColumn = %d", len(insertColumns)))
-				g.WriteString(`return "("+`)
-				for i := range insertColumns {
+		if !readonly {
+			insertColumns := t.InsertColumns()
+			if len(insertColumns) > 0 && len(insertColumns) != len(t.Columns) {
+				g.L("func (" + t.GoName + ") InsertColumns() []string {")
+				g.WriteString("return []string{")
+				for i, col := range insertColumns {
 					if i > 0 {
-						g.WriteString(`+","+`)
+						g.WriteByte(',')
 					}
-					g.WriteString(fmt.Sprintf(`%q+ strconv.Itoa((row * noOfColumn) + %d)`, string(g.dialect.VarRune()), i+1))
+					g.WriteString(g.Quote(g.QuoteIdentifier(col.Name)))
 				}
-				g.WriteString(`+")"`)
+				g.L(fmt.Sprintf("} // %d", len(insertColumns)))
 				g.L("}")
 			}
 
-			g.buildInsertOne(importPkgs, t)
+			if len(insertColumns) > 0 {
+				if g.staticVar {
+					g.L("func (" + t.GoName + ") InsertPlaceholders(row int) string {")
+					g.L(`return "(` + strings.Repeat(","+g.dialect.QuoteVar(0), len(insertColumns))[1:] + `)"` + fmt.Sprintf(" // %d", len(insertColumns)))
+					g.L("}")
+				} else {
+					g.L("func (" + t.GoName + ") InsertPlaceholders(row int) string {")
+					g.L(fmt.Sprintf("const noOfColumn = %d", len(insertColumns)))
+					g.WriteString(`return "("+`)
+					for i := range insertColumns {
+						if i > 0 {
+							g.WriteString(`+","+`)
+						}
+						g.WriteString(fmt.Sprintf(`%q+ strconv.Itoa((row * noOfColumn) + %d)`, string(g.dialect.VarRune()), i+1))
+					}
+					g.WriteString(`+")"`)
+					g.L("}")
+				}
+
+				g.buildInsertOne(importPkgs, t)
+			}
 		}
 
 		if t.HasPK() {
 			g.buildFindByPK(importPkgs, t)
-			if len(t.ColumnsWithoutPK()) > 0 {
+			if !readonly && len(t.ColumnsWithoutPK()) > 0 {
 				g.buildUpdateByPK(importPkgs, t)
 			}
 		}
@@ -323,6 +331,27 @@ func (g *Generator) generateModels(
 			// 	// 			g.L("}")
 			// 	// 		}
 			// }
+		}
+		for _, f := range t.Columns {
+			typeStr := f.Type.String()
+			if idx := strings.Index(typeStr, "."); idx > 0 {
+				typeStr = Expr(typeStr).Format(importPkgs)
+			}
+			g.L("func (v "+t.GoName+") ", g.config.Getter.Prefix+f.GoName, "() sequel.ColumnValuer[", typeStr, "] {")
+			g.L("return sequel.Column(", g.Quote(g.QuoteIdentifier(f.Name)), ", v"+f.GoPath, ", func(val ", typeStr, `) driver.Value {`)
+			// g.L("return ", g.valuer(importPkgs, "val", f.Type))
+
+			if f.IsPtr() {
+				g.L("if val != nil {")
+				// Deference the pointer value and return it
+				g.L("return ", g.valuer(importPkgs, "*val", assertAsPtr[types.Pointer](f.Type).Elem()))
+				g.L("}")
+				g.L("return nil")
+			} else {
+				g.L("return " + g.valuer(importPkgs, "val", f.Type))
+			}
+			g.L("})")
+			g.L("}")
 		}
 
 		schema.Tables = schema.Tables[1:]
@@ -712,27 +741,27 @@ func (g *Generator) sqlValuer(col *compiler.Column, idx int) string {
 	return g.dialect.QuoteVar(idx + 1)
 }
 
-// Generate migration files for models
-// func (g *Generator) genMigrations(schemas []*tableInfo) error {
+// // Generate migration files for models
+// func (g *Generator) genMigrations(pkg *compiler.Package) error {
 // 	unix := time.Now().Unix()
-// 	for i := range schemas {
+// 	for _, tableSchema := range pkg.Tables {
 // 		// Each schema should have one migration files
-// 		if err := g.genMigration(context.Background(), unix, schemas[i]); err != nil {
+// 		if err := g.genMigration(unix, tableSchema); err != nil {
 // 			return err
 // 		}
 // 	}
 // 	return nil
 // }
 
-// func (g *Generator) genMigration(ctx context.Context, unix int64, t *tableInfo) error {
-// 	fileDest := fmt.Sprintf("%s/%d_%s.sql", g.config.Migration.Dir, unix, t.TableName())
+// func (g *Generator) genMigration(unix int64, t *compiler.Table) error {
+// 	fileDest := fmt.Sprintf("%s/%d_%s.sql", g.config.Migration.Dir, unix, t.Name)
 // 	f, err := os.OpenFile(fileDest, os.O_RDWR|os.O_CREATE|os.O_TRUNC, os.ModePerm)
 // 	if err != nil {
 // 		return err
 // 	}
 // 	defer f.Close()
 
-// 	if err := g.dialect.Migrate(ctx, g.config.Migration.DSN, f, t); errors.Is(err, dialect.ErrNoNewMigration) {
+// 	if err := g.dialect.Migrate(g.config.Migration.DSN, f, t); errors.Is(err, dialect.ErrNoNewMigration) {
 // 		_ = syscall.Unlink(fileDest)
 // 		return nil
 // 	} else if err != nil {

@@ -191,6 +191,4 @@ func TestDeleteOne(t *testing.T) {
 
 	// models, err := sqlutil.SelectFrom[autopk.Model](ctx, dbConn)
 	// require.NoError(t, err)
-
-	// log.Println(models)
 }

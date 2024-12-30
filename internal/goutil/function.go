@@ -2,9 +2,18 @@ package goutil
 
 import (
 	"reflect"
+	"regexp"
 	"runtime"
 	"strings"
 )
+
+var genericRegexp = regexp.MustCompile(`(.*)\[\w+\]$`)
+
+func GetTypeName(i any, args ...string) string {
+	typeOf := reflect.TypeOf(i)
+	submatches := genericRegexp.FindStringSubmatch(typeOf.Name())
+	return typeOf.PkgPath() + "." + submatches[1]
+}
 
 func GetFunctionName(i any) string {
 	return runtime.FuncForPC(reflect.ValueOf(i).Pointer()).Name()

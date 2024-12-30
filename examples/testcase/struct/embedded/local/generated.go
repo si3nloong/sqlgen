@@ -2,6 +2,9 @@ package embedded
 
 import (
 	"database/sql/driver"
+	"time"
+
+	"github.com/si3nloong/sqlgen/sequel"
 )
 
 func (B) TableName() string {
@@ -34,18 +37,43 @@ func (B) InsertPlaceholders(row int) string {
 func (v B) InsertOneStmt() (string, []any) {
 	return "INSERT INTO b (id,name,z,created,ok) VALUES (?,?,?,?,?);", v.Values()
 }
-func (v B) GetID() driver.Value {
+func (v B) IDValue() driver.Value {
 	return v.a.ID
 }
-func (v B) GetName() driver.Value {
+func (v B) NameValue() driver.Value {
 	return v.a.Name
 }
-func (v B) GetZ() driver.Value {
+func (v B) ZValue() driver.Value {
 	return v.a.Z
 }
-func (v B) GetCreated() driver.Value {
+func (v B) CreatedValue() driver.Value {
 	return v.ts.Created
 }
-func (v B) GetOK() driver.Value {
+func (v B) OKValue() driver.Value {
 	return v.ts.OK
+}
+func (v B) GetID() sequel.ColumnValuer[int64] {
+	return sequel.Column("id", v.a.ID, func(val int64) driver.Value {
+		return val
+	})
+}
+func (v B) GetName() sequel.ColumnValuer[string] {
+	return sequel.Column("name", v.a.Name, func(val string) driver.Value {
+		return val
+	})
+}
+func (v B) GetZ() sequel.ColumnValuer[bool] {
+	return sequel.Column("z", v.a.Z, func(val bool) driver.Value {
+		return val
+	})
+}
+func (v B) GetCreated() sequel.ColumnValuer[time.Time] {
+	return sequel.Column("created", v.ts.Created, func(val time.Time) driver.Value {
+		return val
+	})
+}
+func (v B) GetOK() sequel.ColumnValuer[bool] {
+	return sequel.Column("ok", v.ts.OK, func(val bool) driver.Value {
+		return val
+	})
 }

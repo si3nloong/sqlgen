@@ -247,16 +247,16 @@ func parseGoPackage(
 
 		// If the `skip_empty` is true,
 		// we do not generate the go file
-		// if gen.config.Exec.SkipEmpty && len(schemas) == 0 {
-		// 	goto nextDir
-		// }
+		if g.config.Exec.SkipEmpty {
+			goto nextDir
+		}
 
-		// if gen.config.Migration != nil {
-		// 	if err := os.MkdirAll(gen.config.Migration.Dir, os.ModePerm); err != nil {
+		// if g.config.Migration != nil {
+		// 	if err := os.MkdirAll(g.config.Migration.Dir, os.ModePerm); err != nil {
 		// 		return err
 		// 	}
 
-		// 	if err := gen.genMigrations(schemas); err != nil {
+		// 	if err := g.genMigrations(schema); err != nil {
 		// 		return err
 		// 	}
 		// }

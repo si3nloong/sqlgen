@@ -4,6 +4,7 @@ import (
 	"database/sql/driver"
 
 	"cloud.google.com/go/civil"
+	"github.com/si3nloong/sqlgen/sequel"
 	"github.com/si3nloong/sqlgen/sequel/encoding"
 )
 
@@ -31,9 +32,19 @@ func (B) InsertPlaceholders(row int) string {
 func (v B) InsertOneStmt() (string, []any) {
 	return "INSERT INTO b (date,time) VALUES (?,?);", v.Values()
 }
-func (v B) GetDate() driver.Value {
+func (v B) DateValue() driver.Value {
 	return encoding.TextValue(v.DateTime.Date)
 }
-func (v B) GetTime() driver.Value {
+func (v B) TimeValue() driver.Value {
 	return encoding.TextValue(v.DateTime.Time)
+}
+func (v B) GetDate() sequel.ColumnValuer[civil.Date] {
+	return sequel.Column("date", v.DateTime.Date, func(val civil.Date) driver.Value {
+		return encoding.TextValue(val)
+	})
+}
+func (v B) GetTime() sequel.ColumnValuer[civil.Time] {
+	return sequel.Column("time", v.DateTime.Time, func(val civil.Time) driver.Value {
+		return encoding.TextValue(val)
+	})
 }

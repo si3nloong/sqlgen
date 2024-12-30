@@ -10,6 +10,7 @@ import (
 	"github.com/si3nloong/sqlgen/codegen/dialect"
 	"github.com/si3nloong/sqlgen/internal/goutil"
 	"github.com/si3nloong/sqlgen/sequel/encoding"
+	"github.com/si3nloong/sqlgen/sequel/sqltype"
 )
 
 func (s *mysqlDriver) ColumnDataTypes() map[string]*dialect.ColumnType {
@@ -125,68 +126,68 @@ func (s *mysqlDriver) ColumnDataTypes() map[string]*dialect.ColumnType {
 		},
 		"[]string": {
 			DataType: s.columnDataType("JSON"),
-			Valuer:   "github.com/si3nloong/sqlgen/sequel/sqltype.StringSlice[{{elemType}}]({{goPath}})",
-			Scanner:  "(*github.com/si3nloong/sqlgen/sequel/sqltype.StringSlice[{{elemType}}])({{addrOfGoPath}})",
+			Valuer:   goutil.GetTypeName(sqltype.StringSlice[string]{}) + "[{{elemType}}]({{goPath}})",
+			Scanner:  "(*" + goutil.GetTypeName(sqltype.StringSlice[string]{}) + "[{{elemType}}])({{addrOfGoPath}})",
 		},
 		"[]byte": {
 			DataType: s.columnDataType("BLOB"),
 			Valuer:   "string({{goPath}})",
-			Scanner:  goutil.GenericFuncName(encoding.StringScanner[[]byte, *[]byte], "{{elemType}}", "{{addr}}"),
+			Scanner:  goutil.GenericFuncName(encoding.StringScanner[[]byte, *[]byte], "{{baseType}}", "{{addr}}"),
 		},
 		"[]bool": {
 			DataType: s.columnDataType("JSON"),
-			Valuer:   "github.com/si3nloong/sqlgen/sequel/encoding.MarshalBoolSlice({{goPath}})",
-			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.BoolSlice({{addrOfGoPath}})",
+			Valuer:   goutil.GetTypeName(sqltype.BoolSlice[bool]{}) + "[{{elemType}}]({{goPath}})",
+			Scanner:  "(*" + goutil.GetTypeName(sqltype.BoolSlice[bool]{}) + "[{{elemType}}])({{addrOfGoPath}})",
 		},
 		"[]int": {
 			DataType: s.columnDataType("JSON"),
-			Valuer:   "github.com/si3nloong/sqlgen/sequel/sqltype.IntSlice[{{elemType}}]({{goPath}})",
-			Scanner:  "(*github.com/si3nloong/sqlgen/sequel/sqltype.IntSlice[{{elemType}}])({{addrOfGoPath}})",
+			Valuer:   goutil.GetTypeName(sqltype.IntSlice[int]{}) + "[{{elemType}}]({{goPath}})",
+			Scanner:  "(*" + goutil.GetTypeName(sqltype.IntSlice[int]{}) + "[{{elemType}}])({{addrOfGoPath}})",
 		},
 		"[]int8": {
 			DataType: s.columnDataType("JSON"),
-			Valuer:   "(github.com/si3nloong/sqlgen/sequel/sqltype.Int8Slice[{{elemType}}])({{goPath}})",
-			Scanner:  "(*github.com/si3nloong/sqlgen/sequel/sqltype.Int8Slice[{{elemType}}])({{addrOfGoPath}})",
+			Valuer:   goutil.GetTypeName(sqltype.Int8Slice[int8]{}) + "[{{elemType}}]({{goPath}})",
+			Scanner:  "(*" + goutil.GetTypeName(sqltype.Int8Slice[int8]{}) + "[{{elemType}}])({{addrOfGoPath}})",
 		},
 		"[]int16": {
 			DataType: s.columnDataType("JSON"),
-			Valuer:   "(github.com/si3nloong/sqlgen/sequel/sqltype.Int16Slice[{{elemType}}])({{goPath}})",
-			Scanner:  "(*github.com/si3nloong/sqlgen/sequel/sqltype.Int16Slice[{{elemType}}])({{addrOfGoPath}})",
+			Valuer:   goutil.GetTypeName(sqltype.Int16Slice[int16]{}) + "[{{elemType}}]({{goPath}})",
+			Scanner:  "(*" + goutil.GetTypeName(sqltype.Int16Slice[int16]{}) + "[{{elemType}}])({{addrOfGoPath}})",
 		},
 		"[]int32": {
 			DataType: s.columnDataType("JSON"),
-			Valuer:   "(github.com/si3nloong/sqlgen/sequel/sqltype.Int32Slice[{{elemType}}])({{goPath}})",
-			Scanner:  "(*github.com/si3nloong/sqlgen/sequel/sqltype.Int32Slice[{{elemType}}])({{addrOfGoPath}})",
+			Valuer:   goutil.GetTypeName(sqltype.Int32Slice[int32]{}) + "[{{elemType}}]({{goPath}})",
+			Scanner:  "(*" + goutil.GetTypeName(sqltype.Int32Slice[int32]{}) + "[{{elemType}}])({{addrOfGoPath}})",
 		},
 		"[]int64": {
 			DataType: s.columnDataType("JSON"),
-			Valuer:   "(github.com/si3nloong/sqlgen/sequel/sqltype.Int64Slice[{{elemType}}])({{goPath}})",
-			Scanner:  "(*github.com/si3nloong/sqlgen/sequel/sqltype.Int64Slice[{{elemType}}])({{addrOfGoPath}})",
+			Valuer:   goutil.GetTypeName(sqltype.Int64Slice[int64]{}) + "[{{elemType}}]({{goPath}})",
+			Scanner:  "(*" + goutil.GetTypeName(sqltype.Int64Slice[int64]{}) + "[{{elemType}}])({{addrOfGoPath}})",
 		},
 		"[]uint": {
 			DataType: s.columnDataType("JSON"),
-			Valuer:   "github.com/si3nloong/sqlgen/sequel/encoding.MarshalUintSlice({{goPath}})",
-			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.UintSlice({{addrOfGoPath}})",
+			Valuer:   goutil.GetTypeName(sqltype.UintSlice[uint]{}) + "[{{elemType}}]({{goPath}})",
+			Scanner:  "(*" + goutil.GetTypeName(sqltype.UintSlice[uint]{}) + "[{{elemType}}])({{addrOfGoPath}})",
 		},
 		"[]uint8": {
 			DataType: s.columnDataType("JSON"),
-			Valuer:   "github.com/si3nloong/sqlgen/sequel/encoding.MarshalUintSlice({{goPath}})",
-			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.UintSlice({{addrOfGoPath}})",
+			Valuer:   goutil.GetTypeName(sqltype.Uint8Slice[uint8]{}) + "[{{elemType}}]({{goPath}})",
+			Scanner:  "(*" + goutil.GetTypeName(sqltype.Uint8Slice[uint8]{}) + "[{{elemType}}])({{addrOfGoPath}})",
 		},
 		"[]uint16": {
 			DataType: s.columnDataType("JSON"),
-			Valuer:   "github.com/si3nloong/sqlgen/sequel/encoding.MarshalUintSlice({{goPath}})",
-			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.UintSlice({{addrOfGoPath}})",
+			Valuer:   goutil.GetTypeName(sqltype.Uint16Slice[uint16]{}) + "[{{elemType}}]({{goPath}})",
+			Scanner:  "(*" + goutil.GetTypeName(sqltype.Uint16Slice[uint16]{}) + "[{{elemType}}])({{addrOfGoPath}})",
 		},
 		"[]uint32": {
 			DataType: s.columnDataType("JSON"),
-			Valuer:   "github.com/si3nloong/sqlgen/sequel/encoding.MarshalUintSlice({{goPath}})",
-			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.UintSlice({{addrOfGoPath}})",
+			Valuer:   goutil.GetTypeName(sqltype.Uint32Slice[uint32]{}) + "[{{elemType}}]({{goPath}})",
+			Scanner:  "(*" + goutil.GetTypeName(sqltype.Uint32Slice[uint32]{}) + "[{{elemType}}])({{addrOfGoPath}})",
 		},
 		"[]uint64": {
 			DataType: s.columnDataType("JSON"),
-			Valuer:   "github.com/si3nloong/sqlgen/sequel/encoding.MarshalUintSlice({{goPath}})",
-			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.UintSlice({{addrOfGoPath}})",
+			Valuer:   goutil.GetTypeName(sqltype.Uint64Slice[uint64]{}) + "[{{elemType}}]({{goPath}})",
+			Scanner:  "(*" + goutil.GetTypeName(sqltype.Uint64Slice[uint64]{}) + "[{{elemType}}])({{addrOfGoPath}})",
 		},
 		"[]float32": {
 			DataType: s.columnDataType("JSON"),

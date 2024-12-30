@@ -19,7 +19,8 @@ var (
 	// sqlgen interface
 	sqlDatabaser, sqlTabler, sqlColumner, sqlQueryColumner, sqlValuer, sqlScanner,
 	binaryMarshaler, binaryUnmarshaler,
-	textMarshaler, textUnmarshaler *types.Interface
+	textMarshaler, textUnmarshaler,
+	locker *types.Interface
 
 	typeOfTime string
 
@@ -30,7 +31,7 @@ var (
 func init() {
 	pkgs, err := packages.Load(&packages.Config{
 		Mode: packages.NeedTypes,
-	}, "time", "database/sql...", "encoding")
+	}, "time", "sync", "database/sql...", "encoding")
 	if err != nil {
 		panic(err)
 	}
@@ -46,6 +47,8 @@ func init() {
 			binaryUnmarshaler = p.Types.Scope().Lookup("BinaryUnmarshaler").Type().Underlying().(*types.Interface)
 			textMarshaler = p.Types.Scope().Lookup("TextMarshaler").Type().Underlying().(*types.Interface)
 			textUnmarshaler = p.Types.Scope().Lookup("TextUnmarshaler").Type().Underlying().(*types.Interface)
+		case "sync":
+			locker = p.Types.Scope().Lookup("Locker").Type().Underlying().(*types.Interface)
 		case "time":
 			typeOfTime = p.Types.Scope().Lookup("Time").Type().(*types.Named).String()
 		}

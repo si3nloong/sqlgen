@@ -3,6 +3,7 @@ package nopk
 import (
 	"database/sql/driver"
 
+	"github.com/si3nloong/sqlgen/sequel"
 	"github.com/si3nloong/sqlgen/sequel/encoding"
 )
 
@@ -32,12 +33,27 @@ func (Customer) InsertPlaceholders(row int) string {
 func (v Customer) InsertOneStmt() (string, []any) {
 	return "INSERT INTO customer (name,age,married) VALUES (?,?,?);", v.Values()
 }
-func (v Customer) GetName() driver.Value {
+func (v Customer) NameValue() driver.Value {
 	return v.Name
 }
-func (v Customer) GetAge() driver.Value {
+func (v Customer) AgeValue() driver.Value {
 	return (int64)(v.Age)
 }
-func (v Customer) GetMarried() driver.Value {
+func (v Customer) MarriedValue() driver.Value {
 	return v.Married
+}
+func (v Customer) GetName() sequel.ColumnValuer[string] {
+	return sequel.Column("name", v.Name, func(val string) driver.Value {
+		return val
+	})
+}
+func (v Customer) GetAge() sequel.ColumnValuer[uint8] {
+	return sequel.Column("age", v.Age, func(val uint8) driver.Value {
+		return (int64)(val)
+	})
+}
+func (v Customer) GetMarried() sequel.ColumnValuer[bool] {
+	return sequel.Column("married", v.Married, func(val bool) driver.Value {
+		return val
+	})
 }

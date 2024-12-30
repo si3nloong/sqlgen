@@ -1,8 +1,11 @@
 package schema
 
 import (
+	"database/sql"
 	"database/sql/driver"
+	"time"
 
+	"github.com/si3nloong/sqlgen/sequel"
 	"github.com/si3nloong/sqlgen/sequel/encoding"
 )
 
@@ -32,14 +35,29 @@ func (A) InsertPlaceholders(row int) string {
 func (v A) InsertOneStmt() (string, []any) {
 	return "INSERT INTO Apple (id,text,created_at) VALUES (?,?,?);", v.Values()
 }
-func (v A) GetID() driver.Value {
+func (v A) IDValue() driver.Value {
 	return v.ID
 }
-func (v A) GetText() driver.Value {
+func (v A) TextValue() driver.Value {
 	return (string)(v.Text)
 }
-func (v A) GetCreatedAt() driver.Value {
+func (v A) CreatedAtValue() driver.Value {
 	return v.CreatedAt
+}
+func (v A) GetID() sequel.ColumnValuer[string] {
+	return sequel.Column("id", v.ID, func(val string) driver.Value {
+		return val
+	})
+}
+func (v A) GetText() sequel.ColumnValuer[LongText] {
+	return sequel.Column("text", v.Text, func(val LongText) driver.Value {
+		return (string)(val)
+	})
+}
+func (v A) GetCreatedAt() sequel.ColumnValuer[time.Time] {
+	return sequel.Column("created_at", v.CreatedAt, func(val time.Time) driver.Value {
+		return val
+	})
 }
 
 func (B) TableName() string {
@@ -66,11 +84,21 @@ func (B) InsertPlaceholders(row int) string {
 func (v B) InsertOneStmt() (string, []any) {
 	return "INSERT INTO b (id,created_at) VALUES (?,?);", v.Values()
 }
-func (v B) GetID() driver.Value {
+func (v B) IDValue() driver.Value {
 	return v.ID
 }
-func (v B) GetCreatedAt() driver.Value {
+func (v B) CreatedAtValue() driver.Value {
 	return v.CreatedAt
+}
+func (v B) GetID() sequel.ColumnValuer[string] {
+	return sequel.Column("id", v.ID, func(val string) driver.Value {
+		return val
+	})
+}
+func (v B) GetCreatedAt() sequel.ColumnValuer[time.Time] {
+	return sequel.Column("created_at", v.CreatedAt, func(val time.Time) driver.Value {
+		return val
+	})
 }
 
 func (C) TableName() string {
@@ -102,8 +130,13 @@ func (v C) InsertOneStmt() (string, []any) {
 func (v C) FindOneByPKStmt() (string, []any) {
 	return "SELECT id FROM c WHERE id = ? LIMIT 1;", []any{v.ID}
 }
-func (v C) GetID() driver.Value {
+func (v C) IDValue() driver.Value {
 	return v.ID
+}
+func (v C) GetID() sequel.ColumnValuer[int64] {
+	return sequel.Column("id", v.ID, func(val int64) driver.Value {
+		return val
+	})
 }
 
 func (D) TableName() string {
@@ -135,6 +168,11 @@ func (v D) InsertOneStmt() (string, []any) {
 func (v D) FindOneByPKStmt() (string, []any) {
 	return "SELECT id FROM d WHERE id = ? LIMIT 1;", []any{v.ID}
 }
-func (v D) GetID() driver.Value {
+func (v D) IDValue() driver.Value {
 	return v.ID
+}
+func (v D) GetID() sequel.ColumnValuer[sql.NullString] {
+	return sequel.Column("id", v.ID, func(val sql.NullString) driver.Value {
+		return val
+	})
 }

@@ -4,6 +4,7 @@ import (
 	"database/sql/driver"
 
 	"cloud.google.com/go/civil"
+	"github.com/si3nloong/sqlgen/sequel"
 	"github.com/si3nloong/sqlgen/sequel/encoding"
 )
 
@@ -28,11 +29,21 @@ func (A) InsertPlaceholders(row int) string {
 func (v A) InsertOneStmt() (string, []any) {
 	return "INSERT INTO " + v.TableName() + " (date,time) VALUES (?,?);", v.Values()
 }
-func (v A) GetDate() driver.Value {
+func (v A) DateValue() driver.Value {
 	return encoding.TextValue(v.Date)
 }
-func (v A) GetTime() driver.Value {
+func (v A) TimeValue() driver.Value {
 	return encoding.TextValue(v.Time)
+}
+func (v A) GetDate() sequel.ColumnValuer[civil.Date] {
+	return sequel.Column("date", v.Date, func(val civil.Date) driver.Value {
+		return encoding.TextValue(val)
+	})
+}
+func (v A) GetTime() sequel.ColumnValuer[civil.Time] {
+	return sequel.Column("time", v.Time, func(val civil.Time) driver.Value {
+		return encoding.TextValue(val)
+	})
 }
 
 func (C) TableName() string {
@@ -59,9 +70,19 @@ func (C) InsertPlaceholders(row int) string {
 func (v C) InsertOneStmt() (string, []any) {
 	return "INSERT INTO c (string,valid) VALUES (?,?);", v.Values()
 }
-func (v C) GetString() driver.Value {
+func (v C) StringValue() driver.Value {
 	return v.String
 }
-func (v C) GetValid() driver.Value {
+func (v C) ValidValue() driver.Value {
 	return v.Valid
+}
+func (v C) GetString() sequel.ColumnValuer[string] {
+	return sequel.Column("string", v.String, func(val string) driver.Value {
+		return val
+	})
+}
+func (v C) GetValid() sequel.ColumnValuer[bool] {
+	return sequel.Column("valid", v.Valid, func(val bool) driver.Value {
+		return val
+	})
 }

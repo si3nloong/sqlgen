@@ -2,6 +2,9 @@ package size
 
 import (
 	"database/sql/driver"
+	"time"
+
+	"github.com/si3nloong/sqlgen/sequel"
 )
 
 func (Size) TableName() string {
@@ -30,12 +33,27 @@ func (Size) InsertPlaceholders(row int) string {
 func (v Size) InsertOneStmt() (string, []any) {
 	return "INSERT INTO size (str,timestamp,time) VALUES (?,?,?);", v.Values()
 }
-func (v Size) GetStr() driver.Value {
+func (v Size) StrValue() driver.Value {
 	return v.Str
 }
-func (v Size) GetTimestamp() driver.Value {
+func (v Size) TimestampValue() driver.Value {
 	return v.Timestamp
 }
-func (v Size) GetTime() driver.Value {
+func (v Size) TimeValue() driver.Value {
 	return v.Time
+}
+func (v Size) GetStr() sequel.ColumnValuer[string] {
+	return sequel.Column("str", v.Str, func(val string) driver.Value {
+		return val
+	})
+}
+func (v Size) GetTimestamp() sequel.ColumnValuer[time.Time] {
+	return sequel.Column("timestamp", v.Timestamp, func(val time.Time) driver.Value {
+		return val
+	})
+}
+func (v Size) GetTime() sequel.ColumnValuer[time.Time] {
+	return sequel.Column("time", v.Time, func(val time.Time) driver.Value {
+		return val
+	})
 }

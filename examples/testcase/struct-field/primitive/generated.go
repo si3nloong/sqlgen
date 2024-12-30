@@ -2,15 +2,17 @@ package primitive
 
 import (
 	"database/sql/driver"
+	"time"
 
+	"github.com/si3nloong/sqlgen/sequel"
 	"github.com/si3nloong/sqlgen/sequel/encoding"
 )
 
 func (Primitive) TableName() string {
-	return "primitive"
+	return "`primitive`"
 }
 func (Primitive) Columns() []string {
-	return []string{"str", "bytes", "bool", "int", "int_8", "int_16", "int_32", "int_64", "uint", "uint_8", "uint_16", "uint_32", "uint_64", "f_32", "f_64", "time"} // 16
+	return []string{"`str`", "`bytes`", "`bool`", "`int`", "`int_8`", "`int_16`", "`int_32`", "`int_64`", "`uint`", "`uint_8`", "`uint_16`", "`uint_32`", "`uint_64`", "`f_32`", "`f_64`", "`time`"} // 16
 }
 func (v Primitive) Values() []any {
 	return []any{
@@ -35,7 +37,7 @@ func (v Primitive) Values() []any {
 func (v *Primitive) Addrs() []any {
 	return []any{
 		&v.Str,                                    //  0 - str
-		encoding.StringScanner[byte](&v.Bytes),    //  1 - bytes
+		encoding.StringScanner[[]byte](&v.Bytes),  //  1 - bytes
 		&v.Bool,                                   //  2 - bool
 		encoding.IntScanner[int](&v.Int),          //  3 - int
 		encoding.Int8Scanner[int8](&v.Int8),       //  4 - int_8
@@ -56,53 +58,133 @@ func (Primitive) InsertPlaceholders(row int) string {
 	return "(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)" // 16
 }
 func (v Primitive) InsertOneStmt() (string, []any) {
-	return "INSERT INTO primitive (str,bytes,bool,int,int_8,int_16,int_32,int_64,uint,uint_8,uint_16,uint_32,uint_64,f_32,f_64,time) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);", v.Values()
+	return "INSERT INTO `primitive` (`str`,`bytes`,`bool`,`int`,`int_8`,`int_16`,`int_32`,`int_64`,`uint`,`uint_8`,`uint_16`,`uint_32`,`uint_64`,`f_32`,`f_64`,`time`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);", v.Values()
 }
-func (v Primitive) GetStr() driver.Value {
+func (v Primitive) StrValue() driver.Value {
 	return v.Str
 }
-func (v Primitive) GetBytes() driver.Value {
+func (v Primitive) BytesValue() driver.Value {
 	return string(v.Bytes)
 }
-func (v Primitive) GetBool() driver.Value {
+func (v Primitive) BoolValue() driver.Value {
 	return v.Bool
 }
-func (v Primitive) GetInt() driver.Value {
+func (v Primitive) IntValue() driver.Value {
 	return (int64)(v.Int)
 }
-func (v Primitive) GetInt8() driver.Value {
+func (v Primitive) Int8Value() driver.Value {
 	return (int64)(v.Int8)
 }
-func (v Primitive) GetInt16() driver.Value {
+func (v Primitive) Int16Value() driver.Value {
 	return (int64)(v.Int16)
 }
-func (v Primitive) GetInt32() driver.Value {
+func (v Primitive) Int32Value() driver.Value {
 	return (int64)(v.Int32)
 }
-func (v Primitive) GetInt64() driver.Value {
+func (v Primitive) Int64Value() driver.Value {
 	return v.Int64
 }
-func (v Primitive) GetUint() driver.Value {
+func (v Primitive) UintValue() driver.Value {
 	return (int64)(v.Uint)
 }
-func (v Primitive) GetUint8() driver.Value {
+func (v Primitive) Uint8Value() driver.Value {
 	return (int64)(v.Uint8)
 }
-func (v Primitive) GetUint16() driver.Value {
+func (v Primitive) Uint16Value() driver.Value {
 	return (int64)(v.Uint16)
 }
-func (v Primitive) GetUint32() driver.Value {
+func (v Primitive) Uint32Value() driver.Value {
 	return (int64)(v.Uint32)
 }
-func (v Primitive) GetUint64() driver.Value {
+func (v Primitive) Uint64Value() driver.Value {
 	return (int64)(v.Uint64)
 }
-func (v Primitive) GetF32() driver.Value {
+func (v Primitive) F32Value() driver.Value {
 	return (float64)(v.F32)
 }
-func (v Primitive) GetF64() driver.Value {
+func (v Primitive) F64Value() driver.Value {
 	return v.F64
 }
-func (v Primitive) GetTime() driver.Value {
+func (v Primitive) TimeValue() driver.Value {
 	return v.Time
+}
+func (v Primitive) GetStr() sequel.ColumnValuer[string] {
+	return sequel.Column("`str`", v.Str, func(val string) driver.Value {
+		return val
+	})
+}
+func (v Primitive) GetBytes() sequel.ColumnValuer[[]byte] {
+	return sequel.Column("`bytes`", v.Bytes, func(val []byte) driver.Value {
+		return string(val)
+	})
+}
+func (v Primitive) GetBool() sequel.ColumnValuer[bool] {
+	return sequel.Column("`bool`", v.Bool, func(val bool) driver.Value {
+		return val
+	})
+}
+func (v Primitive) GetInt() sequel.ColumnValuer[int] {
+	return sequel.Column("`int`", v.Int, func(val int) driver.Value {
+		return (int64)(val)
+	})
+}
+func (v Primitive) GetInt8() sequel.ColumnValuer[int8] {
+	return sequel.Column("`int_8`", v.Int8, func(val int8) driver.Value {
+		return (int64)(val)
+	})
+}
+func (v Primitive) GetInt16() sequel.ColumnValuer[int16] {
+	return sequel.Column("`int_16`", v.Int16, func(val int16) driver.Value {
+		return (int64)(val)
+	})
+}
+func (v Primitive) GetInt32() sequel.ColumnValuer[int32] {
+	return sequel.Column("`int_32`", v.Int32, func(val int32) driver.Value {
+		return (int64)(val)
+	})
+}
+func (v Primitive) GetInt64() sequel.ColumnValuer[int64] {
+	return sequel.Column("`int_64`", v.Int64, func(val int64) driver.Value {
+		return val
+	})
+}
+func (v Primitive) GetUint() sequel.ColumnValuer[uint] {
+	return sequel.Column("`uint`", v.Uint, func(val uint) driver.Value {
+		return (int64)(val)
+	})
+}
+func (v Primitive) GetUint8() sequel.ColumnValuer[uint8] {
+	return sequel.Column("`uint_8`", v.Uint8, func(val uint8) driver.Value {
+		return (int64)(val)
+	})
+}
+func (v Primitive) GetUint16() sequel.ColumnValuer[uint16] {
+	return sequel.Column("`uint_16`", v.Uint16, func(val uint16) driver.Value {
+		return (int64)(val)
+	})
+}
+func (v Primitive) GetUint32() sequel.ColumnValuer[uint32] {
+	return sequel.Column("`uint_32`", v.Uint32, func(val uint32) driver.Value {
+		return (int64)(val)
+	})
+}
+func (v Primitive) GetUint64() sequel.ColumnValuer[uint64] {
+	return sequel.Column("`uint_64`", v.Uint64, func(val uint64) driver.Value {
+		return (int64)(val)
+	})
+}
+func (v Primitive) GetF32() sequel.ColumnValuer[float32] {
+	return sequel.Column("`f_32`", v.F32, func(val float32) driver.Value {
+		return (float64)(val)
+	})
+}
+func (v Primitive) GetF64() sequel.ColumnValuer[float64] {
+	return sequel.Column("`f_64`", v.F64, func(val float64) driver.Value {
+		return val
+	})
+}
+func (v Primitive) GetTime() sequel.ColumnValuer[time.Time] {
+	return sequel.Column("`time`", v.Time, func(val time.Time) driver.Value {
+		return val
+	})
 }

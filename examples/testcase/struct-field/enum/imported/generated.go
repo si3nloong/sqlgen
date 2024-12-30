@@ -5,27 +5,36 @@ import (
 	"time"
 
 	"github.com/si3nloong/sqlgen/sequel"
-	"github.com/si3nloong/sqlgen/sequel/types"
+	"github.com/si3nloong/sqlgen/sequel/encoding"
 )
 
 func (ImportedEnum) TableName() string {
 	return "imported_enum"
 }
 func (ImportedEnum) Columns() []string {
-	return []string{"weekday"}
+	return []string{"weekday"} // 1
 }
 func (v ImportedEnum) Values() []any {
-	return []any{(int64)(v.Weekday)}
+	return []any{
+		(int64)(v.Weekday), // 0 - weekday
+	}
 }
 func (v *ImportedEnum) Addrs() []any {
-	return []any{types.Integer(&v.Weekday)}
+	return []any{
+		encoding.IntScanner[time.Weekday](&v.Weekday), // 0 - weekday
+	}
 }
 func (ImportedEnum) InsertPlaceholders(row int) string {
-	return "(?)"
+	return "(?)" // 1
 }
 func (v ImportedEnum) InsertOneStmt() (string, []any) {
 	return "INSERT INTO imported_enum (weekday) VALUES (?);", v.Values()
 }
+func (v ImportedEnum) WeekdayValue() driver.Value {
+	return (int64)(v.Weekday)
+}
 func (v ImportedEnum) GetWeekday() sequel.ColumnValuer[time.Weekday] {
-	return sequel.Column("weekday", v.Weekday, func(val time.Weekday) driver.Value { return (int64)(val) })
+	return sequel.Column("weekday", v.Weekday, func(val time.Weekday) driver.Value {
+		return (int64)(val)
+	})
 }

@@ -2,6 +2,8 @@ package tabler
 
 import (
 	"database/sql/driver"
+
+	"github.com/si3nloong/sqlgen/sequel"
 )
 
 func (A) HasPK() {}
@@ -35,11 +37,21 @@ func (v A) FindOneByPKStmt() (string, []any) {
 func (v A) UpdateOneByPKStmt() (string, []any) {
 	return "UPDATE " + v.TableName() + " SET name = ? WHERE id = ?;", []any{v.Name, v.ID}
 }
-func (v A) GetID() driver.Value {
+func (v A) IDValue() driver.Value {
 	return v.ID
 }
-func (v A) GetName() driver.Value {
+func (v A) NameValue() driver.Value {
 	return v.Name
+}
+func (v A) GetID() sequel.ColumnValuer[int64] {
+	return sequel.Column("id", v.ID, func(val int64) driver.Value {
+		return val
+	})
+}
+func (v A) GetName() sequel.ColumnValuer[string] {
+	return sequel.Column("name", v.Name, func(val string) driver.Value {
+		return val
+	})
 }
 
 func (Model) Columns() []string {
@@ -61,6 +73,11 @@ func (Model) InsertPlaceholders(row int) string {
 func (v Model) InsertOneStmt() (string, []any) {
 	return "INSERT INTO " + v.TableName() + " (name) VALUES (?);", v.Values()
 }
-func (v Model) GetName() driver.Value {
+func (v Model) NameValue() driver.Value {
 	return v.Name
+}
+func (v Model) GetName() sequel.ColumnValuer[string] {
+	return sequel.Column("name", v.Name, func(val string) driver.Value {
+		return val
+	})
 }

@@ -4,6 +4,8 @@ import (
 	"database/sql/driver"
 
 	"cloud.google.com/go/civil"
+	"github.com/google/uuid"
+	"github.com/si3nloong/sqlgen/sequel"
 	"github.com/si3nloong/sqlgen/sequel/encoding"
 )
 
@@ -41,9 +43,19 @@ func (v User) FindOneByPKStmt() (string, []any) {
 func (v User) UpdateOneByPKStmt() (string, []any) {
 	return "UPDATE user SET birth_date = ? WHERE id = ?;", []any{encoding.TextValue(v.BirthDate), v.ID}
 }
-func (v User) GetID() driver.Value {
+func (v User) IDValue() driver.Value {
 	return v.ID
 }
-func (v User) GetBirthDate() driver.Value {
+func (v User) BirthDateValue() driver.Value {
 	return encoding.TextValue(v.BirthDate)
+}
+func (v User) GetID() sequel.ColumnValuer[uuid.UUID] {
+	return sequel.Column("id", v.ID, func(val uuid.UUID) driver.Value {
+		return val
+	})
+}
+func (v User) GetBirthDate() sequel.ColumnValuer[civil.Date] {
+	return sequel.Column("birth_date", v.BirthDate, func(val civil.Date) driver.Value {
+		return encoding.TextValue(val)
+	})
 }

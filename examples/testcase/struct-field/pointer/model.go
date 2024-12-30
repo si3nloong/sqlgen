@@ -1,6 +1,9 @@
 package pointer
 
-import "time"
+import (
+	"database/sql/driver"
+	"time"
+)
 
 type Ptr struct {
 	ID     int64 `sql:",pk,auto_increment"`
@@ -35,4 +38,24 @@ type embedded struct {
 
 type deepNested struct {
 	*embedded
+}
+
+func (v Ptr) BoolColumn() string {
+	return "`bool`"
+}
+
+func (v Ptr) ConvertBool(val *bool) driver.Value {
+	if val != nil {
+		return *val
+	}
+	return nil
+}
+
+func (v Ptr) GetBool2() (string, func(*bool) driver.Value) {
+	return "`bool`", func(val *bool) driver.Value {
+		if val != nil {
+			return *val
+		}
+		return nil
+	}
 }

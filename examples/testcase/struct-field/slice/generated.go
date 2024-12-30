@@ -3,6 +3,7 @@ package slice
 import (
 	"database/sql/driver"
 
+	"github.com/si3nloong/sqlgen/sequel"
 	"github.com/si3nloong/sqlgen/sequel/encoding"
 	"github.com/si3nloong/sqlgen/sequel/sqltype"
 	"github.com/si3nloong/sqlgen/sequel/types"
@@ -19,9 +20,6 @@ func (v *Slice) ScanAutoIncr(val int64) error {
 }
 func (v Slice) PK() (string, int, any) {
 	return "id", 0, (int64)(v.ID)
-}
-func (Slice) InsertColumns() []string {
-	return []string{"bool_list", "str_list", "custom_str_list", "int_list", "int_8_list", "int_16_list", "int_32_list", "int_64_list", "uint_list", "uint_8_list", "uint_16_list", "uint_32_list", "uint_64_list", "f_32_list", "f_64_list"} // 15
 }
 func (Slice) Columns() []string {
 	return []string{"id", "bool_list", "str_list", "custom_str_list", "int_list", "int_8_list", "int_16_list", "int_32_list", "int_64_list", "uint_list", "uint_8_list", "uint_16_list", "uint_32_list", "uint_64_list", "f_32_list", "f_64_list"} // 16
@@ -65,6 +63,9 @@ func (v *Slice) Addrs() []any {
 		(*sqltype.Float64Slice[float64])(&v.F64List),        // 15 - f_64_list
 	}
 }
+func (Slice) InsertColumns() []string {
+	return []string{"bool_list", "str_list", "custom_str_list", "int_list", "int_8_list", "int_16_list", "int_32_list", "int_64_list", "uint_list", "uint_8_list", "uint_16_list", "uint_32_list", "uint_64_list", "f_32_list", "f_64_list"} // 15
+}
 func (Slice) InsertPlaceholders(row int) string {
 	return "(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)" // 15
 }
@@ -77,51 +78,131 @@ func (v Slice) FindOneByPKStmt() (string, []any) {
 func (v Slice) UpdateOneByPKStmt() (string, []any) {
 	return "UPDATE slice SET bool_list = ?,str_list = ?,custom_str_list = ?,int_list = ?,int_8_list = ?,int_16_list = ?,int_32_list = ?,int_64_list = ?,uint_list = ?,uint_8_list = ?,uint_16_list = ?,uint_32_list = ?,uint_64_list = ?,f_32_list = ?,f_64_list = ? WHERE id = ?;", []any{encoding.MarshalBoolSlice(v.BoolList), sqltype.StringSlice[string](v.StrList), sqltype.StringSlice[customStr](v.CustomStrList), sqltype.IntSlice[int](v.IntList), (sqltype.Int8Slice[int8])(v.Int8List), (sqltype.Int16Slice[int16])(v.Int16List), (sqltype.Int32Slice[int32])(v.Int32List), (sqltype.Int64Slice[int64])(v.Int64List), encoding.MarshalUintSlice(v.UintList), encoding.MarshalUintSlice(v.Uint8List), encoding.MarshalUintSlice(v.Uint16List), encoding.MarshalUintSlice(v.Uint32List), encoding.MarshalUintSlice(v.Uint64List), (sqltype.Float32Slice[float32])(v.F32List), (sqltype.Float64Slice[float64])(v.F64List), (int64)(v.ID)}
 }
-func (v Slice) GetID() driver.Value {
+func (v Slice) IDValue() driver.Value {
 	return (int64)(v.ID)
 }
-func (v Slice) GetBoolList() driver.Value {
+func (v Slice) BoolListValue() driver.Value {
 	return encoding.MarshalBoolSlice(v.BoolList)
 }
-func (v Slice) GetStrList() driver.Value {
+func (v Slice) StrListValue() driver.Value {
 	return sqltype.StringSlice[string](v.StrList)
 }
-func (v Slice) GetCustomStrList() driver.Value {
+func (v Slice) CustomStrListValue() driver.Value {
 	return sqltype.StringSlice[customStr](v.CustomStrList)
 }
-func (v Slice) GetIntList() driver.Value {
+func (v Slice) IntListValue() driver.Value {
 	return sqltype.IntSlice[int](v.IntList)
 }
-func (v Slice) GetInt8List() driver.Value {
+func (v Slice) Int8ListValue() driver.Value {
 	return (sqltype.Int8Slice[int8])(v.Int8List)
 }
-func (v Slice) GetInt16List() driver.Value {
+func (v Slice) Int16ListValue() driver.Value {
 	return (sqltype.Int16Slice[int16])(v.Int16List)
 }
-func (v Slice) GetInt32List() driver.Value {
+func (v Slice) Int32ListValue() driver.Value {
 	return (sqltype.Int32Slice[int32])(v.Int32List)
 }
-func (v Slice) GetInt64List() driver.Value {
+func (v Slice) Int64ListValue() driver.Value {
 	return (sqltype.Int64Slice[int64])(v.Int64List)
 }
-func (v Slice) GetUintList() driver.Value {
+func (v Slice) UintListValue() driver.Value {
 	return encoding.MarshalUintSlice(v.UintList)
 }
-func (v Slice) GetUint8List() driver.Value {
+func (v Slice) Uint8ListValue() driver.Value {
 	return encoding.MarshalUintSlice(v.Uint8List)
 }
-func (v Slice) GetUint16List() driver.Value {
+func (v Slice) Uint16ListValue() driver.Value {
 	return encoding.MarshalUintSlice(v.Uint16List)
 }
-func (v Slice) GetUint32List() driver.Value {
+func (v Slice) Uint32ListValue() driver.Value {
 	return encoding.MarshalUintSlice(v.Uint32List)
 }
-func (v Slice) GetUint64List() driver.Value {
+func (v Slice) Uint64ListValue() driver.Value {
 	return encoding.MarshalUintSlice(v.Uint64List)
 }
-func (v Slice) GetF32List() driver.Value {
+func (v Slice) F32ListValue() driver.Value {
 	return (sqltype.Float32Slice[float32])(v.F32List)
 }
-func (v Slice) GetF64List() driver.Value {
+func (v Slice) F64ListValue() driver.Value {
 	return (sqltype.Float64Slice[float64])(v.F64List)
+}
+func (v Slice) GetID() sequel.ColumnValuer[uint64] {
+	return sequel.Column("id", v.ID, func(val uint64) driver.Value {
+		return (int64)(val)
+	})
+}
+func (v Slice) GetBoolList() sequel.ColumnValuer[[]bool] {
+	return sequel.Column("bool_list", v.BoolList, func(val []bool) driver.Value {
+		return encoding.MarshalBoolSlice(val)
+	})
+}
+func (v Slice) GetStrList() sequel.ColumnValuer[[]string] {
+	return sequel.Column("str_list", v.StrList, func(val []string) driver.Value {
+		return sqltype.StringSlice[string](val)
+	})
+}
+func (v Slice) GetCustomStrList() sequel.ColumnValuer[[]customStr] {
+	return sequel.Column("custom_str_list", v.CustomStrList, func(val []customStr) driver.Value {
+		return sqltype.StringSlice[customStr](val)
+	})
+}
+func (v Slice) GetIntList() sequel.ColumnValuer[[]int] {
+	return sequel.Column("int_list", v.IntList, func(val []int) driver.Value {
+		return sqltype.IntSlice[int](val)
+	})
+}
+func (v Slice) GetInt8List() sequel.ColumnValuer[[]int8] {
+	return sequel.Column("int_8_list", v.Int8List, func(val []int8) driver.Value {
+		return (sqltype.Int8Slice[int8])(val)
+	})
+}
+func (v Slice) GetInt16List() sequel.ColumnValuer[[]int16] {
+	return sequel.Column("int_16_list", v.Int16List, func(val []int16) driver.Value {
+		return (sqltype.Int16Slice[int16])(val)
+	})
+}
+func (v Slice) GetInt32List() sequel.ColumnValuer[[]int32] {
+	return sequel.Column("int_32_list", v.Int32List, func(val []int32) driver.Value {
+		return (sqltype.Int32Slice[int32])(val)
+	})
+}
+func (v Slice) GetInt64List() sequel.ColumnValuer[[]int64] {
+	return sequel.Column("int_64_list", v.Int64List, func(val []int64) driver.Value {
+		return (sqltype.Int64Slice[int64])(val)
+	})
+}
+func (v Slice) GetUintList() sequel.ColumnValuer[[]uint] {
+	return sequel.Column("uint_list", v.UintList, func(val []uint) driver.Value {
+		return encoding.MarshalUintSlice(val)
+	})
+}
+func (v Slice) GetUint8List() sequel.ColumnValuer[[]uint8] {
+	return sequel.Column("uint_8_list", v.Uint8List, func(val []uint8) driver.Value {
+		return encoding.MarshalUintSlice(val)
+	})
+}
+func (v Slice) GetUint16List() sequel.ColumnValuer[[]uint16] {
+	return sequel.Column("uint_16_list", v.Uint16List, func(val []uint16) driver.Value {
+		return encoding.MarshalUintSlice(val)
+	})
+}
+func (v Slice) GetUint32List() sequel.ColumnValuer[[]uint32] {
+	return sequel.Column("uint_32_list", v.Uint32List, func(val []uint32) driver.Value {
+		return encoding.MarshalUintSlice(val)
+	})
+}
+func (v Slice) GetUint64List() sequel.ColumnValuer[[]uint64] {
+	return sequel.Column("uint_64_list", v.Uint64List, func(val []uint64) driver.Value {
+		return encoding.MarshalUintSlice(val)
+	})
+}
+func (v Slice) GetF32List() sequel.ColumnValuer[[]float32] {
+	return sequel.Column("f_32_list", v.F32List, func(val []float32) driver.Value {
+		return (sqltype.Float32Slice[float32])(val)
+	})
+}
+func (v Slice) GetF64List() sequel.ColumnValuer[[]float64] {
+	return sequel.Column("f_64_list", v.F64List, func(val []float64) driver.Value {
+		return (sqltype.Float64Slice[float64])(val)
+	})
 }

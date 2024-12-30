@@ -49,18 +49,18 @@ type Config struct {
 	NamingConvention naming `yaml:"naming_convention,omitempty"`
 	Tag              string `yaml:"struct_tag,omitempty"`
 	// Whether to quote the table name or column name
-	QuoteIdentifier bool                `yaml:"quote_identifier"`
-	ReadOnly        bool                `yaml:"read_only"`
-	Strict          *bool               `yaml:"strict,omitempty"`
-	Exec            ExecConfig          `yaml:"exec"`
-	Getter          GetterConfig        `yaml:"getter"`
-	Migration       *MigrationConfig    `yaml:"migration"`
-	Database        *DatabaseConfig     `yaml:"database"`
-	OmitGetters     bool                `yaml:"omit_getters,omitempty"`
-	SourceMap       bool                `yaml:"source_map"`
-	SkipHeader      bool                `yaml:"skip_header"`
-	SkipModTidy     bool                `yaml:"skip_mod_tidy"`
-	DataTypes       map[string]DataType `yaml:"data_types"`
+	QuoteIdentifier bool                 `yaml:"quote_identifier"`
+	ReadOnly        bool                 `yaml:"read_only"`
+	Strict          *bool                `yaml:"strict,omitempty"`
+	Exec            ExecConfig           `yaml:"exec"`
+	Getter          GetterConfig         `yaml:"getter"`
+	Migration       *MigrationConfig     `yaml:"migration"`
+	Database        *DatabaseConfig      `yaml:"database"`
+	OmitGetters     bool                 `yaml:"omit_getters,omitempty"`
+	SourceMap       bool                 `yaml:"source_map"`
+	SkipHeader      bool                 `yaml:"skip_header"`
+	SkipModTidy     bool                 `yaml:"skip_mod_tidy"`
+	DataTypes       map[string]*DataType `yaml:"data_types"`
 }
 
 type DataType struct {
@@ -119,7 +119,7 @@ func (c *Config) Init() {
 	c.Database.Operator.Package = c.Database.Package
 	c.Database.Operator.Dir = c.Database.Dir
 	c.Database.Operator.Filename = "operator.go"
-	c.DataTypes = make(map[string]DataType)
+	c.DataTypes = make(map[string]*DataType)
 }
 
 func (c *Config) initIfEmpty() {
@@ -178,7 +178,7 @@ func (c *Config) initIfEmpty() {
 		}
 	}
 	if c.DataTypes == nil {
-		c.DataTypes = make(map[string]DataType)
+		c.DataTypes = make(map[string]*DataType)
 	}
 }
 

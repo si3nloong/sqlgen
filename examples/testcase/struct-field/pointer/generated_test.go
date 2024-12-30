@@ -28,8 +28,8 @@ func TestPointer(t *testing.T) {
 			t.Run("deepNested has value but descendant is nil", func(t *testing.T) {
 				ptr := Ptr{}
 				ptr.deepNested = &deepNested{}
-				require.Nil(t, ptr.GetEmbeddedTime())
-				require.Nil(t, ptr.GetAnyTime())
+				require.Nil(t, ptr.EmbeddedTimeValue())
+				require.Nil(t, ptr.AnyTimeValue())
 				// values := ptr.Values()
 				// require.Equal(t, 19, len(values))
 				// require.Equal(t, int64(0), values[0])
@@ -43,8 +43,8 @@ func TestPointer(t *testing.T) {
 				ptr.deepNested = &deepNested{
 					&embedded{},
 				}
-				require.Nil(t, ptr.GetEmbeddedTime())
-				require.Zero(t, ptr.GetAnyTime())
+				require.Nil(t, ptr.EmbeddedTimeValue())
+				require.Zero(t, ptr.AnyTimeValue())
 				// values := ptr.Values()
 				// require.Equal(t, 19, len(values))
 				// require.Equal(t, int64(0), values[0])
@@ -63,8 +63,8 @@ func TestPointer(t *testing.T) {
 				}
 				values := ptr.Values()
 				require.Equal(t, 19, len(values))
-				require.NotNil(t, ptr.GetEmbeddedTime())
-				require.Equal(t, ts.Format(time.RFC3339), ptr.GetEmbeddedTime().(time.Time).Format(time.RFC3339))
+				require.NotNil(t, ptr.EmbeddedTimeValue())
+				require.Equal(t, ts.Format(time.RFC3339), ptr.EmbeddedTimeValue().(time.Time).Format(time.RFC3339))
 			})
 		})
 	})
@@ -97,7 +97,7 @@ func TestPointer(t *testing.T) {
 		require.NoError(t, addrs[18].(sql.Scanner).Scan(nil))
 		require.Nil(t, ptr.EmbeddedTime)
 
-		require.Zero(t, ptr.GetAnyTime())
+		require.Zero(t, ptr.AnyTimeValue())
 		require.Zero(t, ptr.AnyTime)
 	})
 }

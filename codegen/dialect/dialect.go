@@ -1,7 +1,6 @@
 package dialect
 
 import (
-	"context"
 	"database/sql/driver"
 	"errors"
 	"go/types"
@@ -39,7 +38,7 @@ type Dialect interface {
 	ColumnDataTypes() map[string]*ColumnType
 
 	// To create migration
-	Migrate(ctx context.Context, dsn string, w Writer, m TableMigrator) error
+	// Migrate(dsn string, w Writer, m TableMigrator) error
 }
 
 type ColumnType struct {

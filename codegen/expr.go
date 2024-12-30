@@ -71,8 +71,16 @@ func (e Expr) Format(pkg *Package, args ...ExprParams) string {
 			}
 			return "&" + params.GoPath
 		},
-		"type": func() string {
-			return importPkgIfNeeded(pkg, params.Type.String())
+		"baseType": func() string {
+			t := params.Type
+			for t != nil {
+				nt, ok := t.(*types.Pointer)
+				if !ok {
+					break
+				}
+				t = nt.Elem()
+			}
+			return importPkgIfNeeded(pkg, t.String())
 		},
 		"addr": func() string {
 			return "&" + params.GoPath
