@@ -72,7 +72,7 @@ func parseArray(src, del []byte) (dims []int, elems [][]byte, err error) {
 	var depth, i int
 
 	if len(src) < 1 || src[0] != '[' {
-		return nil, nil, fmt.Errorf("pgtype: unable to parse array; expected %q at offset %d", ']', 0)
+		return nil, nil, fmt.Errorf("sqltype: unable to parse array; expected %q at offset %d", ']', 0)
 	}
 
 Open:
@@ -125,7 +125,7 @@ Element:
 				if bytes.HasPrefix(src[i:], del) || src[i] == ']' {
 					elem := src[start:i]
 					if len(elem) == 0 {
-						return nil, nil, fmt.Errorf("pgtype: unable to parse array; unexpected %q at offset %d", src[i], i)
+						return nil, nil, fmt.Errorf("sqltype: unable to parse array; unexpected %q at offset %d", src[i], i)
 					}
 					if bytes.Equal(elem, []byte("NULL")) {
 						elem = nil
@@ -142,12 +142,12 @@ Element:
 			dims[depth-1]++
 			i += len(del)
 			goto Element
-		} else if src[i] == '}' && depth > 0 {
+		} else if src[i] == ']' && depth > 0 {
 			dims[depth-1]++
 			depth--
 			i++
 		} else {
-			return nil, nil, fmt.Errorf("pgtype: unable to parse array; unexpected %q at offset %d", src[i], i)
+			return nil, nil, fmt.Errorf("sqltype: unable to parse array; unexpected %q at offset %d", src[i], i)
 		}
 	}
 
@@ -157,16 +157,16 @@ Close:
 			depth--
 			i++
 		} else {
-			return nil, nil, fmt.Errorf("pgtype: unable to parse array; unexpected %q at offset %d", src[i], i)
+			return nil, nil, fmt.Errorf("sqltype: unable to parse array; unexpected %q at offset %d", src[i], i)
 		}
 	}
 	if depth > 0 {
-		err = fmt.Errorf("pgtype: unable to parse array; expected %q at offset %d", ']', i)
+		err = fmt.Errorf("sqltype: unable to parse array; expected %q at offset %d", ']', i)
 	}
 	if err == nil {
 		for _, d := range dims {
 			if (len(elems) % d) != 0 {
-				err = fmt.Errorf("pgtype: multidimensional arrays must have elements with matching dimensions")
+				err = fmt.Errorf("sqltype: multidimensional arrays must have elements with matching dimensions")
 			}
 		}
 	}

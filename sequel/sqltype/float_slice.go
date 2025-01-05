@@ -21,17 +21,17 @@ func (a Float32Slice[T]) Value() (driver.Value, error) {
 		// There will be at least two curly brackets, N bytes of values,
 		// and N-1 bytes of delimiters.
 		b := make([]byte, 1, 1+2*n)
-		b[0] = '{'
+		b[0] = '['
 
 		b = strconv.AppendFloat(b, (float64)(a[0]), 'f', -1, 32)
 		for i := 1; i < n; i++ {
 			b = append(b, ',')
 			b = strconv.AppendFloat(b, (float64)(a[i]), 'f', -1, 32)
 		}
-		b = append(b, '}')
+		b = append(b, ']')
 		return unsafe.String(unsafe.SliceData(b), len(b)), nil
 	}
-	return "{}", nil
+	return "[]", nil
 }
 
 // Scan implements the sql.Scanner interface.
@@ -45,7 +45,7 @@ func (a *Float32Slice[T]) Scan(src interface{}) error {
 		*a = nil
 		return nil
 	}
-	return fmt.Errorf("pgtype: cannot convert %T to Float32Slice", src)
+	return fmt.Errorf("sqltype: cannot convert %T to Float32Slice", src)
 }
 
 func (a *Float32Slice[T]) scanBytes(src []byte) error {
@@ -60,7 +60,7 @@ func (a *Float32Slice[T]) scanBytes(src []byte) error {
 		for i, v := range elems {
 			f, err := strconv.ParseFloat(unsafe.String(unsafe.SliceData(v), len(v)), 32)
 			if err != nil {
-				return fmt.Errorf("pgtype: parsing array element index %d: %v", i, err)
+				return fmt.Errorf("sqltype: parsing array element index %d: %v", i, err)
 			}
 			b[i] = T(f)
 		}
@@ -83,7 +83,7 @@ func (a Float64Slice[T]) Value() (driver.Value, error) {
 		// There will be at least two curly brackets, N bytes of values,
 		// and N-1 bytes of delimiters.
 		b := make([]byte, 1, 1+2*n)
-		b[0] = '{'
+		b[0] = '['
 
 		b = strconv.AppendFloat(b, (float64)(a[0]), 'f', -1, 64)
 		for i := 1; i < n; i++ {
@@ -91,9 +91,9 @@ func (a Float64Slice[T]) Value() (driver.Value, error) {
 			b = strconv.AppendFloat(b, (float64)(a[i]), 'f', -1, 64)
 		}
 
-		return string(append(b, '}')), nil
+		return string(append(b, ']')), nil
 	}
-	return "{}", nil
+	return "[]", nil
 }
 
 // Scan implements the sql.Scanner interface.
@@ -108,7 +108,7 @@ func (a *Float64Slice[T]) Scan(src interface{}) error {
 		return nil
 	}
 
-	return fmt.Errorf("pgtype: cannot convert %T to Float64Slice", src)
+	return fmt.Errorf("sqltype: cannot convert %T to Float64Slice", src)
 }
 
 func (a *Float64Slice[T]) scanBytes(src []byte) error {
@@ -123,7 +123,7 @@ func (a *Float64Slice[T]) scanBytes(src []byte) error {
 		for i, v := range elems {
 			f, err := strconv.ParseFloat(unsafe.String(unsafe.SliceData(v), len(v)), 64)
 			if err != nil {
-				return fmt.Errorf("pgtype: parsing array element index %d: %v", i, err)
+				return fmt.Errorf("sqltype: parsing array element index %d: %v", i, err)
 			}
 			b[i] = T(f)
 		}

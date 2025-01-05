@@ -35,11 +35,11 @@ func (a BoolSlice[T]) Value() (driver.Value, error) {
 			}
 		}
 
-		b[0] = '{'
-		b[2*n] = '}'
+		b[0] = '['
+		b[2*n] = ']'
 		return unsafe.String(unsafe.SliceData(b), len(b)), nil
 	}
-	return "{}", nil
+	return "[]", nil
 }
 
 // Scan implements the sql.Scanner interface.
@@ -53,7 +53,7 @@ func (a *BoolSlice[T]) Scan(src interface{}) error {
 		*a = nil
 		return nil
 	}
-	return fmt.Errorf("pgtype: cannot convert %T to BoolSlice", src)
+	return fmt.Errorf("sqltype: cannot convert %T to BoolSlice", src)
 }
 
 func (a *BoolSlice[T]) scanBytes(src []byte) error {
@@ -67,7 +67,7 @@ func (a *BoolSlice[T]) scanBytes(src []byte) error {
 		b := make(BoolSlice[T], len(elems))
 		for i, v := range elems {
 			if len(v) != 1 {
-				return fmt.Errorf("pgtype: could not parse boolean array index %d: invalid boolean %q", i, v)
+				return fmt.Errorf("sqltype: could not parse boolean array index %d: invalid boolean %q", i, v)
 			}
 			switch v[0] {
 			case 't':
@@ -75,7 +75,7 @@ func (a *BoolSlice[T]) scanBytes(src []byte) error {
 			case 'f':
 				b[i] = false
 			default:
-				return fmt.Errorf("pgtype: could not parse boolean array index %d: invalid boolean %q", i, v)
+				return fmt.Errorf("sqltype: could not parse boolean array index %d: invalid boolean %q", i, v)
 			}
 		}
 		*a = b

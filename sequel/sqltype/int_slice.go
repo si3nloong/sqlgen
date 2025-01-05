@@ -80,7 +80,7 @@ func scanBytes[T constraints.Integer, Arr interface{ ~[]T }](a *Arr, src []byte,
 		for i, v := range elems {
 			n, err := strconv.ParseInt(unsafe.String(unsafe.SliceData(v), len(v)), 10, 64)
 			if err != nil {
-				return fmt.Errorf("pgtype: parsing array element index %d: %v", i, err)
+				return fmt.Errorf("sqltype: parsing array element index %d: %v", i, err)
 			}
 			b[i] = T(n)
 		}
@@ -99,7 +99,7 @@ func arrayScan[T constraints.Integer, Arr interface{ ~[]T }](a *Arr, src any, t 
 		*a = nil
 		return nil
 	}
-	return fmt.Errorf("pgtype: cannot convert %T to %s", src, t)
+	return fmt.Errorf("sqltype: cannot convert %T to %s", src, t)
 }
 
 func intSliceValue[T constraints.Signed](a []T) (driver.Value, error) {
