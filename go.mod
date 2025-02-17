@@ -6,7 +6,7 @@ require (
 	github.com/AlecAivazis/survey/v2 v2.3.7
 	github.com/Masterminds/semver/v3 v3.3.1
 	github.com/fsnotify/fsnotify v1.8.0
-	github.com/go-playground/validator/v10 v10.24.0
+	github.com/go-playground/validator/v10 v10.25.0
 	github.com/go-sql-driver/mysql v1.8.1
 	github.com/goccy/go-yaml v1.15.22
 	github.com/jackc/pgx/v5 v5.7.2
