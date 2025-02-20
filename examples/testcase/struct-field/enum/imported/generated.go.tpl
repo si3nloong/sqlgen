@@ -27,5 +27,7 @@ func (v ImportedEnum) InsertOneStmt() (string, []any) {
 	return "INSERT INTO imported_enum (weekday) VALUES (?);", v.Values()
 }
 func (v ImportedEnum) GetWeekday() sequel.ColumnValuer[time.Weekday] {
-	return sequel.Column("weekday", v.Weekday, func(val time.Weekday) driver.Value { return (int64)(val) })
+	return sequel.Column("weekday", v.Weekday, func(val time.Weekday) driver.Value {
+		return (int64)(val)
+	})
 }

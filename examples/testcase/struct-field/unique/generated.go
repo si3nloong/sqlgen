@@ -26,14 +26,22 @@ func (v User) InsertOneStmt() (string, []any) {
 	return "INSERT INTO user (email,age,first_name,last_name) VALUES (?,?,?,?);", v.Values()
 }
 func (v User) GetEmail() sequel.ColumnValuer[string] {
-	return sequel.Column("email", v.Email, func(val string) driver.Value { return (string)(val) })
+	return sequel.Column("email", v.Email, func(val string) driver.Value {
+		return (string)(val)
+	})
 }
 func (v User) GetAge() sequel.ColumnValuer[uint8] {
-	return sequel.Column("age", v.Age, func(val uint8) driver.Value { return (int64)(val) })
+	return sequel.Column("age", v.Age, func(val uint8) driver.Value {
+		return (int64)(val)
+	})
 }
 func (v User) GetFirstName() sequel.ColumnValuer[string] {
-	return sequel.Column("first_name", v.FirstName, func(val string) driver.Value { return (string)(val) })
+	return sequel.Column("first_name", v.FirstName, func(val string) driver.Value {
+		return (string)(val)
+	})
 }
 func (v User) GetLastName() sequel.ColumnValuer[string] {
-	return sequel.Column("last_name", v.LastName, func(val string) driver.Value { return (string)(val) })
+	return sequel.Column("last_name", v.LastName, func(val string) driver.Value {
+		return (string)(val)
+	})
 }

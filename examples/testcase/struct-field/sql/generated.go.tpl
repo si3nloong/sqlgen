@@ -76,19 +76,38 @@ func (v AutoPkLocation) UpdateOneByPKStmt() (string, []any) {
 	return "UPDATE auto_pk_location SET geo_point = ST_GeomFromEWKB(?),ptr_geo_point = ?,ptr_uuid = ?,ptr_date = ? WHERE id = ?;", []any{ewkb.Value(v.GeoPoint, 4326), types.JSONMarshaler(v.PtrGeoPoint), (driver.Valuer)(v.PtrUUID), types.TextMarshaler(v.PtrDate), (int64)(v.ID)}
 }
 func (v AutoPkLocation) GetID() sequel.ColumnValuer[uint64] {
-	return sequel.Column("id", v.ID, func(val uint64) driver.Value { return (int64)(val) })
+	return sequel.Column("id", v.ID, func(val uint64) driver.Value {
+		return (int64)(val)
+	})
 }
 func (v AutoPkLocation) GetGeoPoint() sequel.SQLColumnValuer[orb.Point] {
-	return sequel.SQLColumn("geo_point", v.GeoPoint, func(placeholder string) string { return "ST_GeomFromEWKB(" + placeholder + ")" }, func(val orb.Point) driver.Value { return ewkb.Value(val, 4326) })
+	return sequel.SQLColumn("geo_point", v.GeoPoint, func(placeholder string) string { return "ST_GeomFromEWKB(" + placeholder + ")" }, func(val orb.Point) driver.Value {
+		return ewkb.Value(val, 4326)
+	})
 }
 func (v AutoPkLocation) GetPtrGeoPoint() sequel.ColumnValuer[*orb.Point] {
-	return sequel.Column("ptr_geo_point", v.PtrGeoPoint, func(val *orb.Point) driver.Value { return types.JSONMarshaler(val) })
+	return sequel.Column("ptr_geo_point", v.PtrGeoPoint, func(val *orb.Point) driver.Value {
+		if val != nil {
+			return ewkb.Value(*val, 4326)
+		}
+		return nil
+	})
 }
 func (v AutoPkLocation) GetPtrUUID() sequel.ColumnValuer[*uuid.UUID] {
-	return sequel.Column("ptr_uuid", v.PtrUUID, func(val *uuid.UUID) driver.Value { return (driver.Valuer)(val) })
+	return sequel.Column("ptr_uuid", v.PtrUUID, func(val *uuid.UUID) driver.Value {
+		if val != nil {
+			return (driver.Valuer)(*val)
+		}
+		return nil
+	})
 }
 func (v AutoPkLocation) GetPtrDate() sequel.ColumnValuer[*civil.Date] {
-	return sequel.Column("ptr_date", v.PtrDate, func(val *civil.Date) driver.Value { return types.TextMarshaler(val) })
+	return sequel.Column("ptr_date", v.PtrDate, func(val *civil.Date) driver.Value {
+		if val != nil {
+			return types.TextMarshaler(*val)
+		}
+		return nil
+	})
 }
 
 func (Location) TableName() string {
@@ -123,11 +142,17 @@ func (v Location) UpdateOneByPKStmt() (string, []any) {
 	return "UPDATE location SET geo_point = ST_GeomFromEWKB(?),uuid = ? WHERE id = ?;", []any{ewkb.Value(v.GeoPoint, 4326), (driver.Valuer)(v.UUID), (int64)(v.ID)}
 }
 func (v Location) GetID() sequel.ColumnValuer[uint64] {
-	return sequel.Column("id", v.ID, func(val uint64) driver.Value { return (int64)(val) })
+	return sequel.Column("id", v.ID, func(val uint64) driver.Value {
+		return (int64)(val)
+	})
 }
 func (v Location) GetGeoPoint() sequel.SQLColumnValuer[orb.Point] {
-	return sequel.SQLColumn("geo_point", v.GeoPoint, func(placeholder string) string { return "ST_GeomFromEWKB(" + placeholder + ")" }, func(val orb.Point) driver.Value { return ewkb.Value(val, 4326) })
+	return sequel.SQLColumn("geo_point", v.GeoPoint, func(placeholder string) string { return "ST_GeomFromEWKB(" + placeholder + ")" }, func(val orb.Point) driver.Value {
+		return ewkb.Value(val, 4326)
+	})
 }
 func (v Location) GetUUID() sequel.ColumnValuer[uuid.UUID] {
-	return sequel.Column("uuid", v.UUID, func(val uuid.UUID) driver.Value { return (driver.Valuer)(val) })
+	return sequel.Column("uuid", v.UUID, func(val uuid.UUID) driver.Value {
+		return (driver.Valuer)(val)
+	})
 }

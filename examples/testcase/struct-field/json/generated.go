@@ -27,8 +27,12 @@ func (v JSON) InsertOneStmt() (string, []any) {
 	return "INSERT INTO json (num,raw_bytes) VALUES (?,?);", v.Values()
 }
 func (v JSON) GetNum() sequel.ColumnValuer[json.Number] {
-	return sequel.Column("num", v.Num, func(val json.Number) driver.Value { return val.String() })
+	return sequel.Column("num", v.Num, func(val json.Number) driver.Value {
+		return val.String()
+	})
 }
 func (v JSON) GetRawBytes() sequel.ColumnValuer[json.RawMessage] {
-	return sequel.Column("raw_bytes", v.RawBytes, func(val json.RawMessage) driver.Value { return string(val) })
+	return sequel.Column("raw_bytes", v.RawBytes, func(val json.RawMessage) driver.Value {
+		return string(val)
+	})
 }

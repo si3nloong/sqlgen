@@ -27,8 +27,12 @@ func (v B) InsertOneStmt() (string, []any) {
 	return "INSERT INTO b (date,time) VALUES (?,?);", v.Values()
 }
 func (v B) GetDate() sequel.ColumnValuer[civil.Date] {
-	return sequel.Column("date", v.DateTime.Date, func(val civil.Date) driver.Value { return types.TextMarshaler(val) })
+	return sequel.Column("date", v.DateTime.Date, func(val civil.Date) driver.Value {
+		return types.TextMarshaler(val)
+	})
 }
 func (v B) GetTime() sequel.ColumnValuer[civil.Time] {
-	return sequel.Column("time", v.DateTime.Time, func(val civil.Time) driver.Value { return types.TextMarshaler(val) })
+	return sequel.Column("time", v.DateTime.Time, func(val civil.Time) driver.Value {
+		return types.TextMarshaler(val)
+	})
 }

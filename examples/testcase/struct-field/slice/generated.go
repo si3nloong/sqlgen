@@ -42,50 +42,82 @@ func (v Slice) UpdateOneByPKStmt() (string, []any) {
 	return "UPDATE slice SET bool_list = ?,str_list = ?,custom_str_list = ?,int_list = ?,int_8_list = ?,int_16_list = ?,int_32_list = ?,int_64_list = ?,uint_list = ?,uint_8_list = ?,uint_16_list = ?,uint_32_list = ?,uint_64_list = ?,f_32_list = ?,f_64_list = ? WHERE id = ?;", []any{encoding.MarshalBoolSlice(v.BoolList), encoding.MarshalStringSlice(v.StrList), encoding.MarshalStringSlice(v.CustomStrList), encoding.MarshalIntSlice(v.IntList), encoding.MarshalIntSlice(v.Int8List), encoding.MarshalIntSlice(v.Int16List), encoding.MarshalIntSlice(v.Int32List), encoding.MarshalIntSlice(v.Int64List), encoding.MarshalUintSlice(v.UintList), encoding.MarshalUintSlice(v.Uint8List), encoding.MarshalUintSlice(v.Uint16List), encoding.MarshalUintSlice(v.Uint32List), encoding.MarshalUintSlice(v.Uint64List), encoding.MarshalFloatList(v.F32List, -1), encoding.MarshalFloatList(v.F64List, -1), (int64)(v.ID)}
 }
 func (v Slice) GetID() sequel.ColumnValuer[uint64] {
-	return sequel.Column("id", v.ID, func(val uint64) driver.Value { return (int64)(val) })
+	return sequel.Column("id", v.ID, func(val uint64) driver.Value {
+		return (int64)(val)
+	})
 }
 func (v Slice) GetBoolList() sequel.ColumnValuer[[]bool] {
-	return sequel.Column("bool_list", v.BoolList, func(val []bool) driver.Value { return encoding.MarshalBoolSlice(val) })
+	return sequel.Column("bool_list", v.BoolList, func(val []bool) driver.Value {
+		return encoding.MarshalBoolSlice(val)
+	})
 }
 func (v Slice) GetStrList() sequel.ColumnValuer[[]string] {
-	return sequel.Column("str_list", v.StrList, func(val []string) driver.Value { return encoding.MarshalStringSlice(val) })
+	return sequel.Column("str_list", v.StrList, func(val []string) driver.Value {
+		return encoding.MarshalStringSlice(val)
+	})
 }
 func (v Slice) GetCustomStrList() sequel.ColumnValuer[[]customStr] {
-	return sequel.Column("custom_str_list", v.CustomStrList, func(val []customStr) driver.Value { return encoding.MarshalStringSlice(val) })
+	return sequel.Column("custom_str_list", v.CustomStrList, func(val []customStr) driver.Value {
+		return encoding.MarshalStringSlice(val)
+	})
 }
 func (v Slice) GetIntList() sequel.ColumnValuer[[]int] {
-	return sequel.Column("int_list", v.IntList, func(val []int) driver.Value { return encoding.MarshalIntSlice(val) })
+	return sequel.Column("int_list", v.IntList, func(val []int) driver.Value {
+		return encoding.MarshalIntSlice(val)
+	})
 }
 func (v Slice) GetInt8List() sequel.ColumnValuer[[]int8] {
-	return sequel.Column("int_8_list", v.Int8List, func(val []int8) driver.Value { return encoding.MarshalIntSlice(val) })
+	return sequel.Column("int_8_list", v.Int8List, func(val []int8) driver.Value {
+		return encoding.MarshalIntSlice(val)
+	})
 }
 func (v Slice) GetInt16List() sequel.ColumnValuer[[]int16] {
-	return sequel.Column("int_16_list", v.Int16List, func(val []int16) driver.Value { return encoding.MarshalIntSlice(val) })
+	return sequel.Column("int_16_list", v.Int16List, func(val []int16) driver.Value {
+		return encoding.MarshalIntSlice(val)
+	})
 }
 func (v Slice) GetInt32List() sequel.ColumnValuer[[]int32] {
-	return sequel.Column("int_32_list", v.Int32List, func(val []int32) driver.Value { return encoding.MarshalIntSlice(val) })
+	return sequel.Column("int_32_list", v.Int32List, func(val []int32) driver.Value {
+		return encoding.MarshalIntSlice(val)
+	})
 }
 func (v Slice) GetInt64List() sequel.ColumnValuer[[]int64] {
-	return sequel.Column("int_64_list", v.Int64List, func(val []int64) driver.Value { return encoding.MarshalIntSlice(val) })
+	return sequel.Column("int_64_list", v.Int64List, func(val []int64) driver.Value {
+		return encoding.MarshalIntSlice(val)
+	})
 }
 func (v Slice) GetUintList() sequel.ColumnValuer[[]uint] {
-	return sequel.Column("uint_list", v.UintList, func(val []uint) driver.Value { return encoding.MarshalUintSlice(val) })
+	return sequel.Column("uint_list", v.UintList, func(val []uint) driver.Value {
+		return encoding.MarshalUintSlice(val)
+	})
 }
 func (v Slice) GetUint8List() sequel.ColumnValuer[[]uint8] {
-	return sequel.Column("uint_8_list", v.Uint8List, func(val []uint8) driver.Value { return encoding.MarshalUintSlice(val) })
+	return sequel.Column("uint_8_list", v.Uint8List, func(val []uint8) driver.Value {
+		return encoding.MarshalUintSlice(val)
+	})
 }
 func (v Slice) GetUint16List() sequel.ColumnValuer[[]uint16] {
-	return sequel.Column("uint_16_list", v.Uint16List, func(val []uint16) driver.Value { return encoding.MarshalUintSlice(val) })
+	return sequel.Column("uint_16_list", v.Uint16List, func(val []uint16) driver.Value {
+		return encoding.MarshalUintSlice(val)
+	})
 }
 func (v Slice) GetUint32List() sequel.ColumnValuer[[]uint32] {
-	return sequel.Column("uint_32_list", v.Uint32List, func(val []uint32) driver.Value { return encoding.MarshalUintSlice(val) })
+	return sequel.Column("uint_32_list", v.Uint32List, func(val []uint32) driver.Value {
+		return encoding.MarshalUintSlice(val)
+	})
 }
 func (v Slice) GetUint64List() sequel.ColumnValuer[[]uint64] {
-	return sequel.Column("uint_64_list", v.Uint64List, func(val []uint64) driver.Value { return encoding.MarshalUintSlice(val) })
+	return sequel.Column("uint_64_list", v.Uint64List, func(val []uint64) driver.Value {
+		return encoding.MarshalUintSlice(val)
+	})
 }
 func (v Slice) GetF32List() sequel.ColumnValuer[[]float32] {
-	return sequel.Column("f_32_list", v.F32List, func(val []float32) driver.Value { return encoding.MarshalFloatList(val, -1) })
+	return sequel.Column("f_32_list", v.F32List, func(val []float32) driver.Value {
+		return encoding.MarshalFloatList(val, -1)
+	})
 }
 func (v Slice) GetF64List() sequel.ColumnValuer[[]float64] {
-	return sequel.Column("f_64_list", v.F64List, func(val []float64) driver.Value { return encoding.MarshalFloatList(val, -1) })
+	return sequel.Column("f_64_list", v.F64List, func(val []float64) driver.Value {
+		return encoding.MarshalFloatList(val, -1)
+	})
 }

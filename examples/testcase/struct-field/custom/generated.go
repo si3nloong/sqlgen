@@ -34,25 +34,39 @@ func (v Address) InsertOneStmt() (string, []any) {
 	return "INSERT INTO address (line_1,line_2,city,post_code,state_code,geo_point,country_code) VALUES (?,?,?,?,?,ST_GeomFromEWKB(?),?);", v.Values()
 }
 func (v Address) GetLine1() sequel.ColumnValuer[string] {
-	return sequel.Column("line_1", v.Line1, func(val string) driver.Value { return (string)(val) })
+	return sequel.Column("line_1", v.Line1, func(val string) driver.Value {
+		return (string)(val)
+	})
 }
 func (v Address) GetLine2() sequel.ColumnValuer[sql.NullString] {
-	return sequel.Column("line_2", v.Line2, func(val sql.NullString) driver.Value { return (driver.Valuer)(val) })
+	return sequel.Column("line_2", v.Line2, func(val sql.NullString) driver.Value {
+		return (driver.Valuer)(val)
+	})
 }
 func (v Address) GetCity() sequel.ColumnValuer[string] {
-	return sequel.Column("city", v.City, func(val string) driver.Value { return (string)(val) })
+	return sequel.Column("city", v.City, func(val string) driver.Value {
+		return (string)(val)
+	})
 }
 func (v Address) GetPostCode() sequel.ColumnValuer[uint] {
-	return sequel.Column("post_code", v.PostCode, func(val uint) driver.Value { return (int64)(val) })
+	return sequel.Column("post_code", v.PostCode, func(val uint) driver.Value {
+		return (int64)(val)
+	})
 }
 func (v Address) GetStateCode() sequel.ColumnValuer[StateCode] {
-	return sequel.Column("state_code", v.StateCode, func(val StateCode) driver.Value { return (string)(val) })
+	return sequel.Column("state_code", v.StateCode, func(val StateCode) driver.Value {
+		return (string)(val)
+	})
 }
 func (v Address) GetGeoPoint() sequel.SQLColumnValuer[orb.Point] {
-	return sequel.SQLColumn("geo_point", v.GeoPoint, func(placeholder string) string { return "ST_GeomFromEWKB(" + placeholder + ")" }, func(val orb.Point) driver.Value { return ewkb.Value(val, 4326) })
+	return sequel.SQLColumn("geo_point", v.GeoPoint, func(placeholder string) string { return "ST_GeomFromEWKB(" + placeholder + ")" }, func(val orb.Point) driver.Value {
+		return ewkb.Value(val, 4326)
+	})
 }
 func (v Address) GetCountryCode() sequel.ColumnValuer[CountryCode] {
-	return sequel.Column("country_code", v.CountryCode, func(val CountryCode) driver.Value { return (string)(val) })
+	return sequel.Column("country_code", v.CountryCode, func(val CountryCode) driver.Value {
+		return (string)(val)
+	})
 }
 
 func (Customer) TableName() string {
@@ -74,23 +88,37 @@ func (v Customer) InsertOneStmt() (string, []any) {
 	return "INSERT INTO customer (id,howOld,name,address,nicknames,status,join_at) VALUES (?,?,?,?,?,?,?);", v.Values()
 }
 func (v Customer) GetID() sequel.ColumnValuer[int64] {
-	return sequel.Column("id", v.ID, func(val int64) driver.Value { return (int64)(val) })
+	return sequel.Column("id", v.ID, func(val int64) driver.Value {
+		return (int64)(val)
+	})
 }
 func (v Customer) GetAge() sequel.ColumnValuer[uint8] {
-	return sequel.Column("howOld", v.Age, func(val uint8) driver.Value { return (int64)(val) })
+	return sequel.Column("howOld", v.Age, func(val uint8) driver.Value {
+		return (int64)(val)
+	})
 }
 func (v Customer) GetName() sequel.ColumnValuer[longText] {
-	return sequel.Column("name", v.Name, func(val longText) driver.Value { return (driver.Valuer)(val) })
+	return sequel.Column("name", v.Name, func(val longText) driver.Value {
+		return (driver.Valuer)(val)
+	})
 }
 func (v Customer) GetAddress() sequel.ColumnValuer[Addresses] {
-	return sequel.Column("address", v.Address, func(val Addresses) driver.Value { return (driver.Valuer)(val) })
+	return sequel.Column("address", v.Address, func(val Addresses) driver.Value {
+		return (driver.Valuer)(val)
+	})
 }
 func (v Customer) GetNicknames() sequel.ColumnValuer[[]longText] {
-	return sequel.Column("nicknames", v.Nicknames, func(val []longText) driver.Value { return encoding.MarshalStringSlice(val) })
+	return sequel.Column("nicknames", v.Nicknames, func(val []longText) driver.Value {
+		return encoding.MarshalStringSlice(val)
+	})
 }
 func (v Customer) GetStatus() sequel.ColumnValuer[string] {
-	return sequel.Column("status", v.Status, func(val string) driver.Value { return (string)(val) })
+	return sequel.Column("status", v.Status, func(val string) driver.Value {
+		return (string)(val)
+	})
 }
 func (v Customer) GetJoinAt() sequel.ColumnValuer[time.Time] {
-	return sequel.Column("join_at", v.JoinAt, func(val time.Time) driver.Value { return (time.Time)(val) })
+	return sequel.Column("join_at", v.JoinAt, func(val time.Time) driver.Value {
+		return (time.Time)(val)
+	})
 }

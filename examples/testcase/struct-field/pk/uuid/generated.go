@@ -28,8 +28,12 @@ func (v User) InsertOneStmt() (string, []any) {
 	return "INSERT INTO user (id,name) VALUES (?,?);", v.Values()
 }
 func (v User) GetID() sequel.ColumnValuer[uuid.UUID] {
-	return sequel.Column("id", v.ID, func(val uuid.UUID) driver.Value { return (driver.Valuer)(val) })
+	return sequel.Column("id", v.ID, func(val uuid.UUID) driver.Value {
+		return (driver.Valuer)(val)
+	})
 }
 func (v User) GetName() sequel.ColumnValuer[string] {
-	return sequel.Column("name", v.Name, func(val string) driver.Value { return (string)(val) })
+	return sequel.Column("name", v.Name, func(val string) driver.Value {
+		return (string)(val)
+	})
 }

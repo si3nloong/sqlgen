@@ -39,8 +39,12 @@ func (v User) UpdateOneByPKStmt() (string, []any) {
 	return "UPDATE user SET birth_date = ? WHERE id = ?;", []any{types.TextMarshaler(v.BirthDate), (driver.Valuer)(v.ID)}
 }
 func (v User) GetID() sequel.ColumnValuer[uuid.UUID] {
-	return sequel.Column("id", v.ID, func(val uuid.UUID) driver.Value { return (driver.Valuer)(val) })
+	return sequel.Column("id", v.ID, func(val uuid.UUID) driver.Value {
+		return (driver.Valuer)(val)
+	})
 }
 func (v User) GetBirthDate() sequel.ColumnValuer[civil.Date] {
-	return sequel.Column("birth_date", v.BirthDate, func(val civil.Date) driver.Value { return types.TextMarshaler(val) })
+	return sequel.Column("birth_date", v.BirthDate, func(val civil.Date) driver.Value {
+		return types.TextMarshaler(val)
+	})
 }

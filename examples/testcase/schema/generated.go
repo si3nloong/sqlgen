@@ -28,13 +28,19 @@ func (v A) InsertOneStmt() (string, []any) {
 	return "INSERT INTO Apple (id,text,created_at) VALUES (?,?,?);", v.Values()
 }
 func (v A) GetID() sequel.ColumnValuer[string] {
-	return sequel.Column("id", v.ID, func(val string) driver.Value { return (string)(val) })
+	return sequel.Column("id", v.ID, func(val string) driver.Value {
+		return (string)(val)
+	})
 }
 func (v A) GetText() sequel.ColumnValuer[LongText] {
-	return sequel.Column("text", v.Text, func(val LongText) driver.Value { return (string)(val) })
+	return sequel.Column("text", v.Text, func(val LongText) driver.Value {
+		return (string)(val)
+	})
 }
 func (v A) GetCreatedAt() sequel.ColumnValuer[time.Time] {
-	return sequel.Column("created_at", v.CreatedAt, func(val time.Time) driver.Value { return (time.Time)(val) })
+	return sequel.Column("created_at", v.CreatedAt, func(val time.Time) driver.Value {
+		return (time.Time)(val)
+	})
 }
 
 func (B) TableName() string {
@@ -56,10 +62,14 @@ func (v B) InsertOneStmt() (string, []any) {
 	return "INSERT INTO b (id,created_at) VALUES (?,?);", v.Values()
 }
 func (v B) GetID() sequel.ColumnValuer[string] {
-	return sequel.Column("id", v.ID, func(val string) driver.Value { return (string)(val) })
+	return sequel.Column("id", v.ID, func(val string) driver.Value {
+		return (string)(val)
+	})
 }
 func (v B) GetCreatedAt() sequel.ColumnValuer[time.Time] {
-	return sequel.Column("created_at", v.CreatedAt, func(val time.Time) driver.Value { return (time.Time)(val) })
+	return sequel.Column("created_at", v.CreatedAt, func(val time.Time) driver.Value {
+		return (time.Time)(val)
+	})
 }
 
 func (C) TableName() string {
@@ -88,7 +98,9 @@ func (v C) FindOneByPKStmt() (string, []any) {
 	return "SELECT id FROM c WHERE id = ? LIMIT 1;", []any{(int64)(v.ID)}
 }
 func (v C) GetID() sequel.ColumnValuer[int64] {
-	return sequel.Column("id", v.ID, func(val int64) driver.Value { return (int64)(val) })
+	return sequel.Column("id", v.ID, func(val int64) driver.Value {
+		return (int64)(val)
+	})
 }
 
 func (D) TableName() string {
@@ -117,5 +129,7 @@ func (v D) FindOneByPKStmt() (string, []any) {
 	return "SELECT id FROM d WHERE id = ? LIMIT 1;", []any{(driver.Valuer)(v.ID)}
 }
 func (v D) GetID() sequel.ColumnValuer[sql.NullString] {
-	return sequel.Column("id", v.ID, func(val sql.NullString) driver.Value { return (driver.Valuer)(val) })
+	return sequel.Column("id", v.ID, func(val sql.NullString) driver.Value {
+		return (driver.Valuer)(val)
+	})
 }

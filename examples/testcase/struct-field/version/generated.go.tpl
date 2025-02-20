@@ -34,5 +34,7 @@ func (v Version) FindOneByPKStmt() (string, []any) {
 	return "SELECT id FROM version WHERE id = ? LIMIT 1;", []any{(driver.Valuer)(v.ID)}
 }
 func (v Version) GetID() sequel.ColumnValuer[uuid.UUID] {
-	return sequel.Column("id", v.ID, func(val uuid.UUID) driver.Value { return (driver.Valuer)(val) })
+	return sequel.Column("id", v.ID, func(val uuid.UUID) driver.Value {
+		return (driver.Valuer)(val)
+	})
 }

@@ -24,10 +24,14 @@ func (v A) InsertOneStmt() (string, []any) {
 	return "INSERT INTO " + v.TableName() + " (date,time) VALUES (?,?);", v.Values()
 }
 func (v A) GetDate() sequel.ColumnValuer[civil.Date] {
-	return sequel.Column("date", v.Date, func(val civil.Date) driver.Value { return types.TextMarshaler(val) })
+	return sequel.Column("date", v.Date, func(val civil.Date) driver.Value {
+		return types.TextMarshaler(val)
+	})
 }
 func (v A) GetTime() sequel.ColumnValuer[civil.Time] {
-	return sequel.Column("time", v.Time, func(val civil.Time) driver.Value { return types.TextMarshaler(val) })
+	return sequel.Column("time", v.Time, func(val civil.Time) driver.Value {
+		return types.TextMarshaler(val)
+	})
 }
 
 func (C) TableName() string {
@@ -49,8 +53,12 @@ func (v C) InsertOneStmt() (string, []any) {
 	return "INSERT INTO c (string,valid) VALUES (?,?);", v.Values()
 }
 func (v C) GetString() sequel.ColumnValuer[string] {
-	return sequel.Column("string", v.String, func(val string) driver.Value { return (string)(val) })
+	return sequel.Column("string", v.String, func(val string) driver.Value {
+		return (string)(val)
+	})
 }
 func (v C) GetValid() sequel.ColumnValuer[bool] {
-	return sequel.Column("valid", v.Valid, func(val bool) driver.Value { return (bool)(val) })
+	return sequel.Column("valid", v.Valid, func(val bool) driver.Value {
+		return (bool)(val)
+	})
 }

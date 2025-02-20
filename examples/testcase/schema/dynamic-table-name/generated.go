@@ -33,10 +33,14 @@ func (v A) UpdateOneByPKStmt() (string, []any) {
 	return "UPDATE " + v.TableName() + " SET name = ? WHERE id = ?;", []any{(string)(v.Name), (int64)(v.ID)}
 }
 func (v A) GetID() sequel.ColumnValuer[int64] {
-	return sequel.Column("id", v.ID, func(val int64) driver.Value { return (int64)(val) })
+	return sequel.Column("id", v.ID, func(val int64) driver.Value {
+		return (int64)(val)
+	})
 }
 func (v A) GetName() sequel.ColumnValuer[string] {
-	return sequel.Column("name", v.Name, func(val string) driver.Value { return (string)(val) })
+	return sequel.Column("name", v.Name, func(val string) driver.Value {
+		return (string)(val)
+	})
 }
 
 func (Model) Columns() []string {
@@ -55,5 +59,7 @@ func (v Model) InsertOneStmt() (string, []any) {
 	return "INSERT INTO " + v.TableName() + " (name) VALUES (?);", v.Values()
 }
 func (v Model) GetName() sequel.ColumnValuer[string] {
-	return sequel.Column("name", v.Name, func(val string) driver.Value { return (string)(val) })
+	return sequel.Column("name", v.Name, func(val string) driver.Value {
+		return (string)(val)
+	})
 }

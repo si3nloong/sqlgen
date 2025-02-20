@@ -32,5 +32,7 @@ func (v Model) FindOneByPKStmt() (string, []any) {
 	return "SELECT id FROM model WHERE id = ? LIMIT 1;", []any{(int64)(v.ID)}
 }
 func (v Model) GetID() sequel.ColumnValuer[int] {
-	return sequel.Column("id", v.ID, func(val int) driver.Value { return (int64)(val) })
+	return sequel.Column("id", v.ID, func(val int) driver.Value {
+		return (int64)(val)
+	})
 }

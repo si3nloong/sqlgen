@@ -41,14 +41,22 @@ func (v Model) UpdateOneByPKStmt() (string, []any) {
 	return "UPDATE AutoIncrPK SET name = ?,f = ?,n = ? WHERE id = ?;", []any{(string)(v.Name), (bool)(v.F), (int64)(v.N), (int64)(v.ID)}
 }
 func (v Model) GetName() sequel.ColumnValuer[LongText] {
-	return sequel.Column("name", v.Name, func(val LongText) driver.Value { return (string)(val) })
+	return sequel.Column("name", v.Name, func(val LongText) driver.Value {
+		return (string)(val)
+	})
 }
 func (v Model) GetF() sequel.ColumnValuer[Flag] {
-	return sequel.Column("f", v.F, func(val Flag) driver.Value { return (bool)(val) })
+	return sequel.Column("f", v.F, func(val Flag) driver.Value {
+		return (bool)(val)
+	})
 }
 func (v Model) GetID() sequel.ColumnValuer[uint] {
-	return sequel.Column("id", v.ID, func(val uint) driver.Value { return (int64)(val) })
+	return sequel.Column("id", v.ID, func(val uint) driver.Value {
+		return (int64)(val)
+	})
 }
 func (v Model) GetN() sequel.ColumnValuer[int64] {
-	return sequel.Column("n", v.N, func(val int64) driver.Value { return (int64)(val) })
+	return sequel.Column("n", v.N, func(val int64) driver.Value {
+		return (int64)(val)
+	})
 }

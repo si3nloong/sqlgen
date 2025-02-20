@@ -11,6 +11,10 @@ import (
 	"unsafe"
 )
 
+type addrOrPtr[T any] interface {
+	*T | **T
+}
+
 type ValueScanner[T any] interface {
 	driver.Valuer
 	sql.Scanner

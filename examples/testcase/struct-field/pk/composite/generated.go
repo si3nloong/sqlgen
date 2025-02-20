@@ -38,14 +38,22 @@ func (v Composite) UpdateOneByPKStmt() (string, []any) {
 	return "UPDATE composite SET flag = ?,col_2 = ? WHERE (col_1,col_3) = (?,?);", []any{(bool)(v.Flag), (bool)(v.Col2), (string)(v.Col1), (driver.Valuer)(v.Col3)}
 }
 func (v Composite) GetFlag() sequel.ColumnValuer[bool] {
-	return sequel.Column("flag", v.Flag, func(val bool) driver.Value { return (bool)(val) })
+	return sequel.Column("flag", v.Flag, func(val bool) driver.Value {
+		return (bool)(val)
+	})
 }
 func (v Composite) GetCol1() sequel.ColumnValuer[string] {
-	return sequel.Column("col_1", v.Col1, func(val string) driver.Value { return (string)(val) })
+	return sequel.Column("col_1", v.Col1, func(val string) driver.Value {
+		return (string)(val)
+	})
 }
 func (v Composite) GetCol2() sequel.ColumnValuer[bool] {
-	return sequel.Column("col_2", v.Col2, func(val bool) driver.Value { return (bool)(val) })
+	return sequel.Column("col_2", v.Col2, func(val bool) driver.Value {
+		return (bool)(val)
+	})
 }
 func (v Composite) GetCol3() sequel.ColumnValuer[uuid.UUID] {
-	return sequel.Column("col_3", v.Col3, func(val uuid.UUID) driver.Value { return (driver.Valuer)(val) })
+	return sequel.Column("col_3", v.Col3, func(val uuid.UUID) driver.Value {
+		return (driver.Valuer)(val)
+	})
 }

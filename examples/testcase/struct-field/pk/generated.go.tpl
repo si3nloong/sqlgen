@@ -37,16 +37,24 @@ func (v Car) UpdateOneByPKStmt() (string, []any) {
 	return "UPDATE car SET no = ?,color = ?,manuc_date = ? WHERE id = ?;", []any{(string)(v.No), (int64)(v.Color), (time.Time)(v.ManucDate), (driver.Valuer)(v.ID)}
 }
 func (v Car) GetID() sequel.ColumnValuer[PK] {
-	return sequel.Column("id", v.ID, func(val PK) driver.Value { return (driver.Valuer)(val) })
+	return sequel.Column("id", v.ID, func(val PK) driver.Value {
+		return (driver.Valuer)(val)
+	})
 }
 func (v Car) GetNo() sequel.ColumnValuer[string] {
-	return sequel.Column("no", v.No, func(val string) driver.Value { return (string)(val) })
+	return sequel.Column("no", v.No, func(val string) driver.Value {
+		return (string)(val)
+	})
 }
 func (v Car) GetColor() sequel.ColumnValuer[Color] {
-	return sequel.Column("color", v.Color, func(val Color) driver.Value { return (int64)(val) })
+	return sequel.Column("color", v.Color, func(val Color) driver.Value {
+		return (int64)(val)
+	})
 }
 func (v Car) GetManucDate() sequel.ColumnValuer[time.Time] {
-	return sequel.Column("manuc_date", v.ManucDate, func(val time.Time) driver.Value { return (time.Time)(val) })
+	return sequel.Column("manuc_date", v.ManucDate, func(val time.Time) driver.Value {
+		return (time.Time)(val)
+	})
 }
 
 func (House) TableName() string {
@@ -78,10 +86,14 @@ func (v House) UpdateOneByPKStmt() (string, []any) {
 	return "UPDATE house SET no = ? WHERE id = ?;", []any{(string)(v.No), (int64)(v.ID)}
 }
 func (v House) GetID() sequel.ColumnValuer[uint] {
-	return sequel.Column("id", v.ID, func(val uint) driver.Value { return (int64)(val) })
+	return sequel.Column("id", v.ID, func(val uint) driver.Value {
+		return (int64)(val)
+	})
 }
 func (v House) GetNo() sequel.ColumnValuer[string] {
-	return sequel.Column("no", v.No, func(val string) driver.Value { return (string)(val) })
+	return sequel.Column("no", v.No, func(val string) driver.Value {
+		return (string)(val)
+	})
 }
 
 func (User) TableName() string {
@@ -113,14 +125,22 @@ func (v User) UpdateOneByPKStmt() (string, []any) {
 	return "UPDATE user SET name = ?,age = ?,email = ? WHERE id = ?;", []any{(string)(v.Name), (int64)(v.Age), (string)(v.Email), (int64)(v.ID)}
 }
 func (v User) GetID() sequel.ColumnValuer[int64] {
-	return sequel.Column("id", v.ID, func(val int64) driver.Value { return (int64)(val) })
+	return sequel.Column("id", v.ID, func(val int64) driver.Value {
+		return (int64)(val)
+	})
 }
 func (v User) GetName() sequel.ColumnValuer[LongText] {
-	return sequel.Column("name", v.Name, func(val LongText) driver.Value { return (string)(val) })
+	return sequel.Column("name", v.Name, func(val LongText) driver.Value {
+		return (string)(val)
+	})
 }
 func (v User) GetAge() sequel.ColumnValuer[uint8] {
-	return sequel.Column("age", v.Age, func(val uint8) driver.Value { return (int64)(val) })
+	return sequel.Column("age", v.Age, func(val uint8) driver.Value {
+		return (int64)(val)
+	})
 }
 func (v User) GetEmail() sequel.ColumnValuer[string] {
-	return sequel.Column("email", v.Email, func(val string) driver.Value { return (string)(val) })
+	return sequel.Column("email", v.Email, func(val string) driver.Value {
+		return (string)(val)
+	})
 }
