@@ -67,6 +67,6 @@ func (j *jsonScanner[T, Addr]) Scan(v any) error {
 	case json.RawMessage:
 		return json.NewDecoder(bytes.NewBuffer(vi)).Decode(j.v)
 	default:
-		return fmt.Errorf(`sequel/types: invalid scan type for JSON, %T`, v)
+		return fmt.Errorf(`sequel/encoding: invalid scan type for JSON, %T`, v)
 	}
 }

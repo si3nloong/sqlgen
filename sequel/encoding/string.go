@@ -67,7 +67,7 @@ func (s *strScanner[T, Ptr]) Scan(v any) error {
 		}
 	default:
 		if s.strictType {
-			return fmt.Errorf(`sequel/types: unable to scan %T to ~string`, vi)
+			return fmt.Errorf(`sequel/encoding: unable to scan %T to ~string`, vi)
 		}
 
 		switch vi := v.(type) {
@@ -120,7 +120,7 @@ func (s *strScanner[T, Ptr]) Scan(v any) error {
 				panic("unreachable")
 			}
 		default:
-			return fmt.Errorf(`sequel/types: unable to scan %T to ~string`, vi)
+			return fmt.Errorf(`sequel/encoding: unable to scan %T to ~string`, vi)
 		}
 	}
 }

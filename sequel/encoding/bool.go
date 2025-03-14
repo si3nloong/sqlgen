@@ -64,7 +64,7 @@ func (b *boolScanner[T, Ptr]) Scan(v any) error {
 		}
 	default:
 		if b.strictType {
-			return fmt.Errorf(`sequel/types: unable to scan %T to ~bool`, vi)
+			return fmt.Errorf(`sequel/encoding: unable to scan %T to ~bool`, vi)
 		}
 
 		switch vi := v.(type) {
@@ -101,7 +101,7 @@ func (b *boolScanner[T, Ptr]) Scan(v any) error {
 				panic("unreachable")
 			}
 		default:
-			return fmt.Errorf(`sequel/types: unable to scan %T to ~bool`, vi)
+			return fmt.Errorf(`sequel/encoding: unable to scan %T to ~bool`, vi)
 		}
 	}
 }

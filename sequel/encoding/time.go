@@ -91,7 +91,7 @@ func (t *tsScanner[T]) Scan(v any) error {
 			panic("unreachable")
 		}
 	default:
-		return fmt.Errorf(`sequel/types: unsupported scan type %T for time.Time`, vt)
+		return fmt.Errorf(`sequel/encoding: unsupported scan type %T for time.Time`, vt)
 	}
 }
 

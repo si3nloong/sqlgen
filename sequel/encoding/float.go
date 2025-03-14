@@ -76,7 +76,7 @@ func (f *float32Scanner[T, Addr]) Scan(v any) error {
 		}
 	default:
 		if f.strictType {
-			return fmt.Errorf(`sequel/types: unable to scan %T to ~float32`, vi)
+			return fmt.Errorf(`sequel/encoding: unable to scan %T to ~float32`, vi)
 		}
 
 		switch vi := v.(type) {
@@ -113,7 +113,7 @@ func (f *float32Scanner[T, Addr]) Scan(v any) error {
 				panic("unreachable")
 			}
 		default:
-			return fmt.Errorf(`sequel/types: unable to scan %T to ~float32`, vi)
+			return fmt.Errorf(`sequel/encoding: unable to scan %T to ~float32`, vi)
 		}
 	}
 }
@@ -163,7 +163,7 @@ func (f *float64Scanner[T, Addr]) Scan(v any) error {
 		}
 	default:
 		if f.strictType {
-			return fmt.Errorf(`sequel/types: unable to scan %T to ~float64`, vi)
+			return fmt.Errorf(`sequel/encoding: unable to scan %T to ~float64`, vi)
 		}
 
 		switch vi := v.(type) {
@@ -200,7 +200,7 @@ func (f *float64Scanner[T, Addr]) Scan(v any) error {
 				panic("unreachable")
 			}
 		default:
-			return fmt.Errorf(`sequel/types: unable to scan %T to ~float64`, vi)
+			return fmt.Errorf(`sequel/encoding: unable to scan %T to ~float64`, vi)
 		}
 	}
 }

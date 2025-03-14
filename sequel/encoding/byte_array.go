@@ -26,21 +26,21 @@ func (s *byteArrScanner[T]) Scan(v any) error {
 	case string:
 		bytes := unsafe.Slice(unsafe.StringData(b), len(b))
 		if len(bytes) > s.size {
-			return fmt.Errorf(`sequel/types: byte array overflow, should be %d, but it is %d`, s.size, len(b))
+			return fmt.Errorf(`sequel/encoding: byte array overflow, should be %d, but it is %d`, s.size, len(b))
 		}
 		for i := range bytes {
 			s.v[i] = T(bytes[i])
 		}
 	case []byte:
 		if len(b) > s.size {
-			return fmt.Errorf(`sequel/types: byte array overflow, should be %d, but it is %d`, s.size, len(b))
+			return fmt.Errorf(`sequel/encoding: byte array overflow, should be %d, but it is %d`, s.size, len(b))
 		}
 		for i := range b {
 			s.v[i] = T(b[i])
 		}
 		return nil
 	default:
-		return fmt.Errorf(`sequel/types: unsupported scan type %T for [%d]~byte`, b, s.size)
+		return fmt.Errorf(`sequel/encoding: unsupported scan type %T for [%d]~byte`, b, s.size)
 	}
 	return nil
 }

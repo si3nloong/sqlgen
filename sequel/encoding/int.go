@@ -92,6 +92,6 @@ func (i *signedIntScanner[T, Addr]) Scan(v any) error {
 			panic("unreachable")
 		}
 	default:
-		return fmt.Errorf(`sequel/types: unable to scan %T to ~int`, vi)
+		return fmt.Errorf(`sequel/encoding: unable to scan %T to ~int`, vi)
 	}
 }

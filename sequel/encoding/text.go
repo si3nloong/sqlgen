@@ -116,6 +116,6 @@ func (t *textScanner[T, Ptr, Addr]) Scan(v any) error {
 			panic("unreachable")
 		}
 	default:
-		return fmt.Errorf(`sequel/types: unable to TextUnmarshal %T`, vt)
+		return fmt.Errorf(`sequel/encoding: unable to TextUnmarshal %T`, vt)
 	}
 }
