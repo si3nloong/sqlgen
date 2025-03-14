@@ -1348,7 +1348,7 @@ type UpdateStmt struct {
 	Set		[]sequel.SetClause
 	Where	sequel.WhereClause
 	OrderBy []sequel.OrderByClause
-	{{ if eq driver "postgres" -}}
+	{{ if ne driver "postgres" -}}
 	{{- /* postgres */ -}}
 	Limit   uint16
 	{{ end -}}
@@ -1358,7 +1358,7 @@ type DeleteStmt struct {
 	FromTable string
 	Where     sequel.WhereClause
 	OrderBy   []sequel.OrderByClause
-	{{ if eq driver "postgres" -}}
+	{{ if ne driver "postgres" -}}
 	{{- /* postgres */ -}}
 	Limit     uint16
 	{{ end -}}
@@ -1404,7 +1404,7 @@ func ExecStmt[T any, Stmt interface {
 				}
 			}
 		}
-		{{ if eq driver "postgres" -}}
+		{{ if ne driver "postgres" -}}
 		{{- /* postgres */ -}}
 		if vi.Limit > 0 {
 			blr.WriteString(" LIMIT " + strconv.FormatUint(uint64(vi.Limit), 10))
@@ -1434,7 +1434,7 @@ func ExecStmt[T any, Stmt interface {
 				}
 			}
 		}
-		{{ if eq driver "postgres" -}}
+		{{ if ne driver "postgres" -}}
 		{{- /* postgres */ -}}
 		if vi.Limit > 0 {
 			blr.WriteString(" LIMIT " + strconv.FormatUint(uint64(vi.Limit), 10))
