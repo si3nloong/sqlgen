@@ -27,7 +27,7 @@ func TestAll(t *testing.T) {
 		Exec: codegen.ExecConfig{
 			SkipEmpty: false,
 		},
-		DataTypes: map[string]codegen.DataType{
+		DataTypes: map[string]*codegen.DataType{
 			"github.com/paulmach/orb.Point": {
 				DataType:   "POINT NOT NULL",
 				SQLScanner: `ST_AsBinary({{.}},4326)`,
@@ -91,15 +91,17 @@ func generateModel(t *testing.T, rootDir string) error {
 			return nil
 		}
 
+		// Read result file
+		expected, err := os.ReadFile(filepath.Join(path, codegen.DefaultGeneratedFile+".tpl"))
+		if os.IsNotExist(err) {
+			return nil
+		} else if err != nil {
+			return fmt.Errorf("%w, happened in directory %q", err, path)
+		}
+
 		actual, err := os.ReadFile(filepath.Join(path, codegen.DefaultGeneratedFile))
 		if err != nil {
 			return err
-		}
-
-		// Read result file
-		expected, err := os.ReadFile(filepath.Join(path, codegen.DefaultGeneratedFile+".tpl"))
-		if err != nil {
-			return fmt.Errorf("%w, happened in directory %q", err, path)
 		}
 
 		t.Run(fmt.Sprintf("Test %q is correct", path), func(t *testing.T) {

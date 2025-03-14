@@ -995,7 +995,6 @@ func ExecStmt[T any, Stmt interface {
 		if vi.Limit > 0 {
 			blr.WriteString(" LIMIT " + strconv.FormatUint(uint64(vi.Limit), 10))
 		}
-
 	case DeleteStmt:
 		if vt, ok := any(v).(sequel.Tabler); ok {
 			blr.WriteString("DELETE FROM " + DbTable(vt))

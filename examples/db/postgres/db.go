@@ -1057,14 +1057,12 @@ type UpdateStmt struct {
 	Set     []sequel.SetClause
 	Where   sequel.WhereClause
 	OrderBy []sequel.OrderByClause
-	Limit   uint16
 }
 
 type DeleteStmt struct {
 	FromTable string
 	Where     sequel.WhereClause
 	OrderBy   []sequel.OrderByClause
-	Limit     uint16
 }
 
 func ExecStmt[T any, Stmt interface {
@@ -1107,10 +1105,6 @@ func ExecStmt[T any, Stmt interface {
 				}
 			}
 		}
-		if vi.Limit > 0 {
-			blr.WriteString(" LIMIT " + strconv.FormatUint(uint64(vi.Limit), 10))
-		}
-
 	case DeleteStmt:
 		if vt, ok := any(v).(sequel.Tabler); ok {
 			blr.WriteString("DELETE FROM " + DbTable(vt))
@@ -1133,9 +1127,6 @@ func ExecStmt[T any, Stmt interface {
 					blr.WriteString(vi.OrderBy[i].ColumnName() + " DESC")
 				}
 			}
-		}
-		if vi.Limit > 0 {
-			blr.WriteString(" LIMIT " + strconv.FormatUint(uint64(vi.Limit), 10))
 		}
 	}
 	blr.WriteByte(';')

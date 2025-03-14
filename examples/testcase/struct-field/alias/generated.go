@@ -10,14 +10,14 @@ import (
 )
 
 func (AliasStruct) TableName() string {
-	return "`alias_struct`"
+	return "alias_struct"
 }
 func (AliasStruct) HasPK() {}
 func (v AliasStruct) PK() (string, int, any) {
-	return "`Id`", 1, v.pk.ID
+	return "Id", 1, v.pk.ID
 }
 func (AliasStruct) Columns() []string {
-	return []string{"`b`", "`Id`", "`header`", "`raw`", "`text`", "`null_str`", "`created`", "`updated`"} // 8
+	return []string{"b", "Id", "header", "raw", "text", "null_str", "created", "updated"} // 8
 }
 func (v AliasStruct) Values() []any {
 	return []any{
@@ -47,13 +47,13 @@ func (AliasStruct) InsertPlaceholders(row int) string {
 	return "(?,?,?,?,?,?,?,?)" // 8
 }
 func (v AliasStruct) InsertOneStmt() (string, []any) {
-	return "INSERT INTO `alias_struct` (`b`,`Id`,`header`,`raw`,`text`,`null_str`,`created`,`updated`) VALUES (?,?,?,?,?,?,?,?);", v.Values()
+	return "INSERT INTO alias_struct (b,Id,header,raw,text,null_str,created,updated) VALUES (?,?,?,?,?,?,?,?);", v.Values()
 }
 func (v AliasStruct) FindOneByPKStmt() (string, []any) {
-	return "SELECT `b`,`Id`,`header`,`raw`,`text`,`null_str`,`created`,`updated` FROM `alias_struct` WHERE `Id` = ? LIMIT 1;", []any{v.pk.ID}
+	return "SELECT b,Id,header,raw,text,null_str,created,updated FROM alias_struct WHERE Id = ? LIMIT 1;", []any{v.pk.ID}
 }
 func (v AliasStruct) UpdateOneByPKStmt() (string, []any) {
-	return "UPDATE `alias_struct` SET `b` = ?,`header` = ?,`raw` = ?,`text` = ?,`null_str` = ?,`created` = ?,`updated` = ? WHERE `Id` = ?;", []any{v.B, (string)(v.Header), string(v.Raw), (string)(v.Text), v.NullStr, (time.Time)(v.model.Created), (time.Time)(v.model.Updated), v.pk.ID}
+	return "UPDATE alias_struct SET b = ?,header = ?,raw = ?,text = ?,null_str = ?,created = ?,updated = ? WHERE Id = ?;", []any{v.B, (string)(v.Header), string(v.Raw), (string)(v.Text), v.NullStr, (time.Time)(v.model.Created), (time.Time)(v.model.Updated), v.pk.ID}
 }
 func (v AliasStruct) BValue() driver.Value {
 	return v.B
@@ -80,51 +80,51 @@ func (v AliasStruct) UpdatedValue() driver.Value {
 	return (time.Time)(v.model.Updated)
 }
 func (v AliasStruct) GetB() sequel.ColumnValuer[float64] {
-	return sequel.Column("`b`", v.B, func(val float64) driver.Value {
+	return sequel.Column("b", v.B, func(val float64) driver.Value {
 		return val
 	})
 }
 func (v AliasStruct) GetID() sequel.ColumnValuer[int64] {
-	return sequel.Column("`Id`", v.pk.ID, func(val int64) driver.Value {
+	return sequel.Column("Id", v.pk.ID, func(val int64) driver.Value {
 		return val
 	})
 }
 func (v AliasStruct) GetHeader() sequel.ColumnValuer[aliasStr] {
-	return sequel.Column("`header`", v.Header, func(val aliasStr) driver.Value {
+	return sequel.Column("header", v.Header, func(val aliasStr) driver.Value {
 		return (string)(val)
 	})
 }
 func (v AliasStruct) GetRaw() sequel.ColumnValuer[sql.RawBytes] {
-	return sequel.Column("`raw`", v.Raw, func(val sql.RawBytes) driver.Value {
+	return sequel.Column("raw", v.Raw, func(val sql.RawBytes) driver.Value {
 		return string(val)
 	})
 }
 func (v AliasStruct) GetText() sequel.ColumnValuer[customStr] {
-	return sequel.Column("`text`", v.Text, func(val customStr) driver.Value {
+	return sequel.Column("text", v.Text, func(val customStr) driver.Value {
 		return (string)(val)
 	})
 }
 func (v AliasStruct) GetNullStr() sequel.ColumnValuer[sql.NullString] {
-	return sequel.Column("`null_str`", v.NullStr, func(val sql.NullString) driver.Value {
+	return sequel.Column("null_str", v.NullStr, func(val sql.NullString) driver.Value {
 		return val
 	})
 }
 func (v AliasStruct) GetCreated() sequel.ColumnValuer[DT] {
-	return sequel.Column("`created`", v.model.Created, func(val DT) driver.Value {
+	return sequel.Column("created", v.model.Created, func(val DT) driver.Value {
 		return (time.Time)(val)
 	})
 }
 func (v AliasStruct) GetUpdated() sequel.ColumnValuer[DT] {
-	return sequel.Column("`updated`", v.model.Updated, func(val DT) driver.Value {
+	return sequel.Column("updated", v.model.Updated, func(val DT) driver.Value {
 		return (time.Time)(val)
 	})
 }
 
 func (B) TableName() string {
-	return "`b`"
+	return "b"
 }
 func (B) Columns() []string {
-	return []string{"`name`"} // 1
+	return []string{"name"} // 1
 }
 func (v B) Values() []any {
 	return []any{
@@ -140,22 +140,22 @@ func (B) InsertPlaceholders(row int) string {
 	return "(?)" // 1
 }
 func (v B) InsertOneStmt() (string, []any) {
-	return "INSERT INTO `b` (`name`) VALUES (?);", v.Values()
+	return "INSERT INTO b (name) VALUES (?);", v.Values()
 }
 func (v B) NameValue() driver.Value {
 	return v.Name
 }
 func (v B) GetName() sequel.ColumnValuer[string] {
-	return sequel.Column("`name`", v.Name, func(val string) driver.Value {
+	return sequel.Column("name", v.Name, func(val string) driver.Value {
 		return val
 	})
 }
 
 func (C) TableName() string {
-	return "`c`"
+	return "c"
 }
 func (C) Columns() []string {
-	return []string{"`id`"} // 1
+	return []string{"id"} // 1
 }
 func (v C) Values() []any {
 	return []any{
@@ -171,13 +171,13 @@ func (C) InsertPlaceholders(row int) string {
 	return "(?)" // 1
 }
 func (v C) InsertOneStmt() (string, []any) {
-	return "INSERT INTO `c` (`id`) VALUES (?);", v.Values()
+	return "INSERT INTO c (id) VALUES (?);", v.Values()
 }
 func (v C) IDValue() driver.Value {
 	return v.ID
 }
 func (v C) GetID() sequel.ColumnValuer[int64] {
-	return sequel.Column("`id`", v.ID, func(val int64) driver.Value {
+	return sequel.Column("id", v.ID, func(val int64) driver.Value {
 		return val
 	})
 }

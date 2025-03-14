@@ -3,6 +3,7 @@ package uint32
 import (
 	"database/sql/driver"
 
+	"github.com/si3nloong/sqlgen/sequel"
 	"github.com/si3nloong/sqlgen/sequel/encoding"
 )
 
@@ -19,17 +20,21 @@ func (v Model) PK() (string, int, any) {
 	return "id", 0, (int64)(v.ID)
 }
 func (Model) Columns() []string {
-	return []string{"id"}
-}
-func (v Model) Values() []any {
-	return []any{(int64)(v.ID)}
+	return []string{"id"} // 1
 }
 func (v *Model) Addrs() []any {
-	return []any{encoding.Uint32Scanner[uint32](&v.ID)}
+	return []any{
+		encoding.Uint32Scanner[uint32](&v.ID), // 0 - id
+	}
 }
 func (v Model) FindOneByPKStmt() (string, []any) {
 	return "SELECT id FROM model WHERE id = ? LIMIT 1;", []any{(int64)(v.ID)}
 }
-func (v Model) GetID() driver.Value {
+func (v Model) IDValue() driver.Value {
 	return (int64)(v.ID)
+}
+func (v Model) GetID() sequel.ColumnValuer[uint32] {
+	return sequel.Column("id", v.ID, func(val uint32) driver.Value {
+		return (int64)(val)
+	})
 }
