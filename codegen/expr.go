@@ -59,6 +59,8 @@ func (e Expr) Format(pkg *Package, args ...ExprParams) string {
 				return importPkgIfNeeded(pkg, t.Elem().String())
 			case *types.Slice:
 				return importPkgIfNeeded(pkg, t.Elem().String())
+			case *types.Pointer:
+				return importPkgIfNeeded(pkg, t.Elem().String())
 			}
 			return ""
 		},

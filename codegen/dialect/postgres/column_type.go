@@ -122,52 +122,52 @@ func (s *postgresDriver) ColumnDataTypes() map[string]*dialect.ColumnType {
 		"*int8": {
 			DataType: s.intDataType("int2", int64(0)),
 			Valuer:   "github.com/si3nloong/sqlgen/sequel/types.Integer({{goPath}})",
-			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Int8Scanner({{addr}})",
+			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Int8Scanner[{{elemType}}]({{addr}})",
 		},
 		"*int16": {
 			DataType: s.intDataType("int2", int64(0)),
 			Valuer:   "github.com/si3nloong/sqlgen/sequel/types.Integer({{goPath}})",
-			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Int16Scanner({{addr}})",
+			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Int16Scanner[{{elemType}}]({{addr}})",
 		},
 		"*int32": {
 			DataType: s.intDataType("int4", int64(0)),
 			Valuer:   "github.com/si3nloong/sqlgen/sequel/types.Integer({{goPath}})",
-			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Int32Scanner({{addr}})",
+			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Int32Scanner[{{elemType}}]({{addr}})",
 		},
 		"*int64": {
 			DataType: s.columnDataType("bigint", int64(0)),
 			Valuer:   "github.com/si3nloong/sqlgen/sequel/types.Integer({{goPath}})",
-			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Int64Scanner({{addr}})",
+			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Int64Scanner[{{elemType}}]({{addr}})",
 		},
 		"*int": {
 			DataType: s.intDataType("int4", int64(0)),
 			Valuer:   "github.com/si3nloong/sqlgen/sequel/types.Integer({{goPath}})",
-			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.IntScanner({{addr}})",
+			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.IntScanner[{{elemType}}]({{addr}})",
 		},
 		"*uint8": {
 			DataType: s.intDataType("int2", uint64(0)),
 			Valuer:   "github.com/si3nloong/sqlgen/sequel/types.Integer({{goPath}})",
-			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Uint8Scanner({{addr}})",
+			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Uint8Scanner[{{elemType}}]({{addr}})",
 		},
 		"*uint16": {
 			DataType: s.intDataType("int2", uint64(0)),
 			Valuer:   "github.com/si3nloong/sqlgen/sequel/types.Integer({{goPath}})",
-			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Uint16Scanner({{addr}})",
+			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Uint16Scanner[{{elemType}}]({{addr}})",
 		},
 		"*uint32": {
 			DataType: s.intDataType("int4", uint64(0)),
 			Valuer:   "github.com/si3nloong/sqlgen/sequel/types.Integer({{goPath}})",
-			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Uint32Scanner({{addr}})",
+			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Uint32Scanner[{{elemType}}]({{addr}})",
 		},
 		"*uint64": {
 			DataType: s.intDataType("bigint", uint64(0)),
 			Valuer:   "github.com/si3nloong/sqlgen/sequel/types.Integer({{goPath}})",
-			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Uint64Scanner({{addr}})",
+			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.Uint64Scanner[{{elemType}}]({{addr}})",
 		},
 		"*uint": {
 			DataType: s.intDataType("int4", uint64(0)),
 			Valuer:   "github.com/si3nloong/sqlgen/sequel/types.Integer({{goPath}})",
-			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.UintScanner({{addr}})",
+			Scanner:  "github.com/si3nloong/sqlgen/sequel/types.UintScanner[{{elemType}}]({{addr}})",
 		},
 		"*float32": {
 			DataType: s.columnDataType("real"),
