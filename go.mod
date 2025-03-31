@@ -10,7 +10,7 @@ require (
 	github.com/fsnotify/fsnotify v1.8.0
 	github.com/go-playground/validator/v10 v10.26.0
 	github.com/go-sql-driver/mysql v1.9.1
-	github.com/goccy/go-yaml v1.16.0
+	github.com/goccy/go-yaml v1.17.1
 	github.com/jackc/pgx/v5 v5.7.4
 	github.com/samber/lo v1.49.1
 	github.com/spf13/cobra v1.9.1
