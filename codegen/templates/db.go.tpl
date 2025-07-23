@@ -822,7 +822,12 @@ func (r *Pager[T, Ptr]) Prev(ctx context.Context, sqlConn sequel.DB, cursor ...T
 
 			blr := AcquireStmt()
 			defer ReleaseStmt(blr)
-			blr.WriteString("SELECT " + strings.Join(v.Columns(), ",") + " FROM " + DbTable(v) + " WHERE ")
+			switch vi := any(v).(type) {
+			case sequel.SQLColumner:
+				blr.WriteString("SELECT " + strings.Join(vi.SQLColumns(), ",") + " FROM " + DbTable(v) + " WHERE ")
+			default:
+				blr.WriteString("SELECT " + strings.Join(v.Columns(), ",") + " FROM " + DbTable(v) + " WHERE ")
+			}
 			if r.stmt.Where != nil {
 				r.stmt.Where(blr)
 			}
@@ -1001,7 +1006,12 @@ func (r *Pager[T, Ptr]) Next(ctx context.Context, sqlConn sequel.DB, cursor ...T
 
 			blr := AcquireStmt()
 			defer ReleaseStmt(blr)
-			blr.WriteString("SELECT " + strings.Join(v.Columns(), ",") + " FROM " + DbTable(v) + " WHERE ")
+			switch vi := any(v).(type) {
+			case sequel.SQLColumner:
+				blr.WriteString("SELECT " + strings.Join(vi.SQLColumns(), ",") + " FROM " + DbTable(v) + " WHERE ")
+			default:
+				blr.WriteString("SELECT " + strings.Join(v.Columns(), ",") + " FROM " + DbTable(v) + " WHERE ")
+			}
 			if r.stmt.Where != nil {
 				r.stmt.Where(blr)
 			}
