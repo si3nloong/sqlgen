@@ -152,7 +152,10 @@ func WithDuplicateKeys(keys ...string) UpsertOption {
 	}
 }
 
-func UpsertOne[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Context, sqlConn sequel.DB, model Ptr, opts ...UpsertOption) error {
+func UpsertOne[T sequel.KeyValuer, Ptr interface {
+	sequel.KeyValueScanner[T]
+	sequel.Inserter
+}](ctx context.Context, sqlConn sequel.DB, model Ptr, opts ...UpsertOption) error {
 	var opt upsertOpts
 	for i := range opts {
 		opts[i](&opt)
@@ -186,13 +189,7 @@ func UpsertOne[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Co
 	default:
 		panic("unreachable")
 	}
-	for i := 1; i <= noOfCols; i++ {
-		if i > 1 {
-			stmt.WriteString("," + wrapVar(i))
-		} else {
-			stmt.WriteString(wrapVar(i))
-		}
-	}
+	stmt.WriteString(model.InsertPlaceholders(0))
 	if len(opt.duplicateKeys) > 0 {
 		stmt.WriteString(") ON CONFLICT(" + strings.Join(opt.duplicateKeys, ",") + ")")
 	} else {
@@ -533,7 +530,12 @@ func (r *Pager[T, Ptr]) Prev(ctx context.Context, sqlConn sequel.DB, cursor ...T
 
 			blr := AcquireStmt()
 			defer ReleaseStmt(blr)
-			blr.WriteString("SELECT " + strings.Join(v.Columns(), ",") + " FROM " + DbTable(v) + " WHERE ")
+			switch vi := any(v).(type) {
+			case sequel.SQLColumner:
+				blr.WriteString("SELECT " + strings.Join(vi.SQLColumns(), ",") + " FROM " + DbTable(v) + " WHERE ")
+			default:
+				blr.WriteString("SELECT " + strings.Join(v.Columns(), ",") + " FROM " + DbTable(v) + " WHERE ")
+			}
 			if r.stmt.Where != nil {
 				r.stmt.Where(blr)
 			}
@@ -712,7 +714,12 @@ func (r *Pager[T, Ptr]) Next(ctx context.Context, sqlConn sequel.DB, cursor ...T
 
 			blr := AcquireStmt()
 			defer ReleaseStmt(blr)
-			blr.WriteString("SELECT " + strings.Join(v.Columns(), ",") + " FROM " + DbTable(v) + " WHERE ")
+			switch vi := any(v).(type) {
+			case sequel.SQLColumner:
+				blr.WriteString("SELECT " + strings.Join(vi.SQLColumns(), ",") + " FROM " + DbTable(v) + " WHERE ")
+			default:
+				blr.WriteString("SELECT " + strings.Join(v.Columns(), ",") + " FROM " + DbTable(v) + " WHERE ")
+			}
 			if r.stmt.Where != nil {
 				r.stmt.Where(blr)
 			}
