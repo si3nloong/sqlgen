@@ -177,33 +177,33 @@ func UpsertOne[T sequel.KeyValuer, Ptr interface {
 		noOfCols = len(columns)
 		values = append(values[:idx], values[idx+1:]...)
 		// Don't include auto increment primary key on INSERT
-		stmt.WriteString("INSERT INTO " + DbTable(model) + " (" + strings.Join(columns, ",") + ") VALUES (")
+		stmt.WriteString("INSERT INTO " + DbTable(model) + " (" + strings.Join(columns, ",") + ") VALUES ")
 	case sequel.PrimaryKeyer:
 		pkName, _, _ := v.PK()
 		opt.omitFields = append(opt.omitFields, pkName)
-		stmt.WriteString("INSERT INTO " + DbTable(model) + " (" + strings.Join(columns, ",") + ") VALUES (")
+		stmt.WriteString("INSERT INTO " + DbTable(model) + " (" + strings.Join(columns, ",") + ") VALUES ")
 	case sequel.CompositeKeyer:
 		keyNames, _, _ := v.CompositeKey()
 		opt.omitFields = append(opt.omitFields, keyNames...)
-		stmt.WriteString("INSERT INTO " + DbTable(model) + " (" + strings.Join(columns, ",") + ") VALUES (")
+		stmt.WriteString("INSERT INTO " + DbTable(model) + " (" + strings.Join(columns, ",") + ") VALUES ")
 	default:
 		panic("unreachable")
 	}
 	stmt.WriteString(model.InsertPlaceholders(0))
 	if len(opt.duplicateKeys) > 0 {
-		stmt.WriteString(") ON CONFLICT(" + strings.Join(opt.duplicateKeys, ",") + ")")
+		stmt.WriteString(" ON CONFLICT(" + strings.Join(opt.duplicateKeys, ",") + ")")
 	} else {
 		switch vi := any(model).(type) {
 		case duplicateKeyer:
 			keys := vi.DuplicateKeys()
 			opt.omitFields = append(opt.omitFields, keys...)
-			stmt.WriteString(") ON CONFLICT(" + strings.Join(keys, ",") + ")")
+			stmt.WriteString(" ON CONFLICT(" + strings.Join(keys, ",") + ")")
 		case sequel.PrimaryKeyer:
 			pkName, _, _ := vi.PK()
-			stmt.WriteString(") ON CONFLICT(" + pkName + ")")
+			stmt.WriteString(" ON CONFLICT(" + pkName + ")")
 		case sequel.CompositeKeyer:
 			names, _, _ := vi.CompositeKey()
-			stmt.WriteString(") ON CONFLICT(" + strings.Join(names, ",") + ")")
+			stmt.WriteString(" ON CONFLICT(" + strings.Join(names, ",") + ")")
 		default:
 			panic("unreachable")
 		}
