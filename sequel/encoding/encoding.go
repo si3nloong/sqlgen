@@ -5,14 +5,6 @@
 // This package is a helper library to prevent the value being fallback using reflection in `database/sql`.
 package encoding
 
-import (
-	"unsafe"
-)
-
 type addrOrPtr[T any] interface {
 	*T | **T
 }
-
-const nullStr = "null"
-
-var nullBytes = unsafe.Slice(unsafe.StringData(nullStr), len(nullStr))
