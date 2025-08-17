@@ -364,37 +364,14 @@ func Paginate[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](stmt PaginateSt
 	}
 }
 
-type Result[T any] struct {
-	data []T
-	err  error
-}
-
-func (r *Result[T]) All(yield func(T) bool) {
-	for _, s := range r.data {
-		if !yield(s) {
-			return
-		}
-	}
-}
-
-func (r *Result[T]) AllWithIndex(yield func(int, T) bool) {
-	for i, s := range r.data {
-		if !yield(i, s) {
-			return
-		}
-	}
-}
-
-func (r *Result[T]) Err() error {
-	return r.err
-}
+type Result[T any] []T
 
 type Pager[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]] struct {
 	stmt *PaginateStmt
 }
 
-func (r *Pager[T, Ptr]) Prev(ctx context.Context, sqlConn sequel.DB, cursor ...T) iter.Seq[*Result[T]] {
-	return func(yield func(*Result[T]) bool) {
+func (r *Pager[T, Ptr]) Prev(ctx context.Context, sqlConn sequel.DB, cursor ...T) iter.Seq2[Result[T], error] {
+	return func(yield func(Result[T], error) bool) {
 		var (
 			v         T
 			hasCursor bool
@@ -404,20 +381,23 @@ func (r *Pager[T, Ptr]) Prev(ctx context.Context, sqlConn sequel.DB, cursor ...T
 			v = cursor[0]
 			hasCursor = true
 		}
+		blr := AcquireStmt()
+		defer ReleaseStmt(blr)
 
 		for {
 			if hasCursor {
 				if err := FindByPK(ctx, sqlConn, Ptr(&v)); err != nil {
-					if !yield(&Result[T]{err: err}) {
-						return
-					}
+					yield(nil, err)
 					return
 				}
 			}
 
-			blr := AcquireStmt()
-			defer ReleaseStmt(blr)
-			blr.WriteString("SELECT " + strings.Join(v.Columns(), ",") + " FROM " + DbTable(v) + " WHERE ")
+			switch vi := any(v).(type) {
+			case sequel.SQLColumner:
+				blr.WriteString("SELECT " + strings.Join(vi.SQLColumns(), ",") + " FROM " + DbTable(v) + " WHERE ")
+			default:
+				blr.WriteString("SELECT " + strings.Join(v.Columns(), ",") + " FROM " + DbTable(v) + " WHERE ")
+			}
 			if r.stmt.Where != nil {
 				r.stmt.Where(blr)
 			}
@@ -533,35 +513,33 @@ func (r *Pager[T, Ptr]) Prev(ctx context.Context, sqlConn sequel.DB, cursor ...T
 			blr.WriteString(" LIMIT " + strconv.FormatUint(uint64(r.stmt.Limit+1), 10) + ";")
 
 			rows, err := sqlConn.QueryContext(ctx, blr.Query(), blr.Args()...)
+			blr.Reset()
 			if err != nil {
-				if !yield(&Result[T]{err: err}) {
-					return
-				}
+				yield(nil, err)
 				return
 			}
-			defer rows.Close()
 
 			data := make([]T, 0, r.stmt.Limit+1)
 			for rows.Next() {
 				var v T
 				if err := rows.Scan(Ptr(&v).Addrs()...); err != nil {
-					if !yield(&Result[T]{err: err}) {
-						return
-					}
+					rows.Close()
+					yield(nil, err)
 					return
 				}
 				data = append(data, v)
 			}
+			rows.Close()
 
 			noOfRecord := len(data)
 			if uint16(noOfRecord) < maxLimit {
-				if !yield(&Result[T]{data: data}) {
+				if !yield(Result[T](data), nil) {
 					return
 				}
 				return
 			}
 
-			if !yield(&Result[T]{data: data[:noOfRecord-1]}) {
+			if !yield(Result[T](data[:noOfRecord-1]), nil) {
 				return
 			}
 
@@ -572,8 +550,8 @@ func (r *Pager[T, Ptr]) Prev(ctx context.Context, sqlConn sequel.DB, cursor ...T
 	}
 }
 
-func (r *Pager[T, Ptr]) Next(ctx context.Context, sqlConn sequel.DB, cursor ...T) iter.Seq[*Result[T]] {
-	return func(yield func(*Result[T]) bool) {
+func (r *Pager[T, Ptr]) Next(ctx context.Context, sqlConn sequel.DB, cursor ...T) iter.Seq2[Result[T], error] {
+	return func(yield func(Result[T], error) bool) {
 		var (
 			v         T
 			hasCursor bool
@@ -583,20 +561,23 @@ func (r *Pager[T, Ptr]) Next(ctx context.Context, sqlConn sequel.DB, cursor ...T
 			v = cursor[0]
 			hasCursor = true
 		}
+		blr := AcquireStmt()
+		defer ReleaseStmt(blr)
 
 		for {
 			if hasCursor {
 				if err := FindByPK(ctx, sqlConn, Ptr(&v)); err != nil {
-					if !yield(&Result[T]{err: err}) {
-						return
-					}
+					yield(nil, err)
 					return
 				}
 			}
 
-			blr := AcquireStmt()
-			defer ReleaseStmt(blr)
-			blr.WriteString("SELECT " + strings.Join(v.Columns(), ",") + " FROM " + DbTable(v) + " WHERE ")
+			switch vi := any(v).(type) {
+			case sequel.SQLColumner:
+				blr.WriteString("SELECT " + strings.Join(vi.SQLColumns(), ",") + " FROM " + DbTable(v) + " WHERE ")
+			default:
+				blr.WriteString("SELECT " + strings.Join(v.Columns(), ",") + " FROM " + DbTable(v) + " WHERE ")
+			}
 			if r.stmt.Where != nil {
 				r.stmt.Where(blr)
 			}
@@ -712,35 +693,33 @@ func (r *Pager[T, Ptr]) Next(ctx context.Context, sqlConn sequel.DB, cursor ...T
 			blr.WriteString(" LIMIT " + strconv.FormatUint(uint64(r.stmt.Limit+1), 10) + ";")
 
 			rows, err := sqlConn.QueryContext(ctx, blr.Query(), blr.Args()...)
+			blr.Reset()
 			if err != nil {
-				if !yield(&Result[T]{err: err}) {
-					return
-				}
+				yield(nil, err)
 				return
 			}
-			defer rows.Close()
 
 			data := make([]T, 0, r.stmt.Limit+1)
 			for rows.Next() {
 				var v T
 				if err := rows.Scan(Ptr(&v).Addrs()...); err != nil {
-					if !yield(&Result[T]{err: err}) {
-						return
-					}
+					rows.Close()
+					yield(nil, err)
 					return
 				}
 				data = append(data, v)
 			}
+			rows.Close()
 
 			noOfRecord := len(data)
 			if uint16(noOfRecord) < maxLimit {
-				if !yield(&Result[T]{data: data}) {
+				if !yield(Result[T](data), nil) {
 					return
 				}
 				return
 			}
 
-			if !yield(&Result[T]{data: data[:noOfRecord-1]}) {
+			if !yield(Result[T](data[:noOfRecord-1]), nil) {
 				return
 			}
 

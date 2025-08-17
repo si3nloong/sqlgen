@@ -150,7 +150,10 @@ func WithDuplicateKeys(keys ...string) UpsertOption {
 	}
 }
 
-func UpsertOne[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Context, sqlConn sequel.DB, model Ptr, opts ...UpsertOption) error {
+func UpsertOne[T sequel.KeyValuer, Ptr interface {
+	sequel.KeyValueScanner[T]
+	sequel.Inserter
+}](ctx context.Context, sqlConn sequel.DB, model Ptr, opts ...UpsertOption) error {
 	var opt upsertOpts
 	for i := range opts {
 		opts[i](&opt)
@@ -169,39 +172,33 @@ func UpsertOne[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Co
 		noOfCols = len(columns)
 		values = append(values[:idx], values[idx+1:]...)
 		// Don't include auto increment primary key on INSERT
-		stmt.WriteString("INSERT INTO " + DbTable(model) + " (" + strings.Join(columns, ",") + ") VALUES (")
+		stmt.WriteString("INSERT INTO " + DbTable(model) + " (" + strings.Join(columns, ",") + ") VALUES ")
 	case sequel.PrimaryKeyer:
 		pkName, _, _ := v.PK()
 		opt.omitFields = append(opt.omitFields, pkName)
-		stmt.WriteString("INSERT INTO " + DbTable(model) + " (" + strings.Join(columns, ",") + ") VALUES (")
+		stmt.WriteString("INSERT INTO " + DbTable(model) + " (" + strings.Join(columns, ",") + ") VALUES ")
 	case sequel.CompositeKeyer:
 		keyNames, _, _ := v.CompositeKey()
 		opt.omitFields = append(opt.omitFields, keyNames...)
-		stmt.WriteString("INSERT INTO " + DbTable(model) + " (" + strings.Join(columns, ",") + ") VALUES (")
+		stmt.WriteString("INSERT INTO " + DbTable(model) + " (" + strings.Join(columns, ",") + ") VALUES ")
 	default:
 		panic("unreachable")
 	}
-	for i := 1; i <= noOfCols; i++ {
-		if i > 1 {
-			stmt.WriteString("," + wrapVar(i))
-		} else {
-			stmt.WriteString(wrapVar(i))
-		}
-	}
+	stmt.WriteString(model.InsertPlaceholders(0))
 	if len(opt.duplicateKeys) > 0 {
-		stmt.WriteString(") ON CONFLICT(" + strings.Join(opt.duplicateKeys, ",") + ")")
+		stmt.WriteString(" ON CONFLICT(" + strings.Join(opt.duplicateKeys, ",") + ")")
 	} else {
 		switch vi := any(model).(type) {
 		case duplicateKeyer:
 			keys := vi.DuplicateKeys()
 			opt.omitFields = append(opt.omitFields, keys...)
-			stmt.WriteString(") ON CONFLICT(" + strings.Join(keys, ",") + ")")
+			stmt.WriteString(" ON CONFLICT(" + strings.Join(keys, ",") + ")")
 		case sequel.PrimaryKeyer:
 			pkName, _, _ := vi.PK()
-			stmt.WriteString(") ON CONFLICT(" + pkName + ")")
+			stmt.WriteString(" ON CONFLICT(" + pkName + ")")
 		case sequel.CompositeKeyer:
 			names, _, _ := vi.CompositeKey()
-			stmt.WriteString(") ON CONFLICT(" + strings.Join(names, ",") + ")")
+			stmt.WriteString(" ON CONFLICT(" + strings.Join(names, ",") + ")")
 		default:
 			panic("unreachable")
 		}
@@ -479,37 +476,14 @@ func Paginate[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](stmt PaginateSt
 	}
 }
 
-type Result[T any] struct {
-	data []T
-	err  error
-}
-
-func (r *Result[T]) All(yield func(T) bool) {
-	for _, s := range r.data {
-		if !yield(s) {
-			return
-		}
-	}
-}
-
-func (r *Result[T]) AllWithIndex(yield func(int, T) bool) {
-	for i, s := range r.data {
-		if !yield(i, s) {
-			return
-		}
-	}
-}
-
-func (r *Result[T]) Err() error {
-	return r.err
-}
+type Result[T any] []T
 
 type Pager[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]] struct {
 	stmt *PaginateStmt
 }
 
-func (r *Pager[T, Ptr]) Prev(ctx context.Context, sqlConn sequel.DB, cursor ...T) iter.Seq[*Result[T]] {
-	return func(yield func(*Result[T]) bool) {
+func (r *Pager[T, Ptr]) Prev(ctx context.Context, sqlConn sequel.DB, cursor ...T) iter.Seq2[Result[T], error] {
+	return func(yield func(Result[T], error) bool) {
 		var (
 			v         T
 			hasCursor bool
@@ -519,20 +493,23 @@ func (r *Pager[T, Ptr]) Prev(ctx context.Context, sqlConn sequel.DB, cursor ...T
 			v = cursor[0]
 			hasCursor = true
 		}
+		blr := AcquireStmt()
+		defer ReleaseStmt(blr)
 
 		for {
 			if hasCursor {
 				if err := FindByPK(ctx, sqlConn, Ptr(&v)); err != nil {
-					if !yield(&Result[T]{err: err}) {
-						return
-					}
+					yield(nil, err)
 					return
 				}
 			}
 
-			blr := AcquireStmt()
-			defer ReleaseStmt(blr)
-			blr.WriteString("SELECT " + strings.Join(v.Columns(), ",") + " FROM " + DbTable(v) + " WHERE ")
+			switch vi := any(v).(type) {
+			case sequel.SQLColumner:
+				blr.WriteString("SELECT " + strings.Join(vi.SQLColumns(), ",") + " FROM " + DbTable(v) + " WHERE ")
+			default:
+				blr.WriteString("SELECT " + strings.Join(v.Columns(), ",") + " FROM " + DbTable(v) + " WHERE ")
+			}
 			if r.stmt.Where != nil {
 				r.stmt.Where(blr)
 			}
@@ -648,35 +625,33 @@ func (r *Pager[T, Ptr]) Prev(ctx context.Context, sqlConn sequel.DB, cursor ...T
 			blr.WriteString(" LIMIT " + strconv.FormatUint(uint64(r.stmt.Limit+1), 10) + ";")
 
 			rows, err := sqlConn.QueryContext(ctx, blr.Query(), blr.Args()...)
+			blr.Reset()
 			if err != nil {
-				if !yield(&Result[T]{err: err}) {
-					return
-				}
+				yield(nil, err)
 				return
 			}
-			defer rows.Close()
 
 			data := make([]T, 0, r.stmt.Limit+1)
 			for rows.Next() {
 				var v T
 				if err := rows.Scan(Ptr(&v).Addrs()...); err != nil {
-					if !yield(&Result[T]{err: err}) {
-						return
-					}
+					rows.Close()
+					yield(nil, err)
 					return
 				}
 				data = append(data, v)
 			}
+			rows.Close()
 
 			noOfRecord := len(data)
 			if uint16(noOfRecord) < maxLimit {
-				if !yield(&Result[T]{data: data}) {
+				if !yield(Result[T](data), nil) {
 					return
 				}
 				return
 			}
 
-			if !yield(&Result[T]{data: data[:noOfRecord-1]}) {
+			if !yield(Result[T](data[:noOfRecord-1]), nil) {
 				return
 			}
 
@@ -687,8 +662,8 @@ func (r *Pager[T, Ptr]) Prev(ctx context.Context, sqlConn sequel.DB, cursor ...T
 	}
 }
 
-func (r *Pager[T, Ptr]) Next(ctx context.Context, sqlConn sequel.DB, cursor ...T) iter.Seq[*Result[T]] {
-	return func(yield func(*Result[T]) bool) {
+func (r *Pager[T, Ptr]) Next(ctx context.Context, sqlConn sequel.DB, cursor ...T) iter.Seq2[Result[T], error] {
+	return func(yield func(Result[T], error) bool) {
 		var (
 			v         T
 			hasCursor bool
@@ -698,20 +673,23 @@ func (r *Pager[T, Ptr]) Next(ctx context.Context, sqlConn sequel.DB, cursor ...T
 			v = cursor[0]
 			hasCursor = true
 		}
+		blr := AcquireStmt()
+		defer ReleaseStmt(blr)
 
 		for {
 			if hasCursor {
 				if err := FindByPK(ctx, sqlConn, Ptr(&v)); err != nil {
-					if !yield(&Result[T]{err: err}) {
-						return
-					}
+					yield(nil, err)
 					return
 				}
 			}
 
-			blr := AcquireStmt()
-			defer ReleaseStmt(blr)
-			blr.WriteString("SELECT " + strings.Join(v.Columns(), ",") + " FROM " + DbTable(v) + " WHERE ")
+			switch vi := any(v).(type) {
+			case sequel.SQLColumner:
+				blr.WriteString("SELECT " + strings.Join(vi.SQLColumns(), ",") + " FROM " + DbTable(v) + " WHERE ")
+			default:
+				blr.WriteString("SELECT " + strings.Join(v.Columns(), ",") + " FROM " + DbTable(v) + " WHERE ")
+			}
 			if r.stmt.Where != nil {
 				r.stmt.Where(blr)
 			}
@@ -827,35 +805,33 @@ func (r *Pager[T, Ptr]) Next(ctx context.Context, sqlConn sequel.DB, cursor ...T
 			blr.WriteString(" LIMIT " + strconv.FormatUint(uint64(r.stmt.Limit+1), 10) + ";")
 
 			rows, err := sqlConn.QueryContext(ctx, blr.Query(), blr.Args()...)
+			blr.Reset()
 			if err != nil {
-				if !yield(&Result[T]{err: err}) {
-					return
-				}
+				yield(nil, err)
 				return
 			}
-			defer rows.Close()
 
 			data := make([]T, 0, r.stmt.Limit+1)
 			for rows.Next() {
 				var v T
 				if err := rows.Scan(Ptr(&v).Addrs()...); err != nil {
-					if !yield(&Result[T]{err: err}) {
-						return
-					}
+					rows.Close()
+					yield(nil, err)
 					return
 				}
 				data = append(data, v)
 			}
+			rows.Close()
 
 			noOfRecord := len(data)
 			if uint16(noOfRecord) < maxLimit {
-				if !yield(&Result[T]{data: data}) {
+				if !yield(Result[T](data), nil) {
 					return
 				}
 				return
 			}
 
-			if !yield(&Result[T]{data: data[:noOfRecord-1]}) {
+			if !yield(Result[T](data[:noOfRecord-1]), nil) {
 				return
 			}
 
