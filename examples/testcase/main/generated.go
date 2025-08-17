@@ -34,15 +34,15 @@ func (Address) InsertPlaceholders(row int) string {
 	return "(?,?,?)" // 3
 }
 func (v Address) InsertOneStmt() (string, []any) {
-	return "INSERT INTO address (line_1,line_2,country_code) VALUES (?,?,?);", v.Values()
+	return "INSERT INTO `address` (`line_1`,`line_2`,`country_code`) VALUES (?,?,?);", v.Values()
 }
-func (v Address) Line1Value() driver.Value {
+func (v Address) Line1Value() any {
 	return v.Line1
 }
-func (v Address) Line2Value() driver.Value {
+func (v Address) Line2Value() any {
 	return v.Line2
 }
-func (v Address) CountryCodeValue() driver.Value {
+func (v Address) CountryCodeValue() any {
 	return v.CountryCode
 }
 func (v Address) ColumnLine1() sequel.ColumnValuer[string] {
@@ -99,36 +99,36 @@ func (HouseUnit) InsertPlaceholders(row int) string {
 	return "(?,?,?,?,?,?,?,?,?,?)" // 10
 }
 func (v HouseUnit) InsertOneStmt() (string, []any) {
-	return "INSERT INTO house_unit (no,build_time,address,kind,type,chan,inner,arr,slice,map) VALUES (?,?,?,?,?,?,?,?,?,?);", v.Values()
+	return "INSERT INTO `house_unit` (`no`,`build_time`,`address`,`kind`,`type`,`chan`,`inner`,`arr`,`slice`,`map`) VALUES (?,?,?,?,?,?,?,?,?,?);", v.Values()
 }
-func (v HouseUnit) NoValue() driver.Value {
+func (v HouseUnit) NoValue() any {
 	return (int64)(v.No)
 }
-func (v HouseUnit) BuildTimeValue() driver.Value {
+func (v HouseUnit) BuildTimeValue() any {
 	return v.BuildTime
 }
-func (v HouseUnit) AddressValue() driver.Value {
+func (v HouseUnit) AddressValue() any {
 	return encoding.JSONValue(v.Address)
 }
-func (v HouseUnit) KindValue() driver.Value {
+func (v HouseUnit) KindValue() any {
 	return (int64)(v.Kind)
 }
-func (v HouseUnit) TypeValue() driver.Value {
+func (v HouseUnit) TypeValue() any {
 	return (int64)(v.Type)
 }
-func (v HouseUnit) ChanValue() driver.Value {
+func (v HouseUnit) ChanValue() any {
 	return (int64)(v.Chan)
 }
-func (v HouseUnit) InnerValue() driver.Value {
+func (v HouseUnit) InnerValue() any {
 	return encoding.JSONValue(v.Inner)
 }
-func (v HouseUnit) ArrValue() driver.Value {
+func (v HouseUnit) ArrValue() any {
 	return encoding.JSONValue(v.Arr)
 }
-func (v HouseUnit) SliceValue() driver.Value {
+func (v HouseUnit) SliceValue() any {
 	return (sqltype.Float64Slice[float64])(v.Slice)
 }
-func (v HouseUnit) MapValue() driver.Value {
+func (v HouseUnit) MapValue() any {
 	return encoding.JSONValue(v.Map)
 }
 func (v HouseUnit) ColumnNo() sequel.ColumnValuer[uint] {

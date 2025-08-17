@@ -38,24 +38,24 @@ func (Car) InsertPlaceholders(row int) string {
 	return "(?,?,?,?)" // 4
 }
 func (v Car) InsertOneStmt() (string, []any) {
-	return "INSERT INTO car (id,no,color,manuc_date) VALUES (?,?,?,?);", v.Values()
+	return "INSERT INTO `car` (`id`,`no`,`color`,`manuc_date`) VALUES (?,?,?,?);", v.Values()
 }
 func (v Car) FindOneByPKStmt() (string, []any) {
-	return "SELECT id,no,color,manuc_date FROM car WHERE id = ? LIMIT 1;", []any{v.ID}
+	return "SELECT `id`,`no`,`color`,`manuc_date` FROM `car` WHERE `id` = ? LIMIT 1;", []any{v.ID}
 }
 func (v Car) UpdateOneByPKStmt() (string, []any) {
-	return "UPDATE car SET no = ?,color = ?,manuc_date = ? WHERE id = ?;", []any{v.No, (int64)(v.Color), v.ManucDate, v.ID}
+	return "UPDATE `car` SET `no` = ?,`color` = ?,`manuc_date` = ? WHERE `id` = ?;", []any{v.No, (int64)(v.Color), v.ManucDate, v.ID}
 }
-func (v Car) IDValue() driver.Value {
+func (v Car) IDValue() any {
 	return v.ID
 }
-func (v Car) NoValue() driver.Value {
+func (v Car) NoValue() any {
 	return v.No
 }
-func (v Car) ColorValue() driver.Value {
+func (v Car) ColorValue() any {
 	return (int64)(v.Color)
 }
-func (v Car) ManucDateValue() driver.Value {
+func (v Car) ManucDateValue() any {
 	return v.ManucDate
 }
 func (v Car) ColumnID() sequel.ColumnValuer[PK] {
@@ -105,18 +105,18 @@ func (House) InsertPlaceholders(row int) string {
 	return "(?,?)" // 2
 }
 func (v House) InsertOneStmt() (string, []any) {
-	return "INSERT INTO house (id,no) VALUES (?,?);", v.Values()
+	return "INSERT INTO `house` (`id`,`no`) VALUES (?,?);", v.Values()
 }
 func (v House) FindOneByPKStmt() (string, []any) {
-	return "SELECT id,no FROM house WHERE id = ? LIMIT 1;", []any{(int64)(v.ID)}
+	return "SELECT `id`,`no` FROM `house` WHERE `id` = ? LIMIT 1;", []any{(int64)(v.ID)}
 }
 func (v House) UpdateOneByPKStmt() (string, []any) {
-	return "UPDATE house SET no = ? WHERE id = ?;", []any{v.No, (int64)(v.ID)}
+	return "UPDATE `house` SET `no` = ? WHERE `id` = ?;", []any{v.No, (int64)(v.ID)}
 }
-func (v House) IDValue() driver.Value {
+func (v House) IDValue() any {
 	return (int64)(v.ID)
 }
-func (v House) NoValue() driver.Value {
+func (v House) NoValue() any {
 	return v.No
 }
 func (v House) ColumnID() sequel.ColumnValuer[uint] {
@@ -160,24 +160,24 @@ func (User) InsertPlaceholders(row int) string {
 	return "(?,?,?,?)" // 4
 }
 func (v User) InsertOneStmt() (string, []any) {
-	return "INSERT INTO user (id,name,age,email) VALUES (?,?,?,?);", v.Values()
+	return "INSERT INTO `user` (`id`,`name`,`age`,`email`) VALUES (?,?,?,?);", v.Values()
 }
 func (v User) FindOneByPKStmt() (string, []any) {
-	return "SELECT id,name,age,email FROM user WHERE id = ? LIMIT 1;", []any{v.ID}
+	return "SELECT `id`,`name`,`age`,`email` FROM `user` WHERE `id` = ? LIMIT 1;", []any{v.ID}
 }
 func (v User) UpdateOneByPKStmt() (string, []any) {
-	return "UPDATE user SET name = ?,age = ?,email = ? WHERE id = ?;", []any{(string)(v.Name), (int64)(v.Age), v.Email, v.ID}
+	return "UPDATE `user` SET `name` = ?,`age` = ?,`email` = ? WHERE `id` = ?;", []any{(string)(v.Name), (int64)(v.Age), v.Email, v.ID}
 }
-func (v User) IDValue() driver.Value {
+func (v User) IDValue() any {
 	return v.ID
 }
-func (v User) NameValue() driver.Value {
+func (v User) NameValue() any {
 	return (string)(v.Name)
 }
-func (v User) AgeValue() driver.Value {
+func (v User) AgeValue() any {
 	return (int64)(v.Age)
 }
-func (v User) EmailValue() driver.Value {
+func (v User) EmailValue() any {
 	return v.Email
 }
 func (v User) ColumnID() sequel.ColumnValuer[int64] {

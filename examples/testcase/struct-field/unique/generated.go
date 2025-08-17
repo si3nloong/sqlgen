@@ -33,18 +33,18 @@ func (User) InsertPlaceholders(row int) string {
 	return "(?,?,?,?)" // 4
 }
 func (v User) InsertOneStmt() (string, []any) {
-	return "INSERT INTO user (email,age,first_name,last_name) VALUES (?,?,?,?);", v.Values()
+	return "INSERT INTO `user` (`email`,`age`,`first_name`,`last_name`) VALUES (?,?,?,?);", v.Values()
 }
-func (v User) EmailValue() driver.Value {
+func (v User) EmailValue() any {
 	return v.Email
 }
-func (v User) AgeValue() driver.Value {
+func (v User) AgeValue() any {
 	return (int64)(v.Age)
 }
-func (v User) FirstNameValue() driver.Value {
+func (v User) FirstNameValue() any {
 	return v.FirstName
 }
-func (v User) LastNameValue() driver.Value {
+func (v User) LastNameValue() any {
 	return v.LastName
 }
 func (v User) ColumnEmail() sequel.ColumnValuer[string] {

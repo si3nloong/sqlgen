@@ -30,12 +30,12 @@ func (B) InsertPlaceholders(row int) string {
 	return "(?,?)" // 2
 }
 func (v B) InsertOneStmt() (string, []any) {
-	return "INSERT INTO b (date,time) VALUES (?,?);", v.Values()
+	return "INSERT INTO `b` (`date`,`time`) VALUES (?,?);", v.Values()
 }
-func (v B) DateValue() driver.Value {
+func (v B) DateValue() any {
 	return encoding.TextValue(v.DateTime.Date)
 }
-func (v B) TimeValue() driver.Value {
+func (v B) TimeValue() any {
 	return encoding.TextValue(v.DateTime.Time)
 }
 func (v B) ColumnDate() sequel.ColumnValuer[civil.Date] {

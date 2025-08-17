@@ -26,9 +26,9 @@ func (CustomTableName1) InsertPlaceholders(row int) string {
 	return "(?)" // 1
 }
 func (v CustomTableName1) InsertOneStmt() (string, []any) {
-	return "INSERT INTO CustomTableName_1 (text) VALUES (?);", v.Values()
+	return "INSERT INTO `CustomTableName_1` (`text`) VALUES (?);", v.Values()
 }
-func (v CustomTableName1) TextValue() driver.Value {
+func (v CustomTableName1) TextValue() any {
 	return v.Text
 }
 func (v CustomTableName1) ColumnText() sequel.ColumnValuer[string] {
@@ -57,9 +57,9 @@ func (CustomTableName2) InsertPlaceholders(row int) string {
 	return "(?)" // 1
 }
 func (v CustomTableName2) InsertOneStmt() (string, []any) {
-	return "INSERT INTO table_2 (text) VALUES (?);", v.Values()
+	return "INSERT INTO `table_2` (`text`) VALUES (?);", v.Values()
 }
-func (v CustomTableName2) TextValue() driver.Value {
+func (v CustomTableName2) TextValue() any {
 	return v.Text
 }
 func (v CustomTableName2) ColumnText() sequel.ColumnValuer[string] {
@@ -88,9 +88,9 @@ func (CustomTableName3) InsertPlaceholders(row int) string {
 	return "(?)" // 1
 }
 func (v CustomTableName3) InsertOneStmt() (string, []any) {
-	return "INSERT INTO table_3 (text) VALUES (?);", v.Values()
+	return "INSERT INTO `table_3` (`text`) VALUES (?);", v.Values()
 }
-func (v CustomTableName3) TextValue() driver.Value {
+func (v CustomTableName3) TextValue() any {
 	return v.Text
 }
 func (v CustomTableName3) ColumnText() sequel.ColumnValuer[string] {

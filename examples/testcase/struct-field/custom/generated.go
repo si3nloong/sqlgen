@@ -44,27 +44,27 @@ func (Address) InsertPlaceholders(row int) string {
 	return "(?,?,?,?,?,?,?)" // 7
 }
 func (v Address) InsertOneStmt() (string, []any) {
-	return "INSERT INTO address (line_1,line_2,city,post_code,state_code,geo_point,country_code) VALUES (?,?,?,?,?,?,?);", v.Values()
+	return "INSERT INTO `address` (`line_1`,`line_2`,`city`,`post_code`,`state_code`,`geo_point`,`country_code`) VALUES (?,?,?,?,?,?,?);", v.Values()
 }
-func (v Address) Line1Value() driver.Value {
+func (v Address) Line1Value() any {
 	return v.Line1
 }
-func (v Address) Line2Value() driver.Value {
+func (v Address) Line2Value() any {
 	return v.Line2
 }
-func (v Address) CityValue() driver.Value {
+func (v Address) CityValue() any {
 	return v.City
 }
-func (v Address) PostCodeValue() driver.Value {
+func (v Address) PostCodeValue() any {
 	return (int64)(v.PostCode)
 }
-func (v Address) StateCodeValue() driver.Value {
+func (v Address) StateCodeValue() any {
 	return (string)(v.StateCode)
 }
-func (v Address) GeoPointValue() driver.Value {
+func (v Address) GeoPointValue() any {
 	return ewkb.Value(v.GeoPoint, 4326)
 }
-func (v Address) CountryCodeValue() driver.Value {
+func (v Address) CountryCodeValue() any {
 	return (string)(v.CountryCode)
 }
 func (v Address) ColumnLine1() sequel.ColumnValuer[string] {
@@ -135,27 +135,27 @@ func (Customer) InsertPlaceholders(row int) string {
 	return "(?,?,?,?,?,?,?)" // 7
 }
 func (v Customer) InsertOneStmt() (string, []any) {
-	return "INSERT INTO customer (id,howOld,name,address,nicknames,status,join_at) VALUES (?,?,?,?,?,?,?);", v.Values()
+	return "INSERT INTO `customer` (`id`,`howOld`,`name`,`address`,`nicknames`,`status`,`join_at`) VALUES (?,?,?,?,?,?,?);", v.Values()
 }
-func (v Customer) IDValue() driver.Value {
+func (v Customer) IDValue() any {
 	return v.ID
 }
-func (v Customer) AgeValue() driver.Value {
+func (v Customer) AgeValue() any {
 	return (int64)(v.Age)
 }
-func (v Customer) NameValue() driver.Value {
+func (v Customer) NameValue() any {
 	return v.Name
 }
-func (v Customer) AddressValue() driver.Value {
+func (v Customer) AddressValue() any {
 	return v.Address
 }
-func (v Customer) NicknamesValue() driver.Value {
+func (v Customer) NicknamesValue() any {
 	return sqltype.StringSlice[longText](v.Nicknames)
 }
-func (v Customer) StatusValue() driver.Value {
+func (v Customer) StatusValue() any {
 	return v.Status
 }
-func (v Customer) JoinAtValue() driver.Value {
+func (v Customer) JoinAtValue() any {
 	return v.JoinAt
 }
 func (v Customer) ColumnID() sequel.ColumnValuer[int64] {

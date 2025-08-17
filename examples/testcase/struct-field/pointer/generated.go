@@ -137,120 +137,120 @@ func (Ptr) InsertPlaceholders(row int) string {
 	return "(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)" // 19
 }
 func (v Ptr) InsertOneStmt() (string, []any) {
-	return "INSERT INTO ptr (str,bytes,bool,int,int_8,int_16,int_32,int_64,uint,uint_8,uint_16,uint_32,uint_64,f_32,f_64,time,nested,embedded_time,any_time) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);", []any{v.StrValue(), v.BytesValue(), v.BoolValue(), v.IntValue(), v.Int8Value(), v.Int16Value(), v.Int32Value(), v.Int64Value(), v.UintValue(), v.Uint8Value(), v.Uint16Value(), v.Uint32Value(), v.Uint64Value(), v.F32Value(), v.F64Value(), v.TimeValue(), v.NestedValue(), v.EmbeddedTimeValue(), v.AnyTimeValue()}
+	return "INSERT INTO `ptr` (`str`,`bytes`,`bool`,`int`,`int_8`,`int_16`,`int_32`,`int_64`,`uint`,`uint_8`,`uint_16`,`uint_32`,`uint_64`,`f_32`,`f_64`,`time`,`nested`,`embedded_time`,`any_time`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);", []any{v.StrValue(), v.BytesValue(), v.BoolValue(), v.IntValue(), v.Int8Value(), v.Int16Value(), v.Int32Value(), v.Int64Value(), v.UintValue(), v.Uint8Value(), v.Uint16Value(), v.Uint32Value(), v.Uint64Value(), v.F32Value(), v.F64Value(), v.TimeValue(), v.NestedValue(), v.EmbeddedTimeValue(), v.AnyTimeValue()}
 }
 func (v Ptr) FindOneByPKStmt() (string, []any) {
-	return "SELECT id,str,bytes,bool,int,int_8,int_16,int_32,int_64,uint,uint_8,uint_16,uint_32,uint_64,f_32,f_64,time,nested,embedded_time,any_time FROM ptr WHERE id = ? LIMIT 1;", []any{v.ID}
+	return "SELECT `id`,`str`,`bytes`,`bool`,`int`,`int_8`,`int_16`,`int_32`,`int_64`,`uint`,`uint_8`,`uint_16`,`uint_32`,`uint_64`,`f_32`,`f_64`,`time`,`nested`,`embedded_time`,`any_time` FROM `ptr` WHERE `id` = ? LIMIT 1;", []any{v.ID}
 }
 func (v Ptr) UpdateOneByPKStmt() (string, []any) {
-	return "UPDATE ptr SET str = ?,bytes = ?,bool = ?,int = ?,int_8 = ?,int_16 = ?,int_32 = ?,int_64 = ?,uint = ?,uint_8 = ?,uint_16 = ?,uint_32 = ?,uint_64 = ?,f_32 = ?,f_64 = ?,time = ?,nested = ?,embedded_time = ?,any_time = ? WHERE id = ?;", []any{v.StrValue(), v.BytesValue(), v.BoolValue(), v.IntValue(), v.Int8Value(), v.Int16Value(), v.Int32Value(), v.Int64Value(), v.UintValue(), v.Uint8Value(), v.Uint16Value(), v.Uint32Value(), v.Uint64Value(), v.F32Value(), v.F64Value(), v.TimeValue(), v.NestedValue(), v.EmbeddedTimeValue(), v.AnyTimeValue(), v.ID}
+	return "UPDATE `ptr` SET `str` = ?,`bytes` = ?,`bool` = ?,`int` = ?,`int_8` = ?,`int_16` = ?,`int_32` = ?,`int_64` = ?,`uint` = ?,`uint_8` = ?,`uint_16` = ?,`uint_32` = ?,`uint_64` = ?,`f_32` = ?,`f_64` = ?,`time` = ?,`nested` = ?,`embedded_time` = ?,`any_time` = ? WHERE `id` = ?;", []any{v.StrValue(), v.BytesValue(), v.BoolValue(), v.IntValue(), v.Int8Value(), v.Int16Value(), v.Int32Value(), v.Int64Value(), v.UintValue(), v.Uint8Value(), v.Uint16Value(), v.Uint32Value(), v.Uint64Value(), v.F32Value(), v.F64Value(), v.TimeValue(), v.NestedValue(), v.EmbeddedTimeValue(), v.AnyTimeValue(), v.ID}
 }
-func (v Ptr) IDValue() driver.Value {
+func (v Ptr) IDValue() any {
 	return v.ID
 }
-func (v Ptr) StrValue() driver.Value {
+func (v Ptr) StrValue() any {
 	if v.Str != nil {
 		return *v.Str
 	}
 	return nil
 }
-func (v Ptr) BytesValue() driver.Value {
+func (v Ptr) BytesValue() any {
 	if v.Bytes != nil {
 		return string(*v.Bytes)
 	}
 	return nil
 }
-func (v Ptr) BoolValue() driver.Value {
+func (v Ptr) BoolValue() any {
 	if v.Bool != nil {
 		return *v.Bool
 	}
 	return nil
 }
-func (v Ptr) IntValue() driver.Value {
+func (v Ptr) IntValue() any {
 	if v.Int != nil {
 		return (int64)(*v.Int)
 	}
 	return nil
 }
-func (v Ptr) Int8Value() driver.Value {
+func (v Ptr) Int8Value() any {
 	if v.Int8 != nil {
 		return (int64)(*v.Int8)
 	}
 	return nil
 }
-func (v Ptr) Int16Value() driver.Value {
+func (v Ptr) Int16Value() any {
 	if v.Int16 != nil {
 		return (int64)(*v.Int16)
 	}
 	return nil
 }
-func (v Ptr) Int32Value() driver.Value {
+func (v Ptr) Int32Value() any {
 	if v.Int32 != nil {
 		return (int64)(*v.Int32)
 	}
 	return nil
 }
-func (v Ptr) Int64Value() driver.Value {
+func (v Ptr) Int64Value() any {
 	if v.Int64 != nil {
 		return *v.Int64
 	}
 	return nil
 }
-func (v Ptr) UintValue() driver.Value {
+func (v Ptr) UintValue() any {
 	if v.Uint != nil {
 		return (int64)(*v.Uint)
 	}
 	return nil
 }
-func (v Ptr) Uint8Value() driver.Value {
+func (v Ptr) Uint8Value() any {
 	if v.Uint8 != nil {
 		return (int64)(*v.Uint8)
 	}
 	return nil
 }
-func (v Ptr) Uint16Value() driver.Value {
+func (v Ptr) Uint16Value() any {
 	if v.Uint16 != nil {
 		return (int64)(*v.Uint16)
 	}
 	return nil
 }
-func (v Ptr) Uint32Value() driver.Value {
+func (v Ptr) Uint32Value() any {
 	if v.Uint32 != nil {
 		return (int64)(*v.Uint32)
 	}
 	return nil
 }
-func (v Ptr) Uint64Value() driver.Value {
+func (v Ptr) Uint64Value() any {
 	if v.Uint64 != nil {
 		return (int64)(*v.Uint64)
 	}
 	return nil
 }
-func (v Ptr) F32Value() driver.Value {
+func (v Ptr) F32Value() any {
 	if v.F32 != nil {
 		return (float64)(*v.F32)
 	}
 	return nil
 }
-func (v Ptr) F64Value() driver.Value {
+func (v Ptr) F64Value() any {
 	if v.F64 != nil {
 		return *v.F64
 	}
 	return nil
 }
-func (v Ptr) TimeValue() driver.Value {
+func (v Ptr) TimeValue() any {
 	if v.Time != nil {
 		return *v.Time
 	}
 	return nil
 }
-func (v Ptr) NestedValue() driver.Value {
+func (v Ptr) NestedValue() any {
 	if v.Nested != nil {
 		return encoding.JSONValue(*v.Nested)
 	}
 	return nil
 }
-func (v Ptr) EmbeddedTimeValue() driver.Value {
+func (v Ptr) EmbeddedTimeValue() any {
 	if v.deepNested != nil {
 		if v.deepNested.embedded != nil {
 			if v.deepNested.embedded.EmbeddedTime != nil {
@@ -260,7 +260,7 @@ func (v Ptr) EmbeddedTimeValue() driver.Value {
 	}
 	return nil
 }
-func (v Ptr) AnyTimeValue() driver.Value {
+func (v Ptr) AnyTimeValue() any {
 	if v.deepNested != nil {
 		if v.deepNested.embedded != nil {
 			return v.deepNested.embedded.AnyTime

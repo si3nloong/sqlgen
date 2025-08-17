@@ -2,6 +2,7 @@ package aliasstruct
 
 import (
 	"database/sql"
+	"database/sql/driver"
 	"testing"
 
 	"cloud.google.com/go/civil"
@@ -13,12 +14,14 @@ func TestA(t *testing.T) {
 
 	t.Run("Values (TextMarshaler)", func(t *testing.T) {
 		t.Run("civil.Date", func(t *testing.T) {
-			val := a.DateValue()
+			val, err := a.DateValue().(driver.Valuer).Value()
+			require.NoError(t, err)
 			require.Equal(t, []byte(`0000-00-00`), val)
 		})
 
 		t.Run("civil.Time", func(t *testing.T) {
-			val := a.TimeValue()
+			val, err := a.TimeValue().(driver.Valuer).Value()
+			require.NoError(t, err)
 			require.Equal(t, []byte(`00:00:00`), val)
 		})
 	})

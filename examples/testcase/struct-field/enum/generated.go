@@ -31,15 +31,15 @@ func (Custom) InsertPlaceholders(row int) string {
 	return "(?,?,?)" // 3
 }
 func (v Custom) InsertOneStmt() (string, []any) {
-	return "INSERT INTO custom (text,e,num) VALUES (?,?,?);", v.Values()
+	return "INSERT INTO `custom` (`text`,`e`,`num`) VALUES (?,?,?);", v.Values()
 }
-func (v Custom) StrValue() driver.Value {
+func (v Custom) StrValue() any {
 	return (string)(v.Str)
 }
-func (v Custom) EnumValue() driver.Value {
+func (v Custom) EnumValue() any {
 	return (int64)(v.Enum)
 }
-func (v Custom) NumValue() driver.Value {
+func (v Custom) NumValue() any {
 	return (int64)(v.Num)
 }
 func (v Custom) ColumnStr() sequel.ColumnValuer[longText] {

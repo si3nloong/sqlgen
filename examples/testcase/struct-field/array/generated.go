@@ -35,21 +35,21 @@ func (Array) InsertPlaceholders(row int) string {
 	return "(?,?,?,?,?)" // 5
 }
 func (v Array) InsertOneStmt() (string, []any) {
-	return "INSERT INTO array (tuple,runes,bytes,fixed_size,str) VALUES (?,?,?,?,?);", v.Values()
+	return "INSERT INTO `array` (`tuple`,`runes`,`bytes`,`fixed_size`,`str`) VALUES (?,?,?,?,?);", v.Values()
 }
-func (v Array) TupleValue() driver.Value {
+func (v Array) TupleValue() any {
 	return string(v.Tuple[:])
 }
-func (v Array) RunesValue() driver.Value {
+func (v Array) RunesValue() any {
 	return string(v.Runes[:])
 }
-func (v Array) BytesValue() driver.Value {
+func (v Array) BytesValue() any {
 	return string(v.Bytes[:])
 }
-func (v Array) FixedSizeValue() driver.Value {
+func (v Array) FixedSizeValue() any {
 	return string(v.FixedSize[:])
 }
-func (v Array) StrValue() driver.Value {
+func (v Array) StrValue() any {
 	return encoding.JSONValue(v.Str)
 }
 func (v Array) ColumnTuple() sequel.ColumnValuer[[2]byte] {

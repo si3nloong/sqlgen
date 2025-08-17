@@ -43,30 +43,30 @@ func (Model) InsertPlaceholders(row int) string {
 	return "(?,?,?,?,?,?,?,?)" // 8
 }
 func (v Model) InsertOneStmt() (string, []any) {
-	return "INSERT INTO model (str,bool,raw_bytes,int_16,int_32,int_64,float_64,time) VALUES (?,?,?,?,?,?,?,?);", v.Values()
+	return "INSERT INTO `model` (`str`,`bool`,`raw_bytes`,`int_16`,`int_32`,`int_64`,`float_64`,`time`) VALUES (?,?,?,?,?,?,?,?);", v.Values()
 }
-func (v Model) StrValue() driver.Value {
+func (v Model) StrValue() any {
 	return v.Str
 }
-func (v Model) BoolValue() driver.Value {
+func (v Model) BoolValue() any {
 	return v.Bool
 }
-func (v Model) RawBytesValue() driver.Value {
+func (v Model) RawBytesValue() any {
 	return string(v.RawBytes)
 }
-func (v Model) Int16Value() driver.Value {
+func (v Model) Int16Value() any {
 	return v.Int16
 }
-func (v Model) Int32Value() driver.Value {
+func (v Model) Int32Value() any {
 	return v.Int32
 }
-func (v Model) Int64Value() driver.Value {
+func (v Model) Int64Value() any {
 	return v.Int64
 }
-func (v Model) Float64Value() driver.Value {
+func (v Model) Float64Value() any {
 	return v.Float64
 }
-func (v Model) TimeValue() driver.Value {
+func (v Model) TimeValue() any {
 	return v.Time
 }
 func (v Model) ColumnStr() sequel.ColumnValuer[sql.NullString] {
@@ -130,9 +130,9 @@ func (Some) InsertPlaceholders(row int) string {
 	return "(?)" // 1
 }
 func (v Some) InsertOneStmt() (string, []any) {
-	return "INSERT INTO some (id) VALUES (?);", v.Values()
+	return "INSERT INTO `some` (`id`) VALUES (?);", v.Values()
 }
-func (v Some) IDValue() driver.Value {
+func (v Some) IDValue() any {
 	return v.ID
 }
 func (v Some) ColumnID() sequel.ColumnValuer[uuid.UUID] {

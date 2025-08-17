@@ -58,54 +58,54 @@ func (Primitive) InsertPlaceholders(row int) string {
 	return "(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)" // 16
 }
 func (v Primitive) InsertOneStmt() (string, []any) {
-	return "INSERT INTO primitive (str,bytes,bool,int,int_8,int_16,int_32,int_64,uint,uint_8,uint_16,uint_32,uint_64,f_32,f_64,time) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);", v.Values()
+	return "INSERT INTO `primitive` (`str`,`bytes`,`bool`,`int`,`int_8`,`int_16`,`int_32`,`int_64`,`uint`,`uint_8`,`uint_16`,`uint_32`,`uint_64`,`f_32`,`f_64`,`time`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);", v.Values()
 }
-func (v Primitive) StrValue() driver.Value {
+func (v Primitive) StrValue() any {
 	return v.Str
 }
-func (v Primitive) BytesValue() driver.Value {
+func (v Primitive) BytesValue() any {
 	return string(v.Bytes)
 }
-func (v Primitive) BoolValue() driver.Value {
+func (v Primitive) BoolValue() any {
 	return v.Bool
 }
-func (v Primitive) IntValue() driver.Value {
+func (v Primitive) IntValue() any {
 	return (int64)(v.Int)
 }
-func (v Primitive) Int8Value() driver.Value {
+func (v Primitive) Int8Value() any {
 	return (int64)(v.Int8)
 }
-func (v Primitive) Int16Value() driver.Value {
+func (v Primitive) Int16Value() any {
 	return (int64)(v.Int16)
 }
-func (v Primitive) Int32Value() driver.Value {
+func (v Primitive) Int32Value() any {
 	return (int64)(v.Int32)
 }
-func (v Primitive) Int64Value() driver.Value {
+func (v Primitive) Int64Value() any {
 	return v.Int64
 }
-func (v Primitive) UintValue() driver.Value {
+func (v Primitive) UintValue() any {
 	return (int64)(v.Uint)
 }
-func (v Primitive) Uint8Value() driver.Value {
+func (v Primitive) Uint8Value() any {
 	return (int64)(v.Uint8)
 }
-func (v Primitive) Uint16Value() driver.Value {
+func (v Primitive) Uint16Value() any {
 	return (int64)(v.Uint16)
 }
-func (v Primitive) Uint32Value() driver.Value {
+func (v Primitive) Uint32Value() any {
 	return (int64)(v.Uint32)
 }
-func (v Primitive) Uint64Value() driver.Value {
+func (v Primitive) Uint64Value() any {
 	return (int64)(v.Uint64)
 }
-func (v Primitive) F32Value() driver.Value {
+func (v Primitive) F32Value() any {
 	return (float64)(v.F32)
 }
-func (v Primitive) F64Value() driver.Value {
+func (v Primitive) F64Value() any {
 	return v.F64
 }
-func (v Primitive) TimeValue() driver.Value {
+func (v Primitive) TimeValue() any {
 	return v.Time
 }
 func (v Primitive) ColumnStr() sequel.ColumnValuer[string] {

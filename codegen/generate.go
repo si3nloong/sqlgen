@@ -115,6 +115,10 @@ func (g *Generator) Quote(str string) string {
 	return unsafe.String(unsafe.SliceData(buf), len(buf))
 }
 
+func (g *Generator) MustQuoteIdentifier(str string) string {
+	return g.dialect.QuoteIdentifier(str)
+}
+
 func (g *Generator) QuoteIdentifier(str string) string {
 	if !g.config.QuoteIdentifier {
 		return str
@@ -285,7 +289,7 @@ func (g *Generator) generateModels(
 
 		// Build getter
 		for _, f := range t.Columns {
-			g.L("func (v "+t.GoName+") ", valueFunc(f), " driver.Value {")
+			g.L("func (v "+t.GoName+") ", valueFunc(f), " any {")
 			queue := []string{}
 			// Find all the possible pointer paths
 			ptrPaths := f.GoPtrPaths()
@@ -498,20 +502,20 @@ func (g *Generator) buildFindByPK(importPkgs *Package, t *compiler.Table) {
 	if method, isWrongType := t.Implements(sqlTabler); isWrongType {
 		g.LogError(fmt.Errorf(`sqlgen: struct %q has function "TableName" but wrong footprint`, t.GoName))
 	} else if method != nil {
-		buf.WriteString(g.QuoteIdentifier(t.Name))
+		buf.WriteString(g.MustQuoteIdentifier(t.Name))
 	} else {
 		query = g.Quote(buf.String()) + "+ v.TableName() +"
 		buf.Reset()
 	}
 	buf.WriteString(" WHERE ")
 	if pk, ok := t.AutoIncrKey(); ok {
-		buf.WriteString(g.QuoteIdentifier(pk.Name) + " = " + g.dialect.QuoteVar(1))
+		buf.WriteString(g.MustQuoteIdentifier(pk.Name) + " = " + g.dialect.QuoteVar(1))
 	} else if len(t.Keys) == 1 {
 		pk := t.Keys[0]
-		buf.WriteString(g.QuoteIdentifier(pk.Name) + " = " + g.dialect.QuoteVar(1))
+		buf.WriteString(g.MustQuoteIdentifier(pk.Name) + " = " + g.dialect.QuoteVar(1))
 	} else {
 		keyNames := lo.Map(t.Keys, func(v *compiler.Column, _ int) string {
-			return g.QuoteIdentifier(v.Name)
+			return g.MustQuoteIdentifier(v.Name)
 		})
 		buf.WriteString("(" + strings.Join(keyNames, ",") + ")" + " = ")
 		buf.WriteByte('(')
@@ -547,7 +551,7 @@ func (g *Generator) buildInsertOne(importPkgs *Package, t *compiler.Table) {
 	if method, isWrongType := t.Implements(sqlTabler); isWrongType {
 		g.LogError(fmt.Errorf(`sqlgen: struct %q has function "TableName" but wrong footprint`, t.GoName))
 	} else if method != nil {
-		buf.WriteString("INSERT INTO " + g.QuoteIdentifier(t.Name))
+		buf.WriteString("INSERT INTO " + g.MustQuoteIdentifier(t.Name))
 	} else {
 		query = g.Quote("INSERT INTO ") + "+ v.TableName() +"
 	}
@@ -557,7 +561,7 @@ func (g *Generator) buildInsertOne(importPkgs *Package, t *compiler.Table) {
 		if i > 0 {
 			buf.WriteByte(',')
 		}
-		buf.WriteString(g.QuoteIdentifier(f.Name))
+		buf.WriteString(g.MustQuoteIdentifier(f.Name))
 	}
 	buf.WriteString(") VALUES (")
 	for i, f := range columns {
@@ -603,7 +607,7 @@ func (g *Generator) buildUpdateByPK(importPkgs *Package, t *compiler.Table) {
 	if method, isWrongType := t.Implements(sqlTabler); isWrongType {
 		g.LogError(fmt.Errorf(`sqlgen: struct %q has function "TableName" but wrong footprint`, t.GoName))
 	} else if method != nil {
-		buf.WriteString("UPDATE " + g.QuoteIdentifier(t.Name))
+		buf.WriteString("UPDATE " + g.MustQuoteIdentifier(t.Name))
 	} else {
 		query = g.Quote("UPDATE ") + "+ v.TableName() +"
 	}
@@ -613,19 +617,19 @@ func (g *Generator) buildUpdateByPK(importPkgs *Package, t *compiler.Table) {
 		if i > 0 {
 			buf.WriteByte(',')
 		}
-		buf.WriteString(g.QuoteIdentifier(f.Name) + " = " + g.sqlValuer(f, i))
+		buf.WriteString(g.MustQuoteIdentifier(f.Name) + " = " + g.sqlValuer(f, i))
 	}
 	buf.WriteString(" WHERE ")
 	if pk, ok := t.AutoIncrKey(); ok {
-		buf.WriteString(g.QuoteIdentifier(pk.Name) + " = " + g.dialect.QuoteVar(len(t.Columns)))
+		buf.WriteString(g.MustQuoteIdentifier(pk.Name) + " = " + g.dialect.QuoteVar(len(t.Columns)))
 		columns = append(columns, pk)
 	} else if len(t.Keys) == 1 {
 		pk := t.Keys[0]
-		buf.WriteString(g.QuoteIdentifier(pk.Name) + " = " + g.dialect.QuoteVar(len(t.Columns)))
+		buf.WriteString(g.MustQuoteIdentifier(pk.Name) + " = " + g.dialect.QuoteVar(len(t.Columns)))
 		columns = append(columns, pk)
 	} else {
 		keyNames := lo.Map(t.Keys, func(v *compiler.Column, _ int) string {
-			return g.QuoteIdentifier(v.Name)
+			return g.MustQuoteIdentifier(v.Name)
 		})
 		buf.WriteString("(" + strings.Join(keyNames, ",") + ")" + " = ")
 		buf.WriteByte('(')
@@ -728,7 +732,7 @@ func (g *Generator) sqlScanner(f *compiler.Column) string {
 	// 		return g.QuoteIdentifier(f.ColumnName())
 	// 	}
 	// }
-	return g.QuoteIdentifier(f.Name)
+	return g.MustQuoteIdentifier(f.Name)
 }
 
 func (g *Generator) sqlValuer(col *compiler.Column, idx int) string {

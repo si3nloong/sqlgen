@@ -44,24 +44,24 @@ func (Model) InsertPlaceholders(row int) string {
 	return "(?,?,?)" // 3
 }
 func (v Model) InsertOneStmt() (string, []any) {
-	return "INSERT INTO AutoIncrPK (name,f,n) VALUES (?,?,?);", []any{(string)(v.Name), (bool)(v.F), v.N}
+	return "INSERT INTO `AutoIncrPK` (`name`,`f`,`n`) VALUES (?,?,?);", []any{(string)(v.Name), (bool)(v.F), v.N}
 }
 func (v Model) FindOneByPKStmt() (string, []any) {
-	return "SELECT name,f,id,n FROM AutoIncrPK WHERE id = ? LIMIT 1;", []any{(int64)(v.ID)}
+	return "SELECT `name`,`f`,`id`,`n` FROM `AutoIncrPK` WHERE `id` = ? LIMIT 1;", []any{(int64)(v.ID)}
 }
 func (v Model) UpdateOneByPKStmt() (string, []any) {
-	return "UPDATE AutoIncrPK SET name = ?,f = ?,n = ? WHERE id = ?;", []any{(string)(v.Name), (bool)(v.F), v.N, (int64)(v.ID)}
+	return "UPDATE `AutoIncrPK` SET `name` = ?,`f` = ?,`n` = ? WHERE `id` = ?;", []any{(string)(v.Name), (bool)(v.F), v.N, (int64)(v.ID)}
 }
-func (v Model) NameValue() driver.Value {
+func (v Model) NameValue() any {
 	return (string)(v.Name)
 }
-func (v Model) FValue() driver.Value {
+func (v Model) FValue() any {
 	return (bool)(v.F)
 }
-func (v Model) IDValue() driver.Value {
+func (v Model) IDValue() any {
 	return (int64)(v.ID)
 }
-func (v Model) NValue() driver.Value {
+func (v Model) NValue() any {
 	return v.N
 }
 func (v Model) ColumnName() sequel.ColumnValuer[LongText] {

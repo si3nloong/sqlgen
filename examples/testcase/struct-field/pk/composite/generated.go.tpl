@@ -37,24 +37,24 @@ func (Composite) InsertPlaceholders(row int) string {
 	return "(?,?,?,?)" // 4
 }
 func (v Composite) InsertOneStmt() (string, []any) {
-	return "INSERT INTO composite (flag,col_1,col_2,col_3) VALUES (?,?,?,?);", v.Values()
+	return "INSERT INTO `composite` (`flag`,`col_1`,`col_2`,`col_3`) VALUES (?,?,?,?);", v.Values()
 }
 func (v Composite) FindOneByPKStmt() (string, []any) {
-	return "SELECT flag,col_1,col_2,col_3 FROM composite WHERE (col_1,col_3) = (?,?) LIMIT 1;", []any{v.Col1, v.Col3}
+	return "SELECT `flag`,`col_1`,`col_2`,`col_3` FROM `composite` WHERE (`col_1`,`col_3`) = (?,?) LIMIT 1;", []any{v.Col1, v.Col3}
 }
 func (v Composite) UpdateOneByPKStmt() (string, []any) {
-	return "UPDATE composite SET flag = ?,col_2 = ? WHERE (col_1,col_3) = (?,?);", []any{v.Flag, v.Col2, v.Col1, v.Col3}
+	return "UPDATE `composite` SET `flag` = ?,`col_2` = ? WHERE (`col_1`,`col_3`) = (?,?);", []any{v.Flag, v.Col2, v.Col1, v.Col3}
 }
-func (v Composite) FlagValue() driver.Value {
+func (v Composite) FlagValue() any {
 	return v.Flag
 }
-func (v Composite) Col1Value() driver.Value {
+func (v Composite) Col1Value() any {
 	return v.Col1
 }
-func (v Composite) Col2Value() driver.Value {
+func (v Composite) Col2Value() any {
 	return v.Col2
 }
-func (v Composite) Col3Value() driver.Value {
+func (v Composite) Col3Value() any {
 	return v.Col3
 }
 func (v Composite) ColumnFlag() sequel.ColumnValuer[bool] {

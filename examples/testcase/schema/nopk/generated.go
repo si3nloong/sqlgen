@@ -31,15 +31,15 @@ func (Customer) InsertPlaceholders(row int) string {
 	return "(?,?,?)" // 3
 }
 func (v Customer) InsertOneStmt() (string, []any) {
-	return "INSERT INTO customer (name,age,married) VALUES (?,?,?);", v.Values()
+	return "INSERT INTO `customer` (`name`,`age`,`married`) VALUES (?,?,?);", v.Values()
 }
-func (v Customer) NameValue() driver.Value {
+func (v Customer) NameValue() any {
 	return v.Name
 }
-func (v Customer) AgeValue() driver.Value {
+func (v Customer) AgeValue() any {
 	return (int64)(v.Age)
 }
-func (v Customer) MarriedValue() driver.Value {
+func (v Customer) MarriedValue() any {
 	return v.Married
 }
 func (v Customer) ColumnName() sequel.ColumnValuer[string] {

@@ -31,15 +31,15 @@ func (Size) InsertPlaceholders(row int) string {
 	return "(?,?,?)" // 3
 }
 func (v Size) InsertOneStmt() (string, []any) {
-	return "INSERT INTO size (str,timestamp,time) VALUES (?,?,?);", v.Values()
+	return "INSERT INTO `size` (`str`,`timestamp`,`time`) VALUES (?,?,?);", v.Values()
 }
-func (v Size) StrValue() driver.Value {
+func (v Size) StrValue() any {
 	return v.Str
 }
-func (v Size) TimestampValue() driver.Value {
+func (v Size) TimestampValue() any {
 	return v.Timestamp
 }
-func (v Size) TimeValue() driver.Value {
+func (v Size) TimeValue() any {
 	return v.Time
 }
 func (v Size) ColumnStr() sequel.ColumnValuer[string] {

@@ -47,36 +47,36 @@ func (AliasStruct) InsertPlaceholders(row int) string {
 	return "(?,?,?,?,?,?,?,?)" // 8
 }
 func (v AliasStruct) InsertOneStmt() (string, []any) {
-	return "INSERT INTO alias_struct (b,Id,header,raw,text,null_str,created,updated) VALUES (?,?,?,?,?,?,?,?);", v.Values()
+	return "INSERT INTO `alias_struct` (`b`,`Id`,`header`,`raw`,`text`,`null_str`,`created`,`updated`) VALUES (?,?,?,?,?,?,?,?);", v.Values()
 }
 func (v AliasStruct) FindOneByPKStmt() (string, []any) {
-	return "SELECT b,Id,header,raw,text,null_str,created,updated FROM alias_struct WHERE Id = ? LIMIT 1;", []any{v.pk.ID}
+	return "SELECT `b`,`Id`,`header`,`raw`,`text`,`null_str`,`created`,`updated` FROM `alias_struct` WHERE `Id` = ? LIMIT 1;", []any{v.pk.ID}
 }
 func (v AliasStruct) UpdateOneByPKStmt() (string, []any) {
-	return "UPDATE alias_struct SET b = ?,header = ?,raw = ?,text = ?,null_str = ?,created = ?,updated = ? WHERE Id = ?;", []any{v.B, (string)(v.Header), string(v.Raw), (string)(v.Text), v.NullStr, (time.Time)(v.model.Created), (time.Time)(v.model.Updated), v.pk.ID}
+	return "UPDATE `alias_struct` SET `b` = ?,`header` = ?,`raw` = ?,`text` = ?,`null_str` = ?,`created` = ?,`updated` = ? WHERE `Id` = ?;", []any{v.B, (string)(v.Header), string(v.Raw), (string)(v.Text), v.NullStr, (time.Time)(v.model.Created), (time.Time)(v.model.Updated), v.pk.ID}
 }
-func (v AliasStruct) BValue() driver.Value {
+func (v AliasStruct) BValue() any {
 	return v.B
 }
-func (v AliasStruct) IDValue() driver.Value {
+func (v AliasStruct) IDValue() any {
 	return v.pk.ID
 }
-func (v AliasStruct) HeaderValue() driver.Value {
+func (v AliasStruct) HeaderValue() any {
 	return (string)(v.Header)
 }
-func (v AliasStruct) RawValue() driver.Value {
+func (v AliasStruct) RawValue() any {
 	return string(v.Raw)
 }
-func (v AliasStruct) TextValue() driver.Value {
+func (v AliasStruct) TextValue() any {
 	return (string)(v.Text)
 }
-func (v AliasStruct) NullStrValue() driver.Value {
+func (v AliasStruct) NullStrValue() any {
 	return v.NullStr
 }
-func (v AliasStruct) CreatedValue() driver.Value {
+func (v AliasStruct) CreatedValue() any {
 	return (time.Time)(v.model.Created)
 }
-func (v AliasStruct) UpdatedValue() driver.Value {
+func (v AliasStruct) UpdatedValue() any {
 	return (time.Time)(v.model.Updated)
 }
 func (v AliasStruct) ColumnB() sequel.ColumnValuer[float64] {
@@ -140,9 +140,9 @@ func (B) InsertPlaceholders(row int) string {
 	return "(?)" // 1
 }
 func (v B) InsertOneStmt() (string, []any) {
-	return "INSERT INTO b (name) VALUES (?);", v.Values()
+	return "INSERT INTO `b` (`name`) VALUES (?);", v.Values()
 }
-func (v B) NameValue() driver.Value {
+func (v B) NameValue() any {
 	return v.Name
 }
 func (v B) ColumnName() sequel.ColumnValuer[string] {
@@ -171,9 +171,9 @@ func (C) InsertPlaceholders(row int) string {
 	return "(?)" // 1
 }
 func (v C) InsertOneStmt() (string, []any) {
-	return "INSERT INTO c (id) VALUES (?);", v.Values()
+	return "INSERT INTO `c` (`id`) VALUES (?);", v.Values()
 }
-func (v C) IDValue() driver.Value {
+func (v C) IDValue() any {
 	return v.ID
 }
 func (v C) ColumnID() sequel.ColumnValuer[int64] {

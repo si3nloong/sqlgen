@@ -29,12 +29,12 @@ func (User) InsertPlaceholders(row int) string {
 	return "(?,?)" // 2
 }
 func (v User) InsertOneStmt() (string, []any) {
-	return "INSERT INTO user (id,name) VALUES (?,?);", v.Values()
+	return "INSERT INTO `user` (`id`,`name`) VALUES (?,?);", v.Values()
 }
-func (v User) IDValue() driver.Value {
+func (v User) IDValue() any {
 	return v.ID
 }
-func (v User) NameValue() driver.Value {
+func (v User) NameValue() any {
 	return v.Name
 }
 func (v User) ColumnID() sequel.ColumnValuer[uuid.UUID] {

@@ -33,15 +33,15 @@ func (A) InsertPlaceholders(row int) string {
 	return "(?,?,?)" // 3
 }
 func (v A) InsertOneStmt() (string, []any) {
-	return "INSERT INTO Apple (id,text,created_at) VALUES (?,?,?);", v.Values()
+	return "INSERT INTO `Apple` (`id`,`text`,`created_at`) VALUES (?,?,?);", v.Values()
 }
-func (v A) IDValue() driver.Value {
+func (v A) IDValue() any {
 	return v.ID
 }
-func (v A) TextValue() driver.Value {
+func (v A) TextValue() any {
 	return (string)(v.Text)
 }
-func (v A) CreatedAtValue() driver.Value {
+func (v A) CreatedAtValue() any {
 	return v.CreatedAt
 }
 func (v A) ColumnID() sequel.ColumnValuer[string] {
@@ -82,12 +82,12 @@ func (B) InsertPlaceholders(row int) string {
 	return "(?,?)" // 2
 }
 func (v B) InsertOneStmt() (string, []any) {
-	return "INSERT INTO b (id,created_at) VALUES (?,?);", v.Values()
+	return "INSERT INTO `b` (`id`,`created_at`) VALUES (?,?);", v.Values()
 }
-func (v B) IDValue() driver.Value {
+func (v B) IDValue() any {
 	return v.ID
 }
-func (v B) CreatedAtValue() driver.Value {
+func (v B) CreatedAtValue() any {
 	return v.CreatedAt
 }
 func (v B) ColumnID() sequel.ColumnValuer[string] {
@@ -125,12 +125,12 @@ func (C) InsertPlaceholders(row int) string {
 	return "(?)" // 1
 }
 func (v C) InsertOneStmt() (string, []any) {
-	return "INSERT INTO c (id) VALUES (?);", v.Values()
+	return "INSERT INTO `c` (`id`) VALUES (?);", v.Values()
 }
 func (v C) FindOneByPKStmt() (string, []any) {
-	return "SELECT id FROM c WHERE id = ? LIMIT 1;", []any{v.ID}
+	return "SELECT `id` FROM `c` WHERE `id` = ? LIMIT 1;", []any{v.ID}
 }
-func (v C) IDValue() driver.Value {
+func (v C) IDValue() any {
 	return v.ID
 }
 func (v C) ColumnID() sequel.ColumnValuer[int64] {
@@ -163,12 +163,12 @@ func (D) InsertPlaceholders(row int) string {
 	return "(?)" // 1
 }
 func (v D) InsertOneStmt() (string, []any) {
-	return "INSERT INTO d (id) VALUES (?);", v.Values()
+	return "INSERT INTO `d` (`id`) VALUES (?);", v.Values()
 }
 func (v D) FindOneByPKStmt() (string, []any) {
-	return "SELECT id FROM d WHERE id = ? LIMIT 1;", []any{v.ID}
+	return "SELECT `id` FROM `d` WHERE `id` = ? LIMIT 1;", []any{v.ID}
 }
-func (v D) IDValue() driver.Value {
+func (v D) IDValue() any {
 	return v.ID
 }
 func (v D) ColumnID() sequel.ColumnValuer[sql.NullString] {

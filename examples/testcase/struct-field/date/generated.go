@@ -35,18 +35,18 @@ func (User) InsertPlaceholders(row int) string {
 	return "(?,?)" // 2
 }
 func (v User) InsertOneStmt() (string, []any) {
-	return "INSERT INTO user (id,birth_date) VALUES (?,?);", v.Values()
+	return "INSERT INTO `user` (`id`,`birth_date`) VALUES (?,?);", v.Values()
 }
 func (v User) FindOneByPKStmt() (string, []any) {
-	return "SELECT id,birth_date FROM user WHERE id = ? LIMIT 1;", []any{v.ID}
+	return "SELECT `id`,`birth_date` FROM `user` WHERE `id` = ? LIMIT 1;", []any{v.ID}
 }
 func (v User) UpdateOneByPKStmt() (string, []any) {
-	return "UPDATE user SET birth_date = ? WHERE id = ?;", []any{encoding.TextValue(v.BirthDate), v.ID}
+	return "UPDATE `user` SET `birth_date` = ? WHERE `id` = ?;", []any{encoding.TextValue(v.BirthDate), v.ID}
 }
-func (v User) IDValue() driver.Value {
+func (v User) IDValue() any {
 	return v.ID
 }
-func (v User) BirthDateValue() driver.Value {
+func (v User) BirthDateValue() any {
 	return encoding.TextValue(v.BirthDate)
 }
 func (v User) ColumnID() sequel.ColumnValuer[uuid.UUID] {

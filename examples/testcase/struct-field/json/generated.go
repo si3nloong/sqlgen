@@ -30,12 +30,12 @@ func (JSON) InsertPlaceholders(row int) string {
 	return "(?,?)" // 2
 }
 func (v JSON) InsertOneStmt() (string, []any) {
-	return "INSERT INTO json (num,raw_bytes) VALUES (?,?);", v.Values()
+	return "INSERT INTO `json` (`num`,`raw_bytes`) VALUES (?,?);", v.Values()
 }
-func (v JSON) NumValue() driver.Value {
+func (v JSON) NumValue() any {
 	return v.Num.String()
 }
-func (v JSON) RawBytesValue() driver.Value {
+func (v JSON) RawBytesValue() any {
 	return string(v.RawBytes)
 }
 func (v JSON) ColumnNum() sequel.ColumnValuer[json.Number] {

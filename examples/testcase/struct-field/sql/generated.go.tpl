@@ -59,33 +59,33 @@ func (AutoPkLocation) InsertPlaceholders(row int) string {
 	return "(?,?,?,?)" // 4
 }
 func (v AutoPkLocation) InsertOneStmt() (string, []any) {
-	return "INSERT INTO auto_pk_location (geo_point,ptr_geo_point,ptr_uuid,ptr_date) VALUES (?,?,?,?);", []any{ewkb.Value(v.GeoPoint, 4326), v.PtrGeoPointValue(), v.PtrUUIDValue(), v.PtrDateValue()}
+	return "INSERT INTO `auto_pk_location` (`geo_point`,`ptr_geo_point`,`ptr_uuid`,`ptr_date`) VALUES (?,?,?,?);", []any{ewkb.Value(v.GeoPoint, 4326), v.PtrGeoPointValue(), v.PtrUUIDValue(), v.PtrDateValue()}
 }
 func (v AutoPkLocation) FindOneByPKStmt() (string, []any) {
-	return "SELECT id,geo_point,ptr_geo_point,ptr_uuid,ptr_date FROM auto_pk_location WHERE id = ? LIMIT 1;", []any{(int64)(v.ID)}
+	return "SELECT `id`,`geo_point`,`ptr_geo_point`,`ptr_uuid`,`ptr_date` FROM `auto_pk_location` WHERE `id` = ? LIMIT 1;", []any{(int64)(v.ID)}
 }
 func (v AutoPkLocation) UpdateOneByPKStmt() (string, []any) {
-	return "UPDATE auto_pk_location SET geo_point = ?,ptr_geo_point = ?,ptr_uuid = ?,ptr_date = ? WHERE id = ?;", []any{ewkb.Value(v.GeoPoint, 4326), v.PtrGeoPointValue(), v.PtrUUIDValue(), v.PtrDateValue(), (int64)(v.ID)}
+	return "UPDATE `auto_pk_location` SET `geo_point` = ?,`ptr_geo_point` = ?,`ptr_uuid` = ?,`ptr_date` = ? WHERE `id` = ?;", []any{ewkb.Value(v.GeoPoint, 4326), v.PtrGeoPointValue(), v.PtrUUIDValue(), v.PtrDateValue(), (int64)(v.ID)}
 }
-func (v AutoPkLocation) IDValue() driver.Value {
+func (v AutoPkLocation) IDValue() any {
 	return (int64)(v.ID)
 }
-func (v AutoPkLocation) GeoPointValue() driver.Value {
+func (v AutoPkLocation) GeoPointValue() any {
 	return ewkb.Value(v.GeoPoint, 4326)
 }
-func (v AutoPkLocation) PtrGeoPointValue() driver.Value {
+func (v AutoPkLocation) PtrGeoPointValue() any {
 	if v.PtrGeoPoint != nil {
 		return ewkb.Value(*v.PtrGeoPoint, 4326)
 	}
 	return nil
 }
-func (v AutoPkLocation) PtrUUIDValue() driver.Value {
+func (v AutoPkLocation) PtrUUIDValue() any {
 	if v.PtrUUID != nil {
 		return *v.PtrUUID
 	}
 	return nil
 }
-func (v AutoPkLocation) PtrDateValue() driver.Value {
+func (v AutoPkLocation) PtrDateValue() any {
 	if v.PtrDate != nil {
 		return encoding.TextValue(*v.PtrDate)
 	}
@@ -154,21 +154,21 @@ func (Location) InsertPlaceholders(row int) string {
 	return "(?,?,?)" // 3
 }
 func (v Location) InsertOneStmt() (string, []any) {
-	return "INSERT INTO location (id,geo_point,uuid) VALUES (?,?,?);", v.Values()
+	return "INSERT INTO `location` (`id`,`geo_point`,`uuid`) VALUES (?,?,?);", v.Values()
 }
 func (v Location) FindOneByPKStmt() (string, []any) {
-	return "SELECT id,geo_point,uuid FROM location WHERE id = ? LIMIT 1;", []any{(int64)(v.ID)}
+	return "SELECT `id`,`geo_point`,`uuid` FROM `location` WHERE `id` = ? LIMIT 1;", []any{(int64)(v.ID)}
 }
 func (v Location) UpdateOneByPKStmt() (string, []any) {
-	return "UPDATE location SET geo_point = ?,uuid = ? WHERE id = ?;", []any{ewkb.Value(v.GeoPoint, 4326), v.UUID, (int64)(v.ID)}
+	return "UPDATE `location` SET `geo_point` = ?,`uuid` = ? WHERE `id` = ?;", []any{ewkb.Value(v.GeoPoint, 4326), v.UUID, (int64)(v.ID)}
 }
-func (v Location) IDValue() driver.Value {
+func (v Location) IDValue() any {
 	return (int64)(v.ID)
 }
-func (v Location) GeoPointValue() driver.Value {
+func (v Location) GeoPointValue() any {
 	return ewkb.Value(v.GeoPoint, 4326)
 }
-func (v Location) UUIDValue() driver.Value {
+func (v Location) UUIDValue() any {
 	return v.UUID
 }
 func (v Location) ColumnID() sequel.ColumnValuer[uint64] {

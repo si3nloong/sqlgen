@@ -28,9 +28,9 @@ func (ImportedEnum) InsertPlaceholders(row int) string {
 	return "(?)" // 1
 }
 func (v ImportedEnum) InsertOneStmt() (string, []any) {
-	return "INSERT INTO imported_enum (weekday) VALUES (?);", v.Values()
+	return "INSERT INTO `imported_enum` (`weekday`) VALUES (?);", v.Values()
 }
-func (v ImportedEnum) WeekdayValue() driver.Value {
+func (v ImportedEnum) WeekdayValue() any {
 	return (int64)(v.Weekday)
 }
 func (v ImportedEnum) ColumnWeekday() sequel.ColumnValuer[time.Weekday] {

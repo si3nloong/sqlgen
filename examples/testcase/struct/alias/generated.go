@@ -27,12 +27,12 @@ func (A) InsertPlaceholders(row int) string {
 	return "(?,?)" // 2
 }
 func (v A) InsertOneStmt() (string, []any) {
-	return "INSERT INTO " + v.TableName() + " (date,time) VALUES (?,?);", v.Values()
+	return "INSERT INTO " + v.TableName() + " (`date`,`time`) VALUES (?,?);", v.Values()
 }
-func (v A) DateValue() driver.Value {
+func (v A) DateValue() any {
 	return encoding.TextValue(v.Date)
 }
-func (v A) TimeValue() driver.Value {
+func (v A) TimeValue() any {
 	return encoding.TextValue(v.Time)
 }
 func (v A) ColumnDate() sequel.ColumnValuer[civil.Date] {
@@ -68,12 +68,12 @@ func (C) InsertPlaceholders(row int) string {
 	return "(?,?)" // 2
 }
 func (v C) InsertOneStmt() (string, []any) {
-	return "INSERT INTO c (string,valid) VALUES (?,?);", v.Values()
+	return "INSERT INTO `c` (`string`,`valid`) VALUES (?,?);", v.Values()
 }
-func (v C) StringValue() driver.Value {
+func (v C) StringValue() any {
 	return v.String
 }
-func (v C) ValidValue() driver.Value {
+func (v C) ValidValue() any {
 	return v.Valid
 }
 func (v C) ColumnString() sequel.ColumnValuer[string] {

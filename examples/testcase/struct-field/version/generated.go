@@ -31,12 +31,12 @@ func (Version) InsertPlaceholders(row int) string {
 	return "(?)" // 1
 }
 func (v Version) InsertOneStmt() (string, []any) {
-	return "INSERT INTO version (id) VALUES (?);", v.Values()
+	return "INSERT INTO `version` (`id`) VALUES (?);", v.Values()
 }
 func (v Version) FindOneByPKStmt() (string, []any) {
-	return "SELECT id FROM version WHERE id = ? LIMIT 1;", []any{v.ID}
+	return "SELECT `id` FROM `version` WHERE `id` = ? LIMIT 1;", []any{v.ID}
 }
-func (v Version) IDValue() driver.Value {
+func (v Version) IDValue() any {
 	return v.ID
 }
 func (v Version) ColumnID() sequel.ColumnValuer[uuid.UUID] {

@@ -32,15 +32,15 @@ func (Model) InsertPlaceholders(row int) string {
 	return "(?,?)" // 2
 }
 func (v Model) InsertOneStmt() (string, []any) {
-	return "INSERT INTO model (a,b) VALUES (?,?);", []any{v.A, v.B}
+	return "INSERT INTO `model` (`a`,`b`) VALUES (?,?);", []any{v.A, v.B}
 }
-func (v Model) AValue() driver.Value {
+func (v Model) AValue() any {
 	return v.A
 }
-func (v Model) BValue() driver.Value {
+func (v Model) BValue() any {
 	return v.B
 }
-func (v Model) ReadOnlyValue() driver.Value {
+func (v Model) ReadOnlyValue() any {
 	return v.ReadOnly
 }
 func (v Model) ColumnA() sequel.ColumnValuer[string] {

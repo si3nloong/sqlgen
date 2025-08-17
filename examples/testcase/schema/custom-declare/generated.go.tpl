@@ -10,9 +10,9 @@ func (A) InsertPlaceholders(row int) string {
 	return "(?)" // 1
 }
 func (v A) InsertOneStmt() (string, []any) {
-	return "INSERT INTO " + v.TableName() + " (name) VALUES (?);", v.Values()
+	return "INSERT INTO " + v.TableName() + " (`name`) VALUES (?);", v.Values()
 }
-func (v A) NameValue() driver.Value {
+func (v A) NameValue() any {
 	return v.Name
 }
 func (v A) ColumnName() sequel.ColumnValuer[string] {

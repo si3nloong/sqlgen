@@ -29,18 +29,18 @@ func (A) InsertPlaceholders(row int) string {
 	return "(?,?)" // 2
 }
 func (v A) InsertOneStmt() (string, []any) {
-	return "INSERT INTO " + v.TableName() + " (id,name) VALUES (?,?);", v.Values()
+	return "INSERT INTO " + v.TableName() + " (`id`,`name`) VALUES (?,?);", v.Values()
 }
 func (v A) FindOneByPKStmt() (string, []any) {
-	return "SELECT id,name FROM " + v.TableName() + " WHERE id = ? LIMIT 1;", []any{v.ID}
+	return "SELECT `id`,`name` FROM " + v.TableName() + " WHERE `id` = ? LIMIT 1;", []any{v.ID}
 }
 func (v A) UpdateOneByPKStmt() (string, []any) {
-	return "UPDATE " + v.TableName() + " SET name = ? WHERE id = ?;", []any{v.Name, v.ID}
+	return "UPDATE " + v.TableName() + " SET `name` = ? WHERE `id` = ?;", []any{v.Name, v.ID}
 }
-func (v A) IDValue() driver.Value {
+func (v A) IDValue() any {
 	return v.ID
 }
-func (v A) NameValue() driver.Value {
+func (v A) NameValue() any {
 	return v.Name
 }
 func (v A) ColumnID() sequel.ColumnValuer[int64] {
@@ -71,9 +71,9 @@ func (Model) InsertPlaceholders(row int) string {
 	return "(?)" // 1
 }
 func (v Model) InsertOneStmt() (string, []any) {
-	return "INSERT INTO " + v.TableName() + " (name) VALUES (?);", v.Values()
+	return "INSERT INTO " + v.TableName() + " (`name`) VALUES (?);", v.Values()
 }
-func (v Model) NameValue() driver.Value {
+func (v Model) NameValue() any {
 	return v.Name
 }
 func (v Model) ColumnName() sequel.ColumnValuer[string] {

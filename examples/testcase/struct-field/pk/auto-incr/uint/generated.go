@@ -28,9 +28,9 @@ func (v *Model) Addrs() []any {
 	}
 }
 func (v Model) FindOneByPKStmt() (string, []any) {
-	return "SELECT id FROM model WHERE id = ? LIMIT 1;", []any{(int64)(v.ID)}
+	return "SELECT `id` FROM `model` WHERE `id` = ? LIMIT 1;", []any{(int64)(v.ID)}
 }
-func (v Model) IDValue() driver.Value {
+func (v Model) IDValue() any {
 	return (int64)(v.ID)
 }
 func (v Model) ColumnID() sequel.ColumnValuer[uint] {

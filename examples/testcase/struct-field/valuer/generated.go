@@ -36,21 +36,21 @@ func (B) InsertPlaceholders(row int) string {
 	return "(?,?,?,?)" // 4
 }
 func (v B) InsertOneStmt() (string, []any) {
-	return "INSERT INTO b (id,value,ptr_value,n) VALUES (?,?,?,?);", v.Values()
+	return "INSERT INTO `b` (`id`,`value`,`ptr_value`,`n`) VALUES (?,?,?,?);", v.Values()
 }
-func (v B) IDValue() driver.Value {
+func (v B) IDValue() any {
 	return v.ID
 }
-func (v B) ValueValue() driver.Value {
+func (v B) ValueValue() any {
 	return v.Value
 }
-func (v B) PtrValueValue() driver.Value {
+func (v B) PtrValueValue() any {
 	if v.PtrValue != nil {
 		return *v.PtrValue
 	}
 	return nil
 }
-func (v B) NValue() driver.Value {
+func (v B) NValue() any {
 	return v.N
 }
 func (v B) ColumnID() sequel.ColumnValuer[int64] {
