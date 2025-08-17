@@ -154,7 +154,7 @@ func TestInsert(t *testing.T) {
 		ptrs, err := mysqldb.QueryStmt[pointer.Ptr](ctx, dbConn, mysqldb.SelectStmt{
 			Select:    ptr.Columns(),
 			FromTable: ptr.TableName(),
-			Where:     mysqldb.Equal(ptr.GetInt(), &i),
+			Where:     mysqldb.Equal(ptr.ColumnInt(), &i),
 			Limit:     3,
 		})
 		_ = ptrs

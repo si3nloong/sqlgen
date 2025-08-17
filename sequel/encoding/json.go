@@ -38,9 +38,7 @@ type jsonScanner[T any, Addr addrOrPtr[T]] struct {
 	v Addr
 }
 
-func JSONScanner[T any, Addr interface {
-	*T
-}](addr Addr) sql.Scanner {
+func JSONScanner[T any, Addr interface{ *T }](addr Addr) sql.Scanner {
 	return &jsonScanner[T, Addr]{v: addr}
 }
 

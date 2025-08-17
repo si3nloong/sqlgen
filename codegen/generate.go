@@ -139,24 +139,24 @@ func (g *Generator) generateModels(
 
 		g.L()
 
-		// if method, wrongType := t.Implements(sqlDatabaser); wrongType {
+		// if method, isWrongType := t.Implements(sqlDatabaser); isWrongType {
 		// 	g.LogError(fmt.Errorf(`sqlgen: struct %q has function "DatabaseName" but wrong footprint`, t.Name))
-		// } else if method != nil && !wrongType && t.dbName != "" {
+		// } else if method != nil && !isWrongType && t.dbName != "" {
 		// 	g.L("func (" + t.GoName + ") DatabaseName() string {")
 		// 	g.L(`return ` + g.Quote(g.QuoteIdentifier(t.dbName)))
 		// 	g.L("}")
 		// }
 		var readonly bool
-		if method, wrongType := t.PtrImplements(locker); wrongType {
+		if method, isWrongType := t.PtrImplements(locker); isWrongType {
 			g.LogError(fmt.Errorf(`sqlgen: struct %q has function "TableName" but wrong footprint`, t.Name))
-		} else if method == nil && !wrongType {
+		} else if method == nil && !isWrongType {
 			readonly = true
 		}
 
 		// Build the "TableName" function which return the table name
-		if method, wrongType := t.Implements(sqlTabler); wrongType {
+		if method, isWrongType := t.Implements(sqlTabler); isWrongType {
 			g.LogError(fmt.Errorf(`sqlgen: struct %q has function "TableName" but wrong footprint`, t.Name))
-		} else if method != nil && !wrongType {
+		} else if method != nil && !isWrongType {
 			g.L("func ("+t.GoName+") ", sqlTabler.Method(0).Name(), "() string {")
 			g.L(`return ` + g.Quote(g.QuoteIdentifier(t.Name)))
 			g.L("}")
@@ -186,9 +186,9 @@ func (g *Generator) generateModels(
 		}
 
 		// Build the "SQLColumns" function which return the column SQL query
-		if method, wrongType := t.Implements(sqlQueryColumner); wrongType {
+		if method, isWrongType := t.Implements(sqlQueryColumner); isWrongType {
 			g.LogError(fmt.Errorf(`sqlgen: struct %q has function "SQLColumns" but wrong footprint`, t.Name))
-		} else if method != nil && !wrongType {
+		} else if method != nil && !isWrongType {
 			// if _, ok := lo.Find(t.columns, func(v *columnInfo) bool {
 			// 	_, exists := v.sqlScanner()
 			// 	return exists
@@ -207,9 +207,9 @@ func (g *Generator) generateModels(
 		}
 
 		// Build the "Columns" function which return the column names
-		if method, wrongType := t.Implements(sqlColumner); wrongType {
+		if method, isWrongType := t.Implements(sqlColumner); isWrongType {
 			g.LogError(fmt.Errorf(`sqlgen: struct %q has function "Columns" but wrong footprint`, t.Name))
-		} else if method != nil && !wrongType {
+		} else if method != nil && !isWrongType {
 			g.L("func ("+t.GoName+") ", sqlColumner.Method(0).Name(), "() []string {")
 			g.WriteString("return []string{")
 			for i, col := range t.Columns {
@@ -223,35 +223,37 @@ func (g *Generator) generateModels(
 		}
 
 		// Build the "Values" function which return the column values
-		if method, wrongType := t.Implements(sqlValuer); wrongType {
+		if method, isWrongType := t.Implements(sqlValuer); isWrongType {
 			g.LogError(fmt.Errorf(`sqlgen: struct %q has function "Values" but wrong footprint`, t.Name))
-		} else if method != nil && !wrongType {
+		} else if method != nil && !isWrongType {
 			g.buildValuer(importPkgs, t)
 		}
 
 		// Build the "Addrs" function which return the column addressable values
-		if method, wrongType := t.PtrImplements(sqlScanner); wrongType {
+		if method, isWrongType := t.PtrImplements(sqlScanner); isWrongType {
 			g.LogError(fmt.Errorf(`sqlgen: struct %q has function "Addrs" but wrong footprint`, t.Name))
-		} else if method != nil && !wrongType {
+		} else if method != nil && !isWrongType {
 			g.buildScanner(importPkgs, t)
 		}
 
+		// If the struct has readonly columns
 		if !readonly {
 			insertColumns := t.InsertColumns()
-			if len(insertColumns) > 0 && len(insertColumns) != len(t.Columns) {
-				g.L("func (" + t.GoName + ") InsertColumns() []string {")
-				g.WriteString("return []string{")
-				for i, col := range insertColumns {
-					if i > 0 {
-						g.WriteByte(',')
-					}
-					g.WriteString(g.Quote(g.QuoteIdentifier(col.Name)))
-				}
-				g.L(fmt.Sprintf("} // %d", len(insertColumns)))
-				g.L("}")
-			}
-
 			if len(insertColumns) > 0 {
+				// If the insertable columns is not tally with the table columns means the struct has readonly columns
+				if len(insertColumns) != len(t.Columns) {
+					g.L("func (" + t.GoName + ") InsertColumns() []string {")
+					g.WriteString("return []string{")
+					for i, col := range insertColumns {
+						if i > 0 {
+							g.WriteByte(',')
+						}
+						g.WriteString(g.Quote(g.QuoteIdentifier(col.Name)))
+					}
+					g.L(fmt.Sprintf("} // %d", len(insertColumns)))
+					g.L("}")
+				}
+
 				if g.staticVar {
 					g.L("func (" + t.GoName + ") InsertPlaceholders(row int) string {")
 					g.L(`return "(` + strings.Repeat(","+g.dialect.QuoteVar(0), len(insertColumns))[1:] + `)"` + fmt.Sprintf(" // %d", len(insertColumns)))
@@ -493,7 +495,7 @@ func (g *Generator) buildFindByPK(importPkgs *Package, t *compiler.Table) {
 	}
 	buf.WriteString(" FROM ")
 	var query string
-	if method, wrongType := t.Implements(sqlTabler); wrongType {
+	if method, isWrongType := t.Implements(sqlTabler); isWrongType {
 		g.LogError(fmt.Errorf(`sqlgen: struct %q has function "TableName" but wrong footprint`, t.GoName))
 	} else if method != nil {
 		buf.WriteString(g.QuoteIdentifier(t.Name))
@@ -542,7 +544,7 @@ func (g *Generator) buildFindByPK(importPkgs *Package, t *compiler.Table) {
 func (g *Generator) buildInsertOne(importPkgs *Package, t *compiler.Table) {
 	var query string
 	buf := strpool.AcquireString()
-	if method, wrongType := t.Implements(sqlTabler); wrongType {
+	if method, isWrongType := t.Implements(sqlTabler); isWrongType {
 		g.LogError(fmt.Errorf(`sqlgen: struct %q has function "TableName" but wrong footprint`, t.GoName))
 	} else if method != nil {
 		buf.WriteString("INSERT INTO " + g.QuoteIdentifier(t.Name))
@@ -598,7 +600,7 @@ func (g *Generator) buildInsertOne(importPkgs *Package, t *compiler.Table) {
 func (g *Generator) buildUpdateByPK(importPkgs *Package, t *compiler.Table) {
 	buf := strpool.AcquireString()
 	var query string
-	if method, wrongType := t.Implements(sqlTabler); wrongType {
+	if method, isWrongType := t.Implements(sqlTabler); isWrongType {
 		g.LogError(fmt.Errorf(`sqlgen: struct %q has function "TableName" but wrong footprint`, t.GoName))
 	} else if method != nil {
 		buf.WriteString("UPDATE " + g.QuoteIdentifier(t.Name))

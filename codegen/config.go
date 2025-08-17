@@ -110,7 +110,7 @@ func (c *Config) Init() {
 	c.Driver = MySQL
 	c.Strict = &strict
 	c.Exec.Filename = DefaultGeneratedFile
-	c.Getter.Prefix = "Get"
+	c.Getter.Prefix = "Column"
 	c.Database = new(DatabaseConfig)
 	c.Database.Package = "db"
 	c.Database.Dir = "db"
@@ -136,7 +136,7 @@ func (c *Config) initIfEmpty() {
 		c.Tag = DefaultStructTag
 	}
 	if c.Getter.Prefix == "" {
-		c.Getter.Prefix = "Get"
+		c.Getter.Prefix = "Column"
 	}
 	if c.Exec.Filename == "" {
 		c.Exec.Filename = DefaultGeneratedFile
