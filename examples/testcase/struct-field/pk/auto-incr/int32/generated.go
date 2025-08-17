@@ -33,7 +33,7 @@ func (v Model) FindOneByPKStmt() (string, []any) {
 func (v Model) IDValue() driver.Value {
 	return (int64)(v.ID)
 }
-func (v Model) GetID() sequel.ColumnValuer[int32] {
+func (v Model) ColumnID() sequel.ColumnValuer[int32] {
 	return sequel.Column("id", v.ID, func(val int32) driver.Value {
 		return (int64)(val)
 	})

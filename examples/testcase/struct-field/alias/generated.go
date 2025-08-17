@@ -79,42 +79,42 @@ func (v AliasStruct) CreatedValue() driver.Value {
 func (v AliasStruct) UpdatedValue() driver.Value {
 	return (time.Time)(v.model.Updated)
 }
-func (v AliasStruct) GetB() sequel.ColumnValuer[float64] {
+func (v AliasStruct) ColumnB() sequel.ColumnValuer[float64] {
 	return sequel.Column("b", v.B, func(val float64) driver.Value {
 		return val
 	})
 }
-func (v AliasStruct) GetID() sequel.ColumnValuer[int64] {
+func (v AliasStruct) ColumnID() sequel.ColumnValuer[int64] {
 	return sequel.Column("Id", v.pk.ID, func(val int64) driver.Value {
 		return val
 	})
 }
-func (v AliasStruct) GetHeader() sequel.ColumnValuer[aliasStr] {
+func (v AliasStruct) ColumnHeader() sequel.ColumnValuer[aliasStr] {
 	return sequel.Column("header", v.Header, func(val aliasStr) driver.Value {
 		return (string)(val)
 	})
 }
-func (v AliasStruct) GetRaw() sequel.ColumnValuer[sql.RawBytes] {
+func (v AliasStruct) ColumnRaw() sequel.ColumnValuer[sql.RawBytes] {
 	return sequel.Column("raw", v.Raw, func(val sql.RawBytes) driver.Value {
 		return string(val)
 	})
 }
-func (v AliasStruct) GetText() sequel.ColumnValuer[customStr] {
+func (v AliasStruct) ColumnText() sequel.ColumnValuer[customStr] {
 	return sequel.Column("text", v.Text, func(val customStr) driver.Value {
 		return (string)(val)
 	})
 }
-func (v AliasStruct) GetNullStr() sequel.ColumnValuer[sql.NullString] {
+func (v AliasStruct) ColumnNullStr() sequel.ColumnValuer[sql.NullString] {
 	return sequel.Column("null_str", v.NullStr, func(val sql.NullString) driver.Value {
 		return val
 	})
 }
-func (v AliasStruct) GetCreated() sequel.ColumnValuer[DT] {
+func (v AliasStruct) ColumnCreated() sequel.ColumnValuer[DT] {
 	return sequel.Column("created", v.model.Created, func(val DT) driver.Value {
 		return (time.Time)(val)
 	})
 }
-func (v AliasStruct) GetUpdated() sequel.ColumnValuer[DT] {
+func (v AliasStruct) ColumnUpdated() sequel.ColumnValuer[DT] {
 	return sequel.Column("updated", v.model.Updated, func(val DT) driver.Value {
 		return (time.Time)(val)
 	})
@@ -145,7 +145,7 @@ func (v B) InsertOneStmt() (string, []any) {
 func (v B) NameValue() driver.Value {
 	return v.Name
 }
-func (v B) GetName() sequel.ColumnValuer[string] {
+func (v B) ColumnName() sequel.ColumnValuer[string] {
 	return sequel.Column("name", v.Name, func(val string) driver.Value {
 		return val
 	})
@@ -176,7 +176,7 @@ func (v C) InsertOneStmt() (string, []any) {
 func (v C) IDValue() driver.Value {
 	return v.ID
 }
-func (v C) GetID() sequel.ColumnValuer[int64] {
+func (v C) ColumnID() sequel.ColumnValuer[int64] {
 	return sequel.Column("id", v.ID, func(val int64) driver.Value {
 		return val
 	})

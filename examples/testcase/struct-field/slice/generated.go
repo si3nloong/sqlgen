@@ -125,82 +125,82 @@ func (v Slice) F32ListValue() driver.Value {
 func (v Slice) F64ListValue() driver.Value {
 	return (sqltype.Float64Slice[float64])(v.F64List)
 }
-func (v Slice) GetID() sequel.ColumnValuer[uint64] {
+func (v Slice) ColumnID() sequel.ColumnValuer[uint64] {
 	return sequel.Column("id", v.ID, func(val uint64) driver.Value {
 		return (int64)(val)
 	})
 }
-func (v Slice) GetBoolList() sequel.ColumnValuer[[]bool] {
+func (v Slice) ColumnBoolList() sequel.ColumnValuer[[]bool] {
 	return sequel.Column("bool_list", v.BoolList, func(val []bool) driver.Value {
 		return sqltype.BoolSlice[bool](val)
 	})
 }
-func (v Slice) GetStrList() sequel.ColumnValuer[[]string] {
+func (v Slice) ColumnStrList() sequel.ColumnValuer[[]string] {
 	return sequel.Column("str_list", v.StrList, func(val []string) driver.Value {
 		return sqltype.StringSlice[string](val)
 	})
 }
-func (v Slice) GetCustomStrList() sequel.ColumnValuer[[]customStr] {
+func (v Slice) ColumnCustomStrList() sequel.ColumnValuer[[]customStr] {
 	return sequel.Column("custom_str_list", v.CustomStrList, func(val []customStr) driver.Value {
 		return sqltype.StringSlice[customStr](val)
 	})
 }
-func (v Slice) GetIntList() sequel.ColumnValuer[[]int] {
+func (v Slice) ColumnIntList() sequel.ColumnValuer[[]int] {
 	return sequel.Column("int_list", v.IntList, func(val []int) driver.Value {
 		return sqltype.IntSlice[int](val)
 	})
 }
-func (v Slice) GetInt8List() sequel.ColumnValuer[[]int8] {
+func (v Slice) ColumnInt8List() sequel.ColumnValuer[[]int8] {
 	return sequel.Column("int_8_list", v.Int8List, func(val []int8) driver.Value {
 		return sqltype.Int8Slice[int8](val)
 	})
 }
-func (v Slice) GetInt16List() sequel.ColumnValuer[[]int16] {
+func (v Slice) ColumnInt16List() sequel.ColumnValuer[[]int16] {
 	return sequel.Column("int_16_list", v.Int16List, func(val []int16) driver.Value {
 		return sqltype.Int16Slice[int16](val)
 	})
 }
-func (v Slice) GetInt32List() sequel.ColumnValuer[[]int32] {
+func (v Slice) ColumnInt32List() sequel.ColumnValuer[[]int32] {
 	return sequel.Column("int_32_list", v.Int32List, func(val []int32) driver.Value {
 		return sqltype.Int32Slice[int32](val)
 	})
 }
-func (v Slice) GetInt64List() sequel.ColumnValuer[[]int64] {
+func (v Slice) ColumnInt64List() sequel.ColumnValuer[[]int64] {
 	return sequel.Column("int_64_list", v.Int64List, func(val []int64) driver.Value {
 		return sqltype.Int64Slice[int64](val)
 	})
 }
-func (v Slice) GetUintList() sequel.ColumnValuer[[]uint] {
+func (v Slice) ColumnUintList() sequel.ColumnValuer[[]uint] {
 	return sequel.Column("uint_list", v.UintList, func(val []uint) driver.Value {
 		return sqltype.UintSlice[uint](val)
 	})
 }
-func (v Slice) GetUint8List() sequel.ColumnValuer[[]uint8] {
+func (v Slice) ColumnUint8List() sequel.ColumnValuer[[]uint8] {
 	return sequel.Column("uint_8_list", v.Uint8List, func(val []uint8) driver.Value {
 		return sqltype.Uint8Slice[uint8](val)
 	})
 }
-func (v Slice) GetUint16List() sequel.ColumnValuer[[]uint16] {
+func (v Slice) ColumnUint16List() sequel.ColumnValuer[[]uint16] {
 	return sequel.Column("uint_16_list", v.Uint16List, func(val []uint16) driver.Value {
 		return sqltype.Uint16Slice[uint16](val)
 	})
 }
-func (v Slice) GetUint32List() sequel.ColumnValuer[[]uint32] {
+func (v Slice) ColumnUint32List() sequel.ColumnValuer[[]uint32] {
 	return sequel.Column("uint_32_list", v.Uint32List, func(val []uint32) driver.Value {
 		return sqltype.Uint32Slice[uint32](val)
 	})
 }
-func (v Slice) GetUint64List() sequel.ColumnValuer[[]uint64] {
+func (v Slice) ColumnUint64List() sequel.ColumnValuer[[]uint64] {
 	return sequel.Column("uint_64_list", v.Uint64List, func(val []uint64) driver.Value {
 		return sqltype.Uint64Slice[uint64](val)
 	})
 }
-func (v Slice) GetF32List() sequel.ColumnValuer[[]float32] {
+func (v Slice) ColumnF32List() sequel.ColumnValuer[[]float32] {
 	return sequel.Column("f_32_list", v.F32List, func(val []float32) driver.Value {
 		return (sqltype.Float32Slice[float32])(val)
 	})
 }
-func (v Slice) GetF64List() sequel.ColumnValuer[[]float64] {
+func (v Slice) ColumnF64List() sequel.ColumnValuer[[]float64] {
 	return sequel.Column("f_64_list", v.F64List, func(val []float64) driver.Value {
 		return (sqltype.Float64Slice[float64])(val)
 	})

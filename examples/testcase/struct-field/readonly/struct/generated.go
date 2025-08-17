@@ -43,17 +43,17 @@ func (v Model) BValue() driver.Value {
 func (v Model) ReadOnlyValue() driver.Value {
 	return v.ReadOnly
 }
-func (v Model) GetA() sequel.ColumnValuer[string] {
+func (v Model) ColumnA() sequel.ColumnValuer[string] {
 	return sequel.Column("a", v.A, func(val string) driver.Value {
 		return val
 	})
 }
-func (v Model) GetB() sequel.ColumnValuer[bool] {
+func (v Model) ColumnB() sequel.ColumnValuer[bool] {
 	return sequel.Column("b", v.B, func(val bool) driver.Value {
 		return val
 	})
 }
-func (v Model) GetReadOnly() sequel.ColumnValuer[string] {
+func (v Model) ColumnReadOnly() sequel.ColumnValuer[string] {
 	return sequel.Column("read_only", v.ReadOnly, func(val string) driver.Value {
 		return val
 	})

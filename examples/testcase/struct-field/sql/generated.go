@@ -91,17 +91,17 @@ func (v AutoPkLocation) PtrDateValue() driver.Value {
 	}
 	return nil
 }
-func (v AutoPkLocation) GetID() sequel.ColumnValuer[uint64] {
+func (v AutoPkLocation) ColumnID() sequel.ColumnValuer[uint64] {
 	return sequel.Column("id", v.ID, func(val uint64) driver.Value {
 		return (int64)(val)
 	})
 }
-func (v AutoPkLocation) GetGeoPoint() sequel.ColumnValuer[orb.Point] {
+func (v AutoPkLocation) ColumnGeoPoint() sequel.ColumnValuer[orb.Point] {
 	return sequel.Column("geo_point", v.GeoPoint, func(val orb.Point) driver.Value {
 		return ewkb.Value(val, 4326)
 	})
 }
-func (v AutoPkLocation) GetPtrGeoPoint() sequel.ColumnValuer[*orb.Point] {
+func (v AutoPkLocation) ColumnPtrGeoPoint() sequel.ColumnValuer[*orb.Point] {
 	return sequel.Column("ptr_geo_point", v.PtrGeoPoint, func(val *orb.Point) driver.Value {
 		if val != nil {
 			return ewkb.Value(*val, 4326)
@@ -109,7 +109,7 @@ func (v AutoPkLocation) GetPtrGeoPoint() sequel.ColumnValuer[*orb.Point] {
 		return nil
 	})
 }
-func (v AutoPkLocation) GetPtrUUID() sequel.ColumnValuer[*uuid.UUID] {
+func (v AutoPkLocation) ColumnPtrUUID() sequel.ColumnValuer[*uuid.UUID] {
 	return sequel.Column("ptr_uuid", v.PtrUUID, func(val *uuid.UUID) driver.Value {
 		if val != nil {
 			return *val
@@ -117,7 +117,7 @@ func (v AutoPkLocation) GetPtrUUID() sequel.ColumnValuer[*uuid.UUID] {
 		return nil
 	})
 }
-func (v AutoPkLocation) GetPtrDate() sequel.ColumnValuer[*civil.Date] {
+func (v AutoPkLocation) ColumnPtrDate() sequel.ColumnValuer[*civil.Date] {
 	return sequel.Column("ptr_date", v.PtrDate, func(val *civil.Date) driver.Value {
 		if val != nil {
 			return encoding.TextValue(*val)
@@ -171,17 +171,17 @@ func (v Location) GeoPointValue() driver.Value {
 func (v Location) UUIDValue() driver.Value {
 	return v.UUID
 }
-func (v Location) GetID() sequel.ColumnValuer[uint64] {
+func (v Location) ColumnID() sequel.ColumnValuer[uint64] {
 	return sequel.Column("id", v.ID, func(val uint64) driver.Value {
 		return (int64)(val)
 	})
 }
-func (v Location) GetGeoPoint() sequel.ColumnValuer[orb.Point] {
+func (v Location) ColumnGeoPoint() sequel.ColumnValuer[orb.Point] {
 	return sequel.Column("geo_point", v.GeoPoint, func(val orb.Point) driver.Value {
 		return ewkb.Value(val, 4326)
 	})
 }
-func (v Location) GetUUID() sequel.ColumnValuer[uuid.UUID] {
+func (v Location) ColumnUUID() sequel.ColumnValuer[uuid.UUID] {
 	return sequel.Column("uuid", v.UUID, func(val uuid.UUID) driver.Value {
 		return val
 	})

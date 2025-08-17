@@ -53,17 +53,17 @@ func (v B) PtrValueValue() driver.Value {
 func (v B) NValue() driver.Value {
 	return v.N
 }
-func (v B) GetID() sequel.ColumnValuer[int64] {
+func (v B) ColumnID() sequel.ColumnValuer[int64] {
 	return sequel.Column("id", v.ID, func(val int64) driver.Value {
 		return val
 	})
 }
-func (v B) GetValue() sequel.ColumnValuer[anyType] {
+func (v B) ColumnValue() sequel.ColumnValuer[anyType] {
 	return sequel.Column("value", v.Value, func(val anyType) driver.Value {
 		return val
 	})
 }
-func (v B) GetPtrValue() sequel.ColumnValuer[*anyType] {
+func (v B) ColumnPtrValue() sequel.ColumnValuer[*anyType] {
 	return sequel.Column("ptr_value", v.PtrValue, func(val *anyType) driver.Value {
 		if val != nil {
 			return *val
@@ -71,7 +71,7 @@ func (v B) GetPtrValue() sequel.ColumnValuer[*anyType] {
 		return nil
 	})
 }
-func (v B) GetN() sequel.ColumnValuer[string] {
+func (v B) ColumnN() sequel.ColumnValuer[string] {
 	return sequel.Column("n", v.N, func(val string) driver.Value {
 		return val
 	})

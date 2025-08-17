@@ -35,12 +35,12 @@ func (v A) DateValue() driver.Value {
 func (v A) TimeValue() driver.Value {
 	return encoding.TextValue(v.Time)
 }
-func (v A) GetDate() sequel.ColumnValuer[civil.Date] {
+func (v A) ColumnDate() sequel.ColumnValuer[civil.Date] {
 	return sequel.Column("date", v.Date, func(val civil.Date) driver.Value {
 		return encoding.TextValue(val)
 	})
 }
-func (v A) GetTime() sequel.ColumnValuer[civil.Time] {
+func (v A) ColumnTime() sequel.ColumnValuer[civil.Time] {
 	return sequel.Column("time", v.Time, func(val civil.Time) driver.Value {
 		return encoding.TextValue(val)
 	})
@@ -76,12 +76,12 @@ func (v C) StringValue() driver.Value {
 func (v C) ValidValue() driver.Value {
 	return v.Valid
 }
-func (v C) GetString() sequel.ColumnValuer[string] {
+func (v C) ColumnString() sequel.ColumnValuer[string] {
 	return sequel.Column("string", v.String, func(val string) driver.Value {
 		return val
 	})
 }
-func (v C) GetValid() sequel.ColumnValuer[bool] {
+func (v C) ColumnValid() sequel.ColumnValuer[bool] {
 	return sequel.Column("valid", v.Valid, func(val bool) driver.Value {
 		return val
 	})

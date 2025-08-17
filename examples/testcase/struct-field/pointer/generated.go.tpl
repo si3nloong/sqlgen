@@ -268,12 +268,12 @@ func (v Ptr) AnyTimeValue() driver.Value {
 	}
 	return nil
 }
-func (v Ptr) GetID() sequel.ColumnValuer[int64] {
+func (v Ptr) ColumnID() sequel.ColumnValuer[int64] {
 	return sequel.Column("id", v.ID, func(val int64) driver.Value {
 		return val
 	})
 }
-func (v Ptr) GetStr() sequel.ColumnValuer[*string] {
+func (v Ptr) ColumnStr() sequel.ColumnValuer[*string] {
 	return sequel.Column("str", v.Str, func(val *string) driver.Value {
 		if val != nil {
 			return *val
@@ -281,7 +281,7 @@ func (v Ptr) GetStr() sequel.ColumnValuer[*string] {
 		return nil
 	})
 }
-func (v Ptr) GetBytes() sequel.ColumnValuer[*[]byte] {
+func (v Ptr) ColumnBytes() sequel.ColumnValuer[*[]byte] {
 	return sequel.Column("bytes", v.Bytes, func(val *[]byte) driver.Value {
 		if val != nil {
 			return string(*val)
@@ -289,7 +289,7 @@ func (v Ptr) GetBytes() sequel.ColumnValuer[*[]byte] {
 		return nil
 	})
 }
-func (v Ptr) GetBool() sequel.ColumnValuer[*bool] {
+func (v Ptr) ColumnBool() sequel.ColumnValuer[*bool] {
 	return sequel.Column("bool", v.Bool, func(val *bool) driver.Value {
 		if val != nil {
 			return *val
@@ -297,7 +297,7 @@ func (v Ptr) GetBool() sequel.ColumnValuer[*bool] {
 		return nil
 	})
 }
-func (v Ptr) GetInt() sequel.ColumnValuer[*int] {
+func (v Ptr) ColumnInt() sequel.ColumnValuer[*int] {
 	return sequel.Column("int", v.Int, func(val *int) driver.Value {
 		if val != nil {
 			return (int64)(*val)
@@ -305,7 +305,7 @@ func (v Ptr) GetInt() sequel.ColumnValuer[*int] {
 		return nil
 	})
 }
-func (v Ptr) GetInt8() sequel.ColumnValuer[*int8] {
+func (v Ptr) ColumnInt8() sequel.ColumnValuer[*int8] {
 	return sequel.Column("int_8", v.Int8, func(val *int8) driver.Value {
 		if val != nil {
 			return (int64)(*val)
@@ -313,7 +313,7 @@ func (v Ptr) GetInt8() sequel.ColumnValuer[*int8] {
 		return nil
 	})
 }
-func (v Ptr) GetInt16() sequel.ColumnValuer[*int16] {
+func (v Ptr) ColumnInt16() sequel.ColumnValuer[*int16] {
 	return sequel.Column("int_16", v.Int16, func(val *int16) driver.Value {
 		if val != nil {
 			return (int64)(*val)
@@ -321,7 +321,7 @@ func (v Ptr) GetInt16() sequel.ColumnValuer[*int16] {
 		return nil
 	})
 }
-func (v Ptr) GetInt32() sequel.ColumnValuer[*int32] {
+func (v Ptr) ColumnInt32() sequel.ColumnValuer[*int32] {
 	return sequel.Column("int_32", v.Int32, func(val *int32) driver.Value {
 		if val != nil {
 			return (int64)(*val)
@@ -329,7 +329,7 @@ func (v Ptr) GetInt32() sequel.ColumnValuer[*int32] {
 		return nil
 	})
 }
-func (v Ptr) GetInt64() sequel.ColumnValuer[*int64] {
+func (v Ptr) ColumnInt64() sequel.ColumnValuer[*int64] {
 	return sequel.Column("int_64", v.Int64, func(val *int64) driver.Value {
 		if val != nil {
 			return *val
@@ -337,7 +337,7 @@ func (v Ptr) GetInt64() sequel.ColumnValuer[*int64] {
 		return nil
 	})
 }
-func (v Ptr) GetUint() sequel.ColumnValuer[*uint] {
+func (v Ptr) ColumnUint() sequel.ColumnValuer[*uint] {
 	return sequel.Column("uint", v.Uint, func(val *uint) driver.Value {
 		if val != nil {
 			return (int64)(*val)
@@ -345,7 +345,7 @@ func (v Ptr) GetUint() sequel.ColumnValuer[*uint] {
 		return nil
 	})
 }
-func (v Ptr) GetUint8() sequel.ColumnValuer[*uint8] {
+func (v Ptr) ColumnUint8() sequel.ColumnValuer[*uint8] {
 	return sequel.Column("uint_8", v.Uint8, func(val *uint8) driver.Value {
 		if val != nil {
 			return (int64)(*val)
@@ -353,7 +353,7 @@ func (v Ptr) GetUint8() sequel.ColumnValuer[*uint8] {
 		return nil
 	})
 }
-func (v Ptr) GetUint16() sequel.ColumnValuer[*uint16] {
+func (v Ptr) ColumnUint16() sequel.ColumnValuer[*uint16] {
 	return sequel.Column("uint_16", v.Uint16, func(val *uint16) driver.Value {
 		if val != nil {
 			return (int64)(*val)
@@ -361,7 +361,7 @@ func (v Ptr) GetUint16() sequel.ColumnValuer[*uint16] {
 		return nil
 	})
 }
-func (v Ptr) GetUint32() sequel.ColumnValuer[*uint32] {
+func (v Ptr) ColumnUint32() sequel.ColumnValuer[*uint32] {
 	return sequel.Column("uint_32", v.Uint32, func(val *uint32) driver.Value {
 		if val != nil {
 			return (int64)(*val)
@@ -369,7 +369,7 @@ func (v Ptr) GetUint32() sequel.ColumnValuer[*uint32] {
 		return nil
 	})
 }
-func (v Ptr) GetUint64() sequel.ColumnValuer[*uint64] {
+func (v Ptr) ColumnUint64() sequel.ColumnValuer[*uint64] {
 	return sequel.Column("uint_64", v.Uint64, func(val *uint64) driver.Value {
 		if val != nil {
 			return (int64)(*val)
@@ -377,7 +377,7 @@ func (v Ptr) GetUint64() sequel.ColumnValuer[*uint64] {
 		return nil
 	})
 }
-func (v Ptr) GetF32() sequel.ColumnValuer[*float32] {
+func (v Ptr) ColumnF32() sequel.ColumnValuer[*float32] {
 	return sequel.Column("f_32", v.F32, func(val *float32) driver.Value {
 		if val != nil {
 			return (float64)(*val)
@@ -385,7 +385,7 @@ func (v Ptr) GetF32() sequel.ColumnValuer[*float32] {
 		return nil
 	})
 }
-func (v Ptr) GetF64() sequel.ColumnValuer[*float64] {
+func (v Ptr) ColumnF64() sequel.ColumnValuer[*float64] {
 	return sequel.Column("f_64", v.F64, func(val *float64) driver.Value {
 		if val != nil {
 			return *val
@@ -393,7 +393,7 @@ func (v Ptr) GetF64() sequel.ColumnValuer[*float64] {
 		return nil
 	})
 }
-func (v Ptr) GetTime() sequel.ColumnValuer[*time.Time] {
+func (v Ptr) ColumnTime() sequel.ColumnValuer[*time.Time] {
 	return sequel.Column("time", v.Time, func(val *time.Time) driver.Value {
 		if val != nil {
 			return *val
@@ -401,7 +401,7 @@ func (v Ptr) GetTime() sequel.ColumnValuer[*time.Time] {
 		return nil
 	})
 }
-func (v Ptr) GetNested() sequel.ColumnValuer[*nested] {
+func (v Ptr) ColumnNested() sequel.ColumnValuer[*nested] {
 	return sequel.Column("nested", v.Nested, func(val *nested) driver.Value {
 		if val != nil {
 			return encoding.JSONValue(*val)
@@ -409,7 +409,7 @@ func (v Ptr) GetNested() sequel.ColumnValuer[*nested] {
 		return nil
 	})
 }
-func (v Ptr) GetEmbeddedTime() sequel.ColumnValuer[*time.Time] {
+func (v Ptr) ColumnEmbeddedTime() sequel.ColumnValuer[*time.Time] {
 	return sequel.Column("embedded_time", v.deepNested.embedded.EmbeddedTime, func(val *time.Time) driver.Value {
 		if val != nil {
 			return *val
@@ -417,7 +417,7 @@ func (v Ptr) GetEmbeddedTime() sequel.ColumnValuer[*time.Time] {
 		return nil
 	})
 }
-func (v Ptr) GetAnyTime() sequel.ColumnValuer[time.Time] {
+func (v Ptr) ColumnAnyTime() sequel.ColumnValuer[time.Time] {
 	return sequel.Column("any_time", v.deepNested.embedded.AnyTime, func(val time.Time) driver.Value {
 		return val
 	})

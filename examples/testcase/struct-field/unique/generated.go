@@ -47,22 +47,22 @@ func (v User) FirstNameValue() driver.Value {
 func (v User) LastNameValue() driver.Value {
 	return v.LastName
 }
-func (v User) GetEmail() sequel.ColumnValuer[string] {
+func (v User) ColumnEmail() sequel.ColumnValuer[string] {
 	return sequel.Column("email", v.Email, func(val string) driver.Value {
 		return val
 	})
 }
-func (v User) GetAge() sequel.ColumnValuer[uint8] {
+func (v User) ColumnAge() sequel.ColumnValuer[uint8] {
 	return sequel.Column("age", v.Age, func(val uint8) driver.Value {
 		return (int64)(val)
 	})
 }
-func (v User) GetFirstName() sequel.ColumnValuer[string] {
+func (v User) ColumnFirstName() sequel.ColumnValuer[string] {
 	return sequel.Column("first_name", v.FirstName, func(val string) driver.Value {
 		return val
 	})
 }
-func (v User) GetLastName() sequel.ColumnValuer[string] {
+func (v User) ColumnLastName() sequel.ColumnValuer[string] {
 	return sequel.Column("last_name", v.LastName, func(val string) driver.Value {
 		return val
 	})

@@ -52,27 +52,27 @@ func (v Array) FixedSizeValue() driver.Value {
 func (v Array) StrValue() driver.Value {
 	return encoding.JSONValue(v.Str)
 }
-func (v Array) GetTuple() sequel.ColumnValuer[[2]byte] {
+func (v Array) ColumnTuple() sequel.ColumnValuer[[2]byte] {
 	return sequel.Column("tuple", v.Tuple, func(val [2]byte) driver.Value {
 		return string(val[:])
 	})
 }
-func (v Array) GetRunes() sequel.ColumnValuer[[4]rune] {
+func (v Array) ColumnRunes() sequel.ColumnValuer[[4]rune] {
 	return sequel.Column("runes", v.Runes, func(val [4]rune) driver.Value {
 		return string(val[:])
 	})
 }
-func (v Array) GetBytes() sequel.ColumnValuer[[10]byte] {
+func (v Array) ColumnBytes() sequel.ColumnValuer[[10]byte] {
 	return sequel.Column("bytes", v.Bytes, func(val [10]byte) driver.Value {
 		return string(val[:])
 	})
 }
-func (v Array) GetFixedSize() sequel.ColumnValuer[[10]byte] {
+func (v Array) ColumnFixedSize() sequel.ColumnValuer[[10]byte] {
 	return sequel.Column("fixed_size", v.FixedSize, func(val [10]byte) driver.Value {
 		return string(val[:])
 	})
 }
-func (v Array) GetStr() sequel.ColumnValuer[[100]Str] {
+func (v Array) ColumnStr() sequel.ColumnValuer[[100]Str] {
 	return sequel.Column("str", v.Str, func(val [100]Str) driver.Value {
 		return encoding.JSONValue(val)
 	})

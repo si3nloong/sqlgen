@@ -42,17 +42,17 @@ func (v Customer) AgeValue() driver.Value {
 func (v Customer) MarriedValue() driver.Value {
 	return v.Married
 }
-func (v Customer) GetName() sequel.ColumnValuer[string] {
+func (v Customer) ColumnName() sequel.ColumnValuer[string] {
 	return sequel.Column("name", v.Name, func(val string) driver.Value {
 		return val
 	})
 }
-func (v Customer) GetAge() sequel.ColumnValuer[uint8] {
+func (v Customer) ColumnAge() sequel.ColumnValuer[uint8] {
 	return sequel.Column("age", v.Age, func(val uint8) driver.Value {
 		return (int64)(val)
 	})
 }
-func (v Customer) GetMarried() sequel.ColumnValuer[bool] {
+func (v Customer) ColumnMarried() sequel.ColumnValuer[bool] {
 	return sequel.Column("married", v.Married, func(val bool) driver.Value {
 		return val
 	})

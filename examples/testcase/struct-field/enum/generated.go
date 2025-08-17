@@ -42,17 +42,17 @@ func (v Custom) EnumValue() driver.Value {
 func (v Custom) NumValue() driver.Value {
 	return (int64)(v.Num)
 }
-func (v Custom) GetStr() sequel.ColumnValuer[longText] {
+func (v Custom) ColumnStr() sequel.ColumnValuer[longText] {
 	return sequel.Column("text", v.Str, func(val longText) driver.Value {
 		return (string)(val)
 	})
 }
-func (v Custom) GetEnum() sequel.ColumnValuer[Enum] {
+func (v Custom) ColumnEnum() sequel.ColumnValuer[Enum] {
 	return sequel.Column("e", v.Enum, func(val Enum) driver.Value {
 		return (int64)(val)
 	})
 }
-func (v Custom) GetNum() sequel.ColumnValuer[uint16] {
+func (v Custom) ColumnNum() sequel.ColumnValuer[uint16] {
 	return sequel.Column("num", v.Num, func(val uint16) driver.Value {
 		return (int64)(val)
 	})

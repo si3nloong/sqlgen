@@ -15,7 +15,7 @@ func (v A) InsertOneStmt() (string, []any) {
 func (v A) NameValue() driver.Value {
 	return v.Name
 }
-func (v A) GetName() sequel.ColumnValuer[string] {
+func (v A) ColumnName() sequel.ColumnValuer[string] {
 	return sequel.Column("name", v.Name, func(val string) driver.Value {
 		return val
 	})

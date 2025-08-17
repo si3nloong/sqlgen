@@ -49,12 +49,12 @@ func (v User) IDValue() driver.Value {
 func (v User) BirthDateValue() driver.Value {
 	return encoding.TextValue(v.BirthDate)
 }
-func (v User) GetID() sequel.ColumnValuer[uuid.UUID] {
+func (v User) ColumnID() sequel.ColumnValuer[uuid.UUID] {
 	return sequel.Column("id", v.ID, func(val uuid.UUID) driver.Value {
 		return val
 	})
 }
-func (v User) GetBirthDate() sequel.ColumnValuer[civil.Date] {
+func (v User) ColumnBirthDate() sequel.ColumnValuer[civil.Date] {
 	return sequel.Column("birth_date", v.BirthDate, func(val civil.Date) driver.Value {
 		return encoding.TextValue(val)
 	})

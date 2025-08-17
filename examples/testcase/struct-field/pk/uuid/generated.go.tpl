@@ -37,12 +37,12 @@ func (v User) IDValue() driver.Value {
 func (v User) NameValue() driver.Value {
 	return v.Name
 }
-func (v User) GetID() sequel.ColumnValuer[uuid.UUID] {
+func (v User) ColumnID() sequel.ColumnValuer[uuid.UUID] {
 	return sequel.Column("id", v.ID, func(val uuid.UUID) driver.Value {
 		return val
 	})
 }
-func (v User) GetName() sequel.ColumnValuer[string] {
+func (v User) ColumnName() sequel.ColumnValuer[string] {
 	return sequel.Column("name", v.Name, func(val string) driver.Value {
 		return val
 	})

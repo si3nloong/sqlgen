@@ -52,27 +52,27 @@ func (v B) CreatedValue() driver.Value {
 func (v B) OKValue() driver.Value {
 	return v.ts.OK
 }
-func (v B) GetID() sequel.ColumnValuer[int64] {
+func (v B) ColumnID() sequel.ColumnValuer[int64] {
 	return sequel.Column("id", v.a.ID, func(val int64) driver.Value {
 		return val
 	})
 }
-func (v B) GetName() sequel.ColumnValuer[string] {
+func (v B) ColumnName() sequel.ColumnValuer[string] {
 	return sequel.Column("name", v.a.Name, func(val string) driver.Value {
 		return val
 	})
 }
-func (v B) GetZ() sequel.ColumnValuer[bool] {
+func (v B) ColumnZ() sequel.ColumnValuer[bool] {
 	return sequel.Column("z", v.a.Z, func(val bool) driver.Value {
 		return val
 	})
 }
-func (v B) GetCreated() sequel.ColumnValuer[time.Time] {
+func (v B) ColumnCreated() sequel.ColumnValuer[time.Time] {
 	return sequel.Column("created", v.ts.Created, func(val time.Time) driver.Value {
 		return val
 	})
 }
-func (v B) GetOK() sequel.ColumnValuer[bool] {
+func (v B) ColumnOK() sequel.ColumnValuer[bool] {
 	return sequel.Column("ok", v.ts.OK, func(val bool) driver.Value {
 		return val
 	})

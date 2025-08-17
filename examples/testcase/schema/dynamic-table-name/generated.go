@@ -43,12 +43,12 @@ func (v A) IDValue() driver.Value {
 func (v A) NameValue() driver.Value {
 	return v.Name
 }
-func (v A) GetID() sequel.ColumnValuer[int64] {
+func (v A) ColumnID() sequel.ColumnValuer[int64] {
 	return sequel.Column("id", v.ID, func(val int64) driver.Value {
 		return val
 	})
 }
-func (v A) GetName() sequel.ColumnValuer[string] {
+func (v A) ColumnName() sequel.ColumnValuer[string] {
 	return sequel.Column("name", v.Name, func(val string) driver.Value {
 		return val
 	})
@@ -76,7 +76,7 @@ func (v Model) InsertOneStmt() (string, []any) {
 func (v Model) NameValue() driver.Value {
 	return v.Name
 }
-func (v Model) GetName() sequel.ColumnValuer[string] {
+func (v Model) ColumnName() sequel.ColumnValuer[string] {
 	return sequel.Column("name", v.Name, func(val string) driver.Value {
 		return val
 	})

@@ -44,17 +44,17 @@ func (v A) TextValue() driver.Value {
 func (v A) CreatedAtValue() driver.Value {
 	return v.CreatedAt
 }
-func (v A) GetID() sequel.ColumnValuer[string] {
+func (v A) ColumnID() sequel.ColumnValuer[string] {
 	return sequel.Column("id", v.ID, func(val string) driver.Value {
 		return val
 	})
 }
-func (v A) GetText() sequel.ColumnValuer[LongText] {
+func (v A) ColumnText() sequel.ColumnValuer[LongText] {
 	return sequel.Column("text", v.Text, func(val LongText) driver.Value {
 		return (string)(val)
 	})
 }
-func (v A) GetCreatedAt() sequel.ColumnValuer[time.Time] {
+func (v A) ColumnCreatedAt() sequel.ColumnValuer[time.Time] {
 	return sequel.Column("created_at", v.CreatedAt, func(val time.Time) driver.Value {
 		return val
 	})
@@ -90,12 +90,12 @@ func (v B) IDValue() driver.Value {
 func (v B) CreatedAtValue() driver.Value {
 	return v.CreatedAt
 }
-func (v B) GetID() sequel.ColumnValuer[string] {
+func (v B) ColumnID() sequel.ColumnValuer[string] {
 	return sequel.Column("id", v.ID, func(val string) driver.Value {
 		return val
 	})
 }
-func (v B) GetCreatedAt() sequel.ColumnValuer[time.Time] {
+func (v B) ColumnCreatedAt() sequel.ColumnValuer[time.Time] {
 	return sequel.Column("created_at", v.CreatedAt, func(val time.Time) driver.Value {
 		return val
 	})
@@ -133,7 +133,7 @@ func (v C) FindOneByPKStmt() (string, []any) {
 func (v C) IDValue() driver.Value {
 	return v.ID
 }
-func (v C) GetID() sequel.ColumnValuer[int64] {
+func (v C) ColumnID() sequel.ColumnValuer[int64] {
 	return sequel.Column("id", v.ID, func(val int64) driver.Value {
 		return val
 	})
@@ -171,7 +171,7 @@ func (v D) FindOneByPKStmt() (string, []any) {
 func (v D) IDValue() driver.Value {
 	return v.ID
 }
-func (v D) GetID() sequel.ColumnValuer[sql.NullString] {
+func (v D) ColumnID() sequel.ColumnValuer[sql.NullString] {
 	return sequel.Column("id", v.ID, func(val sql.NullString) driver.Value {
 		return val
 	})

@@ -57,22 +57,22 @@ func (v Composite) Col2Value() driver.Value {
 func (v Composite) Col3Value() driver.Value {
 	return v.Col3
 }
-func (v Composite) GetFlag() sequel.ColumnValuer[bool] {
+func (v Composite) ColumnFlag() sequel.ColumnValuer[bool] {
 	return sequel.Column("flag", v.Flag, func(val bool) driver.Value {
 		return val
 	})
 }
-func (v Composite) GetCol1() sequel.ColumnValuer[string] {
+func (v Composite) ColumnCol1() sequel.ColumnValuer[string] {
 	return sequel.Column("col_1", v.Col1, func(val string) driver.Value {
 		return val
 	})
 }
-func (v Composite) GetCol2() sequel.ColumnValuer[bool] {
+func (v Composite) ColumnCol2() sequel.ColumnValuer[bool] {
 	return sequel.Column("col_2", v.Col2, func(val bool) driver.Value {
 		return val
 	})
 }
-func (v Composite) GetCol3() sequel.ColumnValuer[uuid.UUID] {
+func (v Composite) ColumnCol3() sequel.ColumnValuer[uuid.UUID] {
 	return sequel.Column("col_3", v.Col3, func(val uuid.UUID) driver.Value {
 		return val
 	})

@@ -70,18 +70,18 @@ func Test(t *testing.T) {
 			i64 := int64(1_000)
 			*(addrs[0].(*int64)) = i64
 			require.Equal(t, i64, b.ID)
-			require.Equal(t, i64, b.GetID())
+			require.Equal(t, i64, b.ColumnID())
 			addrs[1].(sql.Scanner).Scan(true)
 			require.NotNil(t, b.Value)
-			val, err := b.GetValue().(driver.Valuer).Value()
+			val, err := b.ColumnValue().(driver.Valuer).Value()
 			require.NoError(t, err)
 			require.Equal(t, "any", val)
 			addrs[2].(sql.Scanner).Scan(nil)
 			require.Nil(t, b.PtrValue)
-			require.Nil(t, b.GetPtrValue())
+			require.Nil(t, b.ColumnPtrValue())
 			*(addrs[3].(*string)) = `HELLO WORLD`
 			require.Equal(t, `HELLO WORLD`, b.N)
-			require.Equal(t, `HELLO WORLD`, b.GetN())
+			require.Equal(t, `HELLO WORLD`, b.ColumnN())
 		})
 	})
 

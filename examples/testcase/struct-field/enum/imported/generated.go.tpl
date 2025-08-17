@@ -33,7 +33,7 @@ func (v ImportedEnum) InsertOneStmt() (string, []any) {
 func (v ImportedEnum) WeekdayValue() driver.Value {
 	return (int64)(v.Weekday)
 }
-func (v ImportedEnum) GetWeekday() sequel.ColumnValuer[time.Weekday] {
+func (v ImportedEnum) ColumnWeekday() sequel.ColumnValuer[time.Weekday] {
 	return sequel.Column("weekday", v.Weekday, func(val time.Weekday) driver.Value {
 		return (int64)(val)
 	})

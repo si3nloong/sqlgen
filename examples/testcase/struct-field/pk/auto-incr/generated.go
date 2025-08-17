@@ -64,22 +64,22 @@ func (v Model) IDValue() driver.Value {
 func (v Model) NValue() driver.Value {
 	return v.N
 }
-func (v Model) GetName() sequel.ColumnValuer[LongText] {
+func (v Model) ColumnName() sequel.ColumnValuer[LongText] {
 	return sequel.Column("name", v.Name, func(val LongText) driver.Value {
 		return (string)(val)
 	})
 }
-func (v Model) GetF() sequel.ColumnValuer[Flag] {
+func (v Model) ColumnF() sequel.ColumnValuer[Flag] {
 	return sequel.Column("f", v.F, func(val Flag) driver.Value {
 		return (bool)(val)
 	})
 }
-func (v Model) GetID() sequel.ColumnValuer[uint] {
+func (v Model) ColumnID() sequel.ColumnValuer[uint] {
 	return sequel.Column("id", v.ID, func(val uint) driver.Value {
 		return (int64)(val)
 	})
 }
-func (v Model) GetN() sequel.ColumnValuer[int64] {
+func (v Model) ColumnN() sequel.ColumnValuer[int64] {
 	return sequel.Column("n", v.N, func(val int64) driver.Value {
 		return val
 	})

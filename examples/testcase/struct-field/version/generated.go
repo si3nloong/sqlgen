@@ -39,7 +39,7 @@ func (v Version) FindOneByPKStmt() (string, []any) {
 func (v Version) IDValue() driver.Value {
 	return v.ID
 }
-func (v Version) GetID() sequel.ColumnValuer[uuid.UUID] {
+func (v Version) ColumnID() sequel.ColumnValuer[uuid.UUID] {
 	return sequel.Column("id", v.ID, func(val uuid.UUID) driver.Value {
 		return val
 	})

@@ -31,7 +31,7 @@ func (v CustomTableName1) InsertOneStmt() (string, []any) {
 func (v CustomTableName1) TextValue() driver.Value {
 	return v.Text
 }
-func (v CustomTableName1) GetText() sequel.ColumnValuer[string] {
+func (v CustomTableName1) ColumnText() sequel.ColumnValuer[string] {
 	return sequel.Column("text", v.Text, func(val string) driver.Value {
 		return val
 	})
@@ -62,7 +62,7 @@ func (v CustomTableName2) InsertOneStmt() (string, []any) {
 func (v CustomTableName2) TextValue() driver.Value {
 	return v.Text
 }
-func (v CustomTableName2) GetText() sequel.ColumnValuer[string] {
+func (v CustomTableName2) ColumnText() sequel.ColumnValuer[string] {
 	return sequel.Column("text", v.Text, func(val string) driver.Value {
 		return val
 	})
@@ -93,7 +93,7 @@ func (v CustomTableName3) InsertOneStmt() (string, []any) {
 func (v CustomTableName3) TextValue() driver.Value {
 	return v.Text
 }
-func (v CustomTableName3) GetText() sequel.ColumnValuer[string] {
+func (v CustomTableName3) ColumnText() sequel.ColumnValuer[string] {
 	return sequel.Column("text", v.Text, func(val string) driver.Value {
 		return val
 	})

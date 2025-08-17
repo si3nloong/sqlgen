@@ -38,12 +38,12 @@ func (v JSON) NumValue() driver.Value {
 func (v JSON) RawBytesValue() driver.Value {
 	return string(v.RawBytes)
 }
-func (v JSON) GetNum() sequel.ColumnValuer[json.Number] {
+func (v JSON) ColumnNum() sequel.ColumnValuer[json.Number] {
 	return sequel.Column("num", v.Num, func(val json.Number) driver.Value {
 		return val.String()
 	})
 }
-func (v JSON) GetRawBytes() sequel.ColumnValuer[json.RawMessage] {
+func (v JSON) ColumnRawBytes() sequel.ColumnValuer[json.RawMessage] {
 	return sequel.Column("raw_bytes", v.RawBytes, func(val json.RawMessage) driver.Value {
 		return string(val)
 	})

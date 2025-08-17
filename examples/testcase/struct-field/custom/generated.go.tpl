@@ -67,37 +67,37 @@ func (v Address) GeoPointValue() driver.Value {
 func (v Address) CountryCodeValue() driver.Value {
 	return (string)(v.CountryCode)
 }
-func (v Address) GetLine1() sequel.ColumnValuer[string] {
+func (v Address) ColumnLine1() sequel.ColumnValuer[string] {
 	return sequel.Column("line_1", v.Line1, func(val string) driver.Value {
 		return val
 	})
 }
-func (v Address) GetLine2() sequel.ColumnValuer[sql.NullString] {
+func (v Address) ColumnLine2() sequel.ColumnValuer[sql.NullString] {
 	return sequel.Column("line_2", v.Line2, func(val sql.NullString) driver.Value {
 		return val
 	})
 }
-func (v Address) GetCity() sequel.ColumnValuer[string] {
+func (v Address) ColumnCity() sequel.ColumnValuer[string] {
 	return sequel.Column("city", v.City, func(val string) driver.Value {
 		return val
 	})
 }
-func (v Address) GetPostCode() sequel.ColumnValuer[uint] {
+func (v Address) ColumnPostCode() sequel.ColumnValuer[uint] {
 	return sequel.Column("post_code", v.PostCode, func(val uint) driver.Value {
 		return (int64)(val)
 	})
 }
-func (v Address) GetStateCode() sequel.ColumnValuer[StateCode] {
+func (v Address) ColumnStateCode() sequel.ColumnValuer[StateCode] {
 	return sequel.Column("state_code", v.StateCode, func(val StateCode) driver.Value {
 		return (string)(val)
 	})
 }
-func (v Address) GetGeoPoint() sequel.ColumnValuer[orb.Point] {
+func (v Address) ColumnGeoPoint() sequel.ColumnValuer[orb.Point] {
 	return sequel.Column("geo_point", v.GeoPoint, func(val orb.Point) driver.Value {
 		return ewkb.Value(val, 4326)
 	})
 }
-func (v Address) GetCountryCode() sequel.ColumnValuer[CountryCode] {
+func (v Address) ColumnCountryCode() sequel.ColumnValuer[CountryCode] {
 	return sequel.Column("country_code", v.CountryCode, func(val CountryCode) driver.Value {
 		return (string)(val)
 	})
@@ -158,37 +158,37 @@ func (v Customer) StatusValue() driver.Value {
 func (v Customer) JoinAtValue() driver.Value {
 	return v.JoinAt
 }
-func (v Customer) GetID() sequel.ColumnValuer[int64] {
+func (v Customer) ColumnID() sequel.ColumnValuer[int64] {
 	return sequel.Column("id", v.ID, func(val int64) driver.Value {
 		return val
 	})
 }
-func (v Customer) GetAge() sequel.ColumnValuer[uint8] {
+func (v Customer) ColumnAge() sequel.ColumnValuer[uint8] {
 	return sequel.Column("howOld", v.Age, func(val uint8) driver.Value {
 		return (int64)(val)
 	})
 }
-func (v Customer) GetName() sequel.ColumnValuer[longText] {
+func (v Customer) ColumnName() sequel.ColumnValuer[longText] {
 	return sequel.Column("name", v.Name, func(val longText) driver.Value {
 		return val
 	})
 }
-func (v Customer) GetAddress() sequel.ColumnValuer[Addresses] {
+func (v Customer) ColumnAddress() sequel.ColumnValuer[Addresses] {
 	return sequel.Column("address", v.Address, func(val Addresses) driver.Value {
 		return val
 	})
 }
-func (v Customer) GetNicknames() sequel.ColumnValuer[[]longText] {
+func (v Customer) ColumnNicknames() sequel.ColumnValuer[[]longText] {
 	return sequel.Column("nicknames", v.Nicknames, func(val []longText) driver.Value {
 		return sqltype.StringSlice[longText](val)
 	})
 }
-func (v Customer) GetStatus() sequel.ColumnValuer[string] {
+func (v Customer) ColumnStatus() sequel.ColumnValuer[string] {
 	return sequel.Column("status", v.Status, func(val string) driver.Value {
 		return val
 	})
 }
-func (v Customer) GetJoinAt() sequel.ColumnValuer[time.Time] {
+func (v Customer) ColumnJoinAt() sequel.ColumnValuer[time.Time] {
 	return sequel.Column("join_at", v.JoinAt, func(val time.Time) driver.Value {
 		return val
 	})
