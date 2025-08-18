@@ -29,15 +29,9 @@ func InsertOne[T sequel.TableColumnValuer, Ptr interface {
 		columns, values := model.Columns(), model.Values()
 		stmt := strpool.AcquireString()
 		defer strpool.ReleaseString(stmt)
-		cols := strings.Join(columns, ",")
-		stmt.WriteString("INSERT INTO " + DbTable(model) + " (" + cols + ") VALUES (")
-		for i := range values {
-			if i > 0 {
-				stmt.WriteString("," + wrapVar(i+1))
-			} else {
-				// argument always started from 1
-				stmt.WriteString(wrapVar(i + 1))
-			}
+		stmt.WriteString("INSERT INTO " + DbTable(model) + " (" + strings.Join(columns, ",") + ") VALUES ($1")
+		for i := 1; i < len(values); i++ {
+			stmt.WriteString("," + wrapVar(i+1))
 		}
 		stmt.WriteString(") RETURNING " + strings.Join(TableColumns(model), ",") + ";")
 		return sqlConn.QueryRowContext(ctx, stmt.String(), values...).Scan(model.Addrs()...)
@@ -51,11 +45,9 @@ func Insert[T sequel.Inserter, Ptr sequel.PtrScanner[T]](ctx context.Context, sq
 		return new(sequel.EmptyResult), nil
 	}
 
-	var (
-		model   = data[0]
-		columns = model.Columns()
-		stmt    = strpool.AcquireString()
-	)
+	model := data[0]
+	columns := model.Columns()
+	stmt := strpool.AcquireString()
 
 	switch v := any(model).(type) {
 	case sequel.AutoIncrKeyer:
@@ -76,8 +68,8 @@ func Insert[T sequel.Inserter, Ptr sequel.PtrScanner[T]](ctx context.Context, sq
 			args = append(args, values...)
 		}
 		stmt.WriteString(" RETURNING " + strings.Join(TableColumns(model), ",") + ";")
-		strpool.ReleaseString(stmt) // Deallocate statement
 		rows, err := sqlConn.QueryContext(ctx, stmt.String(), args...)
+		strpool.ReleaseString(stmt) // Deallocate statement
 		if err != nil {
 			return nil, err
 		}
@@ -94,13 +86,10 @@ func Insert[T sequel.Inserter, Ptr sequel.PtrScanner[T]](ctx context.Context, sq
 		noOfCols := len(columns)
 		cols := strings.Join(columns, ",")
 		args := make([]any, 0, noOfCols*noOfData)
-		stmt.WriteString("INSERT INTO " + DbTable(model) + " (" + cols + ") VALUES ")
-		for i := range data {
-			if i > 0 {
-				stmt.WriteString("," + model.InsertPlaceholders(i))
-			} else {
-				stmt.WriteString(model.InsertPlaceholders(i))
-			}
+		stmt.WriteString("INSERT INTO " + DbTable(model) + " (" + cols + ") VALUES " + model.InsertPlaceholders(0))
+		args = append(args, data[0].Values()...)
+		for i := 1; i < len(data); i++ {
+			stmt.WriteString("," + model.InsertPlaceholders(i))
 			args = append(args, data[i].Values()...)
 		}
 		stmt.WriteString(" RETURNING " + strings.Join(TableColumns(model), ",") + ";")
@@ -174,7 +163,6 @@ func UpsertOne[T sequel.KeyValuer, Ptr interface {
 		pkName, idx, _ := v.PK()
 		opt.omitFields = append(opt.omitFields, pkName)
 		columns = append(columns[:idx], columns[idx+1:]...)
-		noOfCols = len(columns)
 		values = append(values[:idx], values[idx+1:]...)
 		// Don't include auto increment primary key on INSERT
 		stmt.WriteString("INSERT INTO " + DbTable(model) + " (" + strings.Join(columns, ",") + ") VALUES ")
@@ -377,26 +365,19 @@ func FindByPK[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Con
 		query, args := v.FindOneByPKStmt()
 		return sqlConn.QueryRowContext(ctx, query, args...).Scan(model.Addrs()...)
 	case sequel.PrimaryKeyer:
-		columns := TableColumns(model)
 		pkName, _, pk := v.PK()
-		return sqlConn.QueryRowContext(ctx, "SELECT "+strings.Join(columns, ",")+" FROM "+DbTable(model)+" WHERE "+pkName+" = $1 LIMIT 1;", pk).Scan(model.Addrs()...)
+		return sqlConn.QueryRowContext(ctx, "SELECT "+strings.Join(TableColumns(model), ",")+" FROM "+DbTable(model)+" WHERE "+pkName+" = $1 LIMIT 1;", pk).Scan(model.Addrs()...)
 	case sequel.CompositeKeyer:
-		columns := TableColumns(model)
-		names, _, keys := v.CompositeKey()
+		keyNames, _, keys := v.CompositeKey()
 		stmt := strpool.AcquireString()
-		stmt.WriteString("SELECT " + strings.Join(columns, ",") + " FROM " + DbTable(model) + " WHERE (" + strings.Join(names, ",") + ") = (")
-		noOfKey := len(names)
-		for i := 1; i <= noOfKey; i++ {
-			if i > 1 {
-				stmt.WriteString("," + wrapVar(i))
-			} else {
-				stmt.WriteString(wrapVar(i))
-			}
+		defer strpool.ReleaseString(stmt)
+		stmt.WriteString("SELECT " + strings.Join(TableColumns(model), ",") + " FROM " + DbTable(model) + " WHERE (" + strings.Join(keyNames, ",") + ") = ($1")
+		noOfKey := len(keyNames)
+		for i := 1; i < noOfKey; i++ {
+			stmt.WriteString("," + wrapVar(i+1))
 		}
 		stmt.WriteString(") LIMIT 1;")
-		row := sqlConn.QueryRowContext(ctx, stmt.String(), keys...)
-		strpool.ReleaseString(stmt)
-		return row.Scan(model.Addrs()...)
+		return sqlConn.QueryRowContext(ctx, stmt.String(), keys...).Scan(model.Addrs()...)
 	default:
 		panic("unreachable")
 	}
@@ -440,19 +421,15 @@ func DeleteByPK[T sequel.KeyValuer](ctx context.Context, sqlConn sequel.DB, mode
 		pkName, _, pk := v.PK()
 		return sqlConn.ExecContext(ctx, "DELETE FROM "+DbTable(model)+" WHERE "+pkName+" = $1;", pk)
 	case sequel.CompositeKeyer:
-		names, _, keys := v.CompositeKey()
+		keyNames, _, keys := v.CompositeKey()
 		stmt := strpool.AcquireString()
 		defer strpool.ReleaseString(stmt)
-		stmt.WriteString("DELETE FROM " + DbTable(model) + " WHERE ")
-		noOfKey := len(names)
-		for i := 0; i < noOfKey; i++ {
-			if i == 1 {
-				stmt.WriteString(names[i] + " = " + wrapVar(i+1))
-			} else {
-				stmt.WriteString(" AND " + names[i] + " = " + wrapVar(i+1))
-			}
+		stmt.WriteString("DELETE FROM " + DbTable(model) + " WHERE (" + strings.Join(keyNames, ",") + ") = ($1")
+		noOfKey := len(keyNames)
+		for i := 1; i < noOfKey; i++ {
+			stmt.WriteString("," + wrapVar(i+1))
 		}
-		stmt.WriteByte(';')
+		stmt.WriteString(");")
 		return sqlConn.ExecContext(ctx, stmt.String(), keys...)
 	default:
 		panic("unreachable")
@@ -505,12 +482,7 @@ func (r *Pager[T, Ptr]) Prev(ctx context.Context, sqlConn sequel.DB, cursor ...T
 				}
 			}
 
-			switch vi := any(v).(type) {
-			case sequel.SQLColumner:
-				blr.WriteString("SELECT " + strings.Join(vi.SQLColumns(), ",") + " FROM " + DbTable(v) + " WHERE ")
-			default:
-				blr.WriteString("SELECT " + strings.Join(v.Columns(), ",") + " FROM " + DbTable(v) + " WHERE ")
-			}
+			blr.WriteString("SELECT " + strings.Join(TableColumns(v), ",") + " FROM " + DbTable(v) + " WHERE ")
 			if r.stmt.Where != nil {
 				r.stmt.Where(blr)
 			}
@@ -645,7 +617,7 @@ func (r *Pager[T, Ptr]) Prev(ctx context.Context, sqlConn sequel.DB, cursor ...T
 			rows.Close()
 
 			noOfRecord := len(data)
-			if uint16(noOfRecord) < maxLimit {
+			if uint16(noOfRecord) <= maxLimit {
 				if !yield(Result[T](data), nil) {
 					return
 				}
@@ -685,12 +657,7 @@ func (r *Pager[T, Ptr]) Next(ctx context.Context, sqlConn sequel.DB, cursor ...T
 				}
 			}
 
-			switch vi := any(v).(type) {
-			case sequel.SQLColumner:
-				blr.WriteString("SELECT " + strings.Join(vi.SQLColumns(), ",") + " FROM " + DbTable(v) + " WHERE ")
-			default:
-				blr.WriteString("SELECT " + strings.Join(v.Columns(), ",") + " FROM " + DbTable(v) + " WHERE ")
-			}
+			blr.WriteString("SELECT " + strings.Join(TableColumns(v), ",") + " FROM " + DbTable(v) + " WHERE ")
 			if r.stmt.Where != nil {
 				r.stmt.Where(blr)
 			}
@@ -825,7 +792,7 @@ func (r *Pager[T, Ptr]) Next(ctx context.Context, sqlConn sequel.DB, cursor ...T
 			rows.Close()
 
 			noOfRecord := len(data)
-			if uint16(noOfRecord) < maxLimit {
+			if uint16(noOfRecord) <= maxLimit {
 				if !yield(Result[T](data), nil) {
 					return
 				}
@@ -961,7 +928,8 @@ func QueryOneStmt[T any, Ptr sequel.PtrScanner[T], Stmt interface {
 	var v T
 	switch vi := any(stmt).(type) {
 	case SelectOneStmt:
-		var blr = AcquireStmt()
+		blr := AcquireStmt()
+		defer ReleaseStmt(blr)
 		blr.WriteString("SELECT ")
 		if len(vi.Select) > 0 {
 			blr.WriteString(strings.Join(vi.Select, ","))
@@ -980,7 +948,6 @@ func QueryOneStmt[T any, Ptr sequel.PtrScanner[T], Stmt interface {
 			case sequel.Tabler:
 				blr.WriteString(" FROM " + DbTable(vj))
 			default:
-				ReleaseStmt(blr)
 				return nil, fmt.Errorf("missing table name for model %T", v)
 			}
 		}
@@ -989,12 +956,9 @@ func QueryOneStmt[T any, Ptr sequel.PtrScanner[T], Stmt interface {
 			vi.Where(blr)
 		}
 		if len(vi.GroupBy) > 0 {
-			blr.WriteString(" GROUP BY ")
-			for i := range vi.GroupBy {
-				if i > 0 {
-					blr.WriteByte(',')
-				}
-				blr.WriteString(vi.GroupBy[i])
+			blr.WriteString(" GROUP BY " + vi.GroupBy[0])
+			for i := 1; i < len(vi.GroupBy); i++ {
+				blr.WriteString("," + vi.GroupBy[i])
 			}
 		}
 		if len(vi.OrderBy) > 0 {
@@ -1011,9 +975,7 @@ func QueryOneStmt[T any, Ptr sequel.PtrScanner[T], Stmt interface {
 			}
 		}
 		blr.WriteString(" LIMIT 1;")
-		row := sqlConn.QueryRowContext(ctx, blr.Query(), blr.Args()...)
-		ReleaseStmt(blr)
-		if err := row.Scan(Ptr(&v).Addrs()...); err != nil {
+		if err := sqlConn.QueryRowContext(ctx, blr.Query(), blr.Args()...).Scan(Ptr(&v).Addrs()...); err != nil {
 			return nil, err
 		}
 		return &v, nil
@@ -1058,10 +1020,9 @@ func ExecStmt[T any, Stmt interface {
 		}
 		if len(vi.Set) > 0 {
 			blr.WriteString(" SET ")
-			for i := range vi.Set {
-				if i > 0 {
-					blr.WriteByte(',')
-				}
+			vi.Set[0](blr)
+			for i := 1; i < len(vi.Set); i++ {
+				blr.WriteByte(',')
 				vi.Set[i](blr)
 			}
 		}
