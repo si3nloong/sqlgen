@@ -45,11 +45,9 @@ func Insert[T sequel.Inserter, Ptr sequel.PtrScanner[T]](ctx context.Context, sq
 		return new(sequel.EmptyResult), nil
 	}
 
-	var (
-		model   = data[0]
-		columns = model.Columns()
-		stmt    = strpool.AcquireString()
-	)
+	model := data[0]
+	columns := model.Columns()
+	stmt := strpool.AcquireString()
 
 	switch v := any(model).(type) {
 	case sequel.AutoIncrKeyer:

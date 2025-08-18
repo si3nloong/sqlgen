@@ -26,8 +26,7 @@ func InsertOne[T sequel.TableColumnValuer, Ptr interface {
 	sequel.TableColumnValuer
 	sequel.PtrScanner[T]
 }](ctx context.Context, sqlConn sequel.DB, model Ptr) (sql.Result, error) {
-	anyv := any(model)
-	switch v := anyv.(type) {
+	switch v := any(model).(type) {
 	case autoIncrKeyInserter:
 		query, args := v.InsertOneStmt()
 		result, err := sqlConn.ExecContext(ctx, query, args...)
@@ -56,12 +55,9 @@ func Insert[T sequel.TableColumnValuer](ctx context.Context, sqlConn sequel.DB, 
 		return new(sequel.EmptyResult), nil
 	}
 
-	var (
-		model   = data[0]
-		columns = model.Columns()
-		stmt    = strpool.AcquireString()
-	)
-	defer strpool.ReleaseString(stmt)
+	model := data[0]
+	columns := model.Columns()
+	stmt := strpool.AcquireString()
 
 	switch v := any(model).(type) {
 	case sequel.AutoIncrKeyer:
@@ -83,23 +79,24 @@ func Insert[T sequel.TableColumnValuer](ctx context.Context, sqlConn sequel.DB, 
 			args = append(args, values...)
 		}
 		stmt.WriteByte(';')
-		return sqlConn.ExecContext(ctx, stmt.String(), args...)
+		result, err := sqlConn.ExecContext(ctx, stmt.String(), args...)
+		strpool.ReleaseString(stmt)
+		return result, err
 	default:
 		noOfCols := len(columns)
 		cols := strings.Join(columns, ",")
 		args := make([]any, 0, noOfCols*noOfData)
-		stmt.WriteString("INSERT INTO " + DbTable(model) + " (" + cols + ") VALUES ")
 		placeholder := "(" + strings.Repeat(",?", noOfCols)[1:] + ")"
-		for i := range data {
-			if i > 0 {
-				stmt.WriteString("," + placeholder)
-			} else {
-				stmt.WriteString(placeholder)
-			}
+		stmt.WriteString("INSERT INTO " + DbTable(model) + " (" + cols + ") VALUES " + placeholder)
+		args = append(args, data[0].Values()...)
+		for i := 1; i < len(data); i++ {
+			stmt.WriteString("," + placeholder)
 			args = append(args, data[i].Values()...)
 		}
 		stmt.WriteByte(';')
-		return sqlConn.ExecContext(ctx, stmt.String(), args...)
+		result, err := sqlConn.ExecContext(ctx, stmt.String(), args...)
+		strpool.ReleaseString(stmt)
+		return result, err
 	}
 }
 
