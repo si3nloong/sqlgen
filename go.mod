@@ -13,7 +13,7 @@ require (
 	github.com/goccy/go-yaml v1.18.0
 	github.com/jackc/pgx/v5 v5.7.5
 	github.com/samber/lo v1.51.0
-	github.com/spf13/cobra v1.9.1
+	github.com/spf13/cobra v1.10.0
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/exp v0.0.0-20240325151524-a685a6edb6d8
 	golang.org/x/tools v0.36.0
@@ -37,7 +37,7 @@ require (
 	github.com/mgutz/ansi v0.0.0-20170206155736-9520e82c474b // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rogpeppe/go-internal v1.6.1 // indirect
-	github.com/spf13/pflag v1.0.6 // indirect
+	github.com/spf13/pflag v1.0.8 // indirect
 	golang.org/x/crypto v0.41.0 // indirect
 	golang.org/x/mod v0.27.0 // indirect
 	golang.org/x/net v0.43.0 // indirect
