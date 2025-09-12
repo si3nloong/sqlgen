@@ -2,8 +2,6 @@ module github.com/si3nloong/sqlgen/cmd
 
 go 1.24.0
 
-replace github.com/si3nloong/sqlgen => ../../
-
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.7
 	github.com/Masterminds/semver/v3 v3.4.0
@@ -47,3 +45,5 @@ require (
 	golang.org/x/text v0.29.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace github.com/si3nloong/sqlgen => ../../

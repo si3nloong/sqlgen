@@ -169,9 +169,9 @@ func (g *Generator) generateModels(
 				pk = t.Keys[0]
 			}
 			if pk != nil {
-				fprintfln(w, `func (v %s) PK() (string, int, any) {`, t.GoName)
-				fprintfln(w, `return %s, %d, %s`, g.Quote(g.QuoteIdentifier(pk.Name)), pk.Pos, g.getOrValue(importPkgs, "v", pk))
-				fprintfln(w, `}`)
+				fprintfln(w, `func (v %s) PK() (string, int, any) {
+	return %s, %d, %s
+}`, t.GoName, g.Quote(g.QuoteIdentifier(pk.Name)), pk.Pos, g.getOrValue(importPkgs, "v", pk))
 			} else {
 				g.buildCompositeKeys(w, importPkgs, t)
 			}
@@ -282,24 +282,24 @@ func (g *Generator) generateModels(
 			// Find all the possible pointer paths
 			ptrPaths := f.GoPtrPaths()
 			for _, p := range ptrPaths {
-				fprintfln(w, `if v%s != nil {`, p.GoPath)
+				fprintfln(w, "if v%s != nil {", p.GoPath)
 				queue = append(queue, "}")
 			}
 
 			if f.IsPtr() {
 				// Deference the pointer value and return it
-				fprintfln(w, `return %s`, g.valuer(importPkgs, "*v"+f.GoPath, assertAsPtr[types.Pointer](f.Type).Elem()))
+				fprintfln(w, "return %s", g.valuer(importPkgs, "*v"+f.GoPath, assertAsPtr[types.Pointer](f.Type).Elem()))
 			} else {
-				fprintfln(w, `return %s`, g.valuer(importPkgs, "v"+f.GoPath, f.Type))
+				fprintfln(w, "return %s", g.valuer(importPkgs, "v"+f.GoPath, f.Type))
 			}
 			for len(queue) > 0 {
 				fprintfln(w, queue[0])
 				queue = queue[1:]
 			}
 			if len(ptrPaths) > 0 {
-				fprintfln(w, `return nil`)
+				fprintfln(w, "return nil")
 			}
-			fprintfln(w, `}`)
+			fprintfln(w, "}")
 			// 	// 		if idx := strings.Index(typeStr, "."); idx > 0 {
 			// 	// 			typeStr = Expr(typeStr).Format(importPkgs)
 			// 	// 		}
@@ -437,7 +437,7 @@ func (g *Generator) buildHeader(w io.Writer) {
 }
 
 func (g *Generator) buildCompositeKeys(w io.Writer, importPkgs *Package, table *compiler.Table) {
-	fprintfln(w, `func (v %s) CompositeKey() ([]string, []int, []any) {`, table.GoName)
+	fprintfln(w, "func (v %s) CompositeKey() ([]string, []int, []any) {", table.GoName)
 	fmt.Fprint(w, `return []string{`)
 	for i, f := range table.Keys {
 		if i > 0 {
@@ -459,8 +459,8 @@ func (g *Generator) buildCompositeKeys(w io.Writer, importPkgs *Package, table *
 		}
 		fmt.Fprint(w, g.getOrValue(importPkgs, "v", k))
 	}
-	fprintfln(w, `}`)
-	fprintfln(w, `}`)
+	fprintfln(w, "}")
+	fprintfln(w, "}")
 }
 
 func (g *Generator) buildValuer(w io.Writer, importPkgs *Package, table *compiler.Table) {
