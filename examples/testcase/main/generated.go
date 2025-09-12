@@ -161,8 +161,13 @@ func (v HouseUnit) ColumnChan() sequel.ColumnValuer[reflect.ChanDir] {
 		return (int64)(val)
 	})
 }
-func (v HouseUnit) ColumnInner() sequel.ColumnValuer[struct{ Flag bool }] {
-	return sequel.Column("inner", v.Inner, func(val struct{ Flag bool }) driver.Value {
+
+type HouseUnitInnerField = struct {
+	Flag bool
+}
+
+func (v HouseUnit) ColumnInner() sequel.ColumnValuer[HouseUnitInnerField] {
+	return sequel.Column("inner", v.Inner, func(val HouseUnitInnerField) driver.Value {
 		return encoding.JSONValue(val)
 	})
 }

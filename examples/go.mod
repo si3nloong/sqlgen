@@ -11,6 +11,7 @@ require (
 	github.com/lib/pq v1.10.9
 	github.com/mattn/go-sqlite3 v1.14.16
 	github.com/paulmach/orb v0.11.1
+	github.com/shopspring/decimal v1.4.0
 	github.com/si3nloong/sqlgen v1.0.0-alpha.3.0.20231118095154-390f9683bb93
 	github.com/stretchr/testify v1.10.0
 )

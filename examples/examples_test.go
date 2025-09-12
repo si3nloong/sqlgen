@@ -10,8 +10,8 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/require"
 
-	_ "github.com/si3nloong/sqlgen/codegen/dialect/mysql"
-	_ "github.com/si3nloong/sqlgen/codegen/dialect/postgres"
+	_ "github.com/si3nloong/sqlgen/cmd/codegen/dialect/mysql"
+	_ "github.com/si3nloong/sqlgen/cmd/codegen/dialect/postgres"
 
 	"github.com/jaswdr/faker"
 	mysqldb "github.com/si3nloong/sqlgen/examples/db/mysql"

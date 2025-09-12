@@ -5,11 +5,9 @@ package main
 
 import (
 	"log"
-
-	"github.com/si3nloong/sqlgen/internal/cmd"
 )
 
 func main() {
 	log.SetPrefix("sqlgen: ")
-	cmd.Execute()
+	Execute()
 }

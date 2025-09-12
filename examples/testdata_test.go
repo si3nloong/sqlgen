@@ -7,8 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/si3nloong/sqlgen/codegen"
-	"github.com/si3nloong/sqlgen/internal/fileutil"
+	"github.com/si3nloong/sqlgen/cmd/codegen"
 	"github.com/stretchr/testify/require"
 )
 
@@ -16,7 +15,8 @@ func TestAll(t *testing.T) {
 	const rootDir = "./testcase"
 
 	if err := codegen.Generate(&codegen.Config{
-		Source:     []string{rootDir + "/**/*.go"},
+		Source: []string{rootDir + "/**/*.go"},
+		// Source:     []string{rootDir + "/struct/inline-nested/*.go"},
 		SkipHeader: true,
 		// Driver:     codegen.Postgres,
 		Database: &codegen.DatabaseConfig{
@@ -87,9 +87,9 @@ func generateModel(t *testing.T, rootDir string) error {
 			return nil
 		}
 
-		if fileutil.IsDirEmptyFiles(path) {
-			return nil
-		}
+		// if fileutil.IsDirEmptyFiles(path) {
+		// 	return nil
+		// }
 
 		// Read result file
 		expected, err := os.ReadFile(filepath.Join(path, codegen.DefaultGeneratedFile+".tpl"))
