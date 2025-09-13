@@ -15,8 +15,7 @@ func TestAll(t *testing.T) {
 	const rootDir = "./testcase"
 
 	if err := codegen.Generate(&codegen.Config{
-		Source: []string{rootDir + "/**/*.go"},
-		// Source:     []string{rootDir + "/struct/inline-nested/*.go"},
+		Source:     []string{rootDir + "/**/*.go"},
 		SkipHeader: true,
 		// Driver:     codegen.Postgres,
 		Database: &codegen.DatabaseConfig{

@@ -5,6 +5,7 @@ import (
 	"database/sql/driver"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 	"github.com/si3nloong/sqlgen/sequel"
 	"github.com/si3nloong/sqlgen/sequel/encoding"
@@ -37,10 +38,22 @@ func (v DeepNestedModel) NestedValue() any {
 }
 
 type DeepNestedModelNestedField = struct {
-	Byte    sql.NullByte `sql:"byte" json:"byte"`
-	Time    time.Time
-	Decimal decimal.Decimal
-	Bool    bool
+	Byte       sql.NullByte `sql:"byte" json:"byte"`
+	Time       time.Time
+	Decimal    decimal.Decimal
+	number     float64
+	embedded   `json:",inline"`
+	DeepNested struct {
+		time.Time
+		Str      string
+		Duration time.Duration
+		Lvl3     struct {
+			Float float64 `json:"float_64" xml:"float_64"`
+			Bool  bool
+			UUID  uuid.UUID `json:"uuid" xml:"uuid"`
+		}
+	}
+	flag bool
 }
 
 func (v DeepNestedModel) ColumnNested() sequel.ColumnValuer[DeepNestedModelNestedField] {

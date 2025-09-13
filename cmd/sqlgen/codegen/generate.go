@@ -202,16 +202,16 @@ func (g *Generator) generateModels(
 		if method, isWrongType := t.Implements(sqlColumner); isWrongType {
 			g.LogError(fmt.Errorf(`sqlgen: struct %q has function "Columns" but wrong footprint`, t.Name))
 		} else if method != nil && !isWrongType {
-			fprintfln(w, `func (%s) %s() []string {`, t.GoName, methodName(sqlColumner))
-			fmt.Fprint(w, `return []string{`)
+			fprintfln(w, "func (%s) %s() []string {", t.GoName, methodName(sqlColumner))
+			fmt.Fprint(w, "return []string{")
 			for i, col := range t.Columns {
 				if i > 0 {
-					fmt.Fprint(w, `,`)
+					fmt.Fprint(w, ",")
 				}
 				fmt.Fprint(w, g.Quote(g.QuoteIdentifier(col.Name)))
 			}
-			fprintfln(w, `} // %d`, len(t.Columns))
-			fprintfln(w, `}`)
+			fprintfln(w, "} // %d", len(t.Columns))
+			fprintfln(w, "}")
 		}
 
 		// Build the "Values" function which return the column values
@@ -234,8 +234,8 @@ func (g *Generator) generateModels(
 			if len(insertColumns) > 0 {
 				// If the insertable columns is not tally with the table columns means the struct has readonly columns
 				if len(insertColumns) != len(t.Columns) {
-					fprintfln(w, `func (%s) InsertColumns() []string {`, t.GoName)
-					fmt.Fprint(w, `return []string{`)
+					fprintfln(w, "func (%s) InsertColumns() []string {", t.GoName)
+					fmt.Fprint(w, "return []string{")
 					for i, col := range insertColumns {
 						if i > 0 {
 							fmt.Fprint(w, `,`)
@@ -243,7 +243,7 @@ func (g *Generator) generateModels(
 						fmt.Fprint(w, g.Quote(g.QuoteIdentifier(col.Name)))
 					}
 					fprintfln(w, "} // %d", len(insertColumns))
-					fprintfln(w, `}`)
+					fprintfln(w, "}")
 				}
 
 				if g.staticVar {
@@ -251,8 +251,8 @@ func (g *Generator) generateModels(
 	return "(%s)" // %d
 }`, t.GoName, strings.Repeat(","+g.dialect.QuoteVar(0), len(insertColumns))[1:], len(insertColumns))
 				} else {
-					fprintfln(w, `func (%s) InsertPlaceholders(row int) string {`, t.GoName)
-					fprintfln(w, `const noOfColumn = %d`, len(insertColumns))
+					fprintfln(w, "func (%s) InsertPlaceholders(row int) string {", t.GoName)
+					fprintfln(w, "const noOfColumn = %d", len(insertColumns))
 					fmt.Fprint(w, `return "("+`)
 					for i := range insertColumns {
 						if i > 0 {
@@ -300,66 +300,47 @@ func (g *Generator) generateModels(
 				fprintfln(w, "return nil")
 			}
 			fprintfln(w, "}")
-			// 	// 		if idx := strings.Index(typeStr, "."); idx > 0 {
-			// 	// 			typeStr = Expr(typeStr).Format(importPkgs)
-			// 	// 		}
-			// 	// 		var specificType string
-			// 	// 		if !typeInferred {
-			// 	// 			specificType = "[" + typeStr + "]"
-			// 	// 		}
+			// 		if idx := strings.Index(typeStr, "."); idx > 0 {
+			// 			typeStr = Expr(typeStr).Format(importPkgs)
+			// 		}
+			// 		var specificType string
+			// 		if !typeInferred {
+			// 			specificType = "[" + typeStr + "]"
+			// 		}
 
-			// 	// 		if sqlValuer, ok := f.sqlValuer(); ok {
-			// 	// 			matches := sqlFuncRegexp.FindStringSubmatch(sqlValuer("{}"))
-			// 	// 			if len(matches) > 4 {
-			// 	// 				g.L("func (v "+t.goName+") ", g.config.Getter.Prefix+f.GoName(), "() sequel.SQLColumnValuer[", typeStr, "] {")
-			// 	// 				g.L(`return sequel.SQLColumn`+specificType+`(`, g.Quote(g.QuoteIdentifier(f.ColumnName())), `, v.`, f.GoPath()+",", fmt.Sprintf(`func(placeholder string) string { return %q+ placeholder + %q}`, matches[1]+matches[2], matches[4]+matches[5]), `, func(val `, typeStr, `) driver.Value { return `, g.valuer(importPkgs, "val", f.t), ` })`)
-			// 	// 				g.L("}")
-			// 	// 			} else {
-			// 	// 				g.L("func (v "+t.goName+") ", g.config.Getter.Prefix+f.GoName(), "() sequel.ColumnValuer[", typeStr, "] {")
-			// 	// 				g.L(`return sequel.Column`, specificType, `(`, g.Quote(g.QuoteIdentifier(f.ColumnName())), `, v.`, f.GoPath(), `, func(val `, typeStr, `) driver.Value { return `, g.valuer(importPkgs, "val", f.t), ` })`)
-			// 	// 				g.L("}")
-			// 	// 			}
-			// 	// 		} else {
-			// 	// 			g.L("func (v "+t.goName+") ", g.config.Getter.Prefix+f.GoName(), "() sequel.ColumnValuer[", typeStr, "] {")
-			// 	// 			g.L("return sequel.Column", specificType, "(", g.Quote(g.QuoteIdentifier(f.ColumnName())), ", v.", f.GoPath(), ", func(val ", typeStr, `) driver.Value { return `, g.valuer(importPkgs, "val", f.t), ` })`)
-			// 	// 			g.L("}")
-			// 	// 		}
+			// 		if sqlValuer, ok := f.sqlValuer(); ok {
+			// 			matches := sqlFuncRegexp.FindStringSubmatch(sqlValuer("{}"))
+			// 			if len(matches) > 4 {
+			// 				g.L("func (v "+t.goName+") ", g.config.Getter.Prefix+f.GoName(), "() sequel.SQLColumnValuer[", typeStr, "] {")
+			// 				g.L(`return sequel.SQLColumn`+specificType+`(`, g.Quote(g.QuoteIdentifier(f.ColumnName())), `, v.`, f.GoPath()+",", fmt.Sprintf(`func(placeholder string) string { return %q+ placeholder + %q}`, matches[1]+matches[2], matches[4]+matches[5]), `, func(val `, typeStr, `) driver.Value { return `, g.valuer(importPkgs, "val", f.t), ` })`)
+			// 				g.L("}")
+			// 			} else {
+			// 				g.L("func (v "+t.goName+") ", g.config.Getter.Prefix+f.GoName(), "() sequel.ColumnValuer[", typeStr, "] {")
+			// 				g.L(`return sequel.Column`, specificType, `(`, g.Quote(g.QuoteIdentifier(f.ColumnName())), `, v.`, f.GoPath(), `, func(val `, typeStr, `) driver.Value { return `, g.valuer(importPkgs, "val", f.t), ` })`)
+			// 				g.L("}")
+			// 			}
+			// 		} else {
+			// 			g.L("func (v "+t.goName+") ", g.config.Getter.Prefix+f.GoName(), "() sequel.ColumnValuer[", typeStr, "] {")
+			// 			g.L("return sequel.Column", specificType, "(", g.Quote(g.QuoteIdentifier(f.ColumnName())), ", v.", f.GoPath(), ", func(val ", typeStr, `) driver.Value { return `, g.valuer(importPkgs, "val", f.t), ` })`)
+			// 			g.L("}")
+			// 		}
 			// }
 		}
 
 		for _, f := range t.Columns {
 			switch vt := f.Type.(type) {
+			// First level struct data type
 			case *types.Struct:
-				buf := new(strings.Builder)
-				queues := []*types.Struct{vt}
-				for len(queues) > 0 {
-					q := queues[0]
-					fmt.Fprintf(buf, `struct{`)
-					for i := 0; i < q.NumFields(); i++ {
-						f := q.Field(i)
-						switch ft := f.Type().(type) {
-						case *types.Struct:
-							queues = append(queues, ft)
-							fprintfln(buf, f.Name()+" ")
-						default:
-							typeStr := f.Type().String()
-							if idx := strings.Index(typeStr, "."); idx > 0 {
-								typeStr = Expr(typeStr).Format(importPkgs)
-							}
-							buf.WriteString("\n" + f.Name() + " " + typeStr)
-						}
-						if tag := q.Tag(i); len(tag) > 0 {
-							fmt.Fprintf(buf, " `%s`", q.Tag(i))
-						}
-					}
-					fprintfln(buf, "}")
-					queues = queues[1:]
-				}
-
+				buf := strpool.AcquireString()
+				printStruct(buf, importPkgs, vt)
 				aliasname := t.GoName + f.GoName + "Field"
 				fprintfln(w, "type %s = %s", aliasname, buf)
+				fmt.Println(buf.String())
+				strpool.ReleaseString(buf)
+
 				fprintfln(w, "func (v %s) %s() sequel.ColumnValuer[%s] {", t.GoName, g.config.Getter.Prefix+f.GoName, aliasname)
 				fprintfln(w, "return sequel.Column(%s, v%s, func(val %s) driver.Value {", g.Quote(g.QuoteIdentifier(f.Name)), f.GoPath, aliasname)
+
 			default:
 				typeStr := f.Type.String()
 				if idx := strings.Index(typeStr, "."); idx > 0 {
@@ -417,9 +398,7 @@ func (g *Generator) generateModels(
 
 	mustNoError(rw.Write(bw.Bytes()))
 	bw.Reset()
-	println(rw.String())
 
-	// println(rw.String())
 	formatted, err := imports.Process("", rw.Bytes(), &imports.Options{Comments: true})
 	if err != nil {
 		return err
@@ -750,6 +729,45 @@ func (g *Generator) sqlValuer(col *compiler.Column, idx int) string {
 	// 	return g.dialect.QuoteVar(idx + 1)
 	// }
 	return g.dialect.QuoteVar(idx + 1)
+}
+
+func printStruct(w io.Writer, importPkgs *Package, s *types.Struct) {
+	fmt.Fprintln(w, "struct{")
+	for i := 0; i < s.NumFields(); i++ {
+		f := s.Field(i)
+		switch ft := f.Type().(type) {
+		case *types.Struct:
+			if !f.Embedded() {
+				fmt.Fprint(w, f.Name()+" ")
+				printStruct(w, importPkgs, ft)
+			} else {
+				typeStr := f.Type().String()
+				if idx := strings.Index(typeStr, "."); idx > 0 {
+					typeStr = Expr(typeStr).Format(importPkgs)
+				}
+				fmt.Fprint(w, f.Name()+" "+typeStr)
+				if tag := s.Tag(i); len(tag) > 0 {
+					fmt.Fprintf(w, " `%s`", s.Tag(i))
+				}
+				fmt.Fprintln(w)
+			}
+		default:
+			typeStr := f.Type().String()
+			if idx := strings.Index(typeStr, "."); idx > 0 {
+				typeStr = Expr(typeStr).Format(importPkgs)
+			}
+			if f.Embedded() {
+				fmt.Fprint(w, typeStr)
+			} else {
+				fmt.Fprint(w, f.Name()+" "+typeStr)
+			}
+			if tag := s.Tag(i); len(tag) > 0 {
+				fmt.Fprintf(w, " `%s`", s.Tag(i))
+			}
+			fmt.Fprintln(w)
+		}
+	}
+	fmt.Fprintln(w, "}")
 }
 
 func methodName(i *types.Interface) string {
