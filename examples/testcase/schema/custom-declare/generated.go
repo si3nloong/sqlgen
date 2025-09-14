@@ -7,13 +7,16 @@ import (
 )
 
 func (A) InsertPlaceholders(row int) string {
-	return "(?)"
+	return "(?)" // 1
 }
 func (v A) InsertOneStmt() (string, []any) {
-	return "INSERT INTO " + v.TableName() + " (name) VALUES (?);", v.Values()
+	return "INSERT INTO " + v.TableName() + " (`name`) VALUES (?);", v.Values()
 }
-func (v A) GetName() sequel.ColumnValuer[string] {
+func (v A) NameValue() any {
+	return v.Name
+}
+func (v A) ColumnName() sequel.ColumnValuer[string] {
 	return sequel.Column("name", v.Name, func(val string) driver.Value {
-		return (string)(val)
+		return val
 	})
 }

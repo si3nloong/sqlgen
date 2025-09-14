@@ -36,6 +36,10 @@ type Columner interface {
 	Columns() []string
 }
 
+type InsertColumner interface {
+	InsertColumns() []string
+}
+
 type SQLColumner interface {
 	SQLColumns() []string
 }
