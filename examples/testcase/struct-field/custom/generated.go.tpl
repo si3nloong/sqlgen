@@ -15,6 +15,9 @@ import (
 func (Address) TableName() string {
 	return "address"
 }
+func (Address) SQLColumns() []string {
+	return []string{"line_1", "line_2", "city", "post_code", "state_code", "ST_AsBinary(geo_point,4326)", "country_code"} // 7
+}
 func (Address) Columns() []string {
 	return []string{"line_1", "line_2", "city", "post_code", "state_code", "geo_point", "country_code"} // 7
 }
@@ -44,7 +47,7 @@ func (Address) InsertPlaceholders(row int) string {
 	return "(?,?,?,?,?,?,?)" // 7
 }
 func (v Address) InsertOneStmt() (string, []any) {
-	return "INSERT INTO `address` (`line_1`,`line_2`,`city`,`post_code`,`state_code`,`geo_point`,`country_code`) VALUES (?,?,?,?,?,?,?);", v.Values()
+	return "INSERT INTO `address` (`line_1`,`line_2`,`city`,`post_code`,`state_code`,`geo_point`,`country_code`) VALUES (?,?,?,?,?,ST_GeomFromEWKB(?),?);", v.Values()
 }
 func (v Address) Line1Value() any {
 	return v.Line1

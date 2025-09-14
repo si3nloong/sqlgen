@@ -45,8 +45,8 @@ type ColumnType struct {
 	DataType   func(col GoColumn) string
 	Scanner    string
 	Valuer     string
-	SQLScanner string
-	SQLValuer  string
+	SQLScanner *string
+	SQLValuer  *string
 }
 
 type Index interface {

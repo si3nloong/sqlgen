@@ -23,6 +23,9 @@ func (v *AutoPkLocation) ScanAutoIncr(val int64) error {
 func (v AutoPkLocation) PK() (string, int, any) {
 	return "id", 0, (int64)(v.ID)
 }
+func (AutoPkLocation) SQLColumns() []string {
+	return []string{"id", "ST_AsBinary(geo_point,4326)", "ST_AsBinary(ptr_geo_point,4326)", "ptr_uuid", "ptr_date"} // 5
+}
 func (AutoPkLocation) Columns() []string {
 	return []string{"id", "geo_point", "ptr_geo_point", "ptr_uuid", "ptr_date"} // 5
 }
@@ -59,13 +62,13 @@ func (AutoPkLocation) InsertPlaceholders(row int) string {
 	return "(?,?,?,?)" // 4
 }
 func (v AutoPkLocation) InsertOneStmt() (string, []any) {
-	return "INSERT INTO `auto_pk_location` (`geo_point`,`ptr_geo_point`,`ptr_uuid`,`ptr_date`) VALUES (?,?,?,?);", []any{ewkb.Value(v.GeoPoint, 4326), v.PtrGeoPointValue(), v.PtrUUIDValue(), v.PtrDateValue()}
+	return "INSERT INTO `auto_pk_location` (`geo_point`,`ptr_geo_point`,`ptr_uuid`,`ptr_date`) VALUES (ST_GeomFromEWKB(?),ST_GeomFromEWKB(?),?,?);", []any{ewkb.Value(v.GeoPoint, 4326), v.PtrGeoPointValue(), v.PtrUUIDValue(), v.PtrDateValue()}
 }
 func (v AutoPkLocation) FindOneByPKStmt() (string, []any) {
-	return "SELECT `id`,`geo_point`,`ptr_geo_point`,`ptr_uuid`,`ptr_date` FROM `auto_pk_location` WHERE `id` = ? LIMIT 1;", []any{(int64)(v.ID)}
+	return "SELECT `id`,ST_AsBinary(`geo_point`,4326),ST_AsBinary(`ptr_geo_point`,4326),`ptr_uuid`,`ptr_date` FROM `auto_pk_location` WHERE `id` = ? LIMIT 1;", []any{(int64)(v.ID)}
 }
 func (v AutoPkLocation) UpdateOneByPKStmt() (string, []any) {
-	return "UPDATE `auto_pk_location` SET `geo_point` = ?,`ptr_geo_point` = ?,`ptr_uuid` = ?,`ptr_date` = ? WHERE `id` = ?;", []any{ewkb.Value(v.GeoPoint, 4326), v.PtrGeoPointValue(), v.PtrUUIDValue(), v.PtrDateValue(), (int64)(v.ID)}
+	return "UPDATE `auto_pk_location` SET `geo_point` = ST_GeomFromEWKB(?),`ptr_geo_point` = ST_GeomFromEWKB(?),`ptr_uuid` = ?,`ptr_date` = ? WHERE `id` = ?;", []any{ewkb.Value(v.GeoPoint, 4326), v.PtrGeoPointValue(), v.PtrUUIDValue(), v.PtrDateValue(), (int64)(v.ID)}
 }
 func (v AutoPkLocation) IDValue() any {
 	return (int64)(v.ID)
@@ -133,6 +136,9 @@ func (Location) HasPK() {}
 func (v Location) PK() (string, int, any) {
 	return "id", 0, (int64)(v.ID)
 }
+func (Location) SQLColumns() []string {
+	return []string{"id", "ST_AsBinary(geo_point,4326)", "uuid"} // 3
+}
 func (Location) Columns() []string {
 	return []string{"id", "geo_point", "uuid"} // 3
 }
@@ -154,13 +160,13 @@ func (Location) InsertPlaceholders(row int) string {
 	return "(?,?,?)" // 3
 }
 func (v Location) InsertOneStmt() (string, []any) {
-	return "INSERT INTO `location` (`id`,`geo_point`,`uuid`) VALUES (?,?,?);", v.Values()
+	return "INSERT INTO `location` (`id`,`geo_point`,`uuid`) VALUES (?,ST_GeomFromEWKB(?),?);", v.Values()
 }
 func (v Location) FindOneByPKStmt() (string, []any) {
-	return "SELECT `id`,`geo_point`,`uuid` FROM `location` WHERE `id` = ? LIMIT 1;", []any{(int64)(v.ID)}
+	return "SELECT `id`,ST_AsBinary(`geo_point`,4326),`uuid` FROM `location` WHERE `id` = ? LIMIT 1;", []any{(int64)(v.ID)}
 }
 func (v Location) UpdateOneByPKStmt() (string, []any) {
-	return "UPDATE `location` SET `geo_point` = ?,`uuid` = ? WHERE `id` = ?;", []any{ewkb.Value(v.GeoPoint, 4326), v.UUID, (int64)(v.ID)}
+	return "UPDATE `location` SET `geo_point` = ST_GeomFromEWKB(?),`uuid` = ? WHERE `id` = ?;", []any{ewkb.Value(v.GeoPoint, 4326), v.UUID, (int64)(v.ID)}
 }
 func (v Location) IDValue() any {
 	return (int64)(v.ID)

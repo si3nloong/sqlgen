@@ -15,7 +15,8 @@ func TestAll(t *testing.T) {
 	const rootDir = "./testcase"
 
 	if err := codegen.Generate(&codegen.Config{
-		Source:     []string{rootDir + "/**/*.go"},
+		Source: []string{rootDir + "/**/*.go"},
+		// Source:     []string{rootDir + "/struct-field/sql/*.go"},
 		SkipHeader: true,
 		// Driver:     codegen.Postgres,
 		Database: &codegen.DatabaseConfig{
@@ -29,9 +30,9 @@ func TestAll(t *testing.T) {
 		DataTypes: map[string]*codegen.DataType{
 			"github.com/paulmach/orb.Point": {
 				DataType:   "POINT NOT NULL",
-				SQLScanner: `ST_AsBinary({{.}},4326)`,
+				SQLScanner: toPtr("ST_AsBinary({{.}},4326)"),
 				Scanner:    `github.com/paulmach/orb/encoding/ewkb.Scanner({{.}})`,
-				SQLValuer:  `ST_GeomFromEWKB({{.}})`,
+				SQLValuer:  toPtr("ST_GeomFromEWKB({{.}})"),
 				Valuer:     `github.com/paulmach/orb/encoding/ewkb.Value({{.}},4326)`,
 			},
 			"github.com/gofrs/uuid/v5.UUID": {
@@ -75,6 +76,10 @@ func TestAll(t *testing.T) {
 	if err := generateModel(t, rootDir); err != nil {
 		t.Fatal(err)
 	}
+}
+
+func toPtr[T any](v T) *T {
+	return &v
 }
 
 func generateModel(t *testing.T, rootDir string) error {

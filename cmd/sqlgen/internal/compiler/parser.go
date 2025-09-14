@@ -341,7 +341,7 @@ func Parse(dir string, cfg *Config) (*Package, error) {
 		nameMap := make(map[string]struct{})
 		pos := 0
 		for _, f := range structFields {
-			if noOfPtr(f.t) > 1 {
+			if ptrCount(f.t) > 1 {
 				return nil, fmt.Errorf(`sqlgen: pointer of pointer is not supported`)
 			}
 
@@ -427,7 +427,7 @@ func Parse(dir string, cfg *Config) (*Package, error) {
 	return goPkg, nil
 }
 
-func noOfPtr(t types.Type) int {
+func ptrCount(t types.Type) int {
 	var total int
 loop:
 	for t != nil {

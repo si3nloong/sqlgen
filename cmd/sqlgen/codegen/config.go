@@ -64,11 +64,11 @@ type Config struct {
 }
 
 type DataType struct {
-	DataType   string `yaml:"data_type"`
-	Scanner    string `yaml:"scan"`
-	SQLScanner string `yaml:"sql_scan"`
-	Valuer     string `yaml:"value"`
-	SQLValuer  string `yaml:"sql_value"`
+	DataType   string  `yaml:"data_type"`
+	Scanner    string  `yaml:"scan"`
+	SQLScanner *string `yaml:"sql_scan,omitempty"`
+	Valuer     string  `yaml:"value"`
+	SQLValuer  *string `yaml:"sql_value,omitempty"`
 }
 
 type ExecConfig struct {

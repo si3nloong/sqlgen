@@ -109,15 +109,16 @@ func pointerType(t types.Type) (*types.Pointer, bool) {
 	return types.NewPointer(t), false
 }
 
-func underlyingType(t types.Type) (types.Type, bool) {
+func underlyingType(t types.Type) (ut types.Type, isNull bool) {
 	v, ok := t.(*types.Pointer)
 	if ok {
-		return v.Elem(), true
+		t, _ = underlyingType(v.Elem())
+		return t, true
 	}
 	return t, false
 }
 
-func mustNoError[T any](v T, err error) {
+func mustNoError[T any](_ T, err error) {
 	if err != nil {
 		panic(err)
 	}
