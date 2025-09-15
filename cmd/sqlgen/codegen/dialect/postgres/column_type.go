@@ -7,7 +7,7 @@ import (
 	"strings"
 	"unsafe"
 
-	"github.com/si3nloong/sqlgen/cmd/codegen/dialect"
+	"github.com/si3nloong/sqlgen/cmd/sqlgen/codegen/dialect"
 )
 
 func (s *postgresDriver) ColumnDataTypes() map[string]*dialect.ColumnType {

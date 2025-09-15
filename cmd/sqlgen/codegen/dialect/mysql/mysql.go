@@ -1,6 +1,6 @@
 package mysql
 
-import "github.com/si3nloong/sqlgen/cmd/codegen/dialect"
+import "github.com/si3nloong/sqlgen/cmd/sqlgen/codegen/dialect"
 
 type mysqlDriver struct{}
 

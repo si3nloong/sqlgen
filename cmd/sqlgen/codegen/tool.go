@@ -5,7 +5,7 @@ import (
 	"go/types"
 	"regexp"
 
-	"github.com/si3nloong/sqlgen/cmd/codegen/dialect"
+	"github.com/si3nloong/sqlgen/cmd/sqlgen/codegen/dialect"
 )
 
 var (

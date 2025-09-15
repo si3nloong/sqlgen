@@ -18,9 +18,9 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/samber/lo"
-	"github.com/si3nloong/sqlgen/cmd/codegen/dialect"
-	"github.com/si3nloong/sqlgen/cmd/internal/compiler"
-	"github.com/si3nloong/sqlgen/cmd/internal/fileutil"
+	"github.com/si3nloong/sqlgen/cmd/sqlgen/codegen/dialect"
+	"github.com/si3nloong/sqlgen/cmd/sqlgen/internal/compiler"
+	"github.com/si3nloong/sqlgen/cmd/sqlgen/internal/fileutil"
 	"github.com/si3nloong/sqlgen/sequel"
 )
 

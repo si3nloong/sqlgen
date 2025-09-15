@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/samber/lo"
-	"github.com/si3nloong/sqlgen/cmd/codegen/dialect"
+	"github.com/si3nloong/sqlgen/cmd/sqlgen/codegen/dialect"
 )
 
 type columnInfo struct {

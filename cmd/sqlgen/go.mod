@@ -1,4 +1,4 @@
-module github.com/si3nloong/sqlgen/cmd
+module github.com/si3nloong/sqlgen/cmd/sqlgen
 
 go 1.24.0
 
@@ -46,4 +46,8 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/si3nloong/sqlgen => ../../
+replace (
+	github.com/si3nloong/sqlgen => ../../
+
+	github.com/si3nloong/sqlgen/cmd/sqlgen => ../cmd/sqlgen
+)

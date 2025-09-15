@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/si3nloong/sqlgen/cmd/internal/sqltype"
+	"github.com/si3nloong/sqlgen/cmd/sqlgen/internal/sqltype"
 )
 
 type column struct {

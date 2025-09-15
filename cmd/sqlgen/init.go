@@ -5,8 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/si3nloong/sqlgen/cmd/codegen"
-	"github.com/si3nloong/sqlgen/cmd/internal/fileutil"
+	"github.com/si3nloong/sqlgen/cmd/sqlgen/codegen"
+	"github.com/si3nloong/sqlgen/cmd/sqlgen/internal/fileutil"
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/AlecAivazis/survey/v2/terminal"

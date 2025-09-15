@@ -4,7 +4,7 @@ import (
 	"strconv"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
-	"github.com/si3nloong/sqlgen/cmd/codegen/dialect"
+	"github.com/si3nloong/sqlgen/cmd/sqlgen/codegen/dialect"
 )
 
 type postgresDriver struct{}

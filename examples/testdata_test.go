@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/si3nloong/sqlgen/cmd/codegen"
+	"github.com/si3nloong/sqlgen/cmd/sqlgen/codegen"
 	"github.com/stretchr/testify/require"
 )
 

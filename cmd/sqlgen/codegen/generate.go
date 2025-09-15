@@ -17,9 +17,9 @@ import (
 
 	"github.com/samber/lo"
 	"github.com/si3nloong/sqlgen"
-	"github.com/si3nloong/sqlgen/cmd/codegen/dialect"
-	"github.com/si3nloong/sqlgen/cmd/internal/compiler"
-	"github.com/si3nloong/sqlgen/cmd/internal/goutil"
+	"github.com/si3nloong/sqlgen/cmd/sqlgen/codegen/dialect"
+	"github.com/si3nloong/sqlgen/cmd/sqlgen/internal/compiler"
+	"github.com/si3nloong/sqlgen/cmd/sqlgen/internal/goutil"
 	"github.com/si3nloong/sqlgen/sequel/encoding"
 	"github.com/si3nloong/sqlgen/sequel/strpool"
 	"golang.org/x/tools/imports"

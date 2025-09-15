@@ -6,12 +6,12 @@ import (
 	"path/filepath"
 
 	"github.com/goccy/go-yaml"
-	"github.com/si3nloong/sqlgen/cmd/internal/fileutil"
-	"github.com/si3nloong/sqlgen/cmd/internal/strfmt"
+	"github.com/si3nloong/sqlgen/cmd/sqlgen/internal/fileutil"
+	"github.com/si3nloong/sqlgen/cmd/sqlgen/internal/strfmt"
 
-	_ "github.com/si3nloong/sqlgen/cmd/codegen/dialect/mysql"
-	_ "github.com/si3nloong/sqlgen/cmd/codegen/dialect/postgres"
-	_ "github.com/si3nloong/sqlgen/cmd/codegen/dialect/sqlite"
+	_ "github.com/si3nloong/sqlgen/cmd/sqlgen/codegen/dialect/mysql"
+	_ "github.com/si3nloong/sqlgen/cmd/sqlgen/codegen/dialect/postgres"
+	_ "github.com/si3nloong/sqlgen/cmd/sqlgen/codegen/dialect/sqlite"
 )
 
 type SqlDriver string

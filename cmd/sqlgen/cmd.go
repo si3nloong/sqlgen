@@ -4,7 +4,7 @@ import (
 	"io"
 	"log"
 
-	"github.com/si3nloong/sqlgen/cmd/codegen"
+	"github.com/si3nloong/sqlgen/cmd/sqlgen/codegen"
 	"github.com/spf13/cobra"
 )
 

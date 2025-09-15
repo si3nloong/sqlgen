@@ -3,7 +3,7 @@ package sqlite
 import (
 	"fmt"
 
-	"github.com/si3nloong/sqlgen/cmd/codegen/dialect"
+	"github.com/si3nloong/sqlgen/cmd/sqlgen/codegen/dialect"
 )
 
 func (s *sqliteDriver) ColumnDataTypes() map[string]*dialect.ColumnType {

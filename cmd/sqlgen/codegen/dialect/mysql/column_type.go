@@ -7,8 +7,8 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/si3nloong/sqlgen/cmd/codegen/dialect"
-	"github.com/si3nloong/sqlgen/cmd/internal/goutil"
+	"github.com/si3nloong/sqlgen/cmd/sqlgen/codegen/dialect"
+	"github.com/si3nloong/sqlgen/cmd/sqlgen/internal/goutil"
 	"github.com/si3nloong/sqlgen/sequel/encoding"
 	"github.com/si3nloong/sqlgen/sequel/sqltype"
 )

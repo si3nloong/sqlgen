@@ -13,7 +13,7 @@ require (
 	github.com/paulmach/orb v0.11.1
 	github.com/shopspring/decimal v1.4.0
 	github.com/si3nloong/sqlgen v1.0.0-alpha.3.0.20231118095154-390f9683bb93
-	github.com/si3nloong/sqlgen/cmd v0.0.0-00010101000000-000000000000
+	github.com/si3nloong/sqlgen/cmd/sqlgen main
 	github.com/stretchr/testify v1.11.1
 )
 
@@ -47,5 +47,5 @@ require (
 replace (
 	github.com/si3nloong/sqlgen => ../
 
-	github.com/si3nloong/sqlgen/cmd => ../cmd/sqlgen
+	github.com/si3nloong/sqlgen/cmd/sqlgen => ../cmd/sqlgen
 )
