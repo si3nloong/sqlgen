@@ -10,7 +10,7 @@ require (
 	github.com/goccy/go-yaml v1.18.0
 	github.com/jackc/pgx/v5 v5.7.6
 	github.com/samber/lo v1.51.0
-	github.com/si3nloong/sqlgen v0.0.0-00010101000000-000000000000
+	github.com/si3nloong/sqlgen v1.0.0-alpha.7.0.20250915030917-cd11c5f93e55
 	github.com/spf13/cobra v1.10.1
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/exp v0.0.0-20250911091902-df9299821621
@@ -44,10 +44,4 @@ require (
 	golang.org/x/term v0.35.0 // indirect
 	golang.org/x/text v0.29.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-)
-
-replace (
-	github.com/si3nloong/sqlgen => ../../
-
-	github.com/si3nloong/sqlgen/cmd/sqlgen => ../cmd/sqlgen
 )
