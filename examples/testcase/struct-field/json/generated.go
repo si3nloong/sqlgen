@@ -16,8 +16,8 @@ func (JSON) Columns() []string {
 }
 func (v JSON) Values() []any {
 	return []any{
-		v.Num.String(),     // 0 - num
-		string(v.RawBytes), // 1 - raw_bytes
+		v.Num.String(), // 0 - num
+		v.RawBytes,     // 1 - raw_bytes
 	}
 }
 func (v *JSON) Addrs() []any {
@@ -36,7 +36,7 @@ func (v JSON) NumValue() any {
 	return v.Num.String()
 }
 func (v JSON) RawBytesValue() any {
-	return string(v.RawBytes)
+	return v.RawBytes
 }
 func (v JSON) ColumnNum() sequel.ColumnValuer[json.Number] {
 	return sequel.Column("num", v.Num, func(val json.Number) driver.Value {
@@ -45,6 +45,6 @@ func (v JSON) ColumnNum() sequel.ColumnValuer[json.Number] {
 }
 func (v JSON) ColumnRawBytes() sequel.ColumnValuer[json.RawMessage] {
 	return sequel.Column("raw_bytes", v.RawBytes, func(val json.RawMessage) driver.Value {
-		return string(val)
+		return val
 	})
 }

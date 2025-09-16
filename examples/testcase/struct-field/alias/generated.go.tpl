@@ -24,7 +24,7 @@ func (v AliasStruct) Values() []any {
 		v.B,                          // 0 - b
 		v.pk.ID,                      // 1 - Id
 		(string)(v.Header),           // 2 - header
-		string(v.Raw),                // 3 - raw
+		v.Raw,                        // 3 - raw
 		(string)(v.Text),             // 4 - text
 		v.NullStr,                    // 5 - null_str
 		(time.Time)(v.model.Created), // 6 - created
@@ -53,7 +53,7 @@ func (v AliasStruct) FindOneByPKStmt() (string, []any) {
 	return "SELECT `b`,`Id`,`header`,`raw`,`text`,`null_str`,`created`,`updated` FROM `alias_struct` WHERE `Id` = ? LIMIT 1;", []any{v.pk.ID}
 }
 func (v AliasStruct) UpdateOneByPKStmt() (string, []any) {
-	return "UPDATE `alias_struct` SET `b` = ?,`header` = ?,`raw` = ?,`text` = ?,`null_str` = ?,`created` = ?,`updated` = ? WHERE `Id` = ?;", []any{v.B, (string)(v.Header), string(v.Raw), (string)(v.Text), v.NullStr, (time.Time)(v.model.Created), (time.Time)(v.model.Updated), v.pk.ID}
+	return "UPDATE `alias_struct` SET `b` = ?,`header` = ?,`raw` = ?,`text` = ?,`null_str` = ?,`created` = ?,`updated` = ? WHERE `Id` = ?;", []any{v.B, (string)(v.Header), v.Raw, (string)(v.Text), v.NullStr, (time.Time)(v.model.Created), (time.Time)(v.model.Updated), v.pk.ID}
 }
 func (v AliasStruct) BValue() any {
 	return v.B
@@ -65,7 +65,7 @@ func (v AliasStruct) HeaderValue() any {
 	return (string)(v.Header)
 }
 func (v AliasStruct) RawValue() any {
-	return string(v.Raw)
+	return v.Raw
 }
 func (v AliasStruct) TextValue() any {
 	return (string)(v.Text)
@@ -96,7 +96,7 @@ func (v AliasStruct) ColumnHeader() sequel.ColumnValuer[aliasStr] {
 }
 func (v AliasStruct) ColumnRaw() sequel.ColumnValuer[sql.RawBytes] {
 	return sequel.Column("raw", v.Raw, func(val sql.RawBytes) driver.Value {
-		return string(val)
+		return val
 	})
 }
 func (v AliasStruct) ColumnText() sequel.ColumnValuer[customStr] {

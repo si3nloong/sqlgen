@@ -156,7 +156,7 @@ func (v Ptr) StrValue() any {
 }
 func (v Ptr) BytesValue() any {
 	if v.Bytes != nil {
-		return string(*v.Bytes)
+		return *v.Bytes
 	}
 	return nil
 }
@@ -284,7 +284,7 @@ func (v Ptr) ColumnStr() sequel.ColumnValuer[*string] {
 func (v Ptr) ColumnBytes() sequel.ColumnValuer[*[]byte] {
 	return sequel.Column("bytes", v.Bytes, func(val *[]byte) driver.Value {
 		if val != nil {
-			return string(*val)
+			return *val
 		}
 		return nil
 	})

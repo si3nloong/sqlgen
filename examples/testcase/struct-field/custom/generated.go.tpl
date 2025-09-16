@@ -118,7 +118,7 @@ func (v Customer) Values() []any {
 		(int64)(v.Age), // 1 - howOld
 		v.Name,         // 2 - name
 		v.Address,      // 3 - address
-		sqltype.StringSlice[longText](v.Nicknames), // 4 - nicknames
+		(sqltype.StringSlice[longText])(v.Nicknames), // 4 - nicknames
 		v.Status, // 5 - status
 		v.JoinAt, // 6 - join_at
 	}
@@ -153,7 +153,7 @@ func (v Customer) AddressValue() any {
 	return v.Address
 }
 func (v Customer) NicknamesValue() any {
-	return sqltype.StringSlice[longText](v.Nicknames)
+	return (sqltype.StringSlice[longText])(v.Nicknames)
 }
 func (v Customer) StatusValue() any {
 	return v.Status
@@ -183,7 +183,7 @@ func (v Customer) ColumnAddress() sequel.ColumnValuer[Addresses] {
 }
 func (v Customer) ColumnNicknames() sequel.ColumnValuer[[]longText] {
 	return sequel.Column("nicknames", v.Nicknames, func(val []longText) driver.Value {
-		return sqltype.StringSlice[longText](val)
+		return (sqltype.StringSlice[longText])(val)
 	})
 }
 func (v Customer) ColumnStatus() sequel.ColumnValuer[string] {

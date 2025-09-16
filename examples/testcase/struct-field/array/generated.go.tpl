@@ -15,10 +15,10 @@ func (Array) Columns() []string {
 }
 func (v Array) Values() []any {
 	return []any{
-		string(v.Tuple[:]),        // 0 - tuple
+		v.Tuple[:],                // 0 - tuple
 		string(v.Runes[:]),        // 1 - runes
-		string(v.Bytes[:]),        // 2 - bytes
-		string(v.FixedSize[:]),    // 3 - fixed_size
+		v.Bytes[:],                // 2 - bytes
+		v.FixedSize[:],            // 3 - fixed_size
 		encoding.JSONValue(v.Str), // 4 - str
 	}
 }
@@ -38,23 +38,23 @@ func (v Array) InsertOneStmt() (string, []any) {
 	return "INSERT INTO `array` (`tuple`,`runes`,`bytes`,`fixed_size`,`str`) VALUES (?,?,?,?,?);", v.Values()
 }
 func (v Array) TupleValue() any {
-	return string(v.Tuple[:])
+	return v.Tuple[:]
 }
 func (v Array) RunesValue() any {
 	return string(v.Runes[:])
 }
 func (v Array) BytesValue() any {
-	return string(v.Bytes[:])
+	return v.Bytes[:]
 }
 func (v Array) FixedSizeValue() any {
-	return string(v.FixedSize[:])
+	return v.FixedSize[:]
 }
 func (v Array) StrValue() any {
 	return encoding.JSONValue(v.Str)
 }
 func (v Array) ColumnTuple() sequel.ColumnValuer[[2]byte] {
 	return sequel.Column("tuple", v.Tuple, func(val [2]byte) driver.Value {
-		return string(val[:])
+		return val[:]
 	})
 }
 func (v Array) ColumnRunes() sequel.ColumnValuer[[4]rune] {
@@ -64,12 +64,12 @@ func (v Array) ColumnRunes() sequel.ColumnValuer[[4]rune] {
 }
 func (v Array) ColumnBytes() sequel.ColumnValuer[[10]byte] {
 	return sequel.Column("bytes", v.Bytes, func(val [10]byte) driver.Value {
-		return string(val[:])
+		return val[:]
 	})
 }
 func (v Array) ColumnFixedSize() sequel.ColumnValuer[[10]byte] {
 	return sequel.Column("fixed_size", v.FixedSize, func(val [10]byte) driver.Value {
-		return string(val[:])
+		return val[:]
 	})
 }
 func (v Array) ColumnStr() sequel.ColumnValuer[[100]Str] {

@@ -17,14 +17,14 @@ func (Model) Columns() []string {
 }
 func (v Model) Values() []any {
 	return []any{
-		v.Str,              // 0 - str
-		v.Bool,             // 1 - bool
-		string(v.RawBytes), // 2 - raw_bytes
-		v.Int16,            // 3 - int_16
-		v.Int32,            // 4 - int_32
-		v.Int64,            // 5 - int_64
-		v.Float64,          // 6 - float_64
-		v.Time,             // 7 - time
+		v.Str,      // 0 - str
+		v.Bool,     // 1 - bool
+		v.RawBytes, // 2 - raw_bytes
+		v.Int16,    // 3 - int_16
+		v.Int32,    // 4 - int_32
+		v.Int64,    // 5 - int_64
+		v.Float64,  // 6 - float_64
+		v.Time,     // 7 - time
 	}
 }
 func (v *Model) Addrs() []any {
@@ -52,7 +52,7 @@ func (v Model) BoolValue() any {
 	return v.Bool
 }
 func (v Model) RawBytesValue() any {
-	return string(v.RawBytes)
+	return v.RawBytes
 }
 func (v Model) Int16Value() any {
 	return v.Int16
@@ -81,7 +81,7 @@ func (v Model) ColumnBool() sequel.ColumnValuer[sql.NullBool] {
 }
 func (v Model) ColumnRawBytes() sequel.ColumnValuer[sql.RawBytes] {
 	return sequel.Column("raw_bytes", v.RawBytes, func(val sql.RawBytes) driver.Value {
-		return string(val)
+		return val
 	})
 }
 func (v Model) ColumnInt16() sequel.ColumnValuer[sql.NullInt16] {

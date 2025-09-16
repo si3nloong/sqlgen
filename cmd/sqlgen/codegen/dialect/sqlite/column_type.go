@@ -1,4 +1,4 @@
-package mysql
+package sqlite
 
 import (
 	"database/sql"
@@ -13,28 +13,22 @@ import (
 	"github.com/si3nloong/sqlgen/sequel/sqltype"
 )
 
-func (s *mysqlDriver) ColumnDataTypes() map[string]*dialect.ColumnType {
+func (s *sqliteDriver) ColumnDataTypes() map[string]*dialect.ColumnType {
 	dataTypes := map[string]*dialect.ColumnType{
 		"rune": {
-			DataType: s.columnDataType("CHAR(1)"),
+			DataType: s.columnDataType("TEXT"),
 			Valuer:   "(string)({{goPath}})",
 			Scanner:  "{{addrOfGoPath}}",
 		},
 		"byte": {
-			DataType: s.columnDataType("CHAR(1)"),
+			DataType: s.columnDataType("BLOB"),
 			Valuer:   "{{goPath}}",
 			Scanner:  "{{addrOfGoPath}}",
 		},
 		"string": {
-			DataType: func(col dialect.GoColumn) string {
-				size := 255
-				if n := col.Size(); n > 0 {
-					size = n
-				}
-				return fmt.Sprintf("VARCHAR(%d)", size)
-			},
-			Valuer:  "(string)({{goPath}})",
-			Scanner: goutil.GenericFuncName(encoding.StringScanner[string, *string], "{{elemType}}", "{{addr}}"),
+			DataType: s.columnDataType("TEXT", ""),
+			Valuer:   "(string)({{goPath}})",
+			Scanner:  goutil.GenericFuncName(encoding.StringScanner[string, *string], "{{elemType}}", "{{addr}}"),
 		},
 		"bool": {
 			DataType: s.columnDataType("BOOL", false),
@@ -92,17 +86,17 @@ func (s *mysqlDriver) ColumnDataTypes() map[string]*dialect.ColumnType {
 			Scanner:  goutil.GenericFuncName(encoding.Uint64Scanner[uint64, *uint64], "{{elemType}}", "{{addr}}"),
 		},
 		"float32": {
-			DataType: s.columnDataType("FLOAT", int64(0)),
+			DataType: s.columnDataType("REAL", int64(0)),
 			Valuer:   "(float64)({{goPath}})",
 			Scanner:  goutil.GenericFuncName(encoding.Float32Scanner[float32, *float32], "{{elemType}}", "{{addr}}"),
 		},
 		"float64": {
-			DataType: s.columnDataType("FLOAT", int64(0)),
+			DataType: s.columnDataType("REAL", int64(0)),
 			Valuer:   "(float64)({{goPath}})",
 			Scanner:  goutil.GenericFuncName(encoding.Float64Scanner[float64, *float64], "{{elemType}}", "{{addr}}"),
 		},
 		"time.Time": {
-			DataType: s.columnDataType("TIMESTAMP", sql.RawBytes("CURRENT_TIMESTAMP")),
+			DataType: s.columnDataType("TEXT"),
 			Valuer:   "(time.Time)({{goPath}})",
 			Scanner:  goutil.GenericFunc(encoding.TimeScanner[*time.Time], "{{addr}}"),
 		},
@@ -112,26 +106,22 @@ func (s *mysqlDriver) ColumnDataTypes() map[string]*dialect.ColumnType {
 			Scanner:  "(*database/sql.RawBytes)({{addrOfGoPath}})",
 		},
 		"encoding/json.RawMessage": {
-			DataType: s.columnDataType("JSON"),
+			DataType: s.columnDataType("TEXT"),
 			Valuer:   "(string)({{goPath}})",
 			Scanner:  "({{addrOfGoPath}})",
 		},
 		"[...]rune": {
-			DataType: func(c dialect.GoColumn) string {
-				return s.columnDataType(fmt.Sprintf("VARCHAR(%d)", c.Size()))(c)
-			},
-			Valuer:  "string({{goPath}}[:])",
-			Scanner: goutil.GenericFunc(encoding.RuneArrayScanner[rune], "{{goPath}}[:]", "{{len}}"),
+			DataType: s.columnDataType("TEXT"),
+			Valuer:   "string({{goPath}}[:])",
+			Scanner:  goutil.GenericFunc(encoding.RuneArrayScanner[rune], "{{goPath}}[:]", "{{len}}"),
 		},
 		"[...]byte": {
-			DataType: func(c dialect.GoColumn) string {
-				return s.columnDataType(fmt.Sprintf("CHAR(%d)", c.Size()))(c)
-			},
-			Valuer:  "{{goPath}}[:]",
-			Scanner: goutil.GenericFunc(encoding.ByteArrayScanner[byte], "{{goPath}}[:]", "{{len}}"),
+			DataType: s.columnDataType("BLOB"),
+			Valuer:   "{{goPath}}[:]",
+			Scanner:  goutil.GenericFunc(encoding.ByteArrayScanner[byte], "{{goPath}}[:]", "{{len}}"),
 		},
 		"[]string": {
-			DataType: s.columnDataType("JSON"),
+			DataType: s.columnDataType("TEXT"),
 			Valuer:   "(" + goutil.GetTypeName(sqltype.StringSlice[string]{}) + "[{{elemType}}])({{goPath}})",
 			Scanner:  "(*" + goutil.GetTypeName(sqltype.StringSlice[string]{}) + "[{{elemType}}])({{addrOfGoPath}})",
 		},
@@ -141,72 +131,72 @@ func (s *mysqlDriver) ColumnDataTypes() map[string]*dialect.ColumnType {
 			Scanner:  goutil.GenericFuncName(encoding.StringScanner[[]byte, *[]byte], "{{baseType}}", "{{addr}}"),
 		},
 		"[]bool": {
-			DataType: s.columnDataType("JSON"),
+			DataType: s.columnDataType("TEXT"),
 			Valuer:   "(" + goutil.GetTypeName(sqltype.BoolSlice[bool]{}) + "[{{elemType}}])({{goPath}})",
 			Scanner:  "(*" + goutil.GetTypeName(sqltype.BoolSlice[bool]{}) + "[{{elemType}}])({{addrOfGoPath}})",
 		},
 		"[]int": {
-			DataType: s.columnDataType("JSON"),
+			DataType: s.columnDataType("TEXT"),
 			Valuer:   "(" + goutil.GetTypeName(sqltype.IntSlice[int]{}) + "[{{elemType}}])({{goPath}})",
 			Scanner:  "(*" + goutil.GetTypeName(sqltype.IntSlice[int]{}) + "[{{elemType}}])({{addrOfGoPath}})",
 		},
 		"[]int8": {
-			DataType: s.columnDataType("JSON"),
+			DataType: s.columnDataType("TEXT"),
 			Valuer:   "(" + goutil.GetTypeName(sqltype.Int8Slice[int8]{}) + "[{{elemType}}])({{goPath}})",
 			Scanner:  "(*" + goutil.GetTypeName(sqltype.Int8Slice[int8]{}) + "[{{elemType}}])({{addrOfGoPath}})",
 		},
 		"[]int16": {
-			DataType: s.columnDataType("JSON"),
+			DataType: s.columnDataType("TEXT"),
 			Valuer:   "(" + goutil.GetTypeName(sqltype.Int16Slice[int16]{}) + "[{{elemType}}])({{goPath}})",
 			Scanner:  "(*" + goutil.GetTypeName(sqltype.Int16Slice[int16]{}) + "[{{elemType}}])({{addrOfGoPath}})",
 		},
 		"[]int32": {
-			DataType: s.columnDataType("JSON"),
+			DataType: s.columnDataType("TEXT"),
 			Valuer:   "(" + goutil.GetTypeName(sqltype.Int32Slice[int32]{}) + "[{{elemType}}])({{goPath}})",
 			Scanner:  "(*" + goutil.GetTypeName(sqltype.Int32Slice[int32]{}) + "[{{elemType}}])({{addrOfGoPath}})",
 		},
 		"[]int64": {
-			DataType: s.columnDataType("JSON"),
+			DataType: s.columnDataType("TEXT"),
 			Valuer:   "(" + goutil.GetTypeName(sqltype.Int64Slice[int64]{}) + "[{{elemType}}])({{goPath}})",
 			Scanner:  "(*" + goutil.GetTypeName(sqltype.Int64Slice[int64]{}) + "[{{elemType}}])({{addrOfGoPath}})",
 		},
 		"[]uint": {
-			DataType: s.columnDataType("JSON"),
+			DataType: s.columnDataType("TEXT"),
 			Valuer:   "(" + goutil.GetTypeName(sqltype.UintSlice[uint]{}) + "[{{elemType}}])({{goPath}})",
 			Scanner:  "(*" + goutil.GetTypeName(sqltype.UintSlice[uint]{}) + "[{{elemType}}])({{addrOfGoPath}})",
 		},
 		"[]uint8": {
-			DataType: s.columnDataType("JSON"),
+			DataType: s.columnDataType("TEXT"),
 			Valuer:   "(" + goutil.GetTypeName(sqltype.Uint8Slice[uint8]{}) + "[{{elemType}}])({{goPath}})",
 			Scanner:  "(*" + goutil.GetTypeName(sqltype.Uint8Slice[uint8]{}) + "[{{elemType}}])({{addrOfGoPath}})",
 		},
 		"[]uint16": {
-			DataType: s.columnDataType("JSON"),
+			DataType: s.columnDataType("TEXT"),
 			Valuer:   "(" + goutil.GetTypeName(sqltype.Uint16Slice[uint16]{}) + "[{{elemType}}])({{goPath}})",
 			Scanner:  "(*" + goutil.GetTypeName(sqltype.Uint16Slice[uint16]{}) + "[{{elemType}}])({{addrOfGoPath}})",
 		},
 		"[]uint32": {
-			DataType: s.columnDataType("JSON"),
+			DataType: s.columnDataType("TEXT"),
 			Valuer:   "(" + goutil.GetTypeName(sqltype.Uint32Slice[uint32]{}) + "[{{elemType}}])({{goPath}})",
 			Scanner:  "(*" + goutil.GetTypeName(sqltype.Uint32Slice[uint32]{}) + "[{{elemType}}])({{addrOfGoPath}})",
 		},
 		"[]uint64": {
-			DataType: s.columnDataType("JSON"),
+			DataType: s.columnDataType("TEXT"),
 			Valuer:   "(" + goutil.GetTypeName(sqltype.Uint64Slice[uint64]{}) + "[{{elemType}}])({{goPath}})",
 			Scanner:  "(*" + goutil.GetTypeName(sqltype.Uint64Slice[uint64]{}) + "[{{elemType}}])({{addrOfGoPath}})",
 		},
 		"[]float32": {
-			DataType: s.columnDataType("JSON"),
+			DataType: s.columnDataType("TEXT"),
 			Valuer:   "(" + goutil.GetTypeName(sqltype.Float32Slice[float32]{}) + "[{{elemType}}])({{goPath}})",
 			Scanner:  "(*" + goutil.GetTypeName(sqltype.Float32Slice[float32]{}) + "[{{elemType}}])({{addrOfGoPath}})",
 		},
 		"[]float64": {
-			DataType: s.columnDataType("JSON"),
+			DataType: s.columnDataType("TEXT"),
 			Valuer:   "(" + goutil.GetTypeName(sqltype.Float64Slice[float64]{}) + "[{{elemType}}])({{goPath}})",
 			Scanner:  "(*" + goutil.GetTypeName(sqltype.Float64Slice[float64]{}) + "[{{elemType}}])({{addrOfGoPath}})",
 		},
 		"*": {
-			DataType: s.columnDataType("JSON"),
+			DataType: s.columnDataType("TEXT"),
 			Valuer:   goutil.GenericFunc(encoding.JSONValue[any], "{{goPath}}"),
 			Scanner:  goutil.GenericFunc(encoding.JSONScanner[any], "{{addr}}"),
 		},
@@ -214,7 +204,7 @@ func (s *mysqlDriver) ColumnDataTypes() map[string]*dialect.ColumnType {
 	return dataTypes
 }
 
-func (*mysqlDriver) columnDataType(dataType string, defaultValue ...any) func(dialect.GoColumn) string {
+func (*sqliteDriver) columnDataType(dataType string, defaultValue ...any) func(dialect.GoColumn) string {
 	return func(column dialect.GoColumn) string {
 		str := dataType
 		if !column.GoNullable() {

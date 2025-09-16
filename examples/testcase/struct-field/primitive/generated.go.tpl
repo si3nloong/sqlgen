@@ -17,7 +17,7 @@ func (Primitive) Columns() []string {
 func (v Primitive) Values() []any {
 	return []any{
 		v.Str,             //  0 - str
-		string(v.Bytes),   //  1 - bytes
+		v.Bytes,           //  1 - bytes
 		v.Bool,            //  2 - bool
 		(int64)(v.Int),    //  3 - int
 		(int64)(v.Int8),   //  4 - int_8
@@ -64,7 +64,7 @@ func (v Primitive) StrValue() any {
 	return v.Str
 }
 func (v Primitive) BytesValue() any {
-	return string(v.Bytes)
+	return v.Bytes
 }
 func (v Primitive) BoolValue() any {
 	return v.Bool
@@ -115,7 +115,7 @@ func (v Primitive) ColumnStr() sequel.ColumnValuer[string] {
 }
 func (v Primitive) ColumnBytes() sequel.ColumnValuer[[]byte] {
 	return sequel.Column("bytes", v.Bytes, func(val []byte) driver.Value {
-		return string(val)
+		return val
 	})
 }
 func (v Primitive) ColumnBool() sequel.ColumnValuer[bool] {
