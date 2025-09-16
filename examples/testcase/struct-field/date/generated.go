@@ -1,8 +1,6 @@
 package date
 
 import (
-	"database/sql/driver"
-
 	"cloud.google.com/go/civil"
 	"github.com/google/uuid"
 	"github.com/si3nloong/sqlgen/sequel"
@@ -49,13 +47,13 @@ func (v User) IDValue() any {
 func (v User) BirthDateValue() any {
 	return encoding.TextValue(v.BirthDate)
 }
-func (v User) ColumnID() sequel.ColumnValuer[uuid.UUID] {
-	return sequel.Column("id", v.ID, func(val uuid.UUID) driver.Value {
+func (v User) ColumnID() sequel.ColumnConvertClause[uuid.UUID] {
+	return sequel.Column("id", v.ID, func(val uuid.UUID) any {
 		return val
 	})
 }
-func (v User) ColumnBirthDate() sequel.ColumnValuer[civil.Date] {
-	return sequel.Column("birth_date", v.BirthDate, func(val civil.Date) driver.Value {
+func (v User) ColumnBirthDate() sequel.ColumnConvertClause[civil.Date] {
+	return sequel.Column("birth_date", v.BirthDate, func(val civil.Date) any {
 		return encoding.TextValue(val)
 	})
 }

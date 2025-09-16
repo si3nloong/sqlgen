@@ -1,8 +1,6 @@
 package array
 
 import (
-	"database/sql/driver"
-
 	"github.com/si3nloong/sqlgen/sequel"
 	"github.com/si3nloong/sqlgen/sequel/encoding"
 )
@@ -52,28 +50,28 @@ func (v Array) FixedSizeValue() any {
 func (v Array) StrValue() any {
 	return encoding.JSONValue(v.Str)
 }
-func (v Array) ColumnTuple() sequel.ColumnValuer[[2]byte] {
-	return sequel.Column("tuple", v.Tuple, func(val [2]byte) driver.Value {
+func (v Array) ColumnTuple() sequel.ColumnConvertClause[[2]byte] {
+	return sequel.Column("tuple", v.Tuple, func(val [2]byte) any {
 		return val[:]
 	})
 }
-func (v Array) ColumnRunes() sequel.ColumnValuer[[4]rune] {
-	return sequel.Column("runes", v.Runes, func(val [4]rune) driver.Value {
+func (v Array) ColumnRunes() sequel.ColumnConvertClause[[4]rune] {
+	return sequel.Column("runes", v.Runes, func(val [4]rune) any {
 		return string(val[:])
 	})
 }
-func (v Array) ColumnBytes() sequel.ColumnValuer[[10]byte] {
-	return sequel.Column("bytes", v.Bytes, func(val [10]byte) driver.Value {
+func (v Array) ColumnBytes() sequel.ColumnConvertClause[[10]byte] {
+	return sequel.Column("bytes", v.Bytes, func(val [10]byte) any {
 		return val[:]
 	})
 }
-func (v Array) ColumnFixedSize() sequel.ColumnValuer[[10]byte] {
-	return sequel.Column("fixed_size", v.FixedSize, func(val [10]byte) driver.Value {
+func (v Array) ColumnFixedSize() sequel.ColumnConvertClause[[10]byte] {
+	return sequel.Column("fixed_size", v.FixedSize, func(val [10]byte) any {
 		return val[:]
 	})
 }
-func (v Array) ColumnStr() sequel.ColumnValuer[[100]Str] {
-	return sequel.Column("str", v.Str, func(val [100]Str) driver.Value {
+func (v Array) ColumnStr() sequel.ColumnConvertClause[[100]Str] {
+	return sequel.Column("str", v.Str, func(val [100]Str) any {
 		return encoding.JSONValue(val)
 	})
 }

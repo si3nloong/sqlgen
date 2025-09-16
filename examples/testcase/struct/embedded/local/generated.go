@@ -1,9 +1,6 @@
 package embedded
 
 import (
-	"database/sql/driver"
-	"time"
-
 	"github.com/si3nloong/sqlgen/sequel"
 )
 
@@ -52,28 +49,18 @@ func (v B) CreatedValue() any {
 func (v B) OKValue() any {
 	return v.ts.OK
 }
-func (v B) ColumnID() sequel.ColumnValuer[int64] {
-	return sequel.Column("id", v.a.ID, func(val int64) driver.Value {
-		return val
-	})
+func (v B) ColumnID() sequel.ColumnClause {
+	return sequel.BasicColumn("id", v.a.ID)
 }
-func (v B) ColumnName() sequel.ColumnValuer[string] {
-	return sequel.Column("name", v.a.Name, func(val string) driver.Value {
-		return val
-	})
+func (v B) ColumnName() sequel.ColumnClause {
+	return sequel.BasicColumn("name", v.a.Name)
 }
-func (v B) ColumnZ() sequel.ColumnValuer[bool] {
-	return sequel.Column("z", v.a.Z, func(val bool) driver.Value {
-		return val
-	})
+func (v B) ColumnZ() sequel.ColumnClause {
+	return sequel.BasicColumn("z", v.a.Z)
 }
-func (v B) ColumnCreated() sequel.ColumnValuer[time.Time] {
-	return sequel.Column("created", v.ts.Created, func(val time.Time) driver.Value {
-		return val
-	})
+func (v B) ColumnCreated() sequel.ColumnClause {
+	return sequel.BasicColumn("created", v.ts.Created)
 }
-func (v B) ColumnOK() sequel.ColumnValuer[bool] {
-	return sequel.Column("ok", v.ts.OK, func(val bool) driver.Value {
-		return val
-	})
+func (v B) ColumnOK() sequel.ColumnClause {
+	return sequel.BasicColumn("ok", v.ts.OK)
 }

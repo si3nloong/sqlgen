@@ -1,8 +1,6 @@
 package uint64
 
 import (
-	"database/sql/driver"
-
 	"github.com/si3nloong/sqlgen/sequel"
 	"github.com/si3nloong/sqlgen/sequel/encoding"
 )
@@ -17,7 +15,7 @@ func (v *Model) ScanAutoIncr(val int64) error {
 	return nil
 }
 func (v Model) PK() (string, int, any) {
-	return "id", 0, (int64)(v.ID)
+	return "id", 0, v.ID
 }
 func (Model) Columns() []string {
 	return []string{"id"} // 1
@@ -28,13 +26,13 @@ func (v *Model) Addrs() []any {
 	}
 }
 func (v Model) FindOneByPKStmt() (string, []any) {
-	return "SELECT `id` FROM `model` WHERE `id` = ? LIMIT 1;", []any{(int64)(v.ID)}
+	return "SELECT `id` FROM `model` WHERE `id` = ? LIMIT 1;", []any{v.ID}
 }
 func (v Model) IDValue() any {
-	return (int64)(v.ID)
+	return v.ID
 }
-func (v Model) ColumnID() sequel.ColumnValuer[uint64] {
-	return sequel.Column("id", v.ID, func(val uint64) driver.Value {
-		return (int64)(val)
+func (v Model) ColumnID() sequel.ColumnConvertClause[uint64] {
+	return sequel.Column("id", v.ID, func(val uint64) any {
+		return val
 	})
 }

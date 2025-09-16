@@ -1,8 +1,6 @@
 package int64
 
 import (
-	"database/sql/driver"
-
 	"github.com/si3nloong/sqlgen/sequel"
 )
 
@@ -32,8 +30,6 @@ func (v Model) FindOneByPKStmt() (string, []any) {
 func (v Model) IDValue() any {
 	return v.ID
 }
-func (v Model) ColumnID() sequel.ColumnValuer[int64] {
-	return sequel.Column("id", v.ID, func(val int64) driver.Value {
-		return val
-	})
+func (v Model) ColumnID() sequel.ColumnClause {
+	return sequel.BasicColumn("id", v.ID)
 }

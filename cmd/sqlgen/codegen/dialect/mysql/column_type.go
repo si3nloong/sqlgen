@@ -88,7 +88,7 @@ func (s *mysqlDriver) ColumnDataTypes() map[string]*dialect.ColumnType {
 		},
 		"uint64": {
 			DataType: s.columnDataType("INTEGER", false),
-			Valuer:   "(int64)({{goPath}})",
+			Valuer:   "{{goPath}}",
 			Scanner:  goutil.GenericFuncName(encoding.Uint64Scanner[uint64, *uint64], "{{elemType}}", "{{addr}}"),
 		},
 		"float32": {

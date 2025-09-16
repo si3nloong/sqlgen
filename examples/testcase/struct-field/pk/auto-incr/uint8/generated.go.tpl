@@ -1,8 +1,6 @@
 package uint8
 
 import (
-	"database/sql/driver"
-
 	"github.com/si3nloong/sqlgen/sequel"
 	"github.com/si3nloong/sqlgen/sequel/encoding"
 )
@@ -33,8 +31,8 @@ func (v Model) FindOneByPKStmt() (string, []any) {
 func (v Model) IDValue() any {
 	return (int64)(v.ID)
 }
-func (v Model) ColumnID() sequel.ColumnValuer[uint8] {
-	return sequel.Column("id", v.ID, func(val uint8) driver.Value {
+func (v Model) ColumnID() sequel.ColumnConvertClause[uint8] {
+	return sequel.Column("id", v.ID, func(val uint8) any {
 		return (int64)(val)
 	})
 }

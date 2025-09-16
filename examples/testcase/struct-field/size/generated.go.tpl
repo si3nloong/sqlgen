@@ -1,9 +1,6 @@
 package size
 
 import (
-	"database/sql/driver"
-	"time"
-
 	"github.com/si3nloong/sqlgen/sequel"
 )
 
@@ -42,18 +39,12 @@ func (v Size) TimestampValue() any {
 func (v Size) TimeValue() any {
 	return v.Time
 }
-func (v Size) ColumnStr() sequel.ColumnValuer[string] {
-	return sequel.Column("str", v.Str, func(val string) driver.Value {
-		return val
-	})
+func (v Size) ColumnStr() sequel.ColumnClause {
+	return sequel.BasicColumn("str", v.Str)
 }
-func (v Size) ColumnTimestamp() sequel.ColumnValuer[time.Time] {
-	return sequel.Column("timestamp", v.Timestamp, func(val time.Time) driver.Value {
-		return val
-	})
+func (v Size) ColumnTimestamp() sequel.ColumnClause {
+	return sequel.BasicColumn("timestamp", v.Timestamp)
 }
-func (v Size) ColumnTime() sequel.ColumnValuer[time.Time] {
-	return sequel.Column("time", v.Time, func(val time.Time) driver.Value {
-		return val
-	})
+func (v Size) ColumnTime() sequel.ColumnClause {
+	return sequel.BasicColumn("time", v.Time)
 }

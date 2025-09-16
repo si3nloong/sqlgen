@@ -1,8 +1,6 @@
 package version
 
 import (
-	"database/sql/driver"
-
 	uuid "github.com/gofrs/uuid/v5"
 	"github.com/si3nloong/sqlgen/sequel"
 )
@@ -39,8 +37,8 @@ func (v Version) FindOneByPKStmt() (string, []any) {
 func (v Version) IDValue() any {
 	return v.ID
 }
-func (v Version) ColumnID() sequel.ColumnValuer[uuid.UUID] {
-	return sequel.Column("id", v.ID, func(val uuid.UUID) driver.Value {
+func (v Version) ColumnID() sequel.ColumnConvertClause[uuid.UUID] {
+	return sequel.Column("id", v.ID, func(val uuid.UUID) any {
 		return val
 	})
 }

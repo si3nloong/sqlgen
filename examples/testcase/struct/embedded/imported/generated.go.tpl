@@ -1,8 +1,6 @@
 package embedded
 
 import (
-	"database/sql/driver"
-
 	"cloud.google.com/go/civil"
 	"github.com/si3nloong/sqlgen/sequel"
 	"github.com/si3nloong/sqlgen/sequel/encoding"
@@ -38,13 +36,13 @@ func (v B) DateValue() any {
 func (v B) TimeValue() any {
 	return encoding.TextValue(v.DateTime.Time)
 }
-func (v B) ColumnDate() sequel.ColumnValuer[civil.Date] {
-	return sequel.Column("date", v.DateTime.Date, func(val civil.Date) driver.Value {
+func (v B) ColumnDate() sequel.ColumnConvertClause[civil.Date] {
+	return sequel.Column("date", v.DateTime.Date, func(val civil.Date) any {
 		return encoding.TextValue(val)
 	})
 }
-func (v B) ColumnTime() sequel.ColumnValuer[civil.Time] {
-	return sequel.Column("time", v.DateTime.Time, func(val civil.Time) driver.Value {
+func (v B) ColumnTime() sequel.ColumnConvertClause[civil.Time] {
+	return sequel.Column("time", v.DateTime.Time, func(val civil.Time) any {
 		return encoding.TextValue(val)
 	})
 }

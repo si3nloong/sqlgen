@@ -1,8 +1,6 @@
 package pkautoincr
 
 import (
-	"database/sql/driver"
-
 	"github.com/si3nloong/sqlgen/sequel"
 	"github.com/si3nloong/sqlgen/sequel/encoding"
 )
@@ -64,23 +62,21 @@ func (v Model) IDValue() any {
 func (v Model) NValue() any {
 	return v.N
 }
-func (v Model) ColumnName() sequel.ColumnValuer[LongText] {
-	return sequel.Column("name", v.Name, func(val LongText) driver.Value {
+func (v Model) ColumnName() sequel.ColumnConvertClause[LongText] {
+	return sequel.Column("name", v.Name, func(val LongText) any {
 		return (string)(val)
 	})
 }
-func (v Model) ColumnF() sequel.ColumnValuer[Flag] {
-	return sequel.Column("f", v.F, func(val Flag) driver.Value {
+func (v Model) ColumnF() sequel.ColumnConvertClause[Flag] {
+	return sequel.Column("f", v.F, func(val Flag) any {
 		return (bool)(val)
 	})
 }
-func (v Model) ColumnID() sequel.ColumnValuer[uint] {
-	return sequel.Column("id", v.ID, func(val uint) driver.Value {
+func (v Model) ColumnID() sequel.ColumnConvertClause[uint] {
+	return sequel.Column("id", v.ID, func(val uint) any {
 		return (int64)(val)
 	})
 }
-func (v Model) ColumnN() sequel.ColumnValuer[int64] {
-	return sequel.Column("n", v.N, func(val int64) driver.Value {
-		return val
-	})
+func (v Model) ColumnN() sequel.ColumnClause {
+	return sequel.BasicColumn("n", v.N)
 }

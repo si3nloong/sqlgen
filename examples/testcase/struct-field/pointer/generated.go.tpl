@@ -1,7 +1,6 @@
 package pointer
 
 import (
-	"database/sql/driver"
 	"time"
 
 	"github.com/si3nloong/sqlgen/sequel"
@@ -222,7 +221,7 @@ func (v Ptr) Uint32Value() any {
 }
 func (v Ptr) Uint64Value() any {
 	if v.Uint64 != nil {
-		return (int64)(*v.Uint64)
+		return *v.Uint64
 	}
 	return nil
 }
@@ -268,157 +267,153 @@ func (v Ptr) AnyTimeValue() any {
 	}
 	return nil
 }
-func (v Ptr) ColumnID() sequel.ColumnValuer[int64] {
-	return sequel.Column("id", v.ID, func(val int64) driver.Value {
-		return val
-	})
+func (v Ptr) ColumnID() sequel.ColumnClause {
+	return sequel.BasicColumn("id", v.ID)
 }
-func (v Ptr) ColumnStr() sequel.ColumnValuer[*string] {
-	return sequel.Column("str", v.Str, func(val *string) driver.Value {
+func (v Ptr) ColumnStr() sequel.ColumnConvertClause[*string] {
+	return sequel.Column("str", v.Str, func(val *string) any {
 		if val != nil {
 			return *val
 		}
 		return nil
 	})
 }
-func (v Ptr) ColumnBytes() sequel.ColumnValuer[*[]byte] {
-	return sequel.Column("bytes", v.Bytes, func(val *[]byte) driver.Value {
+func (v Ptr) ColumnBytes() sequel.ColumnConvertClause[*[]byte] {
+	return sequel.Column("bytes", v.Bytes, func(val *[]byte) any {
 		if val != nil {
 			return *val
 		}
 		return nil
 	})
 }
-func (v Ptr) ColumnBool() sequel.ColumnValuer[*bool] {
-	return sequel.Column("bool", v.Bool, func(val *bool) driver.Value {
+func (v Ptr) ColumnBool() sequel.ColumnConvertClause[*bool] {
+	return sequel.Column("bool", v.Bool, func(val *bool) any {
 		if val != nil {
 			return *val
 		}
 		return nil
 	})
 }
-func (v Ptr) ColumnInt() sequel.ColumnValuer[*int] {
-	return sequel.Column("int", v.Int, func(val *int) driver.Value {
+func (v Ptr) ColumnInt() sequel.ColumnConvertClause[*int] {
+	return sequel.Column("int", v.Int, func(val *int) any {
 		if val != nil {
 			return (int64)(*val)
 		}
 		return nil
 	})
 }
-func (v Ptr) ColumnInt8() sequel.ColumnValuer[*int8] {
-	return sequel.Column("int_8", v.Int8, func(val *int8) driver.Value {
+func (v Ptr) ColumnInt8() sequel.ColumnConvertClause[*int8] {
+	return sequel.Column("int_8", v.Int8, func(val *int8) any {
 		if val != nil {
 			return (int64)(*val)
 		}
 		return nil
 	})
 }
-func (v Ptr) ColumnInt16() sequel.ColumnValuer[*int16] {
-	return sequel.Column("int_16", v.Int16, func(val *int16) driver.Value {
+func (v Ptr) ColumnInt16() sequel.ColumnConvertClause[*int16] {
+	return sequel.Column("int_16", v.Int16, func(val *int16) any {
 		if val != nil {
 			return (int64)(*val)
 		}
 		return nil
 	})
 }
-func (v Ptr) ColumnInt32() sequel.ColumnValuer[*int32] {
-	return sequel.Column("int_32", v.Int32, func(val *int32) driver.Value {
+func (v Ptr) ColumnInt32() sequel.ColumnConvertClause[*int32] {
+	return sequel.Column("int_32", v.Int32, func(val *int32) any {
 		if val != nil {
 			return (int64)(*val)
 		}
 		return nil
 	})
 }
-func (v Ptr) ColumnInt64() sequel.ColumnValuer[*int64] {
-	return sequel.Column("int_64", v.Int64, func(val *int64) driver.Value {
+func (v Ptr) ColumnInt64() sequel.ColumnConvertClause[*int64] {
+	return sequel.Column("int_64", v.Int64, func(val *int64) any {
 		if val != nil {
 			return *val
 		}
 		return nil
 	})
 }
-func (v Ptr) ColumnUint() sequel.ColumnValuer[*uint] {
-	return sequel.Column("uint", v.Uint, func(val *uint) driver.Value {
+func (v Ptr) ColumnUint() sequel.ColumnConvertClause[*uint] {
+	return sequel.Column("uint", v.Uint, func(val *uint) any {
 		if val != nil {
 			return (int64)(*val)
 		}
 		return nil
 	})
 }
-func (v Ptr) ColumnUint8() sequel.ColumnValuer[*uint8] {
-	return sequel.Column("uint_8", v.Uint8, func(val *uint8) driver.Value {
+func (v Ptr) ColumnUint8() sequel.ColumnConvertClause[*uint8] {
+	return sequel.Column("uint_8", v.Uint8, func(val *uint8) any {
 		if val != nil {
 			return (int64)(*val)
 		}
 		return nil
 	})
 }
-func (v Ptr) ColumnUint16() sequel.ColumnValuer[*uint16] {
-	return sequel.Column("uint_16", v.Uint16, func(val *uint16) driver.Value {
+func (v Ptr) ColumnUint16() sequel.ColumnConvertClause[*uint16] {
+	return sequel.Column("uint_16", v.Uint16, func(val *uint16) any {
 		if val != nil {
 			return (int64)(*val)
 		}
 		return nil
 	})
 }
-func (v Ptr) ColumnUint32() sequel.ColumnValuer[*uint32] {
-	return sequel.Column("uint_32", v.Uint32, func(val *uint32) driver.Value {
+func (v Ptr) ColumnUint32() sequel.ColumnConvertClause[*uint32] {
+	return sequel.Column("uint_32", v.Uint32, func(val *uint32) any {
 		if val != nil {
 			return (int64)(*val)
 		}
 		return nil
 	})
 }
-func (v Ptr) ColumnUint64() sequel.ColumnValuer[*uint64] {
-	return sequel.Column("uint_64", v.Uint64, func(val *uint64) driver.Value {
+func (v Ptr) ColumnUint64() sequel.ColumnConvertClause[*uint64] {
+	return sequel.Column("uint_64", v.Uint64, func(val *uint64) any {
 		if val != nil {
-			return (int64)(*val)
+			return *val
 		}
 		return nil
 	})
 }
-func (v Ptr) ColumnF32() sequel.ColumnValuer[*float32] {
-	return sequel.Column("f_32", v.F32, func(val *float32) driver.Value {
+func (v Ptr) ColumnF32() sequel.ColumnConvertClause[*float32] {
+	return sequel.Column("f_32", v.F32, func(val *float32) any {
 		if val != nil {
 			return (float64)(*val)
 		}
 		return nil
 	})
 }
-func (v Ptr) ColumnF64() sequel.ColumnValuer[*float64] {
-	return sequel.Column("f_64", v.F64, func(val *float64) driver.Value {
+func (v Ptr) ColumnF64() sequel.ColumnConvertClause[*float64] {
+	return sequel.Column("f_64", v.F64, func(val *float64) any {
 		if val != nil {
 			return *val
 		}
 		return nil
 	})
 }
-func (v Ptr) ColumnTime() sequel.ColumnValuer[*time.Time] {
-	return sequel.Column("time", v.Time, func(val *time.Time) driver.Value {
+func (v Ptr) ColumnTime() sequel.ColumnConvertClause[*time.Time] {
+	return sequel.Column("time", v.Time, func(val *time.Time) any {
 		if val != nil {
 			return *val
 		}
 		return nil
 	})
 }
-func (v Ptr) ColumnNested() sequel.ColumnValuer[*nested] {
-	return sequel.Column("nested", v.Nested, func(val *nested) driver.Value {
+func (v Ptr) ColumnNested() sequel.ColumnConvertClause[*nested] {
+	return sequel.Column("nested", v.Nested, func(val *nested) any {
 		if val != nil {
 			return encoding.JSONValue(*val)
 		}
 		return nil
 	})
 }
-func (v Ptr) ColumnEmbeddedTime() sequel.ColumnValuer[*time.Time] {
-	return sequel.Column("embedded_time", v.deepNested.embedded.EmbeddedTime, func(val *time.Time) driver.Value {
+func (v Ptr) ColumnEmbeddedTime() sequel.ColumnConvertClause[*time.Time] {
+	return sequel.Column("embedded_time", v.deepNested.embedded.EmbeddedTime, func(val *time.Time) any {
 		if val != nil {
 			return *val
 		}
 		return nil
 	})
 }
-func (v Ptr) ColumnAnyTime() sequel.ColumnValuer[time.Time] {
-	return sequel.Column("any_time", v.deepNested.embedded.AnyTime, func(val time.Time) driver.Value {
-		return val
-	})
+func (v Ptr) ColumnAnyTime() sequel.ColumnClause {
+	return sequel.BasicColumn("any_time", v.deepNested.embedded.AnyTime)
 }

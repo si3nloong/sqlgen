@@ -1,9 +1,6 @@
 package primitive
 
 import (
-	"database/sql/driver"
-	"time"
-
 	"github.com/si3nloong/sqlgen/sequel"
 	"github.com/si3nloong/sqlgen/sequel/encoding"
 )
@@ -28,7 +25,7 @@ func (v Primitive) Values() []any {
 		(int64)(v.Uint8),  //  9 - uint_8
 		(int64)(v.Uint16), // 10 - uint_16
 		(int64)(v.Uint32), // 11 - uint_32
-		(int64)(v.Uint64), // 12 - uint_64
+		v.Uint64,          // 12 - uint_64
 		(float64)(v.F32),  // 13 - f_32
 		v.F64,             // 14 - f_64
 		v.Time,            // 15 - time
@@ -97,7 +94,7 @@ func (v Primitive) Uint32Value() any {
 	return (int64)(v.Uint32)
 }
 func (v Primitive) Uint64Value() any {
-	return (int64)(v.Uint64)
+	return v.Uint64
 }
 func (v Primitive) F32Value() any {
 	return (float64)(v.F32)
@@ -108,83 +105,73 @@ func (v Primitive) F64Value() any {
 func (v Primitive) TimeValue() any {
 	return v.Time
 }
-func (v Primitive) ColumnStr() sequel.ColumnValuer[string] {
-	return sequel.Column("str", v.Str, func(val string) driver.Value {
+func (v Primitive) ColumnStr() sequel.ColumnClause {
+	return sequel.BasicColumn("str", v.Str)
+}
+func (v Primitive) ColumnBytes() sequel.ColumnConvertClause[[]byte] {
+	return sequel.Column("bytes", v.Bytes, func(val []byte) any {
 		return val
 	})
 }
-func (v Primitive) ColumnBytes() sequel.ColumnValuer[[]byte] {
-	return sequel.Column("bytes", v.Bytes, func(val []byte) driver.Value {
+func (v Primitive) ColumnBool() sequel.ColumnClause {
+	return sequel.BasicColumn("bool", v.Bool)
+}
+func (v Primitive) ColumnInt() sequel.ColumnConvertClause[int] {
+	return sequel.Column("int", v.Int, func(val int) any {
+		return (int64)(val)
+	})
+}
+func (v Primitive) ColumnInt8() sequel.ColumnConvertClause[int8] {
+	return sequel.Column("int_8", v.Int8, func(val int8) any {
+		return (int64)(val)
+	})
+}
+func (v Primitive) ColumnInt16() sequel.ColumnConvertClause[int16] {
+	return sequel.Column("int_16", v.Int16, func(val int16) any {
+		return (int64)(val)
+	})
+}
+func (v Primitive) ColumnInt32() sequel.ColumnConvertClause[int32] {
+	return sequel.Column("int_32", v.Int32, func(val int32) any {
+		return (int64)(val)
+	})
+}
+func (v Primitive) ColumnInt64() sequel.ColumnClause {
+	return sequel.BasicColumn("int_64", v.Int64)
+}
+func (v Primitive) ColumnUint() sequel.ColumnConvertClause[uint] {
+	return sequel.Column("uint", v.Uint, func(val uint) any {
+		return (int64)(val)
+	})
+}
+func (v Primitive) ColumnUint8() sequel.ColumnConvertClause[uint8] {
+	return sequel.Column("uint_8", v.Uint8, func(val uint8) any {
+		return (int64)(val)
+	})
+}
+func (v Primitive) ColumnUint16() sequel.ColumnConvertClause[uint16] {
+	return sequel.Column("uint_16", v.Uint16, func(val uint16) any {
+		return (int64)(val)
+	})
+}
+func (v Primitive) ColumnUint32() sequel.ColumnConvertClause[uint32] {
+	return sequel.Column("uint_32", v.Uint32, func(val uint32) any {
+		return (int64)(val)
+	})
+}
+func (v Primitive) ColumnUint64() sequel.ColumnConvertClause[uint64] {
+	return sequel.Column("uint_64", v.Uint64, func(val uint64) any {
 		return val
 	})
 }
-func (v Primitive) ColumnBool() sequel.ColumnValuer[bool] {
-	return sequel.Column("bool", v.Bool, func(val bool) driver.Value {
-		return val
-	})
-}
-func (v Primitive) ColumnInt() sequel.ColumnValuer[int] {
-	return sequel.Column("int", v.Int, func(val int) driver.Value {
-		return (int64)(val)
-	})
-}
-func (v Primitive) ColumnInt8() sequel.ColumnValuer[int8] {
-	return sequel.Column("int_8", v.Int8, func(val int8) driver.Value {
-		return (int64)(val)
-	})
-}
-func (v Primitive) ColumnInt16() sequel.ColumnValuer[int16] {
-	return sequel.Column("int_16", v.Int16, func(val int16) driver.Value {
-		return (int64)(val)
-	})
-}
-func (v Primitive) ColumnInt32() sequel.ColumnValuer[int32] {
-	return sequel.Column("int_32", v.Int32, func(val int32) driver.Value {
-		return (int64)(val)
-	})
-}
-func (v Primitive) ColumnInt64() sequel.ColumnValuer[int64] {
-	return sequel.Column("int_64", v.Int64, func(val int64) driver.Value {
-		return val
-	})
-}
-func (v Primitive) ColumnUint() sequel.ColumnValuer[uint] {
-	return sequel.Column("uint", v.Uint, func(val uint) driver.Value {
-		return (int64)(val)
-	})
-}
-func (v Primitive) ColumnUint8() sequel.ColumnValuer[uint8] {
-	return sequel.Column("uint_8", v.Uint8, func(val uint8) driver.Value {
-		return (int64)(val)
-	})
-}
-func (v Primitive) ColumnUint16() sequel.ColumnValuer[uint16] {
-	return sequel.Column("uint_16", v.Uint16, func(val uint16) driver.Value {
-		return (int64)(val)
-	})
-}
-func (v Primitive) ColumnUint32() sequel.ColumnValuer[uint32] {
-	return sequel.Column("uint_32", v.Uint32, func(val uint32) driver.Value {
-		return (int64)(val)
-	})
-}
-func (v Primitive) ColumnUint64() sequel.ColumnValuer[uint64] {
-	return sequel.Column("uint_64", v.Uint64, func(val uint64) driver.Value {
-		return (int64)(val)
-	})
-}
-func (v Primitive) ColumnF32() sequel.ColumnValuer[float32] {
-	return sequel.Column("f_32", v.F32, func(val float32) driver.Value {
+func (v Primitive) ColumnF32() sequel.ColumnConvertClause[float32] {
+	return sequel.Column("f_32", v.F32, func(val float32) any {
 		return (float64)(val)
 	})
 }
-func (v Primitive) ColumnF64() sequel.ColumnValuer[float64] {
-	return sequel.Column("f_64", v.F64, func(val float64) driver.Value {
-		return val
-	})
+func (v Primitive) ColumnF64() sequel.ColumnClause {
+	return sequel.BasicColumn("f_64", v.F64)
 }
-func (v Primitive) ColumnTime() sequel.ColumnValuer[time.Time] {
-	return sequel.Column("time", v.Time, func(val time.Time) driver.Value {
-		return val
-	})
+func (v Primitive) ColumnTime() sequel.ColumnClause {
+	return sequel.BasicColumn("time", v.Time)
 }

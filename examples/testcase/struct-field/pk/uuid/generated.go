@@ -1,8 +1,6 @@
 package main
 
 import (
-	"database/sql/driver"
-
 	"github.com/google/uuid"
 	"github.com/si3nloong/sqlgen/sequel"
 )
@@ -37,13 +35,11 @@ func (v User) IDValue() any {
 func (v User) NameValue() any {
 	return v.Name
 }
-func (v User) ColumnID() sequel.ColumnValuer[uuid.UUID] {
-	return sequel.Column("id", v.ID, func(val uuid.UUID) driver.Value {
+func (v User) ColumnID() sequel.ColumnConvertClause[uuid.UUID] {
+	return sequel.Column("id", v.ID, func(val uuid.UUID) any {
 		return val
 	})
 }
-func (v User) ColumnName() sequel.ColumnValuer[string] {
-	return sequel.Column("name", v.Name, func(val string) driver.Value {
-		return val
-	})
+func (v User) ColumnName() sequel.ColumnClause {
+	return sequel.BasicColumn("name", v.Name)
 }

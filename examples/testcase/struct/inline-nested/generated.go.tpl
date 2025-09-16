@@ -2,7 +2,6 @@ package inlinenested
 
 import (
 	"database/sql"
-	"database/sql/driver"
 	"time"
 
 	"github.com/google/uuid"
@@ -56,8 +55,8 @@ type DeepNestedModelNestedField = struct {
 	flag bool
 }
 
-func (v DeepNestedModel) ColumnNested() sequel.ColumnValuer[DeepNestedModelNestedField] {
-	return sequel.Column("nested", v.Nested, func(val DeepNestedModelNestedField) driver.Value {
+func (v DeepNestedModel) ColumnNested() sequel.ColumnConvertClause[DeepNestedModelNestedField] {
+	return sequel.Column("nested", v.Nested, func(val DeepNestedModelNestedField) any {
 		return encoding.JSONValue(val)
 	})
 }
@@ -94,8 +93,8 @@ type NestedModelNestedField = struct {
 	Bool    bool
 }
 
-func (v NestedModel) ColumnNested() sequel.ColumnValuer[NestedModelNestedField] {
-	return sequel.Column("nested", v.Nested, func(val NestedModelNestedField) driver.Value {
+func (v NestedModel) ColumnNested() sequel.ColumnConvertClause[NestedModelNestedField] {
+	return sequel.Column("nested", v.Nested, func(val NestedModelNestedField) any {
 		return encoding.JSONValue(val)
 	})
 }
@@ -133,8 +132,8 @@ type NestedModelWithTagNestedField = struct {
 	Str     Str  `json:"str"`
 }
 
-func (v NestedModelWithTag) ColumnNested() sequel.ColumnValuer[NestedModelWithTagNestedField] {
-	return sequel.Column("nested", v.Nested, func(val NestedModelWithTagNestedField) driver.Value {
+func (v NestedModelWithTag) ColumnNested() sequel.ColumnConvertClause[NestedModelWithTagNestedField] {
+	return sequel.Column("nested", v.Nested, func(val NestedModelWithTagNestedField) any {
 		return encoding.JSONValue(val)
 	})
 }

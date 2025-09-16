@@ -236,18 +236,16 @@ func (g *Generator) generateModels(
 		// If the struct has readonly columns
 		if !readonly {
 			insertColumns := t.InsertColumns()
-			if len(insertColumns) > 0 {
+			if n := len(insertColumns); n > 0 {
 				// If the insertable columns is not tally with the table columns means the struct has readonly columns
-				if len(insertColumns) != len(t.Columns) {
+				if n != len(t.Columns) {
 					fprintfln(w, "func (%s) InsertColumns() []string {", t.GoName)
 					fmt.Fprint(w, "return []string{")
-					for i, col := range insertColumns {
-						if i > 0 {
-							fmt.Fprint(w, `,`)
-						}
-						fmt.Fprint(w, g.Quote(g.QuoteIdentifier(col.Name)))
+					fmt.Fprint(w, g.Quote(g.QuoteIdentifier(insertColumns[0].Name)))
+					for i := 1; i < n; i++ {
+						fmt.Fprint(w, ","+g.Quote(g.QuoteIdentifier(insertColumns[i].Name)))
 					}
-					fprintfln(w, "} // %d", len(insertColumns))
+					fprintfln(w, "} // %d", n)
 					fprintfln(w, "}")
 				}
 
@@ -305,34 +303,11 @@ func (g *Generator) generateModels(
 				fprintfln(w, "return nil")
 			}
 			fprintfln(w, "}")
-			// 		if idx := strings.Index(typeStr, "."); idx > 0 {
-			// 			typeStr = Expr(typeStr).Format(importPkgs)
-			// 		}
-			// 		var specificType string
-			// 		if !typeInferred {
-			// 			specificType = "[" + typeStr + "]"
-			// 		}
-
-			// 		if sqlValuer, ok := f.sqlValuer(); ok {
-			// 			matches := sqlFuncRegexp.FindStringSubmatch(sqlValuer("{}"))
-			// 			if len(matches) > 4 {
-			// 				g.L("func (v "+t.goName+") ", g.config.Getter.Prefix+f.GoName(), "() sequel.SQLColumnValuer[", typeStr, "] {")
-			// 				g.L(`return sequel.SQLColumn`+specificType+`(`, g.Quote(g.QuoteIdentifier(f.ColumnName())), `, v.`, f.GoPath()+",", fmt.Sprintf(`func(placeholder string) string { return %q+ placeholder + %q}`, matches[1]+matches[2], matches[4]+matches[5]), `, func(val `, typeStr, `) driver.Value { return `, g.valuer(importPkgs, "val", f.t), ` })`)
-			// 				g.L("}")
-			// 			} else {
-			// 				g.L("func (v "+t.goName+") ", g.config.Getter.Prefix+f.GoName(), "() sequel.ColumnValuer[", typeStr, "] {")
-			// 				g.L(`return sequel.Column`, specificType, `(`, g.Quote(g.QuoteIdentifier(f.ColumnName())), `, v.`, f.GoPath(), `, func(val `, typeStr, `) driver.Value { return `, g.valuer(importPkgs, "val", f.t), ` })`)
-			// 				g.L("}")
-			// 			}
-			// 		} else {
-			// 			g.L("func (v "+t.goName+") ", g.config.Getter.Prefix+f.GoName(), "() sequel.ColumnValuer[", typeStr, "] {")
-			// 			g.L("return sequel.Column", specificType, "(", g.Quote(g.QuoteIdentifier(f.ColumnName())), ", v.", f.GoPath(), ", func(val ", typeStr, `) driver.Value { return `, g.valuer(importPkgs, "val", f.t), ` })`)
-			// 			g.L("}")
-			// 		}
-			// }
 		}
 
 		for _, f := range t.Columns {
+			var typeStr string
+			isBasic := g.isBasicType(f.Type)
 			switch vt := f.Type.(type) {
 			// First level struct data type
 			case *types.Struct:
@@ -343,28 +318,39 @@ func (g *Generator) generateModels(
 				fmt.Println(buf.String())
 				strpool.ReleaseString(buf)
 
-				fprintfln(w, "func (v %s) %s() sequel.ColumnValuer[%s] {", t.GoName, g.config.Getter.Prefix+f.GoName, aliasname)
-				fprintfln(w, "return sequel.Column(%s, v%s, func(val %s) driver.Value {", g.Quote(g.QuoteIdentifier(f.Name)), f.GoPath, aliasname)
+				fprintfln(w, "func (v %s) %s() sequel.ColumnConvertClause[%s] {", t.GoName, g.config.Getter.Prefix+f.GoName, aliasname)
+				// fprintfln(w, "return sequel.Column(%s, v%s, func(val %s) any {", g.Quote(g.QuoteIdentifier(f.Name)), f.GoPath, aliasname)
+				typeStr = aliasname
 
 			default:
-				typeStr := f.Type.String()
+				typeStr = f.Type.String()
 				if idx := strings.Index(typeStr, "."); idx > 0 {
 					typeStr = Expr(typeStr).Format(importPkgs)
 				}
-				fprintfln(w, "func (v %s) %s() sequel.ColumnValuer[%s] {", t.GoName, g.config.Getter.Prefix+f.GoName, typeStr)
-				fprintfln(w, "return sequel.Column(%s, v%s, func(val %s) driver.Value {", g.Quote(g.QuoteIdentifier(f.Name)), f.GoPath, typeStr)
+				if isBasic {
+					fprintfln(w, "func (v %s) %s() sequel.ColumnClause {", t.GoName, g.config.Getter.Prefix+f.GoName)
+				} else {
+					fprintfln(w, "func (v %s) %s() sequel.ColumnConvertClause[%s] {", t.GoName, g.config.Getter.Prefix+f.GoName, typeStr)
+				}
 			}
 
-			if f.IsPtr() {
-				fprintfln(w, "if val != nil {")
-				// Deference the pointer value and return it
-				fprintfln(w, "return %s", g.valuer(importPkgs, "*val", assertAsPtr[types.Pointer](f.Type).Elem()))
-				fprintfln(w, "}")
-				fprintfln(w, "return nil")
+			if isBasic {
+				fprintfln(w, "return sequel.BasicColumn(%s, v%s)", g.Quote(g.QuoteIdentifier(f.Name)), f.GoPath)
 			} else {
-				fmt.Fprintf(w, "return %s", g.valuer(importPkgs, "val", f.Type))
+				fprintfln(w, "return sequel.Column(%s, v%s, func(val %s) any {", g.Quote(g.QuoteIdentifier(f.Name)), f.GoPath, typeStr)
+				// fprintfln(w, "if val != nil {")
+				// fprintfln(w, "return %s", g.valuer(importPkgs, "*val", assertAsPtr[types.Pointer](f.Type).Elem()))
+				if f.IsPtr() {
+					fprintfln(w, "if val != nil {")
+					// Deference the pointer value and return it
+					fprintfln(w, "return %s", g.valuer(importPkgs, "*val", assertAsPtr[types.Pointer](f.Type).Elem()))
+					fprintfln(w, "}")
+					fprintfln(w, "return nil")
+				} else {
+					fmt.Fprintf(w, "return %s", g.valuer(importPkgs, "val", f.Type))
+				}
+				fprintfln(w, "})")
 			}
-			fprintfln(w, "})")
 			fprintfln(w, "}")
 		}
 
@@ -716,18 +702,26 @@ func (g *Generator) getOrValue(importPkgs *Package, obj string, f *compiler.Colu
 	return g.valuer(importPkgs, goPath, f.Type)
 }
 
-func (g *Generator) valuer(importPkgs *Package, goPath string, t types.Type) string {
+func (g *Generator) isBasicType(t types.Type) bool {
 	// This is to prevent auto cast if the value is driver.Value
 	switch tv := t.(type) {
 	case *types.Basic:
 		switch tv.Kind() {
 		case types.String, types.Bool, types.Int64, types.Float64:
-			return goPath
+			return true
 		}
 	case *types.Named:
 		if tv.String() == typeOfTime {
-			return goPath
+			return true
 		}
+	}
+	return false
+}
+
+func (g *Generator) valuer(importPkgs *Package, goPath string, t types.Type) string {
+	// This is to prevent auto cast if the value is driver.Value
+	if g.isBasicType(t) {
+		return goPath
 	}
 	utype, isPtr := underlyingType(t)
 	if columnType, ok := g.columnTypes[t.String()]; ok && columnType.Valuer != "" {

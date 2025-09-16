@@ -2,7 +2,6 @@ package imported
 
 import (
 	"database/sql"
-	"database/sql/driver"
 
 	"github.com/google/uuid"
 	"github.com/si3nloong/sqlgen/sequel"
@@ -69,43 +68,43 @@ func (v Model) Float64Value() any {
 func (v Model) TimeValue() any {
 	return v.Time
 }
-func (v Model) ColumnStr() sequel.ColumnValuer[sql.NullString] {
-	return sequel.Column("str", v.Str, func(val sql.NullString) driver.Value {
+func (v Model) ColumnStr() sequel.ColumnConvertClause[sql.NullString] {
+	return sequel.Column("str", v.Str, func(val sql.NullString) any {
 		return val
 	})
 }
-func (v Model) ColumnBool() sequel.ColumnValuer[sql.NullBool] {
-	return sequel.Column("bool", v.Bool, func(val sql.NullBool) driver.Value {
+func (v Model) ColumnBool() sequel.ColumnConvertClause[sql.NullBool] {
+	return sequel.Column("bool", v.Bool, func(val sql.NullBool) any {
 		return val
 	})
 }
-func (v Model) ColumnRawBytes() sequel.ColumnValuer[sql.RawBytes] {
-	return sequel.Column("raw_bytes", v.RawBytes, func(val sql.RawBytes) driver.Value {
+func (v Model) ColumnRawBytes() sequel.ColumnConvertClause[sql.RawBytes] {
+	return sequel.Column("raw_bytes", v.RawBytes, func(val sql.RawBytes) any {
 		return val
 	})
 }
-func (v Model) ColumnInt16() sequel.ColumnValuer[sql.NullInt16] {
-	return sequel.Column("int_16", v.Int16, func(val sql.NullInt16) driver.Value {
+func (v Model) ColumnInt16() sequel.ColumnConvertClause[sql.NullInt16] {
+	return sequel.Column("int_16", v.Int16, func(val sql.NullInt16) any {
 		return val
 	})
 }
-func (v Model) ColumnInt32() sequel.ColumnValuer[sql.NullInt32] {
-	return sequel.Column("int_32", v.Int32, func(val sql.NullInt32) driver.Value {
+func (v Model) ColumnInt32() sequel.ColumnConvertClause[sql.NullInt32] {
+	return sequel.Column("int_32", v.Int32, func(val sql.NullInt32) any {
 		return val
 	})
 }
-func (v Model) ColumnInt64() sequel.ColumnValuer[sql.NullInt64] {
-	return sequel.Column("int_64", v.Int64, func(val sql.NullInt64) driver.Value {
+func (v Model) ColumnInt64() sequel.ColumnConvertClause[sql.NullInt64] {
+	return sequel.Column("int_64", v.Int64, func(val sql.NullInt64) any {
 		return val
 	})
 }
-func (v Model) ColumnFloat64() sequel.ColumnValuer[sql.NullFloat64] {
-	return sequel.Column("float_64", v.Float64, func(val sql.NullFloat64) driver.Value {
+func (v Model) ColumnFloat64() sequel.ColumnConvertClause[sql.NullFloat64] {
+	return sequel.Column("float_64", v.Float64, func(val sql.NullFloat64) any {
 		return val
 	})
 }
-func (v Model) ColumnTime() sequel.ColumnValuer[sql.NullTime] {
-	return sequel.Column("time", v.Time, func(val sql.NullTime) driver.Value {
+func (v Model) ColumnTime() sequel.ColumnConvertClause[sql.NullTime] {
+	return sequel.Column("time", v.Time, func(val sql.NullTime) any {
 		return val
 	})
 }
@@ -135,8 +134,8 @@ func (v Some) InsertOneStmt() (string, []any) {
 func (v Some) IDValue() any {
 	return v.ID
 }
-func (v Some) ColumnID() sequel.ColumnValuer[uuid.UUID] {
-	return sequel.Column("id", v.ID, func(val uuid.UUID) driver.Value {
+func (v Some) ColumnID() sequel.ColumnConvertClause[uuid.UUID] {
+	return sequel.Column("id", v.ID, func(val uuid.UUID) any {
 		return val
 	})
 }

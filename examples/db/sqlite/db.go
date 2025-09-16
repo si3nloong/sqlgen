@@ -22,8 +22,8 @@ type autoIncrKeyInserter interface {
 	ScanAutoIncr(int64) error
 }
 
-func InsertOne[T sequel.TableColumnValuer, Ptr interface {
-	sequel.TableColumnValuer
+func InsertOne[T sequel.ColumnValuer, Ptr interface {
+	sequel.ColumnValuer
 	sequel.PtrScanner[T]
 }](ctx context.Context, sqlConn sequel.DB, model Ptr) (sql.Result, error) {
 	switch v := any(model).(type) {
@@ -49,7 +49,7 @@ func InsertOne[T sequel.TableColumnValuer, Ptr interface {
 }
 
 // Insert is a helper function to insert multiple records.
-func Insert[T sequel.TableColumnValuer](ctx context.Context, sqlConn sequel.DB, data []T) (sql.Result, error) {
+func Insert[T sequel.ColumnValuer](ctx context.Context, sqlConn sequel.DB, data []T) (sql.Result, error) {
 	noOfData := len(data)
 	if noOfData == 0 {
 		return new(sequel.EmptyResult), nil

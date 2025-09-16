@@ -1,8 +1,6 @@
 package sql
 
 import (
-	"database/sql/driver"
-
 	"cloud.google.com/go/civil"
 	uuid "github.com/gofrs/uuid/v5"
 	"github.com/paulmach/orb"
@@ -21,7 +19,7 @@ func (v *AutoPkLocation) ScanAutoIncr(val int64) error {
 	return nil
 }
 func (v AutoPkLocation) PK() (string, int, any) {
-	return "id", 0, (int64)(v.ID)
+	return "id", 0, v.ID
 }
 func (AutoPkLocation) SQLColumns() []string {
 	return []string{"id", "ST_AsBinary(geo_point,4326)", "ST_AsBinary(ptr_geo_point,4326)", "ptr_uuid", "ptr_date"} // 5
@@ -65,13 +63,13 @@ func (v AutoPkLocation) InsertOneStmt() (string, []any) {
 	return "INSERT INTO `auto_pk_location` (`geo_point`,`ptr_geo_point`,`ptr_uuid`,`ptr_date`) VALUES (ST_GeomFromEWKB(?),ST_GeomFromEWKB(?),?,?);", []any{ewkb.Value(v.GeoPoint, 4326), v.PtrGeoPointValue(), v.PtrUUIDValue(), v.PtrDateValue()}
 }
 func (v AutoPkLocation) FindOneByPKStmt() (string, []any) {
-	return "SELECT `id`,ST_AsBinary(`geo_point`,4326),ST_AsBinary(`ptr_geo_point`,4326),`ptr_uuid`,`ptr_date` FROM `auto_pk_location` WHERE `id` = ? LIMIT 1;", []any{(int64)(v.ID)}
+	return "SELECT `id`,ST_AsBinary(`geo_point`,4326),ST_AsBinary(`ptr_geo_point`,4326),`ptr_uuid`,`ptr_date` FROM `auto_pk_location` WHERE `id` = ? LIMIT 1;", []any{v.ID}
 }
 func (v AutoPkLocation) UpdateOneByPKStmt() (string, []any) {
-	return "UPDATE `auto_pk_location` SET `geo_point` = ST_GeomFromEWKB(?),`ptr_geo_point` = ST_GeomFromEWKB(?),`ptr_uuid` = ?,`ptr_date` = ? WHERE `id` = ?;", []any{ewkb.Value(v.GeoPoint, 4326), v.PtrGeoPointValue(), v.PtrUUIDValue(), v.PtrDateValue(), (int64)(v.ID)}
+	return "UPDATE `auto_pk_location` SET `geo_point` = ST_GeomFromEWKB(?),`ptr_geo_point` = ST_GeomFromEWKB(?),`ptr_uuid` = ?,`ptr_date` = ? WHERE `id` = ?;", []any{ewkb.Value(v.GeoPoint, 4326), v.PtrGeoPointValue(), v.PtrUUIDValue(), v.PtrDateValue(), v.ID}
 }
 func (v AutoPkLocation) IDValue() any {
-	return (int64)(v.ID)
+	return v.ID
 }
 func (v AutoPkLocation) GeoPointValue() any {
 	return ewkb.Value(v.GeoPoint, 4326)
@@ -94,34 +92,34 @@ func (v AutoPkLocation) PtrDateValue() any {
 	}
 	return nil
 }
-func (v AutoPkLocation) ColumnID() sequel.ColumnValuer[uint64] {
-	return sequel.Column("id", v.ID, func(val uint64) driver.Value {
-		return (int64)(val)
+func (v AutoPkLocation) ColumnID() sequel.ColumnConvertClause[uint64] {
+	return sequel.Column("id", v.ID, func(val uint64) any {
+		return val
 	})
 }
-func (v AutoPkLocation) ColumnGeoPoint() sequel.ColumnValuer[orb.Point] {
-	return sequel.Column("geo_point", v.GeoPoint, func(val orb.Point) driver.Value {
+func (v AutoPkLocation) ColumnGeoPoint() sequel.ColumnConvertClause[orb.Point] {
+	return sequel.Column("geo_point", v.GeoPoint, func(val orb.Point) any {
 		return ewkb.Value(val, 4326)
 	})
 }
-func (v AutoPkLocation) ColumnPtrGeoPoint() sequel.ColumnValuer[*orb.Point] {
-	return sequel.Column("ptr_geo_point", v.PtrGeoPoint, func(val *orb.Point) driver.Value {
+func (v AutoPkLocation) ColumnPtrGeoPoint() sequel.ColumnConvertClause[*orb.Point] {
+	return sequel.Column("ptr_geo_point", v.PtrGeoPoint, func(val *orb.Point) any {
 		if val != nil {
 			return ewkb.Value(*val, 4326)
 		}
 		return nil
 	})
 }
-func (v AutoPkLocation) ColumnPtrUUID() sequel.ColumnValuer[*uuid.UUID] {
-	return sequel.Column("ptr_uuid", v.PtrUUID, func(val *uuid.UUID) driver.Value {
+func (v AutoPkLocation) ColumnPtrUUID() sequel.ColumnConvertClause[*uuid.UUID] {
+	return sequel.Column("ptr_uuid", v.PtrUUID, func(val *uuid.UUID) any {
 		if val != nil {
 			return *val
 		}
 		return nil
 	})
 }
-func (v AutoPkLocation) ColumnPtrDate() sequel.ColumnValuer[*civil.Date] {
-	return sequel.Column("ptr_date", v.PtrDate, func(val *civil.Date) driver.Value {
+func (v AutoPkLocation) ColumnPtrDate() sequel.ColumnConvertClause[*civil.Date] {
+	return sequel.Column("ptr_date", v.PtrDate, func(val *civil.Date) any {
 		if val != nil {
 			return encoding.TextValue(*val)
 		}
@@ -134,7 +132,7 @@ func (Location) TableName() string {
 }
 func (Location) HasPK() {}
 func (v Location) PK() (string, int, any) {
-	return "id", 0, (int64)(v.ID)
+	return "id", 0, v.ID
 }
 func (Location) SQLColumns() []string {
 	return []string{"id", "ST_AsBinary(geo_point,4326)", "uuid"} // 3
@@ -144,7 +142,7 @@ func (Location) Columns() []string {
 }
 func (v Location) Values() []any {
 	return []any{
-		(int64)(v.ID),                // 0 - id
+		v.ID,                         // 0 - id
 		ewkb.Value(v.GeoPoint, 4326), // 1 - geo_point
 		v.UUID,                       // 2 - uuid
 	}
@@ -163,13 +161,13 @@ func (v Location) InsertOneStmt() (string, []any) {
 	return "INSERT INTO `location` (`id`,`geo_point`,`uuid`) VALUES (?,ST_GeomFromEWKB(?),?);", v.Values()
 }
 func (v Location) FindOneByPKStmt() (string, []any) {
-	return "SELECT `id`,ST_AsBinary(`geo_point`,4326),`uuid` FROM `location` WHERE `id` = ? LIMIT 1;", []any{(int64)(v.ID)}
+	return "SELECT `id`,ST_AsBinary(`geo_point`,4326),`uuid` FROM `location` WHERE `id` = ? LIMIT 1;", []any{v.ID}
 }
 func (v Location) UpdateOneByPKStmt() (string, []any) {
-	return "UPDATE `location` SET `geo_point` = ST_GeomFromEWKB(?),`uuid` = ? WHERE `id` = ?;", []any{ewkb.Value(v.GeoPoint, 4326), v.UUID, (int64)(v.ID)}
+	return "UPDATE `location` SET `geo_point` = ST_GeomFromEWKB(?),`uuid` = ? WHERE `id` = ?;", []any{ewkb.Value(v.GeoPoint, 4326), v.UUID, v.ID}
 }
 func (v Location) IDValue() any {
-	return (int64)(v.ID)
+	return v.ID
 }
 func (v Location) GeoPointValue() any {
 	return ewkb.Value(v.GeoPoint, 4326)
@@ -177,18 +175,18 @@ func (v Location) GeoPointValue() any {
 func (v Location) UUIDValue() any {
 	return v.UUID
 }
-func (v Location) ColumnID() sequel.ColumnValuer[uint64] {
-	return sequel.Column("id", v.ID, func(val uint64) driver.Value {
-		return (int64)(val)
+func (v Location) ColumnID() sequel.ColumnConvertClause[uint64] {
+	return sequel.Column("id", v.ID, func(val uint64) any {
+		return val
 	})
 }
-func (v Location) ColumnGeoPoint() sequel.ColumnValuer[orb.Point] {
-	return sequel.Column("geo_point", v.GeoPoint, func(val orb.Point) driver.Value {
+func (v Location) ColumnGeoPoint() sequel.ColumnConvertClause[orb.Point] {
+	return sequel.Column("geo_point", v.GeoPoint, func(val orb.Point) any {
 		return ewkb.Value(val, 4326)
 	})
 }
-func (v Location) ColumnUUID() sequel.ColumnValuer[uuid.UUID] {
-	return sequel.Column("uuid", v.UUID, func(val uuid.UUID) driver.Value {
+func (v Location) ColumnUUID() sequel.ColumnConvertClause[uuid.UUID] {
+	return sequel.Column("uuid", v.UUID, func(val uuid.UUID) any {
 		return val
 	})
 }

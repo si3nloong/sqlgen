@@ -1,8 +1,6 @@
 package valuer
 
 import (
-	"database/sql/driver"
-
 	"github.com/si3nloong/sqlgen/sequel"
 	"github.com/si3nloong/sqlgen/sequel/encoding"
 )
@@ -53,26 +51,22 @@ func (v B) PtrValueValue() any {
 func (v B) NValue() any {
 	return v.N
 }
-func (v B) ColumnID() sequel.ColumnValuer[int64] {
-	return sequel.Column("id", v.ID, func(val int64) driver.Value {
+func (v B) ColumnID() sequel.ColumnClause {
+	return sequel.BasicColumn("id", v.ID)
+}
+func (v B) ColumnValue() sequel.ColumnConvertClause[anyType] {
+	return sequel.Column("value", v.Value, func(val anyType) any {
 		return val
 	})
 }
-func (v B) ColumnValue() sequel.ColumnValuer[anyType] {
-	return sequel.Column("value", v.Value, func(val anyType) driver.Value {
-		return val
-	})
-}
-func (v B) ColumnPtrValue() sequel.ColumnValuer[*anyType] {
-	return sequel.Column("ptr_value", v.PtrValue, func(val *anyType) driver.Value {
+func (v B) ColumnPtrValue() sequel.ColumnConvertClause[*anyType] {
+	return sequel.Column("ptr_value", v.PtrValue, func(val *anyType) any {
 		if val != nil {
 			return *val
 		}
 		return nil
 	})
 }
-func (v B) ColumnN() sequel.ColumnValuer[string] {
-	return sequel.Column("n", v.N, func(val string) driver.Value {
-		return val
-	})
+func (v B) ColumnN() sequel.ColumnClause {
+	return sequel.BasicColumn("n", v.N)
 }

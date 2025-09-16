@@ -3,7 +3,6 @@ package sequel
 import (
 	"context"
 	"database/sql"
-	"database/sql/driver"
 	"fmt"
 	"io"
 )
@@ -12,7 +11,7 @@ import (
 type TableName struct{}
 
 type (
-	ConvertFunc[T any] func(T) driver.Value
+	ConvertFunc[T any] func(T) any
 	QueryFunc          func(placeholder string) string
 	WhereClause        func(StmtBuilder)
 	SetClause          func(StmtBuilder)
@@ -96,11 +95,11 @@ type SingleInserter interface {
 }
 
 type Inserter interface {
-	TableColumnValuer
+	ColumnValuer
 	InsertPlaceholders(row int) string
 }
 
-type TableColumnValuer interface {
+type ColumnValuer interface {
 	Tabler
 	Columner
 	Valuer
@@ -139,17 +138,19 @@ type Stmt interface {
 	Reset()
 }
 
-type ColumnValuer[T any] interface {
+type ColumnClause interface {
 	ColumnName() string
-	Convert(T) driver.Value
-	Value() driver.Value
+	Value() any
 }
 
-type SQLColumnValuer[T any] interface {
-	ColumnName() string
-	Convert(T) driver.Value
-	Value() driver.Value
-	SQLValue(placeholder string) string
+type ColumnConvertClause[T any] interface {
+	ColumnClause
+	Convert(T) any
+}
+
+type SQLColumnClause[T any] interface {
+	ColumnConvertClause[T]
+	SQLColumn(placeholder string) string
 }
 
 type OrderByClause interface {

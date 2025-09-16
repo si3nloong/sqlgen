@@ -1,8 +1,6 @@
 package customdeclare
 
 import (
-	"database/sql/driver"
-
 	"github.com/si3nloong/sqlgen/sequel"
 )
 
@@ -15,8 +13,6 @@ func (v A) InsertOneStmt() (string, []any) {
 func (v A) NameValue() any {
 	return v.Name
 }
-func (v A) ColumnName() sequel.ColumnValuer[string] {
-	return sequel.Column("name", v.Name, func(val string) driver.Value {
-		return val
-	})
+func (v A) ColumnName() sequel.ColumnClause {
+	return sequel.BasicColumn("name", v.Name)
 }

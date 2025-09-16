@@ -1,9 +1,7 @@
 package main
 
 import (
-	"database/sql/driver"
 	"reflect"
-	"time"
 
 	"github.com/si3nloong/sqlgen/sequel"
 	"github.com/si3nloong/sqlgen/sequel/encoding"
@@ -45,20 +43,14 @@ func (v Address) Line2Value() any {
 func (v Address) CountryCodeValue() any {
 	return v.CountryCode
 }
-func (v Address) ColumnLine1() sequel.ColumnValuer[string] {
-	return sequel.Column("line_1", v.Line1, func(val string) driver.Value {
-		return val
-	})
+func (v Address) ColumnLine1() sequel.ColumnClause {
+	return sequel.BasicColumn("line_1", v.Line1)
 }
-func (v Address) ColumnLine2() sequel.ColumnValuer[string] {
-	return sequel.Column("line_2", v.Line2, func(val string) driver.Value {
-		return val
-	})
+func (v Address) ColumnLine2() sequel.ColumnClause {
+	return sequel.BasicColumn("line_2", v.Line2)
 }
-func (v Address) ColumnCountryCode() sequel.ColumnValuer[string] {
-	return sequel.Column("country_code", v.CountryCode, func(val string) driver.Value {
-		return val
-	})
+func (v Address) ColumnCountryCode() sequel.ColumnClause {
+	return sequel.BasicColumn("country_code", v.CountryCode)
 }
 
 func (HouseUnit) TableName() string {
@@ -131,33 +123,31 @@ func (v HouseUnit) SliceValue() any {
 func (v HouseUnit) MapValue() any {
 	return encoding.JSONValue(v.Map)
 }
-func (v HouseUnit) ColumnNo() sequel.ColumnValuer[uint] {
-	return sequel.Column("no", v.No, func(val uint) driver.Value {
+func (v HouseUnit) ColumnNo() sequel.ColumnConvertClause[uint] {
+	return sequel.Column("no", v.No, func(val uint) any {
 		return (int64)(val)
 	})
 }
-func (v HouseUnit) ColumnBuildTime() sequel.ColumnValuer[time.Time] {
-	return sequel.Column("build_time", v.BuildTime, func(val time.Time) driver.Value {
-		return val
-	})
+func (v HouseUnit) ColumnBuildTime() sequel.ColumnClause {
+	return sequel.BasicColumn("build_time", v.BuildTime)
 }
-func (v HouseUnit) ColumnAddress() sequel.ColumnValuer[Address] {
-	return sequel.Column("address", v.Address, func(val Address) driver.Value {
+func (v HouseUnit) ColumnAddress() sequel.ColumnConvertClause[Address] {
+	return sequel.Column("address", v.Address, func(val Address) any {
 		return encoding.JSONValue(val)
 	})
 }
-func (v HouseUnit) ColumnKind() sequel.ColumnValuer[reflect.Kind] {
-	return sequel.Column("kind", v.Kind, func(val reflect.Kind) driver.Value {
+func (v HouseUnit) ColumnKind() sequel.ColumnConvertClause[reflect.Kind] {
+	return sequel.Column("kind", v.Kind, func(val reflect.Kind) any {
 		return (int64)(val)
 	})
 }
-func (v HouseUnit) ColumnType() sequel.ColumnValuer[HouseUnitType] {
-	return sequel.Column("type", v.Type, func(val HouseUnitType) driver.Value {
+func (v HouseUnit) ColumnType() sequel.ColumnConvertClause[HouseUnitType] {
+	return sequel.Column("type", v.Type, func(val HouseUnitType) any {
 		return (int64)(val)
 	})
 }
-func (v HouseUnit) ColumnChan() sequel.ColumnValuer[reflect.ChanDir] {
-	return sequel.Column("chan", v.Chan, func(val reflect.ChanDir) driver.Value {
+func (v HouseUnit) ColumnChan() sequel.ColumnConvertClause[reflect.ChanDir] {
+	return sequel.Column("chan", v.Chan, func(val reflect.ChanDir) any {
 		return (int64)(val)
 	})
 }
@@ -166,23 +156,23 @@ type HouseUnitInnerField = struct {
 	Flag bool
 }
 
-func (v HouseUnit) ColumnInner() sequel.ColumnValuer[HouseUnitInnerField] {
-	return sequel.Column("inner", v.Inner, func(val HouseUnitInnerField) driver.Value {
+func (v HouseUnit) ColumnInner() sequel.ColumnConvertClause[HouseUnitInnerField] {
+	return sequel.Column("inner", v.Inner, func(val HouseUnitInnerField) any {
 		return encoding.JSONValue(val)
 	})
 }
-func (v HouseUnit) ColumnArr() sequel.ColumnValuer[[2]string] {
-	return sequel.Column("arr", v.Arr, func(val [2]string) driver.Value {
+func (v HouseUnit) ColumnArr() sequel.ColumnConvertClause[[2]string] {
+	return sequel.Column("arr", v.Arr, func(val [2]string) any {
 		return encoding.JSONValue(val)
 	})
 }
-func (v HouseUnit) ColumnSlice() sequel.ColumnValuer[[]float64] {
-	return sequel.Column("slice", v.Slice, func(val []float64) driver.Value {
+func (v HouseUnit) ColumnSlice() sequel.ColumnConvertClause[[]float64] {
+	return sequel.Column("slice", v.Slice, func(val []float64) any {
 		return (sqltype.Float64Slice[float64])(val)
 	})
 }
-func (v HouseUnit) ColumnMap() sequel.ColumnValuer[map[string]float64] {
-	return sequel.Column("map", v.Map, func(val map[string]float64) driver.Value {
+func (v HouseUnit) ColumnMap() sequel.ColumnConvertClause[map[string]float64] {
+	return sequel.Column("map", v.Map, func(val map[string]float64) any {
 		return encoding.JSONValue(val)
 	})
 }

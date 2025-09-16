@@ -1,7 +1,6 @@
 package imported
 
 import (
-	"database/sql/driver"
 	"time"
 
 	"github.com/si3nloong/sqlgen/sequel"
@@ -33,8 +32,8 @@ func (v ImportedEnum) InsertOneStmt() (string, []any) {
 func (v ImportedEnum) WeekdayValue() any {
 	return (int64)(v.Weekday)
 }
-func (v ImportedEnum) ColumnWeekday() sequel.ColumnValuer[time.Weekday] {
-	return sequel.Column("weekday", v.Weekday, func(val time.Weekday) driver.Value {
+func (v ImportedEnum) ColumnWeekday() sequel.ColumnConvertClause[time.Weekday] {
+	return sequel.Column("weekday", v.Weekday, func(val time.Weekday) any {
 		return (int64)(val)
 	})
 }

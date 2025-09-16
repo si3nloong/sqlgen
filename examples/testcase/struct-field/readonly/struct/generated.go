@@ -1,8 +1,6 @@
 package readonly
 
 import (
-	"database/sql/driver"
-
 	"github.com/si3nloong/sqlgen/sequel"
 )
 
@@ -43,18 +41,12 @@ func (v Model) BValue() any {
 func (v Model) ReadOnlyValue() any {
 	return v.ReadOnly
 }
-func (v Model) ColumnA() sequel.ColumnValuer[string] {
-	return sequel.Column("a", v.A, func(val string) driver.Value {
-		return val
-	})
+func (v Model) ColumnA() sequel.ColumnClause {
+	return sequel.BasicColumn("a", v.A)
 }
-func (v Model) ColumnB() sequel.ColumnValuer[bool] {
-	return sequel.Column("b", v.B, func(val bool) driver.Value {
-		return val
-	})
+func (v Model) ColumnB() sequel.ColumnClause {
+	return sequel.BasicColumn("b", v.B)
 }
-func (v Model) ColumnReadOnly() sequel.ColumnValuer[string] {
-	return sequel.Column("read_only", v.ReadOnly, func(val string) driver.Value {
-		return val
-	})
+func (v Model) ColumnReadOnly() sequel.ColumnClause {
+	return sequel.BasicColumn("read_only", v.ReadOnly)
 }

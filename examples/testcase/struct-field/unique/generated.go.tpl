@@ -1,8 +1,6 @@
 package unique
 
 import (
-	"database/sql/driver"
-
 	"github.com/si3nloong/sqlgen/sequel"
 	"github.com/si3nloong/sqlgen/sequel/encoding"
 )
@@ -47,23 +45,17 @@ func (v User) FirstNameValue() any {
 func (v User) LastNameValue() any {
 	return v.LastName
 }
-func (v User) ColumnEmail() sequel.ColumnValuer[string] {
-	return sequel.Column("email", v.Email, func(val string) driver.Value {
-		return val
-	})
+func (v User) ColumnEmail() sequel.ColumnClause {
+	return sequel.BasicColumn("email", v.Email)
 }
-func (v User) ColumnAge() sequel.ColumnValuer[uint8] {
-	return sequel.Column("age", v.Age, func(val uint8) driver.Value {
+func (v User) ColumnAge() sequel.ColumnConvertClause[uint8] {
+	return sequel.Column("age", v.Age, func(val uint8) any {
 		return (int64)(val)
 	})
 }
-func (v User) ColumnFirstName() sequel.ColumnValuer[string] {
-	return sequel.Column("first_name", v.FirstName, func(val string) driver.Value {
-		return val
-	})
+func (v User) ColumnFirstName() sequel.ColumnClause {
+	return sequel.BasicColumn("first_name", v.FirstName)
 }
-func (v User) ColumnLastName() sequel.ColumnValuer[string] {
-	return sequel.Column("last_name", v.LastName, func(val string) driver.Value {
-		return val
-	})
+func (v User) ColumnLastName() sequel.ColumnClause {
+	return sequel.BasicColumn("last_name", v.LastName)
 }

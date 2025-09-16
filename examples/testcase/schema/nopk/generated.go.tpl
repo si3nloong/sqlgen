@@ -1,8 +1,6 @@
 package nopk
 
 import (
-	"database/sql/driver"
-
 	"github.com/si3nloong/sqlgen/sequel"
 	"github.com/si3nloong/sqlgen/sequel/encoding"
 )
@@ -42,18 +40,14 @@ func (v Customer) AgeValue() any {
 func (v Customer) MarriedValue() any {
 	return v.Married
 }
-func (v Customer) ColumnName() sequel.ColumnValuer[string] {
-	return sequel.Column("name", v.Name, func(val string) driver.Value {
-		return val
-	})
+func (v Customer) ColumnName() sequel.ColumnClause {
+	return sequel.BasicColumn("name", v.Name)
 }
-func (v Customer) ColumnAge() sequel.ColumnValuer[uint8] {
-	return sequel.Column("age", v.Age, func(val uint8) driver.Value {
+func (v Customer) ColumnAge() sequel.ColumnConvertClause[uint8] {
+	return sequel.Column("age", v.Age, func(val uint8) any {
 		return (int64)(val)
 	})
 }
-func (v Customer) ColumnMarried() sequel.ColumnValuer[bool] {
-	return sequel.Column("married", v.Married, func(val bool) driver.Value {
-		return val
-	})
+func (v Customer) ColumnMarried() sequel.ColumnClause {
+	return sequel.BasicColumn("married", v.Married)
 }

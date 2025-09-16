@@ -2,7 +2,6 @@ package alias
 
 import (
 	"database/sql"
-	"database/sql/driver"
 	"time"
 
 	"github.com/si3nloong/sqlgen/sequel"
@@ -79,43 +78,39 @@ func (v AliasStruct) CreatedValue() any {
 func (v AliasStruct) UpdatedValue() any {
 	return (time.Time)(v.model.Updated)
 }
-func (v AliasStruct) ColumnB() sequel.ColumnValuer[float64] {
-	return sequel.Column("b", v.B, func(val float64) driver.Value {
-		return val
-	})
+func (v AliasStruct) ColumnB() sequel.ColumnClause {
+	return sequel.BasicColumn("b", v.B)
 }
-func (v AliasStruct) ColumnID() sequel.ColumnValuer[int64] {
-	return sequel.Column("Id", v.pk.ID, func(val int64) driver.Value {
-		return val
-	})
+func (v AliasStruct) ColumnID() sequel.ColumnClause {
+	return sequel.BasicColumn("Id", v.pk.ID)
 }
-func (v AliasStruct) ColumnHeader() sequel.ColumnValuer[aliasStr] {
-	return sequel.Column("header", v.Header, func(val aliasStr) driver.Value {
+func (v AliasStruct) ColumnHeader() sequel.ColumnConvertClause[aliasStr] {
+	return sequel.Column("header", v.Header, func(val aliasStr) any {
 		return (string)(val)
 	})
 }
-func (v AliasStruct) ColumnRaw() sequel.ColumnValuer[sql.RawBytes] {
-	return sequel.Column("raw", v.Raw, func(val sql.RawBytes) driver.Value {
+func (v AliasStruct) ColumnRaw() sequel.ColumnConvertClause[sql.RawBytes] {
+	return sequel.Column("raw", v.Raw, func(val sql.RawBytes) any {
 		return val
 	})
 }
-func (v AliasStruct) ColumnText() sequel.ColumnValuer[customStr] {
-	return sequel.Column("text", v.Text, func(val customStr) driver.Value {
+func (v AliasStruct) ColumnText() sequel.ColumnConvertClause[customStr] {
+	return sequel.Column("text", v.Text, func(val customStr) any {
 		return (string)(val)
 	})
 }
-func (v AliasStruct) ColumnNullStr() sequel.ColumnValuer[sql.NullString] {
-	return sequel.Column("null_str", v.NullStr, func(val sql.NullString) driver.Value {
+func (v AliasStruct) ColumnNullStr() sequel.ColumnConvertClause[sql.NullString] {
+	return sequel.Column("null_str", v.NullStr, func(val sql.NullString) any {
 		return val
 	})
 }
-func (v AliasStruct) ColumnCreated() sequel.ColumnValuer[DT] {
-	return sequel.Column("created", v.model.Created, func(val DT) driver.Value {
+func (v AliasStruct) ColumnCreated() sequel.ColumnConvertClause[DT] {
+	return sequel.Column("created", v.model.Created, func(val DT) any {
 		return (time.Time)(val)
 	})
 }
-func (v AliasStruct) ColumnUpdated() sequel.ColumnValuer[DT] {
-	return sequel.Column("updated", v.model.Updated, func(val DT) driver.Value {
+func (v AliasStruct) ColumnUpdated() sequel.ColumnConvertClause[DT] {
+	return sequel.Column("updated", v.model.Updated, func(val DT) any {
 		return (time.Time)(val)
 	})
 }
@@ -145,10 +140,8 @@ func (v B) InsertOneStmt() (string, []any) {
 func (v B) NameValue() any {
 	return v.Name
 }
-func (v B) ColumnName() sequel.ColumnValuer[string] {
-	return sequel.Column("name", v.Name, func(val string) driver.Value {
-		return val
-	})
+func (v B) ColumnName() sequel.ColumnClause {
+	return sequel.BasicColumn("name", v.Name)
 }
 
 func (C) TableName() string {
@@ -176,8 +169,6 @@ func (v C) InsertOneStmt() (string, []any) {
 func (v C) IDValue() any {
 	return v.ID
 }
-func (v C) ColumnID() sequel.ColumnValuer[int64] {
-	return sequel.Column("id", v.ID, func(val int64) driver.Value {
-		return val
-	})
+func (v C) ColumnID() sequel.ColumnClause {
+	return sequel.BasicColumn("id", v.ID)
 }

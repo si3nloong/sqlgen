@@ -1,8 +1,6 @@
 package tabler
 
 import (
-	"database/sql/driver"
-
 	"github.com/si3nloong/sqlgen/sequel"
 )
 
@@ -43,15 +41,11 @@ func (v A) IDValue() any {
 func (v A) NameValue() any {
 	return v.Name
 }
-func (v A) ColumnID() sequel.ColumnValuer[int64] {
-	return sequel.Column("id", v.ID, func(val int64) driver.Value {
-		return val
-	})
+func (v A) ColumnID() sequel.ColumnClause {
+	return sequel.BasicColumn("id", v.ID)
 }
-func (v A) ColumnName() sequel.ColumnValuer[string] {
-	return sequel.Column("name", v.Name, func(val string) driver.Value {
-		return val
-	})
+func (v A) ColumnName() sequel.ColumnClause {
+	return sequel.BasicColumn("name", v.Name)
 }
 
 func (Model) Columns() []string {
@@ -76,8 +70,6 @@ func (v Model) InsertOneStmt() (string, []any) {
 func (v Model) NameValue() any {
 	return v.Name
 }
-func (v Model) ColumnName() sequel.ColumnValuer[string] {
-	return sequel.Column("name", v.Name, func(val string) driver.Value {
-		return val
-	})
+func (v Model) ColumnName() sequel.ColumnClause {
+	return sequel.BasicColumn("name", v.Name)
 }

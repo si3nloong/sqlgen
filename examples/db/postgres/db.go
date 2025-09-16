@@ -17,8 +17,8 @@ import (
 	"github.com/si3nloong/sqlgen/sequel/strpool"
 )
 
-func InsertOne[T sequel.TableColumnValuer, Ptr interface {
-	sequel.TableColumnValuer
+func InsertOne[T sequel.ColumnValuer, Ptr interface {
+	sequel.ColumnValuer
 	sequel.PtrScanner[T]
 }](ctx context.Context, sqlConn sequel.DB, model Ptr) error {
 	switch v := any(model).(type) {

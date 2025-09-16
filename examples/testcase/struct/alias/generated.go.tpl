@@ -1,8 +1,6 @@
 package aliasstruct
 
 import (
-	"database/sql/driver"
-
 	"cloud.google.com/go/civil"
 	"github.com/si3nloong/sqlgen/sequel"
 	"github.com/si3nloong/sqlgen/sequel/encoding"
@@ -35,13 +33,13 @@ func (v A) DateValue() any {
 func (v A) TimeValue() any {
 	return encoding.TextValue(v.Time)
 }
-func (v A) ColumnDate() sequel.ColumnValuer[civil.Date] {
-	return sequel.Column("date", v.Date, func(val civil.Date) driver.Value {
+func (v A) ColumnDate() sequel.ColumnConvertClause[civil.Date] {
+	return sequel.Column("date", v.Date, func(val civil.Date) any {
 		return encoding.TextValue(val)
 	})
 }
-func (v A) ColumnTime() sequel.ColumnValuer[civil.Time] {
-	return sequel.Column("time", v.Time, func(val civil.Time) driver.Value {
+func (v A) ColumnTime() sequel.ColumnConvertClause[civil.Time] {
+	return sequel.Column("time", v.Time, func(val civil.Time) any {
 		return encoding.TextValue(val)
 	})
 }
@@ -76,13 +74,9 @@ func (v C) StringValue() any {
 func (v C) ValidValue() any {
 	return v.Valid
 }
-func (v C) ColumnString() sequel.ColumnValuer[string] {
-	return sequel.Column("string", v.String, func(val string) driver.Value {
-		return val
-	})
+func (v C) ColumnString() sequel.ColumnClause {
+	return sequel.BasicColumn("string", v.String)
 }
-func (v C) ColumnValid() sequel.ColumnValuer[bool] {
-	return sequel.Column("valid", v.Valid, func(val bool) driver.Value {
-		return val
-	})
+func (v C) ColumnValid() sequel.ColumnClause {
+	return sequel.BasicColumn("valid", v.Valid)
 }

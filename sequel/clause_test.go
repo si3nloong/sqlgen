@@ -1,7 +1,6 @@
 package sequel
 
 import (
-	"database/sql/driver"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -16,7 +15,7 @@ func TestColumn(t *testing.T) {
 		text       = "Hello World"
 	)
 
-	cv := Column[Str](columnName, Str(value), func(s Str) driver.Value {
+	cv := Column(columnName, Str(value), func(s Str) any {
 		return string(s)
 	})
 	require.Equal(t, columnName, cv.ColumnName())

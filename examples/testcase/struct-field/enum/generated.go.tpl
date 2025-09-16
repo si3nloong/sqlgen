@@ -1,8 +1,6 @@
 package enum
 
 import (
-	"database/sql/driver"
-
 	"github.com/si3nloong/sqlgen/sequel"
 	"github.com/si3nloong/sqlgen/sequel/encoding"
 )
@@ -42,18 +40,18 @@ func (v Custom) EnumValue() any {
 func (v Custom) NumValue() any {
 	return (int64)(v.Num)
 }
-func (v Custom) ColumnStr() sequel.ColumnValuer[longText] {
-	return sequel.Column("text", v.Str, func(val longText) driver.Value {
+func (v Custom) ColumnStr() sequel.ColumnConvertClause[longText] {
+	return sequel.Column("text", v.Str, func(val longText) any {
 		return (string)(val)
 	})
 }
-func (v Custom) ColumnEnum() sequel.ColumnValuer[Enum] {
-	return sequel.Column("e", v.Enum, func(val Enum) driver.Value {
+func (v Custom) ColumnEnum() sequel.ColumnConvertClause[Enum] {
+	return sequel.Column("e", v.Enum, func(val Enum) any {
 		return (int64)(val)
 	})
 }
-func (v Custom) ColumnNum() sequel.ColumnValuer[uint16] {
-	return sequel.Column("num", v.Num, func(val uint16) driver.Value {
+func (v Custom) ColumnNum() sequel.ColumnConvertClause[uint16] {
+	return sequel.Column("num", v.Num, func(val uint16) any {
 		return (int64)(val)
 	})
 }

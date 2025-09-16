@@ -1,9 +1,6 @@
 package pk
 
 import (
-	"database/sql/driver"
-	"time"
-
 	"github.com/si3nloong/sqlgen/sequel"
 	"github.com/si3nloong/sqlgen/sequel/encoding"
 )
@@ -58,25 +55,21 @@ func (v Car) ColorValue() any {
 func (v Car) ManucDateValue() any {
 	return v.ManucDate
 }
-func (v Car) ColumnID() sequel.ColumnValuer[PK] {
-	return sequel.Column("id", v.ID, func(val PK) driver.Value {
+func (v Car) ColumnID() sequel.ColumnConvertClause[PK] {
+	return sequel.Column("id", v.ID, func(val PK) any {
 		return val
 	})
 }
-func (v Car) ColumnNo() sequel.ColumnValuer[string] {
-	return sequel.Column("no", v.No, func(val string) driver.Value {
-		return val
-	})
+func (v Car) ColumnNo() sequel.ColumnClause {
+	return sequel.BasicColumn("no", v.No)
 }
-func (v Car) ColumnColor() sequel.ColumnValuer[Color] {
-	return sequel.Column("color", v.Color, func(val Color) driver.Value {
+func (v Car) ColumnColor() sequel.ColumnConvertClause[Color] {
+	return sequel.Column("color", v.Color, func(val Color) any {
 		return (int64)(val)
 	})
 }
-func (v Car) ColumnManucDate() sequel.ColumnValuer[time.Time] {
-	return sequel.Column("manuc_date", v.ManucDate, func(val time.Time) driver.Value {
-		return val
-	})
+func (v Car) ColumnManucDate() sequel.ColumnClause {
+	return sequel.BasicColumn("manuc_date", v.ManucDate)
 }
 
 func (House) TableName() string {
@@ -119,15 +112,13 @@ func (v House) IDValue() any {
 func (v House) NoValue() any {
 	return v.No
 }
-func (v House) ColumnID() sequel.ColumnValuer[uint] {
-	return sequel.Column("id", v.ID, func(val uint) driver.Value {
+func (v House) ColumnID() sequel.ColumnConvertClause[uint] {
+	return sequel.Column("id", v.ID, func(val uint) any {
 		return (int64)(val)
 	})
 }
-func (v House) ColumnNo() sequel.ColumnValuer[string] {
-	return sequel.Column("no", v.No, func(val string) driver.Value {
-		return val
-	})
+func (v House) ColumnNo() sequel.ColumnClause {
+	return sequel.BasicColumn("no", v.No)
 }
 
 func (User) TableName() string {
@@ -180,23 +171,19 @@ func (v User) AgeValue() any {
 func (v User) EmailValue() any {
 	return v.Email
 }
-func (v User) ColumnID() sequel.ColumnValuer[int64] {
-	return sequel.Column("id", v.ID, func(val int64) driver.Value {
-		return val
-	})
+func (v User) ColumnID() sequel.ColumnClause {
+	return sequel.BasicColumn("id", v.ID)
 }
-func (v User) ColumnName() sequel.ColumnValuer[LongText] {
-	return sequel.Column("name", v.Name, func(val LongText) driver.Value {
+func (v User) ColumnName() sequel.ColumnConvertClause[LongText] {
+	return sequel.Column("name", v.Name, func(val LongText) any {
 		return (string)(val)
 	})
 }
-func (v User) ColumnAge() sequel.ColumnValuer[uint8] {
-	return sequel.Column("age", v.Age, func(val uint8) driver.Value {
+func (v User) ColumnAge() sequel.ColumnConvertClause[uint8] {
+	return sequel.Column("age", v.Age, func(val uint8) any {
 		return (int64)(val)
 	})
 }
-func (v User) ColumnEmail() sequel.ColumnValuer[string] {
-	return sequel.Column("email", v.Email, func(val string) driver.Value {
-		return val
-	})
+func (v User) ColumnEmail() sequel.ColumnClause {
+	return sequel.BasicColumn("email", v.Email)
 }

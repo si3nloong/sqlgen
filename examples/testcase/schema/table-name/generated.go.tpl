@@ -1,8 +1,6 @@
 package tablename
 
 import (
-	"database/sql/driver"
-
 	"github.com/si3nloong/sqlgen/sequel"
 )
 
@@ -31,10 +29,8 @@ func (v CustomTableName1) InsertOneStmt() (string, []any) {
 func (v CustomTableName1) TextValue() any {
 	return v.Text
 }
-func (v CustomTableName1) ColumnText() sequel.ColumnValuer[string] {
-	return sequel.Column("text", v.Text, func(val string) driver.Value {
-		return val
-	})
+func (v CustomTableName1) ColumnText() sequel.ColumnClause {
+	return sequel.BasicColumn("text", v.Text)
 }
 
 func (CustomTableName2) TableName() string {
@@ -62,10 +58,8 @@ func (v CustomTableName2) InsertOneStmt() (string, []any) {
 func (v CustomTableName2) TextValue() any {
 	return v.Text
 }
-func (v CustomTableName2) ColumnText() sequel.ColumnValuer[string] {
-	return sequel.Column("text", v.Text, func(val string) driver.Value {
-		return val
-	})
+func (v CustomTableName2) ColumnText() sequel.ColumnClause {
+	return sequel.BasicColumn("text", v.Text)
 }
 
 func (CustomTableName3) TableName() string {
@@ -93,8 +87,6 @@ func (v CustomTableName3) InsertOneStmt() (string, []any) {
 func (v CustomTableName3) TextValue() any {
 	return v.Text
 }
-func (v CustomTableName3) ColumnText() sequel.ColumnValuer[string] {
-	return sequel.Column("text", v.Text, func(val string) driver.Value {
-		return val
-	})
+func (v CustomTableName3) ColumnText() sequel.ColumnClause {
+	return sequel.BasicColumn("text", v.Text)
 }

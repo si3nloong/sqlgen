@@ -2,8 +2,6 @@ package custom
 
 import (
 	"database/sql"
-	"database/sql/driver"
-	"time"
 
 	"github.com/paulmach/orb"
 	"github.com/paulmach/orb/encoding/ewkb"
@@ -70,38 +68,34 @@ func (v Address) GeoPointValue() any {
 func (v Address) CountryCodeValue() any {
 	return (string)(v.CountryCode)
 }
-func (v Address) ColumnLine1() sequel.ColumnValuer[string] {
-	return sequel.Column("line_1", v.Line1, func(val string) driver.Value {
+func (v Address) ColumnLine1() sequel.ColumnClause {
+	return sequel.BasicColumn("line_1", v.Line1)
+}
+func (v Address) ColumnLine2() sequel.ColumnConvertClause[sql.NullString] {
+	return sequel.Column("line_2", v.Line2, func(val sql.NullString) any {
 		return val
 	})
 }
-func (v Address) ColumnLine2() sequel.ColumnValuer[sql.NullString] {
-	return sequel.Column("line_2", v.Line2, func(val sql.NullString) driver.Value {
-		return val
-	})
+func (v Address) ColumnCity() sequel.ColumnClause {
+	return sequel.BasicColumn("city", v.City)
 }
-func (v Address) ColumnCity() sequel.ColumnValuer[string] {
-	return sequel.Column("city", v.City, func(val string) driver.Value {
-		return val
-	})
-}
-func (v Address) ColumnPostCode() sequel.ColumnValuer[uint] {
-	return sequel.Column("post_code", v.PostCode, func(val uint) driver.Value {
+func (v Address) ColumnPostCode() sequel.ColumnConvertClause[uint] {
+	return sequel.Column("post_code", v.PostCode, func(val uint) any {
 		return (int64)(val)
 	})
 }
-func (v Address) ColumnStateCode() sequel.ColumnValuer[StateCode] {
-	return sequel.Column("state_code", v.StateCode, func(val StateCode) driver.Value {
+func (v Address) ColumnStateCode() sequel.ColumnConvertClause[StateCode] {
+	return sequel.Column("state_code", v.StateCode, func(val StateCode) any {
 		return (string)(val)
 	})
 }
-func (v Address) ColumnGeoPoint() sequel.ColumnValuer[orb.Point] {
-	return sequel.Column("geo_point", v.GeoPoint, func(val orb.Point) driver.Value {
+func (v Address) ColumnGeoPoint() sequel.ColumnConvertClause[orb.Point] {
+	return sequel.Column("geo_point", v.GeoPoint, func(val orb.Point) any {
 		return ewkb.Value(val, 4326)
 	})
 }
-func (v Address) ColumnCountryCode() sequel.ColumnValuer[CountryCode] {
-	return sequel.Column("country_code", v.CountryCode, func(val CountryCode) driver.Value {
+func (v Address) ColumnCountryCode() sequel.ColumnConvertClause[CountryCode] {
+	return sequel.Column("country_code", v.CountryCode, func(val CountryCode) any {
 		return (string)(val)
 	})
 }
@@ -161,38 +155,32 @@ func (v Customer) StatusValue() any {
 func (v Customer) JoinAtValue() any {
 	return v.JoinAt
 }
-func (v Customer) ColumnID() sequel.ColumnValuer[int64] {
-	return sequel.Column("id", v.ID, func(val int64) driver.Value {
-		return val
-	})
+func (v Customer) ColumnID() sequel.ColumnClause {
+	return sequel.BasicColumn("id", v.ID)
 }
-func (v Customer) ColumnAge() sequel.ColumnValuer[uint8] {
-	return sequel.Column("howOld", v.Age, func(val uint8) driver.Value {
+func (v Customer) ColumnAge() sequel.ColumnConvertClause[uint8] {
+	return sequel.Column("howOld", v.Age, func(val uint8) any {
 		return (int64)(val)
 	})
 }
-func (v Customer) ColumnName() sequel.ColumnValuer[longText] {
-	return sequel.Column("name", v.Name, func(val longText) driver.Value {
+func (v Customer) ColumnName() sequel.ColumnConvertClause[longText] {
+	return sequel.Column("name", v.Name, func(val longText) any {
 		return val
 	})
 }
-func (v Customer) ColumnAddress() sequel.ColumnValuer[Addresses] {
-	return sequel.Column("address", v.Address, func(val Addresses) driver.Value {
+func (v Customer) ColumnAddress() sequel.ColumnConvertClause[Addresses] {
+	return sequel.Column("address", v.Address, func(val Addresses) any {
 		return val
 	})
 }
-func (v Customer) ColumnNicknames() sequel.ColumnValuer[[]longText] {
-	return sequel.Column("nicknames", v.Nicknames, func(val []longText) driver.Value {
+func (v Customer) ColumnNicknames() sequel.ColumnConvertClause[[]longText] {
+	return sequel.Column("nicknames", v.Nicknames, func(val []longText) any {
 		return (sqltype.StringSlice[longText])(val)
 	})
 }
-func (v Customer) ColumnStatus() sequel.ColumnValuer[string] {
-	return sequel.Column("status", v.Status, func(val string) driver.Value {
-		return val
-	})
+func (v Customer) ColumnStatus() sequel.ColumnClause {
+	return sequel.BasicColumn("status", v.Status)
 }
-func (v Customer) ColumnJoinAt() sequel.ColumnValuer[time.Time] {
-	return sequel.Column("join_at", v.JoinAt, func(val time.Time) driver.Value {
-		return val
-	})
+func (v Customer) ColumnJoinAt() sequel.ColumnClause {
+	return sequel.BasicColumn("join_at", v.JoinAt)
 }

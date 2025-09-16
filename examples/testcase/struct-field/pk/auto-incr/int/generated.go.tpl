@@ -1,8 +1,6 @@
 package int
 
 import (
-	"database/sql/driver"
-
 	"github.com/si3nloong/sqlgen/sequel"
 	"github.com/si3nloong/sqlgen/sequel/encoding"
 )
@@ -33,8 +31,8 @@ func (v Model) FindOneByPKStmt() (string, []any) {
 func (v Model) IDValue() any {
 	return (int64)(v.ID)
 }
-func (v Model) ColumnID() sequel.ColumnValuer[int] {
-	return sequel.Column("id", v.ID, func(val int) driver.Value {
+func (v Model) ColumnID() sequel.ColumnConvertClause[int] {
+	return sequel.Column("id", v.ID, func(val int) any {
 		return (int64)(val)
 	})
 }
