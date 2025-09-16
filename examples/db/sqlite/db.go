@@ -6,6 +6,7 @@ import (
 	"database/sql/driver"
 	"fmt"
 	"iter"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -42,9 +43,9 @@ func InsertOne[T sequel.ColumnValuer, Ptr interface {
 		query, args := v.InsertOneStmt()
 		return sqlConn.ExecContext(ctx, query, args...)
 	default:
-		columns, values := model.Columns(), model.Values()
-		s := strings.Repeat("?,", len(columns))
-		return sqlConn.ExecContext(ctx, "INSERT INTO "+DbTable(model)+" ("+strings.Join(columns, ",")+") VALUES ("+s[:len(s)-1]+");", values...)
+		columns, args := model.Columns(), model.Values()
+		query := "INSERT INTO " + DbTable(model) + " (" + strings.Join(columns, ",") + ") VALUES (" + strings.Repeat("?,", len(columns)-1) + "?);"
+		return sqlConn.ExecContext(ctx, query, args...)
 	}
 }
 
@@ -89,7 +90,7 @@ func Insert[T sequel.ColumnValuer](ctx context.Context, sqlConn sequel.DB, data 
 		placeholder := "(" + strings.Repeat(",?", noOfCols)[1:] + ")"
 		stmt.WriteString("INSERT INTO " + DbTable(model) + " (" + cols + ") VALUES " + placeholder)
 		args = append(args, data[0].Values()...)
-		for i := 1; i < len(data); i++ {
+		for i := 1; i < noOfData; i++ {
 			stmt.WriteString("," + placeholder)
 			args = append(args, data[i].Values()...)
 		}
@@ -319,6 +320,21 @@ func UpdateByPK[T sequel.KeyValuer](ctx context.Context, sqlConn sequel.DB, mode
 		values := model.Values()
 		values = append(values[:pkIdx], append(values[pkIdx+1:], pk)...)
 		return sqlConn.ExecContext(ctx, "UPDATE "+DbTable(model)+" SET "+strings.Join(columns, " = ?,")+" = ? WHERE "+pkName+" = ?;", append(values, pk)...)
+	case sequel.CompositeKeyer:
+		columns := model.Columns()
+		keyNames, keyIdxs, keys := v.CompositeKey()
+		values := model.Values()
+		sort.Ints(keyIdxs)
+		for i := len(keyIdxs) - 1; i >= 0; i-- {
+			columns = append(columns[:keyIdxs[i]], columns[keyIdxs[i]+1:]...)
+			values = append(values[:keyIdxs[i]], values[keyIdxs[i]+1:]...)
+		}
+		stmt := strpool.AcquireString()
+		defer strpool.ReleaseString(stmt)
+		noOfColumn := len(columns)
+		args := make([]any, 0, noOfColumn+len(keys))
+		stmt.WriteString("UPDATE " + DbTable(model) + " SET " + strings.Join(columns, " = ?,") + " = ? WHERE (" + strings.Join(keyNames, ",") + ") = (" + strings.Repeat("?,", len(keyNames)) + "?);")
+		return sqlConn.ExecContext(ctx, stmt.String(), append(args, keys...)...)
 	default:
 		panic("unreachable")
 	}
@@ -641,12 +657,10 @@ func (r *Pager[T, Ptr]) Next(ctx context.Context, sqlConn sequel.DB, cursor ...T
 				switch vi := any(v).(type) {
 				case sequel.CompositeKeyer:
 					pkNames, _, _ := vi.CompositeKey()
-					for i := range pkNames {
-						if i > 0 {
-							blr.WriteString("," + pkNames[i] + suffix)
-						} else {
-							blr.WriteString(pkNames[i] + suffix)
-						}
+					blr.WriteString(pkNames[0] + suffix)
+					noOfKeys := len(pkNames)
+					for i := 1; i < noOfKeys; i++ {
+						blr.WriteString("," + pkNames[i] + suffix)
 					}
 				case sequel.PrimaryKeyer:
 					pkName, _, _ := vi.PK()
@@ -660,22 +674,20 @@ func (r *Pager[T, Ptr]) Next(ctx context.Context, sqlConn sequel.DB, cursor ...T
 				switch vi := any(v).(type) {
 				case sequel.CompositeKeyer:
 					pkNames, _, _ := vi.CompositeKey()
-					for i := range pkNames {
-						if i > 0 {
-							blr.WriteString("," + pkNames[i] + " ASC")
-						} else {
-							blr.WriteString(pkNames[i] + " ASC")
-						}
+					blr.WriteString(pkNames[0])
+					noOfKeys := len(pkNames)
+					for i := 1; i < noOfKeys; i++ {
+						blr.WriteString("," + pkNames[i])
 					}
 				case sequel.PrimaryKeyer:
 					pkName, _, _ := vi.PK()
-					blr.WriteString(pkName + " ASC")
+					blr.WriteString(pkName)
 				default:
 					panic("unreachable")
 				}
 			}
 			// Add one to limit to find next cursor
-			blr.WriteString(" LIMIT " + strconv.FormatUint(uint64(r.stmt.Limit+1), 10) + ";")
+			blr.WriteString(" LIMIT " + strconv.Itoa(int(r.stmt.Limit+1)) + ";")
 
 			rows, err := sqlConn.QueryContext(ctx, blr.Query(), blr.Args()...)
 			blr.Reset()
@@ -765,30 +777,28 @@ func QueryStmt[T any, Ptr sequel.PtrScanner[T], Stmt interface {
 			blr.WriteString(" WHERE ")
 			vi.Where(blr)
 		}
-		if len(vi.GroupBy) > 0 {
-			blr.WriteString(" GROUP BY ")
-			for i := range vi.GroupBy {
-				if i > 0 {
-					blr.WriteByte(',')
-				}
-				blr.WriteString(vi.GroupBy[i])
+		if n := len(vi.GroupBy); n > 0 {
+			blr.WriteString(" GROUP BY " + vi.GroupBy[0])
+			for i := 1; i < n; i++ {
+				blr.WriteString("," + vi.GroupBy[i])
 			}
 		}
-		if len(vi.OrderBy) > 0 {
-			blr.WriteString(" ORDER BY ")
-			for i := range vi.OrderBy {
-				if i > 0 {
-					blr.WriteByte(',')
-				}
+		if n := len(vi.OrderBy); n > 0 {
+			if vi.OrderBy[0].Asc() {
+				blr.WriteString(" ORDER BY " + vi.OrderBy[0].ColumnName())
+			} else {
+				blr.WriteString(" ORDER BY " + vi.OrderBy[0].ColumnName() + " DESC")
+			}
+			for i := 1; i < n; i++ {
 				if vi.OrderBy[i].Asc() {
-					blr.WriteString(vi.OrderBy[i].ColumnName() + " ASC")
+					blr.WriteString("," + vi.OrderBy[i].ColumnName() + " ASC")
 				} else {
-					blr.WriteString(vi.OrderBy[i].ColumnName() + " DESC")
+					blr.WriteString("," + vi.OrderBy[i].ColumnName() + " DESC")
 				}
 			}
 		}
 		if vi.Limit > 0 {
-			blr.WriteString(" LIMIT " + strconv.FormatUint(uint64(vi.Limit), 10))
+			blr.WriteString(" LIMIT " + strconv.Itoa(int(vi.Limit)))
 		}
 		if vi.Offset > 0 {
 			blr.WriteString(" OFFSET " + strconv.FormatUint(vi.Offset, 10))
@@ -834,7 +844,6 @@ func QueryOneStmt[T any, Ptr sequel.PtrScanner[T], Stmt interface {
 	switch vi := any(stmt).(type) {
 	case SelectOneStmt:
 		blr := AcquireStmt()
-		defer ReleaseStmt(blr)
 		blr.WriteString("SELECT ")
 		if len(vi.Select) > 0 {
 			blr.WriteString(strings.Join(vi.Select, ","))
@@ -860,27 +869,30 @@ func QueryOneStmt[T any, Ptr sequel.PtrScanner[T], Stmt interface {
 			blr.WriteString(" WHERE ")
 			vi.Where(blr)
 		}
-		if len(vi.GroupBy) > 0 {
+		if n := len(vi.GroupBy); n > 0 {
 			blr.WriteString(" GROUP BY " + vi.GroupBy[0])
-			for i := 1; i < len(vi.GroupBy); i++ {
+			for i := 1; i < n; i++ {
 				blr.WriteString("," + vi.GroupBy[i])
 			}
 		}
-		if len(vi.OrderBy) > 0 {
-			blr.WriteString(" ORDER BY ")
-			for i := range vi.OrderBy {
-				if i > 0 {
-					blr.WriteByte(',')
-				}
+		if n := len(vi.OrderBy); n > 0 {
+			if vi.OrderBy[0].Asc() {
+				blr.WriteString(" ORDER BY " + vi.OrderBy[0].ColumnName())
+			} else {
+				blr.WriteString(" ORDER BY " + vi.OrderBy[0].ColumnName() + " DESC")
+			}
+			for i := 1; i < n; i++ {
 				if vi.OrderBy[i].Asc() {
-					blr.WriteString(vi.OrderBy[i].ColumnName() + " ASC")
+					blr.WriteString("," + vi.OrderBy[i].ColumnName() + " ASC")
 				} else {
-					blr.WriteString(vi.OrderBy[i].ColumnName() + " DESC")
+					blr.WriteString("," + vi.OrderBy[i].ColumnName() + " DESC")
 				}
 			}
 		}
 		blr.WriteString(" LIMIT 1;")
-		if err := sqlConn.QueryRowContext(ctx, blr.Query(), blr.Args()...).Scan(Ptr(&v).Addrs()...); err != nil {
+		row := sqlConn.QueryRowContext(ctx, blr.Query(), blr.Args()...)
+		ReleaseStmt(blr)
+		if err := row.Scan(Ptr(&v).Addrs()...); err != nil {
 			return nil, err
 		}
 		return &v, nil
@@ -937,16 +949,17 @@ func ExecStmt[T any, Stmt interface {
 			blr.WriteString(" WHERE ")
 			vi.Where(blr)
 		}
-		if len(vi.OrderBy) > 0 {
-			blr.WriteString(" ORDER BY ")
-			for i := range vi.OrderBy {
-				if i > 0 {
-					blr.WriteByte(',')
-				}
+		if n := len(vi.OrderBy); n > 0 {
+			if vi.OrderBy[0].Asc() {
+				blr.WriteString(" ORDER BY " + vi.OrderBy[0].ColumnName())
+			} else {
+				blr.WriteString(" ORDER BY " + vi.OrderBy[0].ColumnName() + " DESC")
+			}
+			for i := 1; i < n; i++ {
 				if vi.OrderBy[i].Asc() {
-					blr.WriteString(vi.OrderBy[i].ColumnName() + " ASC")
+					blr.WriteString("," + vi.OrderBy[i].ColumnName() + " ASC")
 				} else {
-					blr.WriteString(vi.OrderBy[i].ColumnName() + " DESC")
+					blr.WriteString("," + vi.OrderBy[i].ColumnName() + " DESC")
 				}
 			}
 		}
@@ -963,21 +976,22 @@ func ExecStmt[T any, Stmt interface {
 			blr.WriteString(" WHERE ")
 			vi.Where(blr)
 		}
-		if len(vi.OrderBy) > 0 {
-			blr.WriteString(" ORDER BY ")
-			for i := range vi.OrderBy {
-				if i > 0 {
-					blr.WriteByte(',')
-				}
+		if n := len(vi.OrderBy); n > 0 {
+			if vi.OrderBy[0].Asc() {
+				blr.WriteString(" ORDER BY " + vi.OrderBy[0].ColumnName())
+			} else {
+				blr.WriteString(" ORDER BY " + vi.OrderBy[0].ColumnName() + " DESC")
+			}
+			for i := 1; i < n; i++ {
 				if vi.OrderBy[i].Asc() {
-					blr.WriteString(vi.OrderBy[i].ColumnName() + " ASC")
+					blr.WriteString("," + vi.OrderBy[i].ColumnName() + " ASC")
 				} else {
-					blr.WriteString(vi.OrderBy[i].ColumnName() + " DESC")
+					blr.WriteString("," + vi.OrderBy[i].ColumnName() + " DESC")
 				}
 			}
 		}
 		if vi.Limit > 0 {
-			blr.WriteString(" LIMIT " + strconv.FormatUint(uint64(vi.Limit), 10))
+			blr.WriteString(" LIMIT " + strconv.Itoa(int(vi.Limit)))
 		}
 	}
 	blr.WriteByte(';')
