@@ -2,7 +2,6 @@ package sql
 
 import (
 	"database/sql/driver"
-	"fmt"
 	"testing"
 
 	"github.com/gofrs/uuid/v5"
@@ -15,13 +14,9 @@ func TestAutoPkLocation(t *testing.T) {
 		l := AutoPkLocation{}
 		values := l.Values()
 		require.Equal(t, 4, len(values))
-		_, ok := values[1].(driver.Valuer)
-		require.True(t, ok)
-		// require.Nil(t, values[2])
+		require.Nil(t, values[1])
+		require.Nil(t, values[2])
 		require.Nil(t, values[3])
-		// require.Nil(t, values[4])
-		// require.Nil(t, values[3])
-		fmt.Println(values)
 	})
 
 	t.Run("AutoPkLocation has values", func(t *testing.T) {
@@ -37,10 +32,6 @@ func TestAutoPkLocation(t *testing.T) {
 		require.NotNil(t, values[2])
 		_, ok = values[2].(driver.Valuer)
 		require.True(t, ok)
-		require.NotNil(t, values[3])
-		_, ok = values[3].(driver.Valuer)
-		require.True(t, ok)
-		// require.NotNil(t, values[4])
-		fmt.Println(values)
+		require.Nil(t, values[3])
 	})
 }

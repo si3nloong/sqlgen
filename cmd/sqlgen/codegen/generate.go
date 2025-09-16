@@ -315,7 +315,6 @@ func (g *Generator) generateModels(
 				printStruct(buf, importPkgs, vt)
 				aliasname := t.GoName + f.GoName + "Field"
 				fprintfln(w, "type %s = %s", aliasname, buf)
-				fmt.Println(buf.String())
 				strpool.ReleaseString(buf)
 
 				fprintfln(w, "func (v %s) %s() sequel.ColumnConvertClause[%s] {", t.GoName, g.config.Getter.Prefix+f.GoName, aliasname)
