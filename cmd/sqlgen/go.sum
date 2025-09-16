@@ -62,8 +62,8 @@ github.com/rogpeppe/go-internal v1.14.1/go.mod h1:MaRKkUm5W0goXpeCfT7UZI6fk/L7L7
 github.com/russross/blackfriday/v2 v2.1.0/go.mod h1:+Rmxgy9KzJVeS9/2gXHxylqXiyQDYRxCVz55jmeOWTM=
 github.com/samber/lo v1.51.0 h1:kysRYLbHy/MB7kQZf5DSN50JHmMsNEdeY24VzJFu7wI=
 github.com/samber/lo v1.51.0/go.mod h1:4+MXEGsJzbKGaUEQFKBq2xtfuznW9oz/WrgyzMzRoM0=
-github.com/si3nloong/sqlgen v1.0.0-alpha.7.0.20250915030917-cd11c5f93e55 h1:2fXRQ4inaaeqD11Q8Tw4XvVLiKHCLziTz+ZCsVzrH9U=
-github.com/si3nloong/sqlgen v1.0.0-alpha.7.0.20250915030917-cd11c5f93e55/go.mod h1:l0moykdpQ3DJB2APJsQLuWHFsv/y4SqzTVGq4amxhnk=
+github.com/si3nloong/sqlgen v1.0.0-alpha.7.0.20250916080036-b910b4151209 h1:5JTrbG30UfO7cvS6uR7JQATQatCYp0OIaYjCUZKaSV4=
+github.com/si3nloong/sqlgen v1.0.0-alpha.7.0.20250916080036-b910b4151209/go.mod h1:l0moykdpQ3DJB2APJsQLuWHFsv/y4SqzTVGq4amxhnk=
 github.com/spf13/cobra v1.10.1 h1:lJeBwCfmrnXthfAupyUTzJ/J4Nc1RsHC/mSRU2dll/s=
 github.com/spf13/cobra v1.10.1/go.mod h1:7SmJGaTHFVBY0jW4NXGluQoLvhqFQM+6XSKD+P4XaB0=
 github.com/spf13/pflag v1.0.9 h1:9exaQaMOCwffKiiiYk6/BndUBv+iRViNW+4lEMi0PvY=
