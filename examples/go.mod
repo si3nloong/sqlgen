@@ -12,8 +12,8 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.16
 	github.com/paulmach/orb v0.11.1
 	github.com/shopspring/decimal v1.4.0
-	github.com/si3nloong/sqlgen v1.0.0-alpha.7.0.20250916080036-b910b4151209
-	github.com/si3nloong/sqlgen/cmd/sqlgen v0.0.0-20250916080036-b910b4151209
+	github.com/si3nloong/sqlgen v1.0.0-alpha.7.0.20250916111734-31b9a41433f5
+	github.com/si3nloong/sqlgen/cmd/sqlgen v0.0.0-20250916111734-31b9a41433f5
 	github.com/stretchr/testify v1.11.1
 )
 
