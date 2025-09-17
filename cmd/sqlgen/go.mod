@@ -10,7 +10,7 @@ require (
 	github.com/goccy/go-yaml v1.18.0
 	github.com/jackc/pgx/v5 v5.7.6
 	github.com/samber/lo v1.51.0
-	github.com/si3nloong/sqlgen v1.0.0-alpha.7.0.20250917023531-7d55da017c15
+	github.com/si3nloong/sqlgen v1.0.0-alpha.7.0.20250917031803-e14a64548422
 	github.com/spf13/cobra v1.10.1
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/exp v0.0.0-20250911091902-df9299821621
