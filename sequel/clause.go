@@ -48,7 +48,7 @@ func (c basicColumn[T]) ColumnName() string {
 	return c.name
 }
 
-func (c basicColumn[T]) Value() any {
+func (c basicColumn[T]) Value() T {
 	return c.value
 }
 
@@ -66,8 +66,8 @@ func (c column[T]) Convert(v T) any {
 	return c.convert(v)
 }
 
-func (c column[T]) Value() any {
-	return c.convert(c.value)
+func (c column[T]) Value() T {
+	return c.value
 }
 
 type sqlColumn[T any] struct {

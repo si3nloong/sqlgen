@@ -140,7 +140,7 @@ type Stmt interface {
 
 type ColumnClause[T any] interface {
 	ColumnName() string
-	Value() any
+	Value() T
 }
 
 type ColumnConvertClause[T any] interface {
