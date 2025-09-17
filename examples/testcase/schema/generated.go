@@ -2,6 +2,7 @@ package schema
 
 import (
 	"database/sql"
+	"time"
 
 	"github.com/si3nloong/sqlgen/sequel"
 	"github.com/si3nloong/sqlgen/sequel/encoding"
@@ -42,7 +43,7 @@ func (v A) TextValue() any {
 func (v A) CreatedAtValue() any {
 	return v.CreatedAt
 }
-func (v A) ColumnID() sequel.ColumnClause {
+func (v A) ColumnID() sequel.ColumnClause[string] {
 	return sequel.BasicColumn("id", v.ID)
 }
 func (v A) ColumnText() sequel.ColumnConvertClause[LongText] {
@@ -50,7 +51,7 @@ func (v A) ColumnText() sequel.ColumnConvertClause[LongText] {
 		return (string)(val)
 	})
 }
-func (v A) ColumnCreatedAt() sequel.ColumnClause {
+func (v A) ColumnCreatedAt() sequel.ColumnClause[time.Time] {
 	return sequel.BasicColumn("created_at", v.CreatedAt)
 }
 
@@ -84,10 +85,10 @@ func (v B) IDValue() any {
 func (v B) CreatedAtValue() any {
 	return v.CreatedAt
 }
-func (v B) ColumnID() sequel.ColumnClause {
+func (v B) ColumnID() sequel.ColumnClause[string] {
 	return sequel.BasicColumn("id", v.ID)
 }
-func (v B) ColumnCreatedAt() sequel.ColumnClause {
+func (v B) ColumnCreatedAt() sequel.ColumnClause[time.Time] {
 	return sequel.BasicColumn("created_at", v.CreatedAt)
 }
 
@@ -123,7 +124,7 @@ func (v C) FindOneByPKStmt() (string, []any) {
 func (v C) IDValue() any {
 	return v.ID
 }
-func (v C) ColumnID() sequel.ColumnClause {
+func (v C) ColumnID() sequel.ColumnClause[int64] {
 	return sequel.BasicColumn("id", v.ID)
 }
 

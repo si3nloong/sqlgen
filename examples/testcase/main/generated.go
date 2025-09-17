@@ -2,6 +2,7 @@ package main
 
 import (
 	"reflect"
+	"time"
 
 	"github.com/si3nloong/sqlgen/sequel"
 	"github.com/si3nloong/sqlgen/sequel/encoding"
@@ -43,13 +44,13 @@ func (v Address) Line2Value() any {
 func (v Address) CountryCodeValue() any {
 	return v.CountryCode
 }
-func (v Address) ColumnLine1() sequel.ColumnClause {
+func (v Address) ColumnLine1() sequel.ColumnClause[string] {
 	return sequel.BasicColumn("line_1", v.Line1)
 }
-func (v Address) ColumnLine2() sequel.ColumnClause {
+func (v Address) ColumnLine2() sequel.ColumnClause[string] {
 	return sequel.BasicColumn("line_2", v.Line2)
 }
-func (v Address) ColumnCountryCode() sequel.ColumnClause {
+func (v Address) ColumnCountryCode() sequel.ColumnClause[string] {
 	return sequel.BasicColumn("country_code", v.CountryCode)
 }
 
@@ -128,7 +129,7 @@ func (v HouseUnit) ColumnNo() sequel.ColumnConvertClause[uint] {
 		return (int64)(val)
 	})
 }
-func (v HouseUnit) ColumnBuildTime() sequel.ColumnClause {
+func (v HouseUnit) ColumnBuildTime() sequel.ColumnClause[time.Time] {
 	return sequel.BasicColumn("build_time", v.BuildTime)
 }
 func (v HouseUnit) ColumnAddress() sequel.ColumnConvertClause[Address] {

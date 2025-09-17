@@ -1,6 +1,8 @@
 package embedded
 
 import (
+	"time"
+
 	"github.com/si3nloong/sqlgen/sequel"
 )
 
@@ -49,18 +51,18 @@ func (v B) CreatedValue() any {
 func (v B) OKValue() any {
 	return v.ts.OK
 }
-func (v B) ColumnID() sequel.ColumnClause {
+func (v B) ColumnID() sequel.ColumnClause[int64] {
 	return sequel.BasicColumn("id", v.a.ID)
 }
-func (v B) ColumnName() sequel.ColumnClause {
+func (v B) ColumnName() sequel.ColumnClause[string] {
 	return sequel.BasicColumn("name", v.a.Name)
 }
-func (v B) ColumnZ() sequel.ColumnClause {
+func (v B) ColumnZ() sequel.ColumnClause[bool] {
 	return sequel.BasicColumn("z", v.a.Z)
 }
-func (v B) ColumnCreated() sequel.ColumnClause {
+func (v B) ColumnCreated() sequel.ColumnClause[time.Time] {
 	return sequel.BasicColumn("created", v.ts.Created)
 }
-func (v B) ColumnOK() sequel.ColumnClause {
+func (v B) ColumnOK() sequel.ColumnClause[bool] {
 	return sequel.BasicColumn("ok", v.ts.OK)
 }

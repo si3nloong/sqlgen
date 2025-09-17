@@ -30,6 +30,6 @@ func (v Model) FindOneByPKStmt() (string, []any) {
 func (v Model) IDValue() any {
 	return v.ID
 }
-func (v Model) ColumnID() sequel.ColumnClause {
+func (v Model) ColumnID() sequel.ColumnClause[int64] {
 	return sequel.BasicColumn("id", v.ID)
 }

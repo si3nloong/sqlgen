@@ -41,12 +41,12 @@ func (v Model) BValue() any {
 func (v Model) ReadOnlyValue() any {
 	return v.ReadOnly
 }
-func (v Model) ColumnA() sequel.ColumnClause {
+func (v Model) ColumnA() sequel.ColumnClause[string] {
 	return sequel.BasicColumn("a", v.A)
 }
-func (v Model) ColumnB() sequel.ColumnClause {
+func (v Model) ColumnB() sequel.ColumnClause[bool] {
 	return sequel.BasicColumn("b", v.B)
 }
-func (v Model) ColumnReadOnly() sequel.ColumnClause {
+func (v Model) ColumnReadOnly() sequel.ColumnClause[string] {
 	return sequel.BasicColumn("read_only", v.ReadOnly)
 }

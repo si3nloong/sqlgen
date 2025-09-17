@@ -2,6 +2,7 @@ package custom
 
 import (
 	"database/sql"
+	"time"
 
 	"github.com/paulmach/orb"
 	"github.com/paulmach/orb/encoding/ewkb"
@@ -68,7 +69,7 @@ func (v Address) GeoPointValue() any {
 func (v Address) CountryCodeValue() any {
 	return (string)(v.CountryCode)
 }
-func (v Address) ColumnLine1() sequel.ColumnClause {
+func (v Address) ColumnLine1() sequel.ColumnClause[string] {
 	return sequel.BasicColumn("line_1", v.Line1)
 }
 func (v Address) ColumnLine2() sequel.ColumnConvertClause[sql.NullString] {
@@ -76,7 +77,7 @@ func (v Address) ColumnLine2() sequel.ColumnConvertClause[sql.NullString] {
 		return val
 	})
 }
-func (v Address) ColumnCity() sequel.ColumnClause {
+func (v Address) ColumnCity() sequel.ColumnClause[string] {
 	return sequel.BasicColumn("city", v.City)
 }
 func (v Address) ColumnPostCode() sequel.ColumnConvertClause[uint] {
@@ -155,7 +156,7 @@ func (v Customer) StatusValue() any {
 func (v Customer) JoinAtValue() any {
 	return v.JoinAt
 }
-func (v Customer) ColumnID() sequel.ColumnClause {
+func (v Customer) ColumnID() sequel.ColumnClause[int64] {
 	return sequel.BasicColumn("id", v.ID)
 }
 func (v Customer) ColumnAge() sequel.ColumnConvertClause[uint8] {
@@ -178,9 +179,9 @@ func (v Customer) ColumnNicknames() sequel.ColumnConvertClause[[]longText] {
 		return (sqltype.StringSlice[longText])(val)
 	})
 }
-func (v Customer) ColumnStatus() sequel.ColumnClause {
+func (v Customer) ColumnStatus() sequel.ColumnClause[string] {
 	return sequel.BasicColumn("status", v.Status)
 }
-func (v Customer) ColumnJoinAt() sequel.ColumnClause {
+func (v Customer) ColumnJoinAt() sequel.ColumnClause[time.Time] {
 	return sequel.BasicColumn("join_at", v.JoinAt)
 }

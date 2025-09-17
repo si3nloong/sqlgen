@@ -1,6 +1,8 @@
 package pk
 
 import (
+	"time"
+
 	"github.com/si3nloong/sqlgen/sequel"
 	"github.com/si3nloong/sqlgen/sequel/encoding"
 )
@@ -60,7 +62,7 @@ func (v Car) ColumnID() sequel.ColumnConvertClause[PK] {
 		return val
 	})
 }
-func (v Car) ColumnNo() sequel.ColumnClause {
+func (v Car) ColumnNo() sequel.ColumnClause[string] {
 	return sequel.BasicColumn("no", v.No)
 }
 func (v Car) ColumnColor() sequel.ColumnConvertClause[Color] {
@@ -68,7 +70,7 @@ func (v Car) ColumnColor() sequel.ColumnConvertClause[Color] {
 		return (int64)(val)
 	})
 }
-func (v Car) ColumnManucDate() sequel.ColumnClause {
+func (v Car) ColumnManucDate() sequel.ColumnClause[time.Time] {
 	return sequel.BasicColumn("manuc_date", v.ManucDate)
 }
 
@@ -117,7 +119,7 @@ func (v House) ColumnID() sequel.ColumnConvertClause[uint] {
 		return (int64)(val)
 	})
 }
-func (v House) ColumnNo() sequel.ColumnClause {
+func (v House) ColumnNo() sequel.ColumnClause[string] {
 	return sequel.BasicColumn("no", v.No)
 }
 
@@ -171,7 +173,7 @@ func (v User) AgeValue() any {
 func (v User) EmailValue() any {
 	return v.Email
 }
-func (v User) ColumnID() sequel.ColumnClause {
+func (v User) ColumnID() sequel.ColumnClause[int64] {
 	return sequel.BasicColumn("id", v.ID)
 }
 func (v User) ColumnName() sequel.ColumnConvertClause[LongText] {
@@ -184,6 +186,6 @@ func (v User) ColumnAge() sequel.ColumnConvertClause[uint8] {
 		return (int64)(val)
 	})
 }
-func (v User) ColumnEmail() sequel.ColumnClause {
+func (v User) ColumnEmail() sequel.ColumnClause[string] {
 	return sequel.BasicColumn("email", v.Email)
 }

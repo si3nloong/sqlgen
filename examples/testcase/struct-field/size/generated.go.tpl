@@ -1,6 +1,8 @@
 package size
 
 import (
+	"time"
+
 	"github.com/si3nloong/sqlgen/sequel"
 )
 
@@ -39,12 +41,12 @@ func (v Size) TimestampValue() any {
 func (v Size) TimeValue() any {
 	return v.Time
 }
-func (v Size) ColumnStr() sequel.ColumnClause {
+func (v Size) ColumnStr() sequel.ColumnClause[string] {
 	return sequel.BasicColumn("str", v.Str)
 }
-func (v Size) ColumnTimestamp() sequel.ColumnClause {
+func (v Size) ColumnTimestamp() sequel.ColumnClause[time.Time] {
 	return sequel.BasicColumn("timestamp", v.Timestamp)
 }
-func (v Size) ColumnTime() sequel.ColumnClause {
+func (v Size) ColumnTime() sequel.ColumnClause[time.Time] {
 	return sequel.BasicColumn("time", v.Time)
 }

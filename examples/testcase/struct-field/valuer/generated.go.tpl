@@ -51,7 +51,7 @@ func (v B) PtrValueValue() any {
 func (v B) NValue() any {
 	return v.N
 }
-func (v B) ColumnID() sequel.ColumnClause {
+func (v B) ColumnID() sequel.ColumnClause[int64] {
 	return sequel.BasicColumn("id", v.ID)
 }
 func (v B) ColumnValue() sequel.ColumnConvertClause[anyType] {
@@ -67,6 +67,6 @@ func (v B) ColumnPtrValue() sequel.ColumnConvertClause[*anyType] {
 		return nil
 	})
 }
-func (v B) ColumnN() sequel.ColumnClause {
+func (v B) ColumnN() sequel.ColumnClause[string] {
 	return sequel.BasicColumn("n", v.N)
 }

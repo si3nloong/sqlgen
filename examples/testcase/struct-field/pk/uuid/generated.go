@@ -40,6 +40,6 @@ func (v User) ColumnID() sequel.ColumnConvertClause[uuid.UUID] {
 		return val
 	})
 }
-func (v User) ColumnName() sequel.ColumnClause {
+func (v User) ColumnName() sequel.ColumnClause[string] {
 	return sequel.BasicColumn("name", v.Name)
 }

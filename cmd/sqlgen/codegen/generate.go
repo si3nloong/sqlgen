@@ -327,7 +327,7 @@ func (g *Generator) generateModels(
 					typeStr = Expr(typeStr).Format(importPkgs)
 				}
 				if isBasic {
-					fprintfln(w, "func (v %s) %s() sequel.ColumnClause {", t.GoName, g.config.Getter.Prefix+f.GoName)
+					fprintfln(w, "func (v %s) %s() sequel.ColumnClause[%s] {", t.GoName, g.config.Getter.Prefix+f.GoName, typeStr)
 				} else {
 					fprintfln(w, "func (v %s) %s() sequel.ColumnConvertClause[%s] {", t.GoName, g.config.Getter.Prefix+f.GoName, typeStr)
 				}

@@ -1,6 +1,8 @@
 package primitive
 
 import (
+	"time"
+
 	"github.com/si3nloong/sqlgen/sequel"
 	"github.com/si3nloong/sqlgen/sequel/encoding"
 )
@@ -105,7 +107,7 @@ func (v Primitive) F64Value() any {
 func (v Primitive) TimeValue() any {
 	return v.Time
 }
-func (v Primitive) ColumnStr() sequel.ColumnClause {
+func (v Primitive) ColumnStr() sequel.ColumnClause[string] {
 	return sequel.BasicColumn("str", v.Str)
 }
 func (v Primitive) ColumnBytes() sequel.ColumnConvertClause[[]byte] {
@@ -113,7 +115,7 @@ func (v Primitive) ColumnBytes() sequel.ColumnConvertClause[[]byte] {
 		return val
 	})
 }
-func (v Primitive) ColumnBool() sequel.ColumnClause {
+func (v Primitive) ColumnBool() sequel.ColumnClause[bool] {
 	return sequel.BasicColumn("bool", v.Bool)
 }
 func (v Primitive) ColumnInt() sequel.ColumnConvertClause[int] {
@@ -136,7 +138,7 @@ func (v Primitive) ColumnInt32() sequel.ColumnConvertClause[int32] {
 		return (int64)(val)
 	})
 }
-func (v Primitive) ColumnInt64() sequel.ColumnClause {
+func (v Primitive) ColumnInt64() sequel.ColumnClause[int64] {
 	return sequel.BasicColumn("int_64", v.Int64)
 }
 func (v Primitive) ColumnUint() sequel.ColumnConvertClause[uint] {
@@ -169,9 +171,9 @@ func (v Primitive) ColumnF32() sequel.ColumnConvertClause[float32] {
 		return (float64)(val)
 	})
 }
-func (v Primitive) ColumnF64() sequel.ColumnClause {
+func (v Primitive) ColumnF64() sequel.ColumnClause[float64] {
 	return sequel.BasicColumn("f_64", v.F64)
 }
-func (v Primitive) ColumnTime() sequel.ColumnClause {
+func (v Primitive) ColumnTime() sequel.ColumnClause[time.Time] {
 	return sequel.BasicColumn("time", v.Time)
 }

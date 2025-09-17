@@ -16,7 +16,7 @@ func Column[T any](columnName string, value T, convert ConvertFunc[T]) ColumnCon
 	}
 }
 
-func BasicColumn[T BasicTypes](columnName string, value T) ColumnClause {
+func BasicColumn[T BasicTypes](columnName string, value T) ColumnClause[T] {
 	return basicColumn[T]{
 		name:  columnName,
 		value: value,

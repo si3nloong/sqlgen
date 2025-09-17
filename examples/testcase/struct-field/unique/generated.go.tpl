@@ -45,7 +45,7 @@ func (v User) FirstNameValue() any {
 func (v User) LastNameValue() any {
 	return v.LastName
 }
-func (v User) ColumnEmail() sequel.ColumnClause {
+func (v User) ColumnEmail() sequel.ColumnClause[string] {
 	return sequel.BasicColumn("email", v.Email)
 }
 func (v User) ColumnAge() sequel.ColumnConvertClause[uint8] {
@@ -53,9 +53,9 @@ func (v User) ColumnAge() sequel.ColumnConvertClause[uint8] {
 		return (int64)(val)
 	})
 }
-func (v User) ColumnFirstName() sequel.ColumnClause {
+func (v User) ColumnFirstName() sequel.ColumnClause[string] {
 	return sequel.BasicColumn("first_name", v.FirstName)
 }
-func (v User) ColumnLastName() sequel.ColumnClause {
+func (v User) ColumnLastName() sequel.ColumnClause[string] {
 	return sequel.BasicColumn("last_name", v.LastName)
 }

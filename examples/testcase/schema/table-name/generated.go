@@ -29,7 +29,7 @@ func (v CustomTableName1) InsertOneStmt() (string, []any) {
 func (v CustomTableName1) TextValue() any {
 	return v.Text
 }
-func (v CustomTableName1) ColumnText() sequel.ColumnClause {
+func (v CustomTableName1) ColumnText() sequel.ColumnClause[string] {
 	return sequel.BasicColumn("text", v.Text)
 }
 
@@ -58,7 +58,7 @@ func (v CustomTableName2) InsertOneStmt() (string, []any) {
 func (v CustomTableName2) TextValue() any {
 	return v.Text
 }
-func (v CustomTableName2) ColumnText() sequel.ColumnClause {
+func (v CustomTableName2) ColumnText() sequel.ColumnClause[string] {
 	return sequel.BasicColumn("text", v.Text)
 }
 
@@ -87,6 +87,6 @@ func (v CustomTableName3) InsertOneStmt() (string, []any) {
 func (v CustomTableName3) TextValue() any {
 	return v.Text
 }
-func (v CustomTableName3) ColumnText() sequel.ColumnClause {
+func (v CustomTableName3) ColumnText() sequel.ColumnClause[string] {
 	return sequel.BasicColumn("text", v.Text)
 }

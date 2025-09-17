@@ -77,6 +77,6 @@ func (v Model) ColumnID() sequel.ColumnConvertClause[uint] {
 		return (int64)(val)
 	})
 }
-func (v Model) ColumnN() sequel.ColumnClause {
+func (v Model) ColumnN() sequel.ColumnClause[int64] {
 	return sequel.BasicColumn("n", v.N)
 }

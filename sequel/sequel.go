@@ -138,13 +138,13 @@ type Stmt interface {
 	Reset()
 }
 
-type ColumnClause interface {
+type ColumnClause[T any] interface {
 	ColumnName() string
 	Value() any
 }
 
 type ColumnConvertClause[T any] interface {
-	ColumnClause
+	ColumnClause[T]
 	Convert(T) any
 }
 

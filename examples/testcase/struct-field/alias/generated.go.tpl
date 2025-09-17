@@ -78,10 +78,10 @@ func (v AliasStruct) CreatedValue() any {
 func (v AliasStruct) UpdatedValue() any {
 	return (time.Time)(v.model.Updated)
 }
-func (v AliasStruct) ColumnB() sequel.ColumnClause {
+func (v AliasStruct) ColumnB() sequel.ColumnClause[float64] {
 	return sequel.BasicColumn("b", v.B)
 }
-func (v AliasStruct) ColumnID() sequel.ColumnClause {
+func (v AliasStruct) ColumnID() sequel.ColumnClause[int64] {
 	return sequel.BasicColumn("Id", v.pk.ID)
 }
 func (v AliasStruct) ColumnHeader() sequel.ColumnConvertClause[aliasStr] {
@@ -140,7 +140,7 @@ func (v B) InsertOneStmt() (string, []any) {
 func (v B) NameValue() any {
 	return v.Name
 }
-func (v B) ColumnName() sequel.ColumnClause {
+func (v B) ColumnName() sequel.ColumnClause[string] {
 	return sequel.BasicColumn("name", v.Name)
 }
 
@@ -169,6 +169,6 @@ func (v C) InsertOneStmt() (string, []any) {
 func (v C) IDValue() any {
 	return v.ID
 }
-func (v C) ColumnID() sequel.ColumnClause {
+func (v C) ColumnID() sequel.ColumnClause[int64] {
 	return sequel.BasicColumn("id", v.ID)
 }

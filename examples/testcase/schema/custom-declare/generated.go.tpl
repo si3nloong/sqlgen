@@ -13,6 +13,6 @@ func (v A) InsertOneStmt() (string, []any) {
 func (v A) NameValue() any {
 	return v.Name
 }
-func (v A) ColumnName() sequel.ColumnClause {
+func (v A) ColumnName() sequel.ColumnClause[string] {
 	return sequel.BasicColumn("name", v.Name)
 }

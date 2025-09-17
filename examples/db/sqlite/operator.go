@@ -32,7 +32,7 @@ func Or(clauses ...sequel.WhereClause) sequel.WhereClause {
 	}
 }
 
-func Equal[T comparable](column sequel.ColumnClause, value T) sequel.WhereClause {
+func Equal[T comparable](column sequel.ColumnClause[T], value T) sequel.WhereClause {
 	return func(stmt sequel.StmtBuilder) {
 		switch vi := column.(type) {
 		case sequel.SQLColumnClause[T]:
@@ -45,7 +45,7 @@ func Equal[T comparable](column sequel.ColumnClause, value T) sequel.WhereClause
 	}
 }
 
-func NotEqual[T comparable](column sequel.ColumnClause, value T) sequel.WhereClause {
+func NotEqual[T comparable](column sequel.ColumnClause[T], value T) sequel.WhereClause {
 	return func(stmt sequel.StmtBuilder) {
 		switch vi := column.(type) {
 		case sequel.SQLColumnClause[T]:
@@ -58,7 +58,7 @@ func NotEqual[T comparable](column sequel.ColumnClause, value T) sequel.WhereCla
 	}
 }
 
-func In[T any](column sequel.ColumnClause, values []T) sequel.WhereClause {
+func In[T any](column sequel.ColumnClause[T], values []T) sequel.WhereClause {
 	return func(stmt sequel.StmtBuilder) {
 		args := make([]any, len(values))
 		switch vi := column.(type) {
@@ -79,7 +79,7 @@ func In[T any](column sequel.ColumnClause, values []T) sequel.WhereClause {
 	}
 }
 
-func NotIn[T any](column sequel.ColumnClause, values []T) sequel.WhereClause {
+func NotIn[T any](column sequel.ColumnClause[T], values []T) sequel.WhereClause {
 	return func(stmt sequel.StmtBuilder) {
 		args := make([]any, len(values))
 		switch vi := column.(type) {
@@ -100,7 +100,7 @@ func NotIn[T any](column sequel.ColumnClause, values []T) sequel.WhereClause {
 	}
 }
 
-func GreaterThan[T comparable](column sequel.ColumnClause, value T) sequel.WhereClause {
+func GreaterThan[T comparable](column sequel.ColumnClause[T], value T) sequel.WhereClause {
 	return func(stmt sequel.StmtBuilder) {
 		switch vi := column.(type) {
 		case sequel.SQLColumnClause[T]:
@@ -113,7 +113,7 @@ func GreaterThan[T comparable](column sequel.ColumnClause, value T) sequel.Where
 	}
 }
 
-func GreaterThanOrEqual[T comparable](column sequel.ColumnClause, value T) sequel.WhereClause {
+func GreaterThanOrEqual[T comparable](column sequel.ColumnClause[T], value T) sequel.WhereClause {
 	return func(stmt sequel.StmtBuilder) {
 		switch vi := column.(type) {
 		case sequel.SQLColumnClause[T]:
@@ -126,7 +126,7 @@ func GreaterThanOrEqual[T comparable](column sequel.ColumnClause, value T) seque
 	}
 }
 
-func LessThan[T comparable](column sequel.ColumnClause, value T) sequel.WhereClause {
+func LessThan[T comparable](column sequel.ColumnClause[T], value T) sequel.WhereClause {
 	return func(stmt sequel.StmtBuilder) {
 		switch vi := column.(type) {
 		case sequel.SQLColumnClause[T]:
@@ -139,7 +139,7 @@ func LessThan[T comparable](column sequel.ColumnClause, value T) sequel.WhereCla
 	}
 }
 
-func LessThanOrEqual[T comparable](column sequel.ColumnClause, value T) sequel.WhereClause {
+func LessThanOrEqual[T comparable](column sequel.ColumnClause[T], value T) sequel.WhereClause {
 	return func(stmt sequel.StmtBuilder) {
 		switch vi := column.(type) {
 		case sequel.SQLColumnClause[T]:
@@ -152,7 +152,7 @@ func LessThanOrEqual[T comparable](column sequel.ColumnClause, value T) sequel.W
 	}
 }
 
-func Like[T comparable](column sequel.ColumnClause, value T) sequel.WhereClause {
+func Like[T comparable](column sequel.ColumnClause[T], value T) sequel.WhereClause {
 	return func(stmt sequel.StmtBuilder) {
 		switch vi := column.(type) {
 		case sequel.SQLColumnClause[T]:
@@ -165,7 +165,7 @@ func Like[T comparable](column sequel.ColumnClause, value T) sequel.WhereClause 
 	}
 }
 
-func NotLike[T comparable](column sequel.ColumnClause, value T) sequel.WhereClause {
+func NotLike[T comparable](column sequel.ColumnClause[T], value T) sequel.WhereClause {
 	return func(stmt sequel.StmtBuilder) {
 		switch vi := column.(type) {
 		case sequel.SQLColumnClause[T]:
@@ -178,19 +178,19 @@ func NotLike[T comparable](column sequel.ColumnClause, value T) sequel.WhereClau
 	}
 }
 
-func IsNull[T any](column sequel.ColumnClause) sequel.WhereClause {
+func IsNull[T any](column sequel.ColumnClause[T]) sequel.WhereClause {
 	return func(stmt sequel.StmtBuilder) {
 		stmt.WriteString(column.ColumnName() + " IS NULL")
 	}
 }
 
-func IsNotNull[T any](column sequel.ColumnClause) sequel.WhereClause {
+func IsNotNull[T any](column sequel.ColumnClause[T]) sequel.WhereClause {
 	return func(stmt sequel.StmtBuilder) {
 		stmt.WriteString(column.ColumnName() + " IS NOT NULL")
 	}
 }
 
-func Between[T comparable](column sequel.ColumnClause, from, to T) sequel.WhereClause {
+func Between[T comparable](column sequel.ColumnClause[T], from, to T) sequel.WhereClause {
 	return func(stmt sequel.StmtBuilder) {
 		switch vi := column.(type) {
 		case sequel.SQLColumnClause[T]:
@@ -203,7 +203,7 @@ func Between[T comparable](column sequel.ColumnClause, from, to T) sequel.WhereC
 	}
 }
 
-func NotBetween[T comparable](column sequel.ColumnClause, from, to T) sequel.WhereClause {
+func NotBetween[T comparable](column sequel.ColumnClause[T], from, to T) sequel.WhereClause {
 	return func(stmt sequel.StmtBuilder) {
 		switch vi := column.(type) {
 		case sequel.SQLColumnClause[T]:
@@ -216,7 +216,7 @@ func NotBetween[T comparable](column sequel.ColumnClause, from, to T) sequel.Whe
 	}
 }
 
-func Set[T any](column sequel.ColumnClause, value ...T) sequel.SetClause {
+func Set[T any](column sequel.ColumnClause[T], value ...T) sequel.SetClause {
 	return func(stmt sequel.StmtBuilder) {
 		if len(value) > 0 {
 			switch vi := column.(type) {
@@ -233,10 +233,10 @@ func Set[T any](column sequel.ColumnClause, value ...T) sequel.SetClause {
 	}
 }
 
-func Asc[T any](f sequel.ColumnClause) sequel.OrderByClause {
-	return sequel.OrderByColumn(f.ColumnName(), true)
+func Asc[T any](column sequel.ColumnClause[T]) sequel.OrderByClause {
+	return sequel.OrderByColumn(column.ColumnName(), true)
 }
 
-func Desc[T any](f sequel.ColumnClause) sequel.OrderByClause {
-	return sequel.OrderByColumn(f.ColumnName(), false)
+func Desc[T any](column sequel.ColumnClause[T]) sequel.OrderByClause {
+	return sequel.OrderByColumn(column.ColumnName(), false)
 }

@@ -267,7 +267,7 @@ func (v Ptr) AnyTimeValue() any {
 	}
 	return nil
 }
-func (v Ptr) ColumnID() sequel.ColumnClause {
+func (v Ptr) ColumnID() sequel.ColumnClause[int64] {
 	return sequel.BasicColumn("id", v.ID)
 }
 func (v Ptr) ColumnStr() sequel.ColumnConvertClause[*string] {
@@ -414,6 +414,6 @@ func (v Ptr) ColumnEmbeddedTime() sequel.ColumnConvertClause[*time.Time] {
 		return nil
 	})
 }
-func (v Ptr) ColumnAnyTime() sequel.ColumnClause {
+func (v Ptr) ColumnAnyTime() sequel.ColumnClause[time.Time] {
 	return sequel.BasicColumn("any_time", v.deepNested.embedded.AnyTime)
 }

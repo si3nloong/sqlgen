@@ -74,9 +74,9 @@ func (v C) StringValue() any {
 func (v C) ValidValue() any {
 	return v.Valid
 }
-func (v C) ColumnString() sequel.ColumnClause {
+func (v C) ColumnString() sequel.ColumnClause[string] {
 	return sequel.BasicColumn("string", v.String)
 }
-func (v C) ColumnValid() sequel.ColumnClause {
+func (v C) ColumnValid() sequel.ColumnClause[bool] {
 	return sequel.BasicColumn("valid", v.Valid)
 }

@@ -41,10 +41,10 @@ func (v A) IDValue() any {
 func (v A) NameValue() any {
 	return v.Name
 }
-func (v A) ColumnID() sequel.ColumnClause {
+func (v A) ColumnID() sequel.ColumnClause[int64] {
 	return sequel.BasicColumn("id", v.ID)
 }
-func (v A) ColumnName() sequel.ColumnClause {
+func (v A) ColumnName() sequel.ColumnClause[string] {
 	return sequel.BasicColumn("name", v.Name)
 }
 
@@ -70,6 +70,6 @@ func (v Model) InsertOneStmt() (string, []any) {
 func (v Model) NameValue() any {
 	return v.Name
 }
-func (v Model) ColumnName() sequel.ColumnClause {
+func (v Model) ColumnName() sequel.ColumnClause[string] {
 	return sequel.BasicColumn("name", v.Name)
 }

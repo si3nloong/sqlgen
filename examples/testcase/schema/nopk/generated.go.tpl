@@ -40,7 +40,7 @@ func (v Customer) AgeValue() any {
 func (v Customer) MarriedValue() any {
 	return v.Married
 }
-func (v Customer) ColumnName() sequel.ColumnClause {
+func (v Customer) ColumnName() sequel.ColumnClause[string] {
 	return sequel.BasicColumn("name", v.Name)
 }
 func (v Customer) ColumnAge() sequel.ColumnConvertClause[uint8] {
@@ -48,6 +48,6 @@ func (v Customer) ColumnAge() sequel.ColumnConvertClause[uint8] {
 		return (int64)(val)
 	})
 }
-func (v Customer) ColumnMarried() sequel.ColumnClause {
+func (v Customer) ColumnMarried() sequel.ColumnClause[bool] {
 	return sequel.BasicColumn("married", v.Married)
 }
