@@ -80,7 +80,7 @@ func renderTemplate(
 	fmt.Fprintln(w)
 
 	if len(impPkg.imports) > 0 {
-		fprintfln(w, `import (`)
+		fprintfln(w, "import (")
 		for _, pkg := range impPkg.imports {
 			if filepath.Base(pkg.Path()) == pkg.Name() {
 				fprintfln(w, strconv.Quote(pkg.Path()))
@@ -88,7 +88,7 @@ func renderTemplate(
 				fprintfln(w, pkg.Name()+strconv.Quote(pkg.Path()))
 			}
 		}
-		fprintfln(w, `)`)
+		fprintfln(w, ")")
 	}
 
 	if _, err := io.Copy(w, blr); err != nil {

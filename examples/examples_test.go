@@ -23,7 +23,7 @@ import (
 func TestMain(m *testing.M) {
 	// openSqlConn("mysql")
 	// ctx := context.Background()
-	dbConn = mustValue(openSqlConn("mysql"))
+	dbConn = mustValue(openSqlConn("sqlite"))
 	defer dbConn.Close()
 
 	// m1 := autopk.Model{}
@@ -151,13 +151,15 @@ func TestInsert(t *testing.T) {
 		require.NotZero(t, *ptr.F32)
 		require.NotZero(t, *ptr.F64)
 
-		ptrs, err := mysqldb.QueryStmt[pointer.Ptr](ctx, dbConn, mysqldb.SelectStmt{
-			Select:    ptr.Columns(),
-			FromTable: ptr.TableName(),
-			Where:     mysqldb.Equal(ptr.ColumnInt(), &i),
-			Limit:     3,
+		ptrs, err := mysqldb.QueryStmt(ctx, dbConn, func(p pointer.Ptr) mysqldb.SelectStmt {
+			return mysqldb.SelectStmt{
+				Select:    p.Columns(),
+				FromTable: p.TableName(),
+				Where:     mysqldb.Equal(p.ColumnInt(), &i),
+				Limit:     3,
+			}
 		})
-		_ = ptrs
+		require.NotEmpty(t, ptrs)
 		require.NoError(t, err)
 	})
 }
