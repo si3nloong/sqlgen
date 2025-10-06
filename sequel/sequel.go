@@ -13,8 +13,8 @@ type TableName struct{}
 type (
 	ConvertFunc[T any] func(T) any
 	QueryFunc          func(placeholder string) string
-	WhereClause        func(StmtBuilder)
-	SetClause          func(StmtBuilder)
+	WhereClause        func(StmtWriter)
+	SetClause          func(StmtWriter)
 )
 
 type DB interface {
@@ -121,17 +121,13 @@ type StmtWriter interface {
 	io.Writer
 	io.StringWriter
 	io.ByteWriter
-}
-
-type StmtBuilder interface {
-	StmtWriter
 	Var(v any) string
 	// Vars will group the valus in parenthesis
 	Vars(vals []any) string
 }
 
 type Stmt interface {
-	StmtBuilder
+	StmtWriter
 	fmt.Formatter
 	Query() string
 	Args() []any
@@ -156,4 +152,5 @@ type SQLColumnClause[T any] interface {
 type OrderByClause interface {
 	ColumnName() string
 	Asc() bool
+	Desc() bool
 }

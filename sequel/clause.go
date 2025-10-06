@@ -91,3 +91,7 @@ func (c orderByColumn) ColumnName() string {
 func (c orderByColumn) Asc() bool {
 	return c.asc
 }
+
+func (c orderByColumn) Desc() bool {
+	return !c.asc
+}

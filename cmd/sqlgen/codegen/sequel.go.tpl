@@ -14,8 +14,8 @@ type Table struct{}
 type (
 	ConvertFunc[T any] func(T) driver.Value
 	QueryFunc          func(placeholder string) string
-	WhereClause        func(StmtBuilder)
-	SetClause          func(StmtBuilder)
+	WhereClause        func(StmtWriter)
+	SetClause          func(StmtWriter)
 )
 
 type DB interface {
@@ -120,7 +120,7 @@ type StmtWriter interface {
 	io.ByteWriter
 }
 
-type StmtBuilder interface {
+type StmtWriter interface {
 	StmtWriter
 	Var(v any) string
 	// Vars will group the valus in parenthesis
@@ -128,7 +128,7 @@ type StmtBuilder interface {
 }
 
 type Stmt interface {
-	StmtBuilder
+	StmtWriter
 	fmt.Stringer
 	fmt.Formatter
 	Args() []any

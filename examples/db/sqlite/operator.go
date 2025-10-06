@@ -5,7 +5,7 @@ import (
 )
 
 func And(clauses ...sequel.WhereClause) sequel.WhereClause {
-	return func(stmt sequel.StmtBuilder) {
+	return func(stmt sequel.StmtWriter) {
 		if n := len(clauses); n > 0 {
 			stmt.WriteByte('(')
 			clauses[0](stmt)
@@ -19,7 +19,7 @@ func And(clauses ...sequel.WhereClause) sequel.WhereClause {
 }
 
 func Or(clauses ...sequel.WhereClause) sequel.WhereClause {
-	return func(stmt sequel.StmtBuilder) {
+	return func(stmt sequel.StmtWriter) {
 		if n := len(clauses); n > 0 {
 			stmt.WriteByte('(')
 			clauses[0](stmt)
@@ -33,7 +33,7 @@ func Or(clauses ...sequel.WhereClause) sequel.WhereClause {
 }
 
 func Equal[T comparable](column sequel.ColumnClause[T], value T) sequel.WhereClause {
-	return func(stmt sequel.StmtBuilder) {
+	return func(stmt sequel.StmtWriter) {
 		switch vi := column.(type) {
 		case sequel.SQLColumnClause[T]:
 			stmt.WriteString(vi.ColumnName() + " = " + stmt.Var(vi.Convert(value)))
@@ -46,7 +46,7 @@ func Equal[T comparable](column sequel.ColumnClause[T], value T) sequel.WhereCla
 }
 
 func NotEqual[T comparable](column sequel.ColumnClause[T], value T) sequel.WhereClause {
-	return func(stmt sequel.StmtBuilder) {
+	return func(stmt sequel.StmtWriter) {
 		switch vi := column.(type) {
 		case sequel.SQLColumnClause[T]:
 			stmt.WriteString(vi.ColumnName() + " <> " + stmt.Var(vi.Convert(value)))
@@ -59,7 +59,7 @@ func NotEqual[T comparable](column sequel.ColumnClause[T], value T) sequel.Where
 }
 
 func In[T any](column sequel.ColumnClause[T], values []T) sequel.WhereClause {
-	return func(stmt sequel.StmtBuilder) {
+	return func(stmt sequel.StmtWriter) {
 		args := make([]any, len(values))
 		switch vi := column.(type) {
 		case sequel.SQLColumnClause[T]:
@@ -80,7 +80,7 @@ func In[T any](column sequel.ColumnClause[T], values []T) sequel.WhereClause {
 }
 
 func NotIn[T any](column sequel.ColumnClause[T], values []T) sequel.WhereClause {
-	return func(stmt sequel.StmtBuilder) {
+	return func(stmt sequel.StmtWriter) {
 		args := make([]any, len(values))
 		switch vi := column.(type) {
 		case sequel.SQLColumnClause[T]:
@@ -101,7 +101,7 @@ func NotIn[T any](column sequel.ColumnClause[T], values []T) sequel.WhereClause 
 }
 
 func GreaterThan[T comparable](column sequel.ColumnClause[T], value T) sequel.WhereClause {
-	return func(stmt sequel.StmtBuilder) {
+	return func(stmt sequel.StmtWriter) {
 		switch vi := column.(type) {
 		case sequel.SQLColumnClause[T]:
 			stmt.WriteString(vi.ColumnName() + " > " + stmt.Var(vi.Convert(value)))
@@ -114,7 +114,7 @@ func GreaterThan[T comparable](column sequel.ColumnClause[T], value T) sequel.Wh
 }
 
 func GreaterThanOrEqual[T comparable](column sequel.ColumnClause[T], value T) sequel.WhereClause {
-	return func(stmt sequel.StmtBuilder) {
+	return func(stmt sequel.StmtWriter) {
 		switch vi := column.(type) {
 		case sequel.SQLColumnClause[T]:
 			stmt.WriteString(vi.ColumnName() + " >= " + stmt.Var(vi.Convert(value)))
@@ -127,7 +127,7 @@ func GreaterThanOrEqual[T comparable](column sequel.ColumnClause[T], value T) se
 }
 
 func LessThan[T comparable](column sequel.ColumnClause[T], value T) sequel.WhereClause {
-	return func(stmt sequel.StmtBuilder) {
+	return func(stmt sequel.StmtWriter) {
 		switch vi := column.(type) {
 		case sequel.SQLColumnClause[T]:
 			stmt.WriteString(vi.ColumnName() + " < " + stmt.Var(vi.Convert(value)))
@@ -140,7 +140,7 @@ func LessThan[T comparable](column sequel.ColumnClause[T], value T) sequel.Where
 }
 
 func LessThanOrEqual[T comparable](column sequel.ColumnClause[T], value T) sequel.WhereClause {
-	return func(stmt sequel.StmtBuilder) {
+	return func(stmt sequel.StmtWriter) {
 		switch vi := column.(type) {
 		case sequel.SQLColumnClause[T]:
 			stmt.WriteString(vi.ColumnName() + " <= " + stmt.Var(vi.Convert(value)))
@@ -153,7 +153,7 @@ func LessThanOrEqual[T comparable](column sequel.ColumnClause[T], value T) seque
 }
 
 func Like[T comparable](column sequel.ColumnClause[T], value T) sequel.WhereClause {
-	return func(stmt sequel.StmtBuilder) {
+	return func(stmt sequel.StmtWriter) {
 		switch vi := column.(type) {
 		case sequel.SQLColumnClause[T]:
 			stmt.WriteString(vi.ColumnName() + " LIKE " + stmt.Var(vi.Convert(value)))
@@ -166,7 +166,7 @@ func Like[T comparable](column sequel.ColumnClause[T], value T) sequel.WhereClau
 }
 
 func NotLike[T comparable](column sequel.ColumnClause[T], value T) sequel.WhereClause {
-	return func(stmt sequel.StmtBuilder) {
+	return func(stmt sequel.StmtWriter) {
 		switch vi := column.(type) {
 		case sequel.SQLColumnClause[T]:
 			stmt.WriteString(vi.ColumnName() + " NOT LIKE " + stmt.Var(vi.Convert(value)))
@@ -179,19 +179,19 @@ func NotLike[T comparable](column sequel.ColumnClause[T], value T) sequel.WhereC
 }
 
 func IsNull[T any](column sequel.ColumnClause[T]) sequel.WhereClause {
-	return func(stmt sequel.StmtBuilder) {
+	return func(stmt sequel.StmtWriter) {
 		stmt.WriteString(column.ColumnName() + " IS NULL")
 	}
 }
 
 func IsNotNull[T any](column sequel.ColumnClause[T]) sequel.WhereClause {
-	return func(stmt sequel.StmtBuilder) {
+	return func(stmt sequel.StmtWriter) {
 		stmt.WriteString(column.ColumnName() + " IS NOT NULL")
 	}
 }
 
 func Between[T comparable](column sequel.ColumnClause[T], from, to T) sequel.WhereClause {
-	return func(stmt sequel.StmtBuilder) {
+	return func(stmt sequel.StmtWriter) {
 		switch vi := column.(type) {
 		case sequel.SQLColumnClause[T]:
 			stmt.WriteString(vi.ColumnName() + " BETWEEN " + stmt.Var(vi.Convert(from)) + " AND " + stmt.Var(vi.Convert(to)))
@@ -204,7 +204,7 @@ func Between[T comparable](column sequel.ColumnClause[T], from, to T) sequel.Whe
 }
 
 func NotBetween[T comparable](column sequel.ColumnClause[T], from, to T) sequel.WhereClause {
-	return func(stmt sequel.StmtBuilder) {
+	return func(stmt sequel.StmtWriter) {
 		switch vi := column.(type) {
 		case sequel.SQLColumnClause[T]:
 			stmt.WriteString(vi.ColumnName() + " NOT BETWEEN " + stmt.Var(vi.Convert(from)) + " AND " + stmt.Var(vi.Convert(to)))
@@ -217,7 +217,7 @@ func NotBetween[T comparable](column sequel.ColumnClause[T], from, to T) sequel.
 }
 
 func Set[T any](column sequel.ColumnClause[T], value ...T) sequel.SetClause {
-	return func(stmt sequel.StmtBuilder) {
+	return func(stmt sequel.StmtWriter) {
 		if len(value) > 0 {
 			switch vi := column.(type) {
 			case sequel.SQLColumnClause[T]:

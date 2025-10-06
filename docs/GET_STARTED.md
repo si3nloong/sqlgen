@@ -179,7 +179,7 @@
     )
 
     func And(stmts ...sequel.WhereClause) sequel.WhereClause {
-        return func(stmt sequel.StmtBuilder) {
+        return func(stmt sequel.StmtWriter) {
             stmt.WriteByte('(')
             for i := range stmts {
                 if i > 0 {
