@@ -15,7 +15,7 @@
 - **sqlgen embrace Generics** — We use generics to eliminate runtime reflection costs and reduce memory allocation.
 - **sqlgen eliminates Side Effects** - You will get expected results instead of side effects when mutate your models.
 - **sqlgen has ZERO Dependencies** - It has no dependencies at all, it only rely on the standard library.
-- **sqlgen support dynamic query** - It provide multiple insert, multiple upsert and pagination which [sqlc](https://github.com/sqlc-dev/sqlc) doesn't able to provide.
+- **sqlgen support dynamic query** - It provide [multiple insert](/docs/ADVANCED_USAGE.md#multiple-insert), [multiple upsert](/docs/ADVANCED_USAGE.md#multiple-upsert) and [cursor-based pagination](/docs/ADVANCED_USAGE.md#pagination) which [sqlc](https://github.com/sqlc-dev/sqlc) doesn't able to provide.
 
 ## SQL driver support
 
@@ -24,6 +24,7 @@
 | `mysql`    |   ✅    |
 | `postgres` |   ✅    |
 | `sqlite`   |   ✅    |
+| `mssql`    |   ❌    |
 
 ## Quick start
 
@@ -106,6 +107,10 @@ More help to get started:
 <img src="./docs/images/orm_benchmark.jpg" />
 
 As you can see, [sqlgen](https://github.com/si3nloong/sqlgen) is perform as close as Raw query, and having low memory allocations.
+
+## Road Map
+
+- [ ] Support Mssql
 
 ## Reporting Issues
 

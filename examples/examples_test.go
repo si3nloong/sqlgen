@@ -57,7 +57,6 @@ func newPKModel() autopk.Model {
 }
 
 func TestInsert(t *testing.T) {
-	ctx := context.TODO()
 
 	// t.Run("Insert with double ptr", func(t *testing.T) {
 	// 	u8 := uint(188)
@@ -93,12 +92,12 @@ func TestInsert(t *testing.T) {
 
 		ptr := slice.Slice{}
 		ptr.ID = uint64(lastID)
-		mustNoError(mysqldb.FindByPK(ctx, dbConn, &ptr))
+		mustNoError(mysqldb.FindByPK(t.Context(), dbConn, &ptr))
 	})
 
 	t.Run("Insert with all nil values", func(t *testing.T) {
 		inputs := []pointer.Ptr{{}, {}}
-		result, err := mysqldb.Insert(ctx, dbConn, inputs)
+		result, err := mysqldb.Insert(t.Context(), dbConn, inputs)
 		require.NoError(t, err)
 		lastID := mustValue(result.LastInsertId())
 		require.NotEmpty(t, lastID)
@@ -125,7 +124,7 @@ func TestInsert(t *testing.T) {
 			{Str: &str, Bool: &flag, Time: &dt, F32: &f32, F64: &f64, Uint: &u, Uint8: &u8, Uint16: &u16, Uint32: &u32, Uint64: &u64, Int: &i, Int8: &i8, Int16: &i16, Int32: &i32, Int64: &i64},
 			{Str: &str, Bool: &flag, Time: &dt, F32: &f32, F64: &f64, Uint: &u, Uint8: &u8, Uint16: &u16, Uint32: &u32, Uint64: &u64, Int: &i, Int8: &i8, Int16: &i16, Int32: &i32, Int64: &i64},
 		}
-		result, err := mysqldb.Insert(ctx, dbConn, inputs)
+		result, err := mysqldb.Insert(t.Context(), dbConn, inputs)
 		require.NoError(t, err)
 		lastID := mustValue(result.LastInsertId())
 		require.NoError(t, err)
@@ -134,7 +133,7 @@ func TestInsert(t *testing.T) {
 
 		ptr := pointer.Ptr{}
 		ptr.ID = lastID
-		mustNoError(mysqldb.FindByPK(ctx, dbConn, &ptr))
+		mustNoError(mysqldb.FindByPK(t.Context(), dbConn, &ptr))
 		require.Equal(t, str, *ptr.Str)
 		require.Equal(t, dt.Format(time.DateOnly), (*ptr.Time).Format(time.DateOnly))
 		require.True(t, *ptr.Bool)
@@ -151,7 +150,7 @@ func TestInsert(t *testing.T) {
 		require.NotZero(t, *ptr.F32)
 		require.NotZero(t, *ptr.F64)
 
-		ptrs, err := mysqldb.QueryStmt(ctx, dbConn, func(p pointer.Ptr) mysqldb.SelectStmt {
+		ptrs, err := mysqldb.QueryStmt(t.Context(), dbConn, func(p pointer.Ptr) mysqldb.SelectStmt {
 			return mysqldb.SelectStmt{
 				Select:    p.Columns(),
 				FromTable: p.TableName(),
@@ -165,12 +164,8 @@ func TestInsert(t *testing.T) {
 }
 
 func TestUpdateOne(t *testing.T) {
-	var (
-		ctx = context.Background()
-	)
-
 	data := autopk.Model{}
-	result, err := mysqldb.InsertOne(ctx, dbConn, &data)
+	result, err := mysqldb.InsertOne(t.Context(), dbConn, &data)
 	if err != nil {
 		panic(err)
 	}
@@ -180,7 +175,7 @@ func TestUpdateOne(t *testing.T) {
 	newData.ID = uint(i64)
 	newData.Name = autopk.LongText(`Updated Text`)
 
-	if _, err := mysqldb.UpdateByPK(ctx, dbConn, newData); err != nil {
+	if _, err := mysqldb.UpdateByPK(t.Context(), dbConn, newData); err != nil {
 		panic(err)
 	}
 }
@@ -193,4 +188,14 @@ func TestDeleteOne(t *testing.T) {
 
 	// models, err := sqlutil.SelectFrom[autopk.Model](ctx, dbConn)
 	// require.NoError(t, err)
+}
+
+func TestPaginate(t *testing.T) {
+	p := mysqldb.Paginate[autopk.Model](mysqldb.PaginateStmt{})
+	for v, err := range p.Next(t.Context(), dbConn) {
+		if err != nil {
+			panic(err)
+		}
+		_ = v
+	}
 }

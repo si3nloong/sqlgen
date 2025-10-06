@@ -318,17 +318,19 @@
         FROM `user` WHERE `gender` = 0 AND `birth_date` >= "1995-01-28"
         ORDER BY `created` DESC LIMIT 50;
         */
-       users, err := db.QueryStmt[model.User](ctx, dbConn, db.SelectStmt{
-           Select:    user.Columns(),
-           FromTable: user.TableName(),
-           Where: db.And(
-               db.Equal(user.GetGender(), model.Female),
-               db.GreaterThanOrEqual(user.GetBirthDate(), birthDate),
-           ),
-           OrderBy: []sequel.ColumnOrder{
-               db.Desc(user.GetCreated()),
-           },
-           Limit: 50,
+       users, err := db.QueryStmt[model.User](ctx, dbConn, func(v User) {
+            return db.SelectStmt{
+                Select:    v.Columns(),
+                FromTable: v.TableName(),
+                Where: db.And(
+                    db.Equal(v.GetGender(), model.Female),
+                    db.GreaterThanOrEqual(v.GetBirthDate(), birthDate),
+                ),
+                OrderBy: []sequel.ColumnOrder{
+                    db.Desc(v.GetCreated()),
+                },
+                Limit: 50,
+            }
        })
        if err != nil {
            panic(err)

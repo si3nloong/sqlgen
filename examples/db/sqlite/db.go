@@ -489,7 +489,7 @@ func (r *Pager[T, Ptr]) Prev(ctx context.Context, sqlConn *sql.DB, cursor ...T) 
 				}
 			}
 			// Add one to limit to find next cursor
-			blr.WriteString(" LIMIT " + strconv.Itoa(int(r.stmt.Limit+1)) + ";")
+			blr.WriteString(" LIMIT " + strconv.Itoa((int)(r.stmt.Limit+1)) + ";")
 
 			rows, err := sqlConn.QueryContext(ctx, blr.Query(), blr.Args()...)
 			blr.Reset()
@@ -652,7 +652,7 @@ func (r *Pager[T, Ptr]) Next(ctx context.Context, sqlConn *sql.DB, cursor ...T) 
 				}
 			}
 			// Add one to limit to find next cursor
-			blr.WriteString(" LIMIT " + strconv.Itoa(int(r.stmt.Limit+1)) + ";")
+			blr.WriteString(" LIMIT " + strconv.Itoa((int)(r.stmt.Limit+1)) + ";")
 
 			rows, err := sqlConn.QueryContext(ctx, blr.Query(), blr.Args()...)
 			blr.Reset()
@@ -753,7 +753,7 @@ func QueryStmt[T any, Ptr sequel.PtrScanner[T]](ctx context.Context, sqlConn *sq
 		}
 	}
 	if stmt.Limit > 0 {
-		blr.WriteString(" LIMIT " + strconv.Itoa(int(stmt.Limit)))
+		blr.WriteString(" LIMIT " + strconv.Itoa((int)(stmt.Limit)))
 	}
 	if stmt.Offset > 0 {
 		blr.WriteString(" OFFSET " + strconv.FormatUint(stmt.Offset, 10))
@@ -903,7 +903,7 @@ func ExecStmt[T any, Stmt interface {
 			}
 		}
 		if vi.Limit > 0 {
-			blr.WriteString(" LIMIT " + strconv.Itoa(int(vi.Limit)))
+			blr.WriteString(" LIMIT " + strconv.Itoa((int)(vi.Limit)))
 		}
 	case DeleteStmt:
 		if vt, ok := any(v).(sequel.Tabler); ok {
@@ -930,7 +930,7 @@ func ExecStmt[T any, Stmt interface {
 			}
 		}
 		if vi.Limit > 0 {
-			blr.WriteString(" LIMIT " + strconv.Itoa(int(vi.Limit)))
+			blr.WriteString(" LIMIT " + strconv.Itoa((int)(vi.Limit)))
 		}
 	}
 	blr.WriteByte(';')
