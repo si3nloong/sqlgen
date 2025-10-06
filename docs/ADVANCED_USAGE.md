@@ -64,7 +64,7 @@ func main() {
 
     birthDate, _ := civil.ParseDate("1995-01-28")
 
-    if _, err := db.UpsertInto(ctx, dbConn, []model.User{
+    if _, err := db.Upsert(ctx, dbConn, []model.User{
         {Name: "John Doe", Gender: model.Male, BirthDate: birthDate, Created: time.Now()},
         {Name: "YY", Gender: model.Female, BirthDate: birthDate, Created: time.Now()},
         {Name: "Yoman", Gender: model.Male, BirthDate: birthDate, Created: time.Now()},
@@ -82,7 +82,7 @@ func main() {
     FROM `user` WHERE `gender` = 0 AND `birth_date` >= "1995-01-28"
     ORDER BY `created` DESC LIMIT 50;
     */
-    users, err := db.QueryOneStmt[model.User](ctx, dbConn, func(v User) {
+    users, err := db.QueryOneStmt[model.User](context.Background(), dbConn, func(v User) {
         return db.SelectOneStmt{
             Select:    v.Columns(),
             FromTable: v.TableName(),
@@ -108,7 +108,7 @@ func main() {
     FROM `user` WHERE `gender` = 0 AND `birth_date` >= "1995-01-28"
     ORDER BY `created` DESC LIMIT 50;
     */
-    users, err := db.QueryStmt[model.User](ctx, dbConn, func(v User) {
+    users, err := db.QueryStmt[model.User](context.Background(), dbConn, func(v User) {
         return db.SelectStmt{
             Select:    v.Columns(),
             FromTable: v.TableName(),
@@ -127,7 +127,38 @@ func main() {
     }
 ```
 
-### ExecStmt
+### ExecStmt with UPDATE
+
+```go
+    /*
+    UPDATE `user` SET `name` = "John" WHERE `id` = 1;
+    */
+    if _, err := db.ExecStmt(context.Background(), dbConn, func(v User) db.UpdateStmt {
+		return db.UpdateStmt{
+			Where: db.Equal(v.ColumnID(), 1),
+    		Set: []sequel.SetClause{
+				db.Set(v.ColumnName(), "John"),
+			},
+		}
+	}); err != nil {
+        panic(err)
+    }
+```
+
+### ExecStmt with DELETE
+
+```go
+    /*
+    DELETE FROM `user` WHERE `id` = 1;
+    */
+	if _, err := db.ExecStmt(context.Background(), dbConn, func(v User) db.DeleteStmt {
+		return db.DeleteStmt{
+			Where: db.Equal(v.ColumnID(), 1),
+		}
+	}); err != nil {
+        panic(err)
+    }
+```
 
 ### Pagination
 
