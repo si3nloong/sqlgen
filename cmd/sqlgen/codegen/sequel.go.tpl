@@ -3,16 +3,15 @@ package sequel
 import (
 	"context"
 	"database/sql"
-	"database/sql/driver"
 	"fmt"
 	"io"
 )
 
 // For rename table name
-type Table struct{}
+type TableName struct{}
 
 type (
-	ConvertFunc[T any] func(T) driver.Value
+	ConvertFunc[T any] func(T) any
 	QueryFunc          func(placeholder string) string
 	WhereClause        func(StmtWriter)
 	SetClause          func(StmtWriter)
@@ -34,6 +33,10 @@ type Tabler interface {
 
 type Columner interface {
 	Columns() []string
+}
+
+type InsertColumner interface {
+	InsertColumns() []string
 }
 
 type SQLColumner interface {
@@ -92,11 +95,11 @@ type SingleInserter interface {
 }
 
 type Inserter interface {
-	TableColumnValuer
+	ColumnValuer
 	InsertPlaceholders(row int) string
 }
 
-type TableColumnValuer interface {
+type ColumnValuer interface {
 	Tabler
 	Columner
 	Valuer
@@ -118,10 +121,6 @@ type StmtWriter interface {
 	io.Writer
 	io.StringWriter
 	io.ByteWriter
-}
-
-type StmtWriter interface {
-	StmtWriter
 	Var(v any) string
 	// Vars will group the valus in parenthesis
 	Vars(vals []any) string
@@ -129,26 +128,29 @@ type StmtWriter interface {
 
 type Stmt interface {
 	StmtWriter
-	fmt.Stringer
 	fmt.Formatter
+	Query() string
 	Args() []any
 	Reset()
 }
 
-type ColumnValuer[T any] interface {
+type ColumnClause[T any] interface {
 	ColumnName() string
-	Convert(T) driver.Value
-	Value() driver.Value
+	Value() T
 }
 
-type SQLColumnValuer[T any] interface {
-	ColumnName() string
-	Convert(T) driver.Value
-	Value() driver.Value
-	SQLValue(placeholder string) string
+type ColumnConvertClause[T any] interface {
+	ColumnClause[T]
+	Convert(T) any
+}
+
+type SQLColumnClause[T any] interface {
+	ColumnConvertClause[T]
+	SQLColumn(placeholder string) string
 }
 
 type OrderByClause interface {
 	ColumnName() string
 	Asc() bool
+	Desc() bool
 }
