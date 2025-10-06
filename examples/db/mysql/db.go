@@ -375,14 +375,12 @@ func Paginate[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](stmt PaginateSt
 	}
 }
 
-type Result[T any] []T
-
 type Pager[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]] struct {
 	stmt *PaginateStmt
 }
 
-func (r *Pager[T, Ptr]) Prev(ctx context.Context, sqlConn *sql.DB, cursor ...T) iter.Seq2[Result[T], error] {
-	return func(yield func(Result[T], error) bool) {
+func (r *Pager[T, Ptr]) Prev(ctx context.Context, sqlConn *sql.DB, cursor ...T) iter.Seq2[[]T, error] {
+	return func(yield func([]T, error) bool) {
 		var (
 			v         T
 			hasCursor bool
@@ -434,23 +432,23 @@ func (r *Pager[T, Ptr]) Prev(ctx context.Context, sqlConn *sql.DB, cursor ...T) 
 				clear(colDict)
 				blr.WriteString("(" + buf.String())
 				strpool.ReleaseString(buf)
-			} else {
-				blr.WriteByte('(')
 			}
 
-			// Check the primary key and compare value
-			switch vi := any(v).(type) {
-			case sequel.CompositeKeyer:
-				pkNames, _, pks := vi.CompositeKey()
-				blr.WriteString("(" + strings.Join(pkNames, ",") + ") <= " + blr.Vars(pks))
-			case sequel.PrimaryKeyer:
-				pkName, _, pk := vi.PK()
-				blr.WriteString(pkName + " <= " + blr.Var(pk))
-			default:
-				panic("unreachable")
+			if hasCursor {
+				// Check the primary key and compare value
+				switch vi := any(v).(type) {
+				case sequel.CompositeKeyer:
+					pkNames, _, vals := vi.CompositeKey()
+					blr.WriteString("((" + strings.Join(pkNames, ",") + ") <= " + blr.Vars(vals) + ")")
+				case sequel.PrimaryKeyer:
+					pkName, _, val := vi.PK()
+					blr.WriteString("(" + pkName + " <= " + blr.Var(val) + ")")
+				default:
+					panic("unreachable")
+				}
 			}
 
-			blr.WriteString(") ORDER BY ")
+			blr.WriteString(" ORDER BY ")
 			if len(r.stmt.OrderBy) > 0 {
 				for i := range r.stmt.OrderBy {
 					if r.stmt.OrderBy[i].Asc() {
@@ -469,12 +467,7 @@ func (r *Pager[T, Ptr]) Prev(ctx context.Context, sqlConn *sql.DB, cursor ...T) 
 				switch vi := any(v).(type) {
 				case sequel.CompositeKeyer:
 					pkNames, _, _ := vi.CompositeKey()
-					if n := len(pkNames); n > 0 {
-						blr.WriteString(pkNames[0] + suffix)
-						for i := 1; i < n; i++ {
-							blr.WriteString("," + pkNames[i] + suffix)
-						}
-					}
+					blr.WriteString("(" + strings.Join(pkNames, ",") + ")" + suffix)
 				case sequel.PrimaryKeyer:
 					pkName, _, _ := vi.PK()
 					blr.WriteString(pkName + suffix)
@@ -483,16 +476,11 @@ func (r *Pager[T, Ptr]) Prev(ctx context.Context, sqlConn *sql.DB, cursor ...T) 
 				}
 			} else {
 				// If there is no order by clause,
-				// ascending is the default order
+				// descending is the default order
 				switch vi := any(v).(type) {
 				case sequel.CompositeKeyer:
 					pkNames, _, _ := vi.CompositeKey()
-					if n := len(pkNames); n > 0 {
-						blr.WriteString(pkNames[0] + " DESC")
-						for i := 1; i < n; i++ {
-							blr.WriteString("," + pkNames[i] + " DESC")
-						}
-					}
+					blr.WriteString("(" + strings.Join(pkNames, ",") + ") DESC")
 				case sequel.PrimaryKeyer:
 					pkName, _, _ := vi.PK()
 					blr.WriteString(pkName + " DESC")
@@ -524,25 +512,25 @@ func (r *Pager[T, Ptr]) Prev(ctx context.Context, sqlConn *sql.DB, cursor ...T) 
 
 			noOfRecord := len(data)
 			if uint16(noOfRecord) <= maxLimit {
-				if !yield(Result[T](data), nil) {
+				if !yield(data, nil) {
 					return
 				}
 				return
 			}
 
-			if !yield(Result[T](data[:noOfRecord-1]), nil) {
+			if !yield(data[:noOfRecord-1], nil) {
 				return
 			}
 
-			// Set next cursor
-			v = data[noOfRecord-1]
+			v = data[noOfRecord-1] // Set next cursor
+			data = nil             // Reset result
 			hasCursor = true
 		}
 	}
 }
 
-func (r *Pager[T, Ptr]) Next(ctx context.Context, sqlConn *sql.DB, cursor ...T) iter.Seq2[Result[T], error] {
-	return func(yield func(Result[T], error) bool) {
+func (r *Pager[T, Ptr]) Next(ctx context.Context, sqlConn *sql.DB, cursor ...T) iter.Seq2[[]T, error] {
+	return func(yield func([]T, error) bool) {
 		var (
 			v         T
 			hasCursor bool
@@ -607,23 +595,23 @@ func (r *Pager[T, Ptr]) Next(ctx context.Context, sqlConn *sql.DB, cursor ...T) 
 				}
 				clear(colDict)
 				blr.WriteString(" OR ")
-			} else {
-				blr.WriteByte('(')
 			}
 
-			// Check the primary key and compare value
-			switch vi := any(v).(type) {
-			case sequel.CompositeKeyer:
-				pkNames, _, vals := vi.CompositeKey()
-				blr.WriteString("(" + strings.Join(pkNames, ",") + ") >= " + blr.Vars(vals))
-			case sequel.PrimaryKeyer:
-				pkName, _, val := vi.PK()
-				blr.WriteString(pkName + " >= " + blr.Var(val))
-			default:
-				panic("unreachable")
+			if hasCursor {
+				// Check the primary key and compare value
+				switch vi := any(v).(type) {
+				case sequel.CompositeKeyer:
+					pkNames, _, vals := vi.CompositeKey()
+					blr.WriteString("((" + strings.Join(pkNames, ",") + ") >= " + blr.Vars(vals) + ")")
+				case sequel.PrimaryKeyer:
+					pkName, _, val := vi.PK()
+					blr.WriteString("(" + pkName + " >= " + blr.Var(val) + ")")
+				default:
+					panic("unreachable")
+				}
 			}
 
-			blr.WriteString(") ORDER BY ")
+			blr.WriteString(" ORDER BY ")
 			if len(r.stmt.OrderBy) > 0 {
 				for i := range r.stmt.OrderBy {
 					if r.stmt.OrderBy[i].Asc() {
@@ -642,11 +630,7 @@ func (r *Pager[T, Ptr]) Next(ctx context.Context, sqlConn *sql.DB, cursor ...T) 
 				switch vi := any(v).(type) {
 				case sequel.CompositeKeyer:
 					pkNames, _, _ := vi.CompositeKey()
-					blr.WriteString(pkNames[0] + suffix)
-					noOfKeys := len(pkNames)
-					for i := 1; i < noOfKeys; i++ {
-						blr.WriteString("," + pkNames[i] + suffix)
-					}
+					blr.WriteString("(" + strings.Join(pkNames, ",") + ")" + suffix)
 				case sequel.PrimaryKeyer:
 					pkName, _, _ := vi.PK()
 					blr.WriteString(pkName + suffix)
@@ -659,11 +643,7 @@ func (r *Pager[T, Ptr]) Next(ctx context.Context, sqlConn *sql.DB, cursor ...T) 
 				switch vi := any(v).(type) {
 				case sequel.CompositeKeyer:
 					pkNames, _, _ := vi.CompositeKey()
-					blr.WriteString(pkNames[0])
-					noOfKeys := len(pkNames)
-					for i := 1; i < noOfKeys; i++ {
-						blr.WriteString("," + pkNames[i])
-					}
+					blr.WriteString("(" + strings.Join(pkNames, ",") + ") ASC")
 				case sequel.PrimaryKeyer:
 					pkName, _, _ := vi.PK()
 					blr.WriteString(pkName)
@@ -695,18 +675,18 @@ func (r *Pager[T, Ptr]) Next(ctx context.Context, sqlConn *sql.DB, cursor ...T) 
 
 			noOfRecord := len(data)
 			if uint16(noOfRecord) <= maxLimit {
-				if !yield(Result[T](data), nil) {
+				if !yield(data, nil) {
 					return
 				}
 				return
 			}
 
-			if !yield(Result[T](data[:noOfRecord-1]), nil) {
+			if !yield(data[:noOfRecord-1], nil) {
 				return
 			}
 
-			// Set next cursor
-			v = data[noOfRecord-1]
+			v = data[noOfRecord-1] // Set next cursor
+			data = nil             // Reset result
 			hasCursor = true
 		}
 	}

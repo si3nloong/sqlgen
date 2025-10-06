@@ -14,6 +14,7 @@
 - **sqlgen prioritizes Performance** — Most of the things will define in compile time instead of runtime.
 - **sqlgen embrace Generics** — We use generics to eliminate runtime reflection costs and reduce memory allocation.
 - **sqlgen eliminates Side Effects** - You will get expected results instead of side effects when mutate your models.
+- **sqlgen support dynamic query** - It provide multiple insert, multiple upsert and pagination which [sqlc](https://github.com/sqlc-dev/sqlc) doesn't able to provide.
 
 ## SQL driver support
 
@@ -112,12 +113,6 @@ If you think you've found a bug, or something isn't behaving the way you think i
 ## Contributing
 
 We welcome contributions, Read our [Contribution Guidelines](https://github.com/si3nloong/sqlgen/blob/main/CONTRIBUTING.md) to learn more about contributing to **sqlgen**
-
-## Big Thanks To
-
-Thanks to these awesome companies for their support of Open Source developers ❤
-
-[![GitHub](https://jstools.dev/img/badges/github.svg)](https://github.com/open-source)
 
 ## Inspired By
 
