@@ -101,6 +101,7 @@ More help to get started:
 - [CLI guide](/docs/CLI.md) - the CLI commands.
 - [FAQ](/docs/FAQ.md) - frequent ask questions.
 - [Configuration file](/docs/CONFIGURATION.md) - configure code generation.
+- [Advanced usages](/docs/ADVANCED_USAGE.md) - advanced API.
 
 ## Benchmark
 

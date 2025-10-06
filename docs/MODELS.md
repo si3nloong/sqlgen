@@ -21,8 +21,8 @@ Tags are case insensitive, however `snake_case` is preferred. Tags are optional 
 
 | Tag Name         | Alias | Description                                                                                                      | Example                                                                 |
 | ---------------- | ----- | ---------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| `primary_key`    | `pk`  | Specifies column as primary key                                                                                  | `sql:",pk"`                                                             |
-| `auto_increment` | -     | Specifies column auto incrementable                                                                              | `sql:",auto_increment"`                                                 |
+| `primary_key`    | `pk`  | Specifies column as primary key, you may also refer to [here](/docs/PRIMARY_KEY.md)                              | `sql:",pk"`                                                             |
+| `auto_increment` | -     | Specifies column auto incrementable, you may also refer to [here](/docs/PRIMARY_KEY.md#auto-increment-key)       | `sql:",auto_increment"`                                                 |
 | `binary`         | -     | Specifies column value using serializer `encoding.BinaryMarshaler` and deserializer `encoding.BinaryUnmarshaler` | `sql:",binary"`                                                         |
 | `size`           | -     | Specifies column data size/length                                                                                | `sql:",size:10"`                                                        |
 | `encode`         | -     | Specifies custom `sql.Valuer`                                                                                    | `sql:",encode:github.com/si3nloong/sqlgen/encoding.MarshalStringSlice"` |
