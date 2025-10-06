@@ -1,7 +1,6 @@
 package sqltype
 
 import (
-	"cmp"
 	"database/sql/driver"
 	"fmt"
 	"strconv"
@@ -67,7 +66,8 @@ func (a *Int64Slice[T]) Scan(src any) error {
 	return arrayScan(a, src, "Int64Slice")
 }
 
-func scanBytes[T cmp.Ordered, Arr interface{ ~[]T }](a *Arr, src []byte, t string) error {
+func scanBytes[T ~int | ~int8 | ~int16 | ~int32 | ~int64 |
+	~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr, Arr interface{ ~[]T }](a *Arr, src []byte, t string) error {
 	elems, err := scanLinearArray(src, []byte{','}, t)
 	if err != nil {
 		return err
@@ -88,7 +88,8 @@ func scanBytes[T cmp.Ordered, Arr interface{ ~[]T }](a *Arr, src []byte, t strin
 	return nil
 }
 
-func arrayScan[T cmp.Ordered, Arr interface{ ~[]T }](a *Arr, src any, t string) error {
+func arrayScan[T ~int | ~int8 | ~int16 | ~int32 | ~int64 |
+	~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr, Arr interface{ ~[]T }](a *Arr, src any, t string) error {
 	switch src := src.(type) {
 	case []byte:
 		return scanBytes(a, src, t)

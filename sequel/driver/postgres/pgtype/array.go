@@ -2,14 +2,14 @@ package pgtype
 
 import (
 	"bytes"
-	"cmp"
 	"database/sql/driver"
 	"fmt"
 	"strconv"
 	"strings"
 )
 
-func arrayScan[T cmp.Ordered, Arr interface{ ~[]T }](a *Arr, src any, t string) error {
+func arrayScan[T ~int | ~int8 | ~int16 | ~int32 | ~int64 |
+	~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr, Arr interface{ ~[]T }](a *Arr, src any, t string) error {
 	switch src := src.(type) {
 	case []byte:
 		return scanBytes(a, src, t)
