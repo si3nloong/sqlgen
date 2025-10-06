@@ -1,6 +1,6 @@
 # sqlgen
 
-[![Build](https://github.com/si3nloong/sqlgen/workflows/test/badge.svg?branch=main)](https://github.com/si3nloong/sqlgen/actions?query=workflow%3Atest)
+[![Build](https://img.shields.io/github/actions/workflow/status/si3nloong/sqlgen/test.yml?branch=main)](https://github.com/si3nloong/sqlgen/actions?query=workflow%3ATest)
 [![Go Report](https://goreportcard.com/badge/github.com/si3nloong/sqlgen)](https://goreportcard.com/report/github.com/si3nloong/sqlgen)
 [![Go Coverage](https://codecov.io/gh/si3nloong/sqlgen/branch/main/graph/badge.svg)](https://codecov.io/gh/si3nloong/sqlgen)
 [![LICENSE](https://img.shields.io/github/license/si3nloong/sqlgen)](https://github.com/si3nloong/sqlgen/blob/main/LICENSE)
