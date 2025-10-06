@@ -212,19 +212,15 @@ func NotBetween[T comparable](column sequel.ColumnClause[T], from, to T) sequel.
 	}
 }
 
-func Set[T any](column sequel.ColumnClause[T], value ...T) sequel.SetClause {
+func Set[T any](column sequel.ColumnClause[T], value T) sequel.SetClause {
 	return func(w sequel.StmtWriter) {
-		if len(value) > 0 {
-			switch vi := column.(type) {
-			case sequel.SQLColumnClause[T]:
-				w.WriteString(column.ColumnName() + " = " + w.Var(vi.Convert(value[0])))
-			case sequel.ColumnConvertClause[T]:
-				w.WriteString(column.ColumnName() + " = " + w.Var(vi.Convert(value[0])))
-			default:
-				w.WriteString(column.ColumnName() + " = " + w.Var(value[0]))
-			}
-		} else {
-			w.WriteString(column.ColumnName() + " = " + w.Var(column.Value()))
+		switch vi := column.(type) {
+		case sequel.SQLColumnClause[T]:
+			w.WriteString(column.ColumnName() + " = " + w.Var(vi.Convert(value)))
+		case sequel.ColumnConvertClause[T]:
+			w.WriteString(column.ColumnName() + " = " + w.Var(vi.Convert(value)))
+		default:
+			w.WriteString(column.ColumnName() + " = " + w.Var(value))
 		}
 	}
 }

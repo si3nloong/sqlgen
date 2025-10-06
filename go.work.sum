@@ -187,6 +187,7 @@ github.com/si3nloong/sqlgen v1.0.0-beta.1.0.20251006073110-36639e879431/go.mod h
 github.com/si3nloong/sqlgen/cmd/sqlgen v0.0.0-20250914115358-f853cea1f7ae/go.mod h1:3jfiQKCBAPuekkYxa/HVCRjGeXFTEi4npC4/gbGAE1E=
 github.com/si3nloong/sqlgen/cmd/sqlgen v0.0.0-20250915031732-2c5dee8403c2/go.mod h1:IFAQG74Eb1YTiKxcmGpaUb6Tu5IJDv8O0uIwyiqieoQ=
 github.com/si3nloong/sqlgen/cmd/sqlgen v0.0.0-20250916080036-b910b4151209/go.mod h1:IFAQG74Eb1YTiKxcmGpaUb6Tu5IJDv8O0uIwyiqieoQ=
+github.com/si3nloong/sqlgen/cmd/sqlgen v0.0.0-20251006112000-22238720dfee/go.mod h1:vZKLOF8bQbcy2S7EHs6FZZvemTS8us5mY6zJdYBWh2w=
 github.com/stretchr/objx v0.4.0/go.mod h1:YvHI0jy2hoMjB+UWwv71VJQ9isScKT/TqJzVSSt89Yw=
 github.com/stretchr/objx v0.5.0/go.mod h1:Yh+to48EsGEfYuaHDzXPcE3xhTkx73EhmCGUpEOglKo=
 github.com/stretchr/objx v0.5.2/go.mod h1:FRsXN1f5AsAjCGJKqEizvkpNtU+EGNCLh3NxZ/8L+MA=
