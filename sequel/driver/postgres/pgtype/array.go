@@ -2,15 +2,14 @@ package pgtype
 
 import (
 	"bytes"
+	"cmp"
 	"database/sql/driver"
 	"fmt"
 	"strconv"
 	"strings"
-
-	"golang.org/x/exp/constraints"
 )
 
-func arrayScan[T constraints.Integer, Arr interface{ ~[]T }](a *Arr, src any, t string) error {
+func arrayScan[T cmp.Ordered, Arr interface{ ~[]T }](a *Arr, src any, t string) error {
 	switch src := src.(type) {
 	case []byte:
 		return scanBytes(a, src, t)
@@ -23,7 +22,7 @@ func arrayScan[T constraints.Integer, Arr interface{ ~[]T }](a *Arr, src any, t 
 	return fmt.Errorf("pgtype: cannot convert %T to %s", src, t)
 }
 
-func intArrayValue[T constraints.Signed](a []T) (driver.Value, error) {
+func intArrayValue[T ~int | ~int8 | ~int16 | ~int32 | ~int64](a []T) (driver.Value, error) {
 	if a == nil {
 		return nil, nil
 	}
@@ -45,7 +44,7 @@ func intArrayValue[T constraints.Signed](a []T) (driver.Value, error) {
 	return "{}", nil
 }
 
-func uintArrayValue[T constraints.Unsigned](a []T) (driver.Value, error) {
+func uintArrayValue[T ~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr](a []T) (driver.Value, error) {
 	if a == nil {
 		return nil, nil
 	}

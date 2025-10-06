@@ -6,8 +6,6 @@ import (
 	"math/bits"
 	"strconv"
 	"unsafe"
-
-	"golang.org/x/exp/constraints"
 )
 
 func UintScanner[T ~uint, Addr addrOrPtr[T]](addr Addr) sql.Scanner {
@@ -45,7 +43,7 @@ func Uint64Scanner[T ~uint64, Addr addrOrPtr[T]](addr Addr) sql.Scanner {
 	}
 }
 
-type unsignedIntScanner[T constraints.Unsigned, Addr addrOrPtr[T]] struct {
+type unsignedIntScanner[T ~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr, Addr addrOrPtr[T]] struct {
 	addr    Addr
 	bitSize int
 }

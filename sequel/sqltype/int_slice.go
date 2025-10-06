@@ -1,12 +1,11 @@
 package sqltype
 
 import (
+	"cmp"
 	"database/sql/driver"
 	"fmt"
 	"strconv"
 	"unsafe"
-
-	"golang.org/x/exp/constraints"
 )
 
 // Int64Slice represents a one-dimensional array of the PostgreSQL integer types.
@@ -68,7 +67,7 @@ func (a *Int64Slice[T]) Scan(src any) error {
 	return arrayScan(a, src, "Int64Slice")
 }
 
-func scanBytes[T constraints.Integer, Arr interface{ ~[]T }](a *Arr, src []byte, t string) error {
+func scanBytes[T cmp.Ordered, Arr interface{ ~[]T }](a *Arr, src []byte, t string) error {
 	elems, err := scanLinearArray(src, []byte{','}, t)
 	if err != nil {
 		return err
@@ -89,7 +88,7 @@ func scanBytes[T constraints.Integer, Arr interface{ ~[]T }](a *Arr, src []byte,
 	return nil
 }
 
-func arrayScan[T constraints.Integer, Arr interface{ ~[]T }](a *Arr, src any, t string) error {
+func arrayScan[T cmp.Ordered, Arr interface{ ~[]T }](a *Arr, src any, t string) error {
 	switch src := src.(type) {
 	case []byte:
 		return scanBytes(a, src, t)
@@ -102,7 +101,7 @@ func arrayScan[T constraints.Integer, Arr interface{ ~[]T }](a *Arr, src any, t 
 	return fmt.Errorf("sqltype: cannot convert %T to %s", src, t)
 }
 
-func intSliceValue[T constraints.Signed](a []T) (driver.Value, error) {
+func intSliceValue[T ~int | ~int8 | ~int16 | ~int32 | ~int64](a []T) (driver.Value, error) {
 	if a == nil {
 		return nil, nil
 	}

@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"strconv"
 	"unsafe"
-
-	"golang.org/x/exp/constraints"
 )
 
 func IntScanner[T ~int, Addr addrOrPtr[T]](addr Addr) sql.Scanner {
@@ -44,7 +42,7 @@ func Int64Scanner[T ~int64, Addr addrOrPtr[T]](addr Addr) sql.Scanner {
 	}
 }
 
-type signedIntScanner[T constraints.Signed, Addr addrOrPtr[T]] struct {
+type signedIntScanner[T ~int | ~int8 | ~int16 | ~int32 | ~int64, Addr addrOrPtr[T]] struct {
 	addr    Addr
 	bitSize int
 }

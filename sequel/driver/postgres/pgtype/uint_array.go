@@ -2,17 +2,15 @@ package pgtype
 
 import (
 	"database/sql/driver"
-
-	"golang.org/x/exp/constraints"
 )
 
 // Uint64Array represents a one-dimensional array of the PostgreSQL integer types.
 type (
-	UintArray[T constraints.Unsigned] []T
-	Uint8Array[T ~uint8]              []T
-	Uint16Array[T ~uint16]            []T
-	Uint32Array[T ~uint32]            []T
-	Uint64Array[T ~uint64]            []T
+	UintArray[T ~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr] []T
+	Uint8Array[T ~uint8]                                                 []T
+	Uint16Array[T ~uint16]                                               []T
+	Uint32Array[T ~uint32]                                               []T
+	Uint64Array[T ~uint64]                                               []T
 )
 
 // Value implements the driver.Valuer interface.

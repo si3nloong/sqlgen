@@ -6,8 +6,6 @@ import (
 	"math/bits"
 	"strconv"
 	"unsafe"
-
-	"golang.org/x/exp/constraints"
 )
 
 // Uint64Slice represents a one-dimensional array of the PostgreSQL integer types.
@@ -69,7 +67,7 @@ func (a *Uint64Slice[T]) Scan(src any) error {
 	return arrayUScan(64, a, src, "Uint64Slice")
 }
 
-func scanUBytes[T constraints.Unsigned, Arr interface{ ~[]T }](bitSize int, a *Arr, src []byte, t string) error {
+func scanUBytes[T ~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr, Arr interface{ ~[]T }](bitSize int, a *Arr, src []byte, t string) error {
 	elems, err := scanLinearArray(src, []byte{','}, t)
 	if err != nil {
 		return err
@@ -90,7 +88,7 @@ func scanUBytes[T constraints.Unsigned, Arr interface{ ~[]T }](bitSize int, a *A
 	return nil
 }
 
-func arrayUScan[T constraints.Unsigned, Arr interface{ ~[]T }](bitSize int, a *Arr, src any, t string) error {
+func arrayUScan[T ~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr, Arr interface{ ~[]T }](bitSize int, a *Arr, src any, t string) error {
 	switch src := src.(type) {
 	case []byte:
 		return scanUBytes(bitSize, a, src, t)
@@ -103,7 +101,7 @@ func arrayUScan[T constraints.Unsigned, Arr interface{ ~[]T }](bitSize int, a *A
 	return fmt.Errorf("sqltype: cannot convert %T to %s", src, t)
 }
 
-func uintSliceValue[T constraints.Unsigned](a []T) (driver.Value, error) {
+func uintSliceValue[T ~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr](a []T) (driver.Value, error) {
 	if a == nil {
 		return nil, nil
 	}
