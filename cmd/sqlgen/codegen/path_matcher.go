@@ -2,6 +2,7 @@ package codegen
 
 import (
 	"regexp"
+	"strings"
 )
 
 type Matcher interface {
@@ -19,6 +20,12 @@ type FileMatcher map[string]struct{}
 func (f FileMatcher) Match(v string) bool {
 	_, ok := f[v]
 	return ok
+}
+
+type FolderMatcher string
+
+func (f FolderMatcher) Match(v string) bool {
+	return strings.HasPrefix(v, (string)(f))
 }
 
 type RegexMatcher struct {

@@ -15,11 +15,11 @@
 func InsertOne[T sequel.ColumnValuer, Ptr interface {
 	sequel.ColumnValuer
 	sequel.PtrScanner[T]
-}](ctx context.Context, sqlConn *sql.DB, model Ptr) error {
+}](ctx context.Context, db *sql.DB, model Ptr) error {
 	switch v := any(model).(type) {
 	case sequel.SingleInserter:
 		query, args := v.InsertOneStmt()
-		return sqlConn.QueryRowContext(ctx, query, args...).Scan(model.Addrs()...)
+		return db.QueryRowContext(ctx, query, args...).Scan(model.Addrs()...)
 	default:
 		columns, args := model.Columns(), model.Values()
 		stmt := strpool.AcquireString()
@@ -29,7 +29,7 @@ func InsertOne[T sequel.ColumnValuer, Ptr interface {
 			stmt.WriteString("," + wrapVar(i+1))
 		}
 		stmt.WriteString(") RETURNING " + strings.Join(TableColumns(model), ",") + ";")
-		row := sqlConn.QueryRowContext(ctx, stmt.String(), args...)
+		row := db.QueryRowContext(ctx, stmt.String(), args...)
 		strpool.ReleaseString(stmt)
 		return row.Scan(model.Addrs()...)
 	}
@@ -44,11 +44,11 @@ type autoIncrKeyInserter interface {
 func InsertOne[T sequel.ColumnValuer, Ptr interface {
 	sequel.ColumnValuer
 	sequel.PtrScanner[T]
-}](ctx context.Context, sqlConn *sql.DB, model Ptr) (sql.Result, error) {
+}](ctx context.Context, db *sql.DB, model Ptr) (sql.Result, error) {
 	switch v := any(model).(type) {
 	case autoIncrKeyInserter:
 		query, args := v.InsertOneStmt()
-		result, err := sqlConn.ExecContext(ctx, query, args...)
+		result, err := db.ExecContext(ctx, query, args...)
 		if err != nil {
 			return nil, err
 		}
@@ -59,11 +59,11 @@ func InsertOne[T sequel.ColumnValuer, Ptr interface {
 		return result, v.ScanAutoIncr(i64)
 	case sequel.SingleInserter:
 		query, args := v.InsertOneStmt()
-		return sqlConn.ExecContext(ctx, query, args...)
+		return db.ExecContext(ctx, query, args...)
 	default:
 		columns, args := model.Columns(), model.Values()
 		query := "INSERT INTO "+DbTable(model)+" ("+strings.Join(columns, ",")+") VALUES ("+strings.Repeat("{{ quoteVar 1 }},", len(columns) - 1)+"{{ quoteVar 1 }});"
-		return sqlConn.ExecContext(ctx, query, args...)
+		return db.ExecContext(ctx, query, args...)
 	}
 }
 {{ end }}
@@ -71,7 +71,7 @@ func InsertOne[T sequel.ColumnValuer, Ptr interface {
 {{ if eq driver "postgres" -}}
 {{- /* postgres */ -}}
 // Insert is a helper function to insert multiple records.
-func Insert[T sequel.Inserter, Ptr sequel.PtrScanner[T]](ctx context.Context, sqlConn *sql.DB, data []T) (sql.Result, error) {
+func Insert[T sequel.Inserter, Ptr sequel.PtrScanner[T]](ctx context.Context, db *sql.DB, data []T) (sql.Result, error) {
 	noOfData := len(data)
 	if noOfData == 0 {
 		return new(sequel.EmptyResult), nil
@@ -100,7 +100,7 @@ func Insert[T sequel.Inserter, Ptr sequel.PtrScanner[T]](ctx context.Context, sq
 			args = append(args, values...)
 		}
 		stmt.WriteString(" RETURNING " + strings.Join(TableColumns(model), ",") + ";")
-		rows, err := sqlConn.QueryContext(ctx, stmt.String(), args...)
+		rows, err := db.QueryContext(ctx, stmt.String(), args...)
 		strpool.ReleaseString(stmt) // Deallocate statement
 		if err != nil {
 			return nil, err
@@ -124,7 +124,7 @@ func Insert[T sequel.Inserter, Ptr sequel.PtrScanner[T]](ctx context.Context, sq
 			args = append(args, data[i].Values()...)
 		}
 		stmt.WriteString(" RETURNING " + strings.Join(TableColumns(model), ",") + ";")
-		rows, err := sqlConn.QueryContext(ctx, stmt.String(), args...)
+		rows, err := db.QueryContext(ctx, stmt.String(), args...)
 		strpool.ReleaseString(stmt) // Deallocate statement
 		if err != nil {
 			return nil, err
@@ -142,7 +142,7 @@ func Insert[T sequel.Inserter, Ptr sequel.PtrScanner[T]](ctx context.Context, sq
 }
 {{ else }}
 // Insert is a helper function to insert multiple records.
-func Insert[T sequel.ColumnValuer](ctx context.Context, sqlConn *sql.DB, data []T) (sql.Result, error) {
+func Insert[T sequel.ColumnValuer](ctx context.Context, db *sql.DB, data []T) (sql.Result, error) {
 	noOfData := len(data)
 	if noOfData == 0 {
 		return new(sequel.EmptyResult), nil
@@ -172,7 +172,7 @@ func Insert[T sequel.ColumnValuer](ctx context.Context, sqlConn *sql.DB, data []
 			args = append(args, values...)
 		}
 		stmt.WriteByte(';')
-		result, err := sqlConn.ExecContext(ctx, stmt.String(), args...)
+		result, err := db.ExecContext(ctx, stmt.String(), args...)
 		strpool.ReleaseString(stmt)
 		return result, err
 	default:
@@ -187,7 +187,7 @@ func Insert[T sequel.ColumnValuer](ctx context.Context, sqlConn *sql.DB, data []
 			args = append(args, data[i].Values()...)
 		}
 		stmt.WriteByte(';')
-		result, err := sqlConn.ExecContext(ctx, stmt.String(), args...)
+		result, err := db.ExecContext(ctx, stmt.String(), args...)
 		strpool.ReleaseString(stmt)
 		return result, err
 	}
@@ -230,7 +230,7 @@ func WithDuplicateKeys(keys ...string) UpsertOption {
 func UpsertOne[T sequel.KeyValuer, Ptr interface{
 	sequel.KeyValueScanner[T]
 	sequel.Inserter
-}](ctx context.Context, sqlConn *sql.DB, model Ptr, opts ...UpsertOption) error {
+}](ctx context.Context, db *sql.DB, model Ptr, opts ...UpsertOption) error {
 	var opt upsertOpts
 	for i := range opts {
 		opts[i](&opt)
@@ -309,14 +309,14 @@ func UpsertOne[T sequel.KeyValuer, Ptr interface{
 		clear(omitDict)
 	}
 	stmt.WriteString(" RETURNING " + strings.Join(TableColumns(model), ",") + ";")
-	return sqlConn.QueryRowContext(ctx, stmt.String(), values...).Scan(model.Addrs()...)
+	return db.QueryRowContext(ctx, stmt.String(), values...).Scan(model.Addrs()...)
 }
 
 // Upsert is a helper function to upsert multiple records.
 func Upsert[T interface {
 	sequel.Keyer
 	sequel.Inserter
-}, Ptr sequel.PtrScanner[T]](ctx context.Context, sqlConn *sql.DB, data []T, opts ...UpsertOption) (sql.Result, error) {
+}, Ptr sequel.PtrScanner[T]](ctx context.Context, db *sql.DB, data []T, opts ...UpsertOption) (sql.Result, error) {
 	noOfData := len(data)
 	if noOfData == 0 {
 		return new(sequel.EmptyResult), nil
@@ -429,7 +429,7 @@ func Upsert[T interface {
 		clear(omitDict)
 	}
 	stmt.WriteString(" RETURNING " + strings.Join(TableColumns(model), ",") + ";")
-	rows, err := sqlConn.QueryContext(ctx, stmt.String(), args...)
+	rows, err := db.QueryContext(ctx, stmt.String(), args...)
 	strpool.ReleaseString(stmt) // Deallocate statement
 	if err != nil {
 		return nil, err
@@ -445,7 +445,7 @@ func Upsert[T interface {
 	return sequel.NewRowsAffectedResult(i), rows.Close()
 }
 {{ else }}
-func UpsertOne[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Context, sqlConn *sql.DB, model Ptr, override bool, omittedFields ...string) (sql.Result, error) {
+func UpsertOne[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Context, db *sql.DB, model Ptr, override bool, omittedFields ...string) (sql.Result, error) {
 	stmt := strpool.AcquireString()
 	defer strpool.ReleaseString(stmt)
 	switch v := any(model).(type) {
@@ -476,7 +476,7 @@ func UpsertOne[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Co
 			clear(omitDict)
 		}
 		if _, ok := any(model).(sequel.AutoIncrKeyer); ok {
-			result, err := sqlConn.ExecContext(ctx, stmt.String(), model.Values()...)
+			result, err := db.ExecContext(ctx, stmt.String(), model.Values()...)
 			if err != nil {
 				return nil, err
 			}
@@ -496,7 +496,7 @@ func UpsertOne[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Co
 			}
 			return result, nil
 		}
-		return sqlConn.ExecContext(ctx, stmt.String(), model.Values()...)
+		return db.ExecContext(ctx, stmt.String(), model.Values()...)
 	case sequel.CompositeKeyer:
 		names, idxs, _ := v.CompositeKey()
 		columns := model.Columns()
@@ -525,7 +525,7 @@ func UpsertOne[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Co
 			}
 			clear(dict)
 		}
-		return sqlConn.ExecContext(ctx, stmt.String(), model.Values()...)
+		return db.ExecContext(ctx, stmt.String(), model.Values()...)
 	default:
 		panic("unreachable")
 	}
@@ -535,7 +535,7 @@ func UpsertOne[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Co
 func Upsert[T interface {
 	sequel.Keyer
 	sequel.Inserter
-}, Ptr sequel.PtrScanner[T]](ctx context.Context, sqlConn *sql.DB, data []T, override bool, omittedFields ...string) (sql.Result, error) {
+}, Ptr sequel.PtrScanner[T]](ctx context.Context, db *sql.DB, data []T, override bool, omittedFields ...string) (sql.Result, error) {
 	noOfData := len(data)
 	if noOfData == 0 {
 		return new(sequel.EmptyResult), nil
@@ -631,23 +631,23 @@ func Upsert[T interface {
 		clear(omitDict)
 	}
 	stmt.WriteByte(';')
-	return sqlConn.ExecContext(ctx, stmt.String(), args...)
+	return db.ExecContext(ctx, stmt.String(), args...)
 }
 {{ end }}
 
 // FindByPK is to find single record using primary key.
-func FindByPK[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Context, sqlConn *sql.DB, model Ptr) error {
+func FindByPK[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Context, db *sql.DB, model Ptr) error {
 	switch v := any(model).(type) {
 	case sequel.KeyFinder:
 		query, args := v.FindOneByPKStmt()
-		return sqlConn.QueryRowContext(ctx, query, args...).Scan(model.Addrs()...)
+		return db.QueryRowContext(ctx, query, args...).Scan(model.Addrs()...)
 	case sequel.PrimaryKeyer:
 		pkName, _, pk := v.PK()
-		return sqlConn.QueryRowContext(ctx, "SELECT "+strings.Join(TableColumns(model), ",")+" FROM "+DbTable(model)+" WHERE "+pkName+" = {{ quoteVar 1 }} LIMIT 1;", pk).Scan(model.Addrs()...)
+		return db.QueryRowContext(ctx, "SELECT "+strings.Join(TableColumns(model), ",")+" FROM "+DbTable(model)+" WHERE "+pkName+" = {{ quoteVar 1 }} LIMIT 1;", pk).Scan(model.Addrs()...)
 	case sequel.CompositeKeyer:
 		keyNames, _, keys := v.CompositeKey()
 		{{ if isStaticVar -}}
-		return sqlConn.QueryRowContext(ctx, "SELECT "+strings.Join(TableColumns(model), ",")+" FROM "+DbTable(model)+" WHERE ("+strings.Join(keyNames, ",")+") = ({{ quoteVar 1 }}"+strings.Repeat(",{{ quoteVar 1 }}", len(keyNames) - 1)+") LIMIT 1;", keys...).Scan(model.Addrs()...)
+		return db.QueryRowContext(ctx, "SELECT "+strings.Join(TableColumns(model), ",")+" FROM "+DbTable(model)+" WHERE ("+strings.Join(keyNames, ",")+") = ({{ quoteVar 1 }}"+strings.Repeat(",{{ quoteVar 1 }}", len(keyNames) - 1)+") LIMIT 1;", keys...).Scan(model.Addrs()...)
 		{{ else -}}
 		stmt := strpool.AcquireString()
 		stmt.WriteString("SELECT " + strings.Join(TableColumns(model), ",") + " FROM " + DbTable(model) + " WHERE ("+ strings.Join(keyNames, ",") +") = ({{ quoteVar 1 }}")
@@ -656,7 +656,7 @@ func FindByPK[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Con
 			stmt.WriteString(","+ wrapVar(i+1))
 		}
 		stmt.WriteString(") LIMIT 1;")
-		row := sqlConn.QueryRowContext(ctx, stmt.String(), keys...)
+		row := db.QueryRowContext(ctx, stmt.String(), keys...)
 		strpool.ReleaseString(stmt)
 		return row.Scan(model.Addrs()...)
 		{{ end -}}
@@ -666,11 +666,11 @@ func FindByPK[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Con
 }
 
 // UpdateByPK is to update single record using primary key.
-func UpdateByPK[T sequel.KeyValuer](ctx context.Context, sqlConn *sql.DB, model T) (sql.Result, error) {
+func UpdateByPK[T sequel.KeyValuer](ctx context.Context, db *sql.DB, model T) (sql.Result, error) {
 	switch v := any(model).(type) {
 	case sequel.KeyUpdater:
 		query, args := v.UpdateOneByPKStmt()
-		return sqlConn.ExecContext(ctx, query, args...)
+		return db.ExecContext(ctx, query, args...)
 	case sequel.PrimaryKeyer:
 		pkName, pkIdx, pk := v.PK()
 		columns := model.Columns()
@@ -678,7 +678,7 @@ func UpdateByPK[T sequel.KeyValuer](ctx context.Context, sqlConn *sql.DB, model 
 		values := model.Values()
 		values = append(values[:pkIdx], append(values[pkIdx+1:], pk)...)
 		{{ if isStaticVar -}}
-		return sqlConn.ExecContext(ctx, "UPDATE "+DbTable(model)+" SET "+strings.Join(columns, " = {{ quoteVar 1 }},")+" = {{ quoteVar 1 }} WHERE "+pkName+" = {{ quoteVar 1 }};", append(values, pk)...)
+		return db.ExecContext(ctx, "UPDATE "+DbTable(model)+" SET "+strings.Join(columns, " = {{ quoteVar 1 }},")+" = {{ quoteVar 1 }} WHERE "+pkName+" = {{ quoteVar 1 }};", append(values, pk)...)
 		{{ else -}}
 		stmt := strpool.AcquireString()
 		defer strpool.ReleaseString(stmt)
@@ -688,7 +688,7 @@ func UpdateByPK[T sequel.KeyValuer](ctx context.Context, sqlConn *sql.DB, model 
 			stmt.WriteString(","+ columns[i] +" = "+ wrapVar(i + 1))
 		}
 		stmt.WriteString(" WHERE "+ pkName +" = "+ wrapVar(noOfColumn + 2)+ ";")
-		return sqlConn.ExecContext(ctx, stmt.String(), append(values, pk)...)
+		return db.ExecContext(ctx, stmt.String(), append(values, pk)...)
 		{{ end -}}
 	case sequel.CompositeKeyer:
 		columns := model.Columns()
@@ -703,7 +703,7 @@ func UpdateByPK[T sequel.KeyValuer](ctx context.Context, sqlConn *sql.DB, model 
 		args := make([]any, 0, noOfColumn+len(keys))
 		{{ if isStaticVar -}}
 		query := "UPDATE " + DbTable(model) + " SET " +strings.Join(columns, " = {{ quoteVar 1 }},")+" = {{ quoteVar 1 }} WHERE (" + strings.Join(keyNames, ",") + ") = ({{ quoteVar 1 }}" + strings.Repeat(",{{ quoteVar 1 }}", len(keyNames)-1)+");"
-		return sqlConn.ExecContext(ctx, query, append(args, keys...)...)
+		return db.ExecContext(ctx, query, append(args, keys...)...)
 		{{ else -}}
 		stmt := strpool.AcquireString()
 		defer strpool.ReleaseString(stmt)
@@ -718,7 +718,7 @@ func UpdateByPK[T sequel.KeyValuer](ctx context.Context, sqlConn *sql.DB, model 
 		}
 		stmt.WriteString(");")
 		args = append(args, values...)
-		return sqlConn.ExecContext(ctx, stmt.String(), append(args, keys...)...)
+		return db.ExecContext(ctx, stmt.String(), append(args, keys...)...)
 		{{ end -}}
 	default:
 		panic("unreachable")
@@ -726,20 +726,20 @@ func UpdateByPK[T sequel.KeyValuer](ctx context.Context, sqlConn *sql.DB, model 
 }
 
 // DeleteByPK is to update single record using primary key.
-func DeleteByPK[T sequel.KeyValuer](ctx context.Context, sqlConn *sql.DB, model T) (sql.Result, error) {
+func DeleteByPK[T sequel.KeyValuer](ctx context.Context, db *sql.DB, model T) (sql.Result, error) {
 	switch v := any(model).(type) {
 	case sequel.KeyDeleter:
 		query, args := v.DeleteOneByPKStmt()
-		return sqlConn.ExecContext(ctx, query, args...)
+		return db.ExecContext(ctx, query, args...)
 	case sequel.PrimaryKeyer:
 		pkName, _, pk := v.PK()
 		query := "DELETE FROM "+DbTable(model)+" WHERE "+pkName+" = {{ quoteVar 1 }};"
-		return sqlConn.ExecContext(ctx, query, pk)
+		return db.ExecContext(ctx, query, pk)
 	case sequel.CompositeKeyer:
 		keyNames, _, keys := v.CompositeKey()
 		{{ if isStaticVar -}}
 		query := "DELETE FROM "+DbTable(model)+" WHERE ("+strings.Join(keyNames, ",")+") = ({{ quoteVar 1 }}"+strings.Repeat(",{{ quoteVar 1 }}", len(keyNames)-1)+");"
-		return sqlConn.ExecContext(ctx, query, keys...)
+		return db.ExecContext(ctx, query, keys...)
 		{{ else -}}
 		stmt := strpool.AcquireString()
 		defer strpool.ReleaseString(stmt)
@@ -749,7 +749,53 @@ func DeleteByPK[T sequel.KeyValuer](ctx context.Context, sqlConn *sql.DB, model 
 			stmt.WriteString(","+ wrapVar(i+1))
 		}
 		stmt.WriteString(");")
-		return sqlConn.ExecContext(ctx, stmt.String(), keys...)
+		return db.ExecContext(ctx, stmt.String(), keys...)
+		{{ end -}}
+	default:
+		panic("unreachable")
+	}
+}
+
+type lockMode string
+
+func (l lockMode) LockMode() string {
+	return (string)(l)
+}
+
+{{ if eq driver "postgres" -}}
+const (
+	LockForUpdate 	   lockMode = "FOR UPDATE"
+	LockForNoKeyUpdate lockMode = "FOR NO KEY UPDATE"
+	LockForShare       lockMode = "FOR SHARE"
+	LockForKeyShare    lockMode = "FOR KEY SHARE"
+)
+{{ else }}
+const (
+	LockForUpdate 	   lockMode = "FOR UPDATE"
+	LockForShare       lockMode = "FOR SHARE"
+)
+{{- end }}
+
+func LockByPK[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Context, tx *sql.Tx, model Ptr, locker sequel.RowLevelLocker) error {
+	switch v := any(model).(type) {
+	case sequel.PrimaryKeyer:
+		pkName, _, pk := v.PK()
+		return tx.QueryRowContext(ctx, "SELECT "+strings.Join(TableColumns(model), ",")+" FROM "+DbTable(model)+" WHERE "+pkName+" = {{ quoteVar 1 }} LIMIT 1 "+ locker.LockMode() +";", pk).Scan(model.Addrs()...)
+	case sequel.CompositeKeyer:
+		keyNames, _, keys := v.CompositeKey()
+		{{ if isStaticVar -}}
+		return tx.QueryRowContext(ctx, "SELECT "+strings.Join(TableColumns(model), ",")+" FROM "+DbTable(model)+" WHERE ("+strings.Join(keyNames, ",")+") = ({{ quoteVar 1 }}"+strings.Repeat(",{{ quoteVar 1 }}", len(keyNames) - 1)+") LIMIT 1 "+ locker.LockMode() +";", keys...).Scan(model.Addrs()...)
+		{{ else -}}
+		stmt := strpool.AcquireString()
+		stmt.WriteString("SELECT " + strings.Join(TableColumns(model), ",") + " FROM " + DbTable(model) + " WHERE ("+ strings.Join(keyNames, ",") +") = ({{ quoteVar 1 }}")
+		noOfKey := len(keyNames)
+		for i := 1; i < noOfKey; i++ {
+			stmt.WriteString(","+ wrapVar(i+1))
+		}
+		stmt.WriteString(") LIMIT 1 "+ locker.LockMode() +";")
+		row := tx.QueryRowContext(ctx, stmt.String(), keys...)
+		strpool.ReleaseString(stmt)
+		return row.Scan(model.Addrs()...)
 		{{ end -}}
 	default:
 		panic("unreachable")
@@ -778,7 +824,7 @@ type Pager[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]] struct {
 	stmt *PaginateStmt
 }
 
-func (r *Pager[T, Ptr]) Prev(ctx context.Context, sqlConn *sql.DB, cursor ...T) iter.Seq2[[]T, error] {
+func (r *Pager[T, Ptr]) Prev(ctx context.Context, db *sql.DB, cursor ...T) iter.Seq2[[]T, error] {
 	return func(yield func([]T, error) bool) {
 		var (
 			v         T
@@ -794,7 +840,7 @@ func (r *Pager[T, Ptr]) Prev(ctx context.Context, sqlConn *sql.DB, cursor ...T) 
 
 		for {
 			if hasCursor {
-				if err := FindByPK(ctx, sqlConn, Ptr(&v)); err != nil {
+				if err := FindByPK(ctx, db, Ptr(&v)); err != nil {
 					yield(nil, err)
 					return
 				}
@@ -891,7 +937,7 @@ func (r *Pager[T, Ptr]) Prev(ctx context.Context, sqlConn *sql.DB, cursor ...T) 
 			// Add one to limit to find next cursor
 			blr.WriteString(" LIMIT " + strconv.Itoa((int)(r.stmt.Limit+1)) + ";")
 
-			rows, err := sqlConn.QueryContext(ctx, blr.Query(), blr.Args()...)
+			rows, err := db.QueryContext(ctx, blr.Query(), blr.Args()...)
 			blr.Reset()
 			if err != nil {
 				yield(nil, err)
@@ -929,7 +975,7 @@ func (r *Pager[T, Ptr]) Prev(ctx context.Context, sqlConn *sql.DB, cursor ...T) 
 	}
 }
 
-func (r *Pager[T, Ptr]) Next(ctx context.Context, sqlConn *sql.DB, cursor ...T) iter.Seq2[[]T, error] {
+func (r *Pager[T, Ptr]) Next(ctx context.Context, db *sql.DB, cursor ...T) iter.Seq2[[]T, error] {
 	return func(yield func([]T, error) bool) {
 		var (
 			v         T
@@ -945,7 +991,7 @@ func (r *Pager[T, Ptr]) Next(ctx context.Context, sqlConn *sql.DB, cursor ...T) 
 
 		for {
 			if hasCursor {
-				if err := FindByPK(ctx, sqlConn, Ptr(&v)); err != nil {
+				if err := FindByPK(ctx, db, Ptr(&v)); err != nil {
 					yield(nil, err)
 					return
 				}
@@ -1054,7 +1100,7 @@ func (r *Pager[T, Ptr]) Next(ctx context.Context, sqlConn *sql.DB, cursor ...T) 
 			// Add one to limit to find next cursor
 			blr.WriteString(" LIMIT " + strconv.Itoa((int)(r.stmt.Limit+1)) + ";")
 
-			rows, err := sqlConn.QueryContext(ctx, blr.Query(), blr.Args()...)
+			rows, err := db.QueryContext(ctx, blr.Query(), blr.Args()...)
 			blr.Reset()
 			if err != nil {
 				yield(nil, err)
@@ -1102,7 +1148,7 @@ type SelectStmt struct {
 	Limit     uint16
 }
 
-func QueryStmt[T any, Ptr sequel.PtrScanner[T]](ctx context.Context, sqlConn *sql.DB, stmtFunc func(T) SelectStmt) ([]T, error) {
+func QueryStmt[T any, Ptr sequel.PtrScanner[T]](ctx context.Context, db *sql.DB, stmtFunc func(T) SelectStmt) ([]T, error) {
 	var v T
 	stmt := stmtFunc(v)
 	blr := AcquireStmt()
@@ -1159,7 +1205,7 @@ func QueryStmt[T any, Ptr sequel.PtrScanner[T]](ctx context.Context, sqlConn *sq
 		blr.WriteString(" OFFSET " + strconv.FormatUint(stmt.Offset, 10))
 	}
 	blr.WriteByte(';')
-	rows, err := sqlConn.QueryContext(ctx, blr.Query(), blr.Args()...)
+	rows, err := db.QueryContext(ctx, blr.Query(), blr.Args()...)
 	ReleaseStmt(blr)
 	if err != nil {
 		return nil, err
@@ -1188,7 +1234,7 @@ type SelectOneStmt struct {
 	GroupBy   []string
 }
 
-func QueryOneStmt[T any, Ptr sequel.PtrScanner[T]](ctx context.Context, sqlConn *sql.DB, stmtFunc func(T) SelectOneStmt) (Ptr, error) {
+func QueryOneStmt[T any, Ptr sequel.PtrScanner[T]](ctx context.Context, db *sql.DB, stmtFunc func(T) SelectOneStmt) (Ptr, error) {
 	var v T
 	stmt := stmtFunc(v)
 	blr := AcquireStmt()
@@ -1238,7 +1284,7 @@ func QueryOneStmt[T any, Ptr sequel.PtrScanner[T]](ctx context.Context, sqlConn 
 		}
 	}
 	blr.WriteString(" LIMIT 1;")
-	row := sqlConn.QueryRowContext(ctx, blr.Query(), blr.Args()...)
+	row := db.QueryRowContext(ctx, blr.Query(), blr.Args()...)
 	ReleaseStmt(blr)
 	if err := row.Scan(Ptr(&v).Addrs()...); err != nil {
 		return nil, err
@@ -1269,7 +1315,7 @@ type DeleteStmt struct {
 
 func ExecStmt[T any, Stmt interface {
 	UpdateStmt | DeleteStmt
-}](ctx context.Context, sqlConn *sql.DB, stmtFunc func(T) Stmt) (sql.Result, error) {
+}](ctx context.Context, db *sql.DB, stmtFunc func(T) Stmt) (sql.Result, error) {
 	var v T
 	stmt := stmtFunc(v)
 	blr := AcquireStmt()
@@ -1347,7 +1393,7 @@ func ExecStmt[T any, Stmt interface {
 		{{ end -}}
 	}
 	blr.WriteByte(';')
-	return sqlConn.ExecContext(ctx, blr.Query(), blr.Args()...)
+	return db.ExecContext(ctx, blr.Query(), blr.Args()...)
 }
 
 

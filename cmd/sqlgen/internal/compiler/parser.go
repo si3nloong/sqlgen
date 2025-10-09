@@ -3,9 +3,11 @@ package compiler
 import (
 	"fmt"
 	"go/ast"
+	"go/token"
 	"go/types"
 	"log"
 	"reflect"
+	"regexp"
 	"sort"
 	"strings"
 
@@ -25,6 +27,8 @@ type Config struct {
 	RenameFunc func(string) string
 	Matcher    Matcher
 }
+
+var annotationRegexp = regexp.MustCompile(`(?i)\s*\+sqlgen\:(.*)`)
 
 func Parse(dir string, cfg *Config) (*Package, error) {
 	// Load single go package and inspect the structs
@@ -61,66 +65,75 @@ func Parse(dir string, cfg *Config) (*Package, error) {
 				return true
 			}
 
-			typeSpec := assertAsPtr[ast.TypeSpec](node)
-			if typeSpec == nil {
+			genDecl := assertAsPtr[ast.GenDecl](node)
+			if genDecl == nil || genDecl.Tok != token.TYPE {
 				return true
 			}
 
-			// We only interested on Type Definition, or else we will skip
-			// e.g: `type Entity sql.NullString`
-			if typeSpec.Assign > 0 {
-				return true
-			}
+			for _, spec := range genDecl.Specs {
+				typeSpec := assertAsPtr[ast.TypeSpec](spec)
+				if typeSpec == nil {
+					continue
+				}
 
-			filename := pkg.Fset.Position(typeSpec.Name.NamePos).Filename
-			if !cfg.Matcher.Match(filename) {
-				return true
-			}
+				// We only interested on Type Definition, or else we will skip
+				// e.g: `type Entity sql.NullString`
+				if typeSpec.Assign > 0 {
+					continue
+				}
 
-			objType := pkg.TypesInfo.ObjectOf(typeSpec.Name)
-			// We're not interested in the unexported type
-			if !objType.Exported() {
-				return true
-			}
+				filename := pkg.Fset.Position(typeSpec.Name.NamePos).Filename
+				if !cfg.Matcher.Match(filename) {
+					continue
+				}
 
-			// There are 2 types we're interested in
-			// 1. struct (*ast.StructType)
-			// 2. Type Definition from external package (*ast.SelectorExpr)
-			//
-			// The other situation like struct alias which we aren't cover it, e.g :
-			// ```go
-			// type A = time.Time
-			// ```
-			switch t := typeSpec.Type.(type) {
-			case *ast.StructType:
-				structCaches = append(structCaches, structCache{name: typeSpec.Name, t: t, pkg: pkg})
+				objType := pkg.TypesInfo.ObjectOf(typeSpec.Name)
+				// We're not interested in the unexported type
+				if !objType.Exported() {
+					continue
+				}
+				// There are 2 types we're interested in
+				// 1. struct (*ast.StructType)
+				// 2. Type Definition from external package (*ast.SelectorExpr)
+				//
+				// The other situation like struct alias which we aren't cover it, e.g :
+				// ```go
+				// type A = time.Time
+				// ```
+				switch t := typeSpec.Type.(type) {
+				case *ast.StructType:
+					structCaches = append(structCaches, structCache{name: typeSpec.Name, doc: genDecl.Doc, t: t, pkg: pkg})
 
-			case *ast.SelectorExpr:
-				var (
-					pkgPath   = pkg.TypesInfo.ObjectOf(t.Sel).Pkg()
-					importPkg = pkg.Imports[pkgPath.Path()]
-					obj       *ast.Object
-				)
+				case *ast.SelectorExpr:
+					var (
+						pkgPath   = pkg.TypesInfo.ObjectOf(t.Sel).Pkg()
+						importPkg = pkg.Imports[pkgPath.Path()]
+						obj       *ast.Object
+					)
 
-				for i := range importPkg.Syntax {
-					obj = importPkg.Syntax[i].Scope.Lookup(t.Sel.Name)
-					if obj != nil {
-						break
+					for i := range importPkg.Syntax {
+						obj = importPkg.Syntax[i].Scope.Lookup(t.Sel.Name)
+						if obj != nil {
+							break
+						}
 					}
-				}
 
-				// Skip if unable to find the specific object
-				if obj == nil {
+					// Skip if unable to find the specific object
+					if obj == nil {
+						continue
+					}
+
+					decl := assertAsPtr[ast.TypeSpec](obj.Decl)
+					if decl == nil {
+						continue
+					}
+
+					if v := assertAsPtr[ast.StructType](decl.Type); v != nil {
+						structCaches = append(structCaches, structCache{name: typeSpec.Name, doc: genDecl.Doc, t: v, pkg: importPkg})
+					}
+
+				default:
 					return true
-				}
-
-				decl := assertAsPtr[ast.TypeSpec](obj.Decl)
-				if decl == nil {
-					return true
-				}
-
-				if v := assertAsPtr[ast.StructType](decl.Type); v != nil {
-					structCaches = append(structCaches, structCache{name: typeSpec.Name, t: v, pkg: importPkg})
 				}
 			}
 			return true
@@ -148,10 +161,11 @@ func Parse(dir string, cfg *Config) (*Package, error) {
 		// Pop the first item for further inspection
 		s := structCaches[0]
 		// Struct queue, this is useful when handling embedded struct
-		q := []typeQueue{{t: s.t, pkg: s.pkg}}
-		f := typeQueue{}
+		q := []typeQueue{{t: s.t, doc: s.doc, pkg: s.pkg}}
 		structFields := make([]*structField, 0)
 
+		var f typeQueue
+		// Resolve every field on the struct, including nested struct
 		for len(q) > 0 {
 			f = q[0]
 
@@ -337,6 +351,25 @@ func Parse(dir string, cfg *Config) (*Package, error) {
 			t:      pkg.TypesInfo.TypeOf(s.name),
 		}
 
+		if s.doc != nil {
+			comment := f.doc.Text()
+			if annotationRegexp.MatchString(comment) {
+				annotations := annotationRegexp.FindStringSubmatch(comment)
+				flags := strings.Split(annotations[1], ",")
+				for len(flags) > 0 {
+					switch flags[0] {
+					case "readonly":
+						table.Readonly = true
+					case "ignore":
+						// Skip this struct because of ignore
+						structCaches = structCaches[1:]
+						continue
+					}
+					flags = flags[1:]
+				}
+			}
+		}
+
 		// To store struct fields, to prevent field name collision
 		nameMap := make(map[string]struct{})
 		pos := 0
@@ -427,6 +460,7 @@ func Parse(dir string, cfg *Config) (*Package, error) {
 	return goPkg, nil
 }
 
+// This is to count the underlying pointer of a type
 func ptrCount(t types.Type) int {
 	var total int
 loop:

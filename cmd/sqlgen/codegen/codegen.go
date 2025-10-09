@@ -2,6 +2,7 @@ package codegen
 
 import (
 	"embed"
+	"errors"
 	"fmt"
 	"io/fs"
 	"log/slog"
@@ -9,7 +10,6 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
-	"reflect"
 	"regexp"
 	"strings"
 	"syscall"
@@ -21,7 +21,6 @@ import (
 	"github.com/si3nloong/sqlgen/cmd/sqlgen/codegen/dialect"
 	"github.com/si3nloong/sqlgen/cmd/sqlgen/internal/compiler"
 	"github.com/si3nloong/sqlgen/cmd/sqlgen/internal/fileutil"
-	"github.com/si3nloong/sqlgen/sequel"
 )
 
 var (
@@ -35,12 +34,10 @@ var (
 		`\`, `[\\/]`,
 		`/`, `[\\/]`,
 	)
-	nameRegex     = regexp.MustCompile(`(?i)^[a-z]+[a-z0-9\_]*$`)
-	go121         = lo.Must1(semver.NewConstraint(">= 1.2.1"))
-	goTagRegexp   = regexp.MustCompile(`(?i)^([a-z][a-z_]*[a-z])(\:(\w+))?$`)
-	sqlFuncRegexp = regexp.MustCompile(`(?i)\s*(\w+\()(\w+\s*\,\s*)?(\{\})(\s*\,\s*\w+)?(\))\s*`)
-	typeOfTable   = reflect.TypeOf(sequel.TableName{})
-	tableNameType = typeOfTable.PkgPath() + "." + typeOfTable.Name()
+	nameRegex = regexp.MustCompile(`(?i)^[a-z]+[a-z0-9\_]*$`)
+	go121     = lo.Must1(semver.NewConstraint(">= 1.2.1"))
+	// goTagRegexp   = regexp.MustCompile(`(?i)^([a-z][a-z_]*[a-z])(\:(\w+))?$`)
+	// sqlFuncRegexp = regexp.MustCompile(`(?i)\s*(\w+\()(\w+\s*\,\s*)?(\{\})(\s*\,\s*\w+)?(\))\s*`)
 )
 
 func Generate(c *Config) error {
@@ -56,7 +53,7 @@ func Generate(c *Config) error {
 
 	dialect, ok := dialect.GetDialect((string)(cfg.Driver))
 	if !ok {
-		return fmt.Errorf("sqlgen: missing dialect, please register your dialect first")
+		return fmt.Errorf("sqlgen: missing dialect, please register dialect %q", cfg.Driver)
 	}
 
 	generator, err := newGenerator(cfg, dialect)
@@ -66,9 +63,9 @@ func Generate(c *Config) error {
 
 	var (
 		srcDir  string
-		sources = make([]string, len(cfg.Source))
+		sources = make([]string, 0, len(cfg.Source))
 	)
-	copy(sources, cfg.Source)
+	sources = append(sources, cfg.Source...)
 
 	// Resolve every source provided
 	for len(sources) > 0 {
@@ -138,8 +135,11 @@ func Generate(c *Config) error {
 				return err
 			}
 
-			// If it's just a file
-			if !fi.IsDir() {
+			if fi.IsDir() {
+				// If it's just a folder
+				matcher = FolderMatcher(srcDir)
+			} else {
+				// If it's just a file
 				srcDir = filepath.Dir(srcDir)
 				matcher = FileMatcher{filepath.Join(srcDir, fi.Name()): struct{}{}}
 			}
@@ -235,7 +235,7 @@ func parseGoPackage(
 			RenameFunc: rename,
 			Matcher:    matcher,
 		})
-		if err == compiler.ErrSkip {
+		if errors.Is(err, compiler.ErrSkip) {
 			goto nextDir
 		} else if err != nil {
 			return err

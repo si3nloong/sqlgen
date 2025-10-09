@@ -117,6 +117,10 @@ type KeyValueScanner[T any] interface {
 	PtrScanner[T]
 }
 
+type RowLevelLocker interface {
+	LockMode() string
+}
+
 type StmtWriter interface {
 	io.Writer
 	io.StringWriter

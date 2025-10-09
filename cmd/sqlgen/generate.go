@@ -20,6 +20,41 @@ var (
 				cfg = codegen.DefaultConfig()
 			)
 
+			// // Create new watcher.
+			// watcher, err := fsnotify.NewWatcher()
+			// if err != nil {
+			// 	return err
+			// }
+			// defer watcher.Close()
+
+			// // Start listening for events.
+			// go func() {
+			// 	for {
+			// 		select {
+			// 		case event, ok := <-watcher.Events:
+			// 			if !ok {
+			// 				return
+			// 			}
+			// 			log.Println("event:", event)
+			// 			if event.Has(fsnotify.Write) {
+			// 				log.Println("modified file:", event.Name)
+			// 			}
+			// 		case err, ok := <-watcher.Errors:
+			// 			if !ok {
+			// 				return
+			// 			}
+			// 			log.Println("error:", err)
+			// 		}
+			// 	}
+			// }()
+
+			// // Add a path.
+			// if err := watcher.Add(filepath.Join(fileutil.Getpwd(), args[0])); err != nil {
+			// 	return err
+			// }
+
+			// <-make(chan struct{})
+
 			// If user pass the source, then we refer to it.
 			cfg.Source = []string{args[0]}
 

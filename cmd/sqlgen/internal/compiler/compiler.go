@@ -31,12 +31,17 @@ type Package struct {
 }
 
 type Table struct {
-	GoName  string
+	GoName string
+	// +sqlgen:database=name
+	DbName string
+	// +sqlgen:table=name
 	Name    string
 	Keys    []*Column
 	Columns []*Column
 
-	t           types.Type
+	t types.Type
+	// +sqlgen:readonly
+	Readonly    bool
 	autoIncrKey *Column
 }
 
@@ -157,6 +162,7 @@ func (c *Column) Size() uint8 {
 
 type structCache struct {
 	name *ast.Ident
+	doc  *ast.CommentGroup
 	t    *ast.StructType
 	pkg  *packages.Package
 }
@@ -228,6 +234,7 @@ func (s *structField) fieldPaths() []*structField {
 type typeQueue struct {
 	idx  []int
 	prev *structField
+	doc  *ast.CommentGroup
 	t    *ast.StructType
 	pkg  *packages.Package
 }

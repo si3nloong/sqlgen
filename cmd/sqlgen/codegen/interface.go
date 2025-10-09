@@ -19,8 +19,7 @@ var (
 	// sqlgen interface
 	sqlDatabaser, sqlTabler, sqlColumner, sqlQueryColumner, sqlValuer, sqlScanner,
 	binaryMarshaler, binaryUnmarshaler,
-	textMarshaler, textUnmarshaler,
-	locker *types.Interface
+	textMarshaler, textUnmarshaler *types.Interface
 
 	typeOfTime string
 
@@ -47,8 +46,6 @@ func init() {
 			binaryUnmarshaler = p.Types.Scope().Lookup("BinaryUnmarshaler").Type().Underlying().(*types.Interface)
 			textMarshaler = p.Types.Scope().Lookup("TextMarshaler").Type().Underlying().(*types.Interface)
 			textUnmarshaler = p.Types.Scope().Lookup("TextUnmarshaler").Type().Underlying().(*types.Interface)
-		case "sync":
-			locker = p.Types.Scope().Lookup("Locker").Type().Underlying().(*types.Interface)
 		case "time":
 			typeOfTime = p.Types.Scope().Lookup("Time").Type().(*types.Named).String()
 		}

@@ -54,5 +54,5 @@ type Address struct {
 }
 
 func main() {
-
+	println("hello !")
 }

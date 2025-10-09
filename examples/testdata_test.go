@@ -16,7 +16,7 @@ func TestAll(t *testing.T) {
 
 	if err := codegen.Generate(&codegen.Config{
 		Source: []string{rootDir + "/**/*.go"},
-		// Source:     []string{rootDir + "/struct-field/sql/*.go"},
+		// Source:     []string{rootDir + "/struct/readonly/*.go"},
 		SkipHeader: true,
 		// Driver:     codegen.Postgres,
 		Database: &codegen.DatabaseConfig{
