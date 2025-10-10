@@ -8,6 +8,7 @@ import (
 	"database/sql/driver"
 	"fmt"
 	"iter"
+	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -1217,6 +1218,8 @@ func wrapVar(i int) string {
 
 func strf(v any) string {
 	switch vi := v.(type) {
+	case nil:
+		return "NULL"
 	case string:
 		return pgutil.Quote(vi)
 	case []byte:
@@ -1235,6 +1238,20 @@ func strf(v any) string {
 		val, _ := vi.Value()
 		return strf(val)
 	default:
-		panic("unreachable")
+		vt := reflect.ValueOf(v)
+		switch vt.Kind() {
+		case reflect.String:
+			return pgutil.Quote(vt.String())
+		case reflect.Bool:
+			return strconv.FormatBool(vt.Bool())
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			return strconv.FormatInt(vt.Int(), 10)
+		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+			return strconv.FormatUint(vt.Uint(), 10)
+		case reflect.Float32, reflect.Float64:
+			return strconv.FormatFloat(vt.Float(), 'f', 10, 64)
+		default:
+			panic("unreachable")
+		}
 	}
 }

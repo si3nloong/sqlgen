@@ -28,7 +28,7 @@ type Config struct {
 	Matcher    Matcher
 }
 
-var annotationRegexp = regexp.MustCompile(`(?i)\s*\+sqlgen\:(.*)`)
+var annotationRegexp = regexp.MustCompile(`(?i)\s*\+sql\:(.*)`)
 
 func Parse(dir string, cfg *Config) (*Package, error) {
 	// Load single go package and inspect the structs
@@ -351,6 +351,10 @@ func Parse(dir string, cfg *Config) (*Package, error) {
 			t:      pkg.TypesInfo.TypeOf(s.name),
 		}
 
+		// To store struct fields, to prevent field name collision
+		nameMap := make(map[string]struct{})
+		pos := 0
+
 		if s.doc != nil {
 			comment := f.doc.Text()
 			if annotationRegexp.MatchString(comment) {
@@ -362,17 +366,13 @@ func Parse(dir string, cfg *Config) (*Package, error) {
 						table.Readonly = true
 					case "ignore":
 						// Skip this struct because of ignore
-						structCaches = structCaches[1:]
-						continue
+						goto nextCache
 					}
 					flags = flags[1:]
 				}
 			}
 		}
 
-		// To store struct fields, to prevent field name collision
-		nameMap := make(map[string]struct{})
-		pos := 0
 		for _, f := range structFields {
 			if ptrCount(f.t) > 1 {
 				return nil, fmt.Errorf(`sqlgen: pointer of pointer is not supported`)
@@ -455,6 +455,8 @@ func Parse(dir string, cfg *Config) (*Package, error) {
 		if len(table.Columns) > 0 {
 			goPkg.Tables = append(goPkg.Tables, table)
 		}
+
+	nextCache:
 		structCaches = structCaches[1:]
 	}
 	return goPkg, nil

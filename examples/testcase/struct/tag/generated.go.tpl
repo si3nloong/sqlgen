@@ -49,39 +49,3 @@ func (v A) ColumnDec() sequel.ColumnConvertClause[decimal.Decimal] {
 		return val
 	})
 }
-
-func (B) TableName() string {
-	return "b"
-}
-func (B) HasPK() {}
-func (v B) PK() (string, int, any) {
-	return "id", 0, v.ID
-}
-func (B) Columns() []string {
-	return []string{"id"} // 1
-}
-func (v B) Values() []any {
-	return []any{
-		v.ID, // 0 - id
-	}
-}
-func (v *B) Addrs() []any {
-	return []any{
-		&v.ID, // 0 - id
-	}
-}
-func (B) InsertPlaceholders(row int) string {
-	return "(?)" // 1
-}
-func (v B) InsertOneStmt() (string, []any) {
-	return "INSERT INTO `b` (`id`) VALUES (?);", v.Values()
-}
-func (v B) FindOneByPKStmt() (string, []any) {
-	return "SELECT `id` FROM `b` WHERE `id` = ? LIMIT 1;", []any{v.ID}
-}
-func (v B) IDValue() any {
-	return v.ID
-}
-func (v B) ColumnID() sequel.ColumnClause[int64] {
-	return sequel.BasicColumn("id", v.ID)
-}
