@@ -9,6 +9,7 @@ import (
 func TestBool(t *testing.T) {
 	t.Run("Scan with nil", func(t *testing.T) {
 		var flag *bool
+		require.Nil(t, flag)
 		v := BoolScanner[bool](&flag)
 		require.NoError(t, v.Scan(true))
 		require.NotNil(t, flag)
@@ -18,6 +19,12 @@ func TestBool(t *testing.T) {
 		require.NoError(t, v.Scan(false))
 		require.NotNil(t, flag)
 		require.False(t, *flag)
+
+		var ptrflag = new(bool)
+		require.NotNil(t, ptrflag)
+		v = BoolScanner[bool](&ptrflag)
+		require.NoError(t, v.Scan(nil))
+		require.Nil(t, ptrflag)
 	})
 
 	t.Run("Scan with bool", func(t *testing.T) {

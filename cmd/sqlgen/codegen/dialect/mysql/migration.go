@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"strings"
 
-	_ "github.com/go-sql-driver/mysql"
 	"github.com/si3nloong/sqlgen/cmd/sqlgen/codegen/dialect"
 )
 

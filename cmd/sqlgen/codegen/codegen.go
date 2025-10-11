@@ -251,16 +251,6 @@ func parseGoPackage(
 			goto nextDir
 		}
 
-		// if g.config.Migration != nil {
-		// 	if err := os.MkdirAll(g.config.Migration.Dir, os.ModePerm); err != nil {
-		// 		return err
-		// 	}
-
-		// 	if err := g.genMigrations(schema); err != nil {
-		// 		return err
-		// 	}
-		// }
-
 	nextDir:
 		dirs = dirs[1:]
 	}

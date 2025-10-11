@@ -1,7 +1,12 @@
+//go:build !sqlite
+// +build !sqlite
+
 package sqlite
 
 import (
 	"strconv"
+
+	_ "github.com/mattn/go-sqlite3"
 
 	"github.com/si3nloong/sqlgen/cmd/sqlgen/codegen/dialect"
 )

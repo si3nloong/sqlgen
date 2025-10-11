@@ -113,7 +113,13 @@ func Insert[T sequel.Inserter, Ptr sequel.PtrScanner[T]](ctx context.Context, db
 			}
 			i++
 		}
-		return sequel.NewRowsAffectedResult(i), rows.Close()
+		if err := rows.Close(); err != nil {
+			return nil, err
+		}
+		if err := rows.Err(); err != nil {
+			return nil, err
+		}
+		return sequel.NewRowsAffectedResult(i), nil
 	default:
 		noOfCols := len(columns)
 		args := make([]any, 0, noOfCols*noOfData)
@@ -137,7 +143,13 @@ func Insert[T sequel.Inserter, Ptr sequel.PtrScanner[T]](ctx context.Context, db
 			}
 			i++
 		}
-		return sequel.NewRowsAffectedResult(i), rows.Close()
+		if err := rows.Close(); err != nil {
+			return nil, err
+		}
+		if err := rows.Err(); err != nil {
+			return nil, err
+		}
+		return sequel.NewRowsAffectedResult(i), nil
 	}
 }
 {{ else }}
@@ -442,7 +454,13 @@ func Upsert[T interface {
 		}
 		i++
 	}
-	return sequel.NewRowsAffectedResult(i), rows.Close()
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return sequel.NewRowsAffectedResult(i), nil
 }
 {{ else }}
 func UpsertOne[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Context, db *sql.DB, model Ptr, override bool, omittedFields ...string) (sql.Result, error) {
@@ -954,7 +972,14 @@ func (r *Pager[T, Ptr]) Prev(ctx context.Context, db *sql.DB, cursor ...T) iter.
 				}
 				data = append(data, v)
 			}
-			rows.Close()
+			if err := rows.Close(); err != nil {
+				yield(nil, err)
+				return
+			}
+			if err := rows.Err(); err != nil {
+				yield(nil, err)
+				return
+			}
 
 			noOfRecord := len(data)
 			if uint16(noOfRecord) <= maxLimit {
@@ -1117,7 +1142,14 @@ func (r *Pager[T, Ptr]) Next(ctx context.Context, db *sql.DB, cursor ...T) iter.
 				}
 				data = append(data, v)
 			}
-			rows.Close()
+			if err := rows.Close(); err != nil {
+				yield(nil, err)
+				return
+			}
+			if err := rows.Err(); err != nil {
+				yield(nil, err)
+				return
+			}
 
 			noOfRecord := len(data)
 			if uint16(noOfRecord) <= maxLimit {
@@ -1221,6 +1253,9 @@ func QueryStmt[T any, Ptr sequel.PtrScanner[T]](ctx context.Context, db *sql.DB,
 		result = append(result, v)
 	}
 	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 	return result, nil

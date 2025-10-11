@@ -1,6 +1,12 @@
+//go:build !mysql
+// +build !mysql
+
 package mysql
 
-import "github.com/si3nloong/sqlgen/cmd/sqlgen/codegen/dialect"
+import (
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/si3nloong/sqlgen/cmd/sqlgen/codegen/dialect"
+)
 
 type mysqlDriver struct{}
 

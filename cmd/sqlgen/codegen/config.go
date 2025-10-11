@@ -17,10 +17,11 @@ import (
 type SqlDriver string
 
 const (
-	MySQL       SqlDriver = "mysql"
-	Postgres    SqlDriver = "postgres"
-	Sqlite      SqlDriver = "sqlite"
-	MSSqlServer SqlDriver = "mssql"
+	MySQL    SqlDriver = "mysql"
+	Postgres SqlDriver = "postgres"
+	Sqlite   SqlDriver = "sqlite"
+	MsSQL    SqlDriver = "mssql"
+	DuckDB   SqlDriver = "duckdb"
 )
 
 type naming string

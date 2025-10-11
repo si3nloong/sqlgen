@@ -30,10 +30,17 @@ func runInitCommand(cmd *cobra.Command, args []string) error {
 		fileDest  = filepath.Join(fileutil.Getpwd(), filename)
 		questions = []*survey.Question{
 			{
+				Name: "source",
+				Prompt: &survey.Input{
+					Message: "What is your model stored in?",
+					Default: ".",
+				},
+			},
+			{
 				Name: "driver",
 				Prompt: &survey.Select{
 					Message: "What is your sql driver:",
-					Options: []string{string(codegen.MySQL), string(codegen.Postgres), string(codegen.Sqlite)},
+					Options: []string{string(codegen.MySQL), string(codegen.Postgres), string(codegen.Sqlite), string(codegen.MsSQL), string(codegen.DuckDB)},
 					Default: string(codegen.MySQL),
 				},
 			},
@@ -63,6 +70,7 @@ func runInitCommand(cmd *cobra.Command, args []string) error {
 	)
 
 	var answer struct {
+		Source           string `survey:"source"`
 		SqlDriver        string `survey:"driver"`
 		NamingConvention string `survey:"naming_convention"`
 		Tag              string `survey:"tag"`
@@ -80,6 +88,7 @@ func runInitCommand(cmd *cobra.Command, args []string) error {
 	}
 
 	cfg := codegen.DefaultConfig()
+	cfg.Source = append(cfg.Source, answer.Source)
 	switch answer.SqlDriver {
 	case string(codegen.MySQL):
 		cfg.Driver = codegen.MySQL
@@ -116,7 +125,7 @@ func runInitCommand(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	cmd.Println(`Creating ` + filename)
+	cmd.Println("Creating " + filename)
 	return codegen.Init(cfg)
 }
 
