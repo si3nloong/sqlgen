@@ -23,14 +23,12 @@ func (v *AutoPkLocation) ScanAutoIncr(val int64) error {
 func (v AutoPkLocation) PK() (string, int, any) {
 	return "id", 0, v.ID
 }
-func (AutoPkLocation) SQLColumns() []string {
-	return []string{"id", "ST_AsBinary(geo_point,4326)", "ST_AsBinary(ptr_geo_point,4326)", "ptr_uuid", "ptr_date"} // 5
-}
 func (AutoPkLocation) Columns() []string {
 	return []string{"id", "geo_point", "ptr_geo_point", "ptr_uuid", "ptr_date"} // 5
 }
 func (v AutoPkLocation) Values() []any {
 	return []any{
+		v.ID,                         // 0 - id
 		ewkb.Value(v.GeoPoint, 4326), // 1 - geo_point
 		v.PtrGeoPointValue(),         // 2 - ptr_geo_point
 		v.PtrUUIDValue(),             // 3 - ptr_uuid
@@ -69,6 +67,9 @@ func (v AutoPkLocation) FindOneByPKStmt() (string, []any) {
 }
 func (v AutoPkLocation) UpdateOneByPKStmt() (string, []any) {
 	return "UPDATE `auto_pk_location` SET `geo_point` = ST_GeomFromEWKB(?),`ptr_geo_point` = ST_GeomFromEWKB(?),`ptr_uuid` = ?,`ptr_date` = ? WHERE `id` = ?;", []any{ewkb.Value(v.GeoPoint, 4326), v.PtrGeoPointValue(), v.PtrUUIDValue(), v.PtrDateValue(), v.ID}
+}
+func (AutoPkLocation) SQLColumns() []string {
+	return []string{"`id`", "ST_AsBinary(`geo_point`,4326)", "ST_AsBinary(`ptr_geo_point`,4326)", "`ptr_uuid`", "`ptr_date`"} // 5
 }
 func (v AutoPkLocation) IDValue() any {
 	return v.ID
@@ -136,9 +137,6 @@ func (Location) HasPK() {}
 func (v Location) PK() (string, int, any) {
 	return "id", 0, v.ID
 }
-func (Location) SQLColumns() []string {
-	return []string{"id", "ST_AsBinary(geo_point,4326)", "uuid"} // 3
-}
 func (Location) Columns() []string {
 	return []string{"id", "geo_point", "uuid"} // 3
 }
@@ -167,6 +165,9 @@ func (v Location) FindOneByPKStmt() (string, []any) {
 }
 func (v Location) UpdateOneByPKStmt() (string, []any) {
 	return "UPDATE `location` SET `geo_point` = ST_GeomFromEWKB(?),`uuid` = ? WHERE `id` = ?;", []any{ewkb.Value(v.GeoPoint, 4326), v.UUID, v.ID}
+}
+func (Location) SQLColumns() []string {
+	return []string{"`id`", "ST_AsBinary(`geo_point`,4326)", "`uuid`"} // 3
 }
 func (v Location) IDValue() any {
 	return v.ID

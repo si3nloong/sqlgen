@@ -3,13 +3,13 @@
 func And(clauses ...sequel.WhereClause) sequel.WhereClause {
 	return func(w sequel.StmtWriter) {
 		if n := len(clauses); n > 0 {
-			w.WriteByte('(')
+			w.WriteString("(")
 			clauses[0](w)
 			for i := 1; i < n; i++ {
 				w.WriteString(" AND ")
 				clauses[i](w)
 			}
-			w.WriteByte(')')
+			w.WriteString(")")
 		}
 	}
 }
@@ -17,13 +17,13 @@ func And(clauses ...sequel.WhereClause) sequel.WhereClause {
 func Or(clauses ...sequel.WhereClause) sequel.WhereClause {
 	return func(w sequel.StmtWriter) {
 		if n := len(clauses); n > 0 {
-			w.WriteByte('(')
+			w.WriteString("(")
 			clauses[0](w)
 			for i := 1; i < n; i++ {
 				w.WriteString(" OR ")
 				clauses[i](w)
 			}
-			w.WriteByte(')')
+			w.WriteString(")")
 		}
 	}
 }
@@ -36,7 +36,7 @@ func Equal[T comparable](column sequel.ColumnClause[T], value T) sequel.WhereCla
 		case sequel.ColumnConvertClause[T]:
 			w.WriteString(vi.ColumnName() + " = " + w.Var(vi.Convert(value)))
 		default:
-			w.WriteString(column.ColumnName() + " = " + w.Var(value))
+			w.WriteString(vi.ColumnName() + " = " + w.Var(value))
 		}
 	}
 }
@@ -49,7 +49,7 @@ func NotEqual[T comparable](column sequel.ColumnClause[T], value T) sequel.Where
 		case sequel.ColumnConvertClause[T]:
 			w.WriteString(vi.ColumnName() + " <> " + w.Var(vi.Convert(value)))
 		default:
-			w.WriteString(column.ColumnName() + " <> " + w.Var(value))
+			w.WriteString(vi.ColumnName() + " <> " + w.Var(value))
 		}
 	}
 }
@@ -104,7 +104,7 @@ func GreaterThan[T comparable](column sequel.ColumnClause[T], value T) sequel.Wh
 		case sequel.ColumnConvertClause[T]:
 			w.WriteString(vi.ColumnName() + " > " + w.Var(vi.Convert(value)))
 		default:
-			w.WriteString(column.ColumnName() + " > " + w.Var(value))
+			w.WriteString(vi.ColumnName() + " > " + w.Var(value))
 		}
 	}
 }
@@ -117,7 +117,7 @@ func GreaterThanOrEqual[T comparable](column sequel.ColumnClause[T], value T) se
 		case sequel.ColumnConvertClause[T]:
 			w.WriteString(vi.ColumnName() + " >= " + w.Var(vi.Convert(value)))
 		default:
-			w.WriteString(column.ColumnName() + " >= " + w.Var(value))
+			w.WriteString(vi.ColumnName() + " >= " + w.Var(value))
 		}
 	}
 }
@@ -130,7 +130,7 @@ func LessThan[T comparable](column sequel.ColumnClause[T], value T) sequel.Where
 		case sequel.ColumnConvertClause[T]:
 			w.WriteString(vi.ColumnName() + " < " + w.Var(vi.Convert(value)))
 		default:
-			w.WriteString(column.ColumnName() + " < " + w.Var(value))
+			w.WriteString(vi.ColumnName() + " < " + w.Var(value))
 		}
 	}
 }
@@ -143,7 +143,7 @@ func LessThanOrEqual[T comparable](column sequel.ColumnClause[T], value T) seque
 		case sequel.ColumnConvertClause[T]:
 			w.WriteString(vi.ColumnName() + " <= " + w.Var(vi.Convert(value)))
 		default:
-			w.WriteString(column.ColumnName() + " <= " + w.Var(value))
+			w.WriteString(vi.ColumnName() + " <= " + w.Var(value))
 		}
 	}
 }
@@ -156,7 +156,7 @@ func Like[T comparable](column sequel.ColumnClause[T], value T) sequel.WhereClau
 		case sequel.ColumnConvertClause[T]:
 			w.WriteString(vi.ColumnName() + " LIKE " + w.Var(vi.Convert(value)))
 		default:
-			w.WriteString(column.ColumnName() + " LIKE " + w.Var(value))
+			w.WriteString(vi.ColumnName() + " LIKE " + w.Var(value))
 		}
 	}
 }
@@ -169,7 +169,7 @@ func NotLike[T comparable](column sequel.ColumnClause[T], value T) sequel.WhereC
 		case sequel.ColumnConvertClause[T]:
 			w.WriteString(vi.ColumnName() + " NOT LIKE " + w.Var(vi.Convert(value)))
 		default:
-			w.WriteString(column.ColumnName() + " NOT LIKE " + w.Var(value))
+			w.WriteString(vi.ColumnName() + " NOT LIKE " + w.Var(value))
 		}
 	}
 }
@@ -194,7 +194,7 @@ func Between[T comparable](column sequel.ColumnClause[T], from, to T) sequel.Whe
 		case sequel.ColumnConvertClause[T]:
 			w.WriteString(vi.ColumnName() + " BETWEEN " + w.Var(vi.Convert(from)) + " AND " + w.Var(vi.Convert(to)))
 		default:
-			w.WriteString(column.ColumnName() + " BETWEEN " + w.Var(from) + " AND " + w.Var(to))
+			w.WriteString(vi.ColumnName() + " BETWEEN " + w.Var(from) + " AND " + w.Var(to))
 		}
 	}
 }
@@ -207,7 +207,7 @@ func NotBetween[T comparable](column sequel.ColumnClause[T], from, to T) sequel.
 		case sequel.ColumnConvertClause[T]:
 			w.WriteString(vi.ColumnName() + " NOT BETWEEN " + w.Var(vi.Convert(from)) + " AND " + w.Var(vi.Convert(to)))
 		default:
-			w.WriteString(column.ColumnName() + " NOT BETWEEN " + w.Var(from) + " AND " + w.Var(to))
+			w.WriteString(vi.ColumnName() + " NOT BETWEEN " + w.Var(from) + " AND " + w.Var(to))
 		}
 	}
 }
@@ -216,11 +216,11 @@ func Set[T any](column sequel.ColumnClause[T], value T) sequel.SetClause {
 	return func(w sequel.StmtWriter) {
 		switch vi := column.(type) {
 		case sequel.SQLColumnClause[T]:
-			w.WriteString(column.ColumnName() + " = " + w.Var(vi.Convert(value)))
+			w.WriteString(vi.ColumnName() + " = " + w.Var(vi.Convert(value)))
 		case sequel.ColumnConvertClause[T]:
-			w.WriteString(column.ColumnName() + " = " + w.Var(vi.Convert(value)))
+			w.WriteString(vi.ColumnName() + " = " + w.Var(vi.Convert(value)))
 		default:
-			w.WriteString(column.ColumnName() + " = " + w.Var(value))
+			w.WriteString(vi.ColumnName() + " = " + w.Var(value))
 		}
 	}
 }

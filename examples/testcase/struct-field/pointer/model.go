@@ -34,6 +34,7 @@ type nested struct {
 type embedded struct {
 	EmbeddedTime *time.Time
 	AnyTime      time.Time
+	PtrStr       *string
 }
 
 type deepNested struct {

@@ -2,7 +2,6 @@ package examples
 
 import (
 	"database/sql"
-	"embed"
 	"errors"
 	"fmt"
 	"os"
@@ -29,9 +28,8 @@ import (
 )
 
 var (
-	//go:embed migrations/*.sql
-	migrationFiles embed.FS
-	sqlConn        *sql.DB
+	// migrationFiles embed.FS
+	sqlConn *sql.DB
 )
 
 func openSqlConn(driver string) (*sql.DB, error) {
@@ -82,14 +80,14 @@ func TestMain(m *testing.M) {
 		log.Fatalf("Could not connect to database: %s", err)
 	}
 
-	b, err := migrationFiles.ReadFile("migrations/1_create_tables.up.sql")
-	if err != nil {
-		log.Fatalf("Unable to find migration file: %s", err)
-	}
-	sqlConn.Exec("DROP TABLE IF EXISTS `user`;")
-	if _, err := sqlConn.Exec(string(b)); err != nil {
-		log.Fatalf("Cannot do migration: %s", err)
-	}
+	// b, err := migrationFiles.ReadFile("migrations/1_create_tables.up.sql")
+	// if err != nil {
+	// 	log.Fatalf("Unable to find migration file: %s", err)
+	// }
+	// sqlConn.Exec("DROP TABLE IF EXISTS `user`;")
+	// if _, err := sqlConn.Exec(string(b)); err != nil {
+	// 	log.Fatalf("Cannot do migration: %s", err)
+	// }
 
 	os.Exit(m.Run())
 }
@@ -273,7 +271,26 @@ func TestDeleteOne(t *testing.T) {
 }
 
 func TestPaginate(t *testing.T) {
-	// p := sqlitedb.Paginate[core.User](sqlitedb.PaginateStmt{})
+	t.Run("Without cursor", func(t *testing.T) {
+		p := mysqldb.Paginate[core.User](mysqldb.PaginateStmt{})
+		p.Next(t.Context(), sqlConn)
+	})
+
+	t.Run("With cursor", func(t *testing.T) {
+		p := mysqldb.Paginate[core.User](mysqldb.PaginateStmt{})
+		p.Next(t.Context(), sqlConn)
+	})
+
+	t.Run(`With "WHERE" clause`, func(t *testing.T) {
+		p := mysqldb.Paginate[core.User](mysqldb.PaginateStmt{})
+		p.Next(t.Context(), sqlConn)
+	})
+
+	t.Run(`With "ORDER BY" clause`, func(t *testing.T) {
+		p := mysqldb.Paginate[core.User](mysqldb.PaginateStmt{})
+		p.Next(t.Context(), sqlConn)
+	})
+
 	// for v, err := range p.Next(t.Context(), dbConn) {
 	// 	if err != nil {
 	// 		panic(err)

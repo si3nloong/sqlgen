@@ -45,6 +45,21 @@ type User struct {
 	Nicknames [2]string
 	Slice     []float64
 	Map       map[string]float64
+	embed
+}
+
+type embed struct {
+	Nested *struct {
+		Deep struct {
+			Bool bool
+		}
+	}
+	T time.Time
+	*deepNested
+}
+
+type deepNested struct {
+	Name string
 }
 
 // +sql:ignore

@@ -16,8 +16,8 @@ const (
 )
 
 type structTag struct {
-	values []string
-	pos    map[string]int
+	// values []string
+	pos map[string]int
 }
 
 func (s *structTag) hasOpts(keys ...string) bool {

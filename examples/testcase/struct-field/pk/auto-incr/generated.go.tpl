@@ -26,6 +26,7 @@ func (v Model) Values() []any {
 	return []any{
 		(string)(v.Name), // 0 - name
 		(bool)(v.F),      // 1 - f
+		(int64)(v.ID),    // 2 - id
 		v.N,              // 3 - n
 	}
 }

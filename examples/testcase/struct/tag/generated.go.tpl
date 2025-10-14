@@ -29,15 +29,6 @@ func (v *A) Addrs() []any {
 func (v A) FindOneByPKStmt() (string, []any) {
 	return "SELECT `id`,`time`,`dec` FROM `a` WHERE `id` = ? LIMIT 1;", []any{v.ID}
 }
-func (v A) IDValue() any {
-	return v.ID
-}
-func (v A) TimeValue() any {
-	return v.Time
-}
-func (v A) DecValue() any {
-	return v.Dec
-}
 func (v A) ColumnID() sequel.ColumnClause[string] {
 	return sequel.BasicColumn("id", v.ID)
 }

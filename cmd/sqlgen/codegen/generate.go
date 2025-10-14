@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"go/types"
 	"io"
+	"iter"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -15,12 +16,12 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/samber/lo"
 	"github.com/si3nloong/sqlgen/cmd/sqlgen/codegen/dialect"
-	"github.com/si3nloong/sqlgen/cmd/sqlgen/internal/compiler"
+	"github.com/si3nloong/sqlgen/cmd/sqlgen/compiler"
 	"github.com/si3nloong/sqlgen/cmd/sqlgen/internal/goutil"
 	"github.com/si3nloong/sqlgen/sequel/encoding"
 	"github.com/si3nloong/sqlgen/sequel/strpool"
+	"golang.org/x/tools/go/packages"
 	"golang.org/x/tools/imports"
 )
 
@@ -115,19 +116,29 @@ func (g *Generator) QuoteIdentifier(str string) string {
 // Generate model functions
 func (g *Generator) generateModels(
 	dstDir string,
-	schema *compiler.Package,
+	pkg *packages.Package,
+	tables iter.Seq2[*compiler.Table, error],
 ) error {
-	importPkgs := NewPackage(schema.Pkg.PkgPath, schema.Pkg.Name)
+	importPkgs := NewPackage(pkg.PkgPath, pkg.Name)
 	importPkgs.Import(types.NewPackage("strings", ""))
 	importPkgs.Import(types.NewPackage("strconv", ""))
 	importPkgs.Import(types.NewPackage("database/sql/driver", ""))
 	importPkgs.Import(types.NewPackage("github.com/si3nloong/sqlgen/sequel", ""))
 
-	bw := bytes.NewBufferString(``)
+	bw := bytes.NewBufferString("")
 	w := bufio.NewWriter(bw)
 
-	for len(schema.Tables) > 0 {
-		t := schema.Tables[0]
+	next, stop := iter.Pull2(tables)
+	defer stop()
+
+loop:
+	for {
+		t, err, ok := next()
+		if err != nil {
+			return err
+		} else if !ok {
+			break loop
+		}
 
 		fmt.Fprintln(w)
 
@@ -150,32 +161,29 @@ func (g *Generator) generateModels(
 			// TODO: we need to do something when table name is declare by user
 		}
 
-		if t.HasPK() {
+		pk, hasPK := t.PK()
+		if hasPK {
 			fprintfln(w, "func (%s) HasPK() {}", t.GoName)
-			pk, ok := t.AutoIncrKey()
-			if ok {
+			switch v := pk.(type) {
+			case *compiler.AutoIncrPrimaryKey:
 				fprintfln(w, "func (%s) IsAutoIncr() {}", t.GoName)
-				fprintfln(w, `func (v *%s) ScanAutoIncr(val int64) error {
-	v.%s = %s(val)
-	return nil
-}`, t.GoName, pk.GoName, pk.Type)
-			} else if len(t.Keys) == 1 {
-				pk = t.Keys[0]
-			}
-			if pk != nil {
-				fprintfln(w, `func (v %s) PK() (string, int, any) {
-	return %s, %d, %s
-}`, t.GoName, g.Quote(g.QuoteIdentifier(pk.Name)), pk.Pos, g.getOrValue(importPkgs, "v", pk))
-			} else {
-				g.buildCompositeKeys(w, importPkgs, t)
-			}
-		}
+				fprintfln(w, "func (v *%s) ScanAutoIncr(val int64) error {", t.GoName)
+				fprintfln(w, "v.%s = %s(val)", v.GoName(), v.GoType())
+				fprintfln(w, "return nil")
+				fprintfln(w, "}")
+				fprintfln(w, "func (v %s) PK() (string, int, any) {", t.GoName)
+				fprintfln(w, "return %s, %d, %s", g.Quote(g.QuoteIdentifier(v.Name())), v.Pos(), g.getOrValue(importPkgs, "v", v))
+				fprintfln(w, "}")
+			case *compiler.PrimaryKey:
+				fprintfln(w, "func (v %s) PK() (string, int, any) {", t.GoName)
+				fprintfln(w, "return %s, %d, %s", g.Quote(g.QuoteIdentifier(v.Name())), v.Pos(), g.getOrValue(importPkgs, "v", v))
+				fprintfln(w, "}")
+			case *compiler.CompositePrimaryKey:
+				g.buildCompositeKeys(w, importPkgs, t.GoName, v)
+			default:
+				panic("unreachable")
 
-		// Build the "SQLColumns" function which return the column SQL query
-		if method, isWrongType := t.Implements(sqlQueryColumner); isWrongType {
-			g.LogError(fmt.Errorf(`sqlgen: struct %q has function "SQLColumns" but wrong footprint`, t.Name))
-		} else if method != nil && !isWrongType {
-			g.buildSqlColumns(w, t)
+			}
 		}
 
 		// Build the "Columns" function which return the column names
@@ -185,9 +193,9 @@ func (g *Generator) generateModels(
 			fprintfln(w, "func (%s) %s() []string {", t.GoName, methodName(sqlColumner))
 			fmt.Fprint(w, "return []string{")
 			if len(t.Columns) > 0 {
-				fmt.Fprint(w, g.Quote(g.QuoteIdentifier(t.Columns[0].Name)))
+				fmt.Fprint(w, g.Quote(t.Columns[0].Name()))
 				for i := 1; i < len(t.Columns); i++ {
-					fmt.Fprint(w, ","+g.Quote(g.QuoteIdentifier(t.Columns[i].Name)))
+					fmt.Fprint(w, ","+g.Quote(t.Columns[i].Name()))
 				}
 			}
 			fprintfln(w, "} // %d", len(t.Columns))
@@ -218,112 +226,121 @@ func (g *Generator) generateModels(
 				if n != len(t.Columns) {
 					fprintfln(w, "func (%s) InsertColumns() []string {", t.GoName)
 					fmt.Fprint(w, "return []string{")
-					fmt.Fprint(w, g.Quote(g.QuoteIdentifier(insertColumns[0].Name)))
+					fmt.Fprint(w, g.Quote(g.QuoteIdentifier(insertColumns[0].Name())))
 					for i := 1; i < n; i++ {
-						fmt.Fprint(w, ","+g.Quote(g.QuoteIdentifier(insertColumns[i].Name)))
+						fmt.Fprint(w, ","+g.Quote(g.QuoteIdentifier(insertColumns[i].Name())))
 					}
 					fprintfln(w, "} // %d", n)
 					fprintfln(w, "}")
 				}
 
+				fprintfln(w, "func (%s) InsertPlaceholders(row int) string {", t.GoName)
 				if g.staticVar {
-					fprintfln(w, `func (%s) InsertPlaceholders(row int) string {
-	return "(%s)" // %d
-}`, t.GoName, strings.Repeat(","+g.dialect.QuoteVar(0), len(insertColumns))[1:], len(insertColumns))
+					fprintfln(w, `return "(%s)" // %d`, strings.Repeat(","+g.dialect.QuoteVar(0), len(insertColumns))[1:], len(insertColumns))
 				} else {
-					fprintfln(w, "func (%s) InsertPlaceholders(row int) string {", t.GoName)
 					fprintfln(w, "const noOfColumn = %d", len(insertColumns))
 					fmt.Fprint(w, `return "("+`)
 					for i := range insertColumns {
 						if i > 0 {
 							fmt.Fprint(w, `+","+`)
 						}
-						fmt.Fprintf(w, `%q+ strconv.Itoa((row * noOfColumn) + %d)`, string(g.dialect.VarRune()), i+1)
+						fmt.Fprintf(w, `%c+ strconv.Itoa((row * noOfColumn) + %d)`, g.dialect.VarRune(), i+1)
 					}
 					fmt.Fprint(w, `+")"`)
-					fprintfln(w, "}")
 				}
-
-				g.buildInsertOne(w, importPkgs, t)
+				fprintfln(w, "}")
 			}
+			g.buildInsertOne(w, importPkgs, t)
 		}
 
-		if t.HasPK() {
+		if hasPK {
 			g.buildFindByPK(w, importPkgs, t)
-			if !t.Readonly && len(t.ColumnsWithoutPK()) > 0 {
+			if !t.Readonly {
 				g.buildUpdateByPK(w, importPkgs, t)
 			}
 		}
 
-		// Build getter
-		for _, f := range t.Columns {
-			fprintfln(w, "func (v %s) %s any {", t.GoName, valueFunc(f))
-			queue := []string{}
-			// Find all the possible pointer paths
-			ptrPaths := f.GoPtrPaths()
-			for _, p := range ptrPaths {
-				fprintfln(w, "if v%s != nil {", p.GoPath)
-				queue = append(queue, "}")
-			}
-
-			if f.IsPtr() {
-				// Deference the pointer value and return it
-				fprintfln(w, "return %s", g.valuer(importPkgs, "*v"+f.GoPath, assertAsPtr[types.Pointer](f.Type).Elem()))
-			} else {
-				fprintfln(w, "return %s", g.valuer(importPkgs, "v"+f.GoPath, f.Type))
-			}
-			for len(queue) > 0 {
-				fprintfln(w, queue[0])
-				queue = queue[1:]
-			}
-			if len(ptrPaths) > 0 {
-				fprintfln(w, "return nil")
-			}
-			fprintfln(w, "}")
+		// Build the "SQLColumns" function which return the column SQL query
+		if method, isWrongType := t.Implements(sqlQueryColumner); isWrongType {
+			g.LogError(fmt.Errorf(`sqlgen: struct %q has function "SQLColumns" but wrong footprint`, t.Name))
+		} else if method != nil && !isWrongType {
+			g.buildSqlColumns(w, t)
 		}
 
+		// Build getter function for each column
+		if !t.Readonly {
+			for _, f := range t.Columns {
+				fprintfln(w, "func (v %s) %s any {", t.GoName, valueFunc(f))
+				queue := []string{}
+				// Find all the possible pointer paths
+				for _, paths := range f.GoPtrPaths() {
+					for _, p := range paths {
+						fprintfln(w, "if v.%s != nil {", p.GoPath())
+						queue = append(queue, "}")
+					}
+				}
+
+				if f.IsGoPtr() {
+					// Deference the pointer value and return it
+					fprintfln(w, "return %s", g.valuer(importPkgs, "*v."+f.GoPath(), assertAsPtr[types.Pointer](f.GoType()).Elem()))
+				} else {
+					fprintfln(w, "return %s", g.valuer(importPkgs, "v."+f.GoPath(), f.GoType()))
+				}
+				if len(queue) > 0 {
+					for len(queue) > 0 {
+						fprintfln(w, queue[0])
+						queue = queue[1:]
+					}
+					fprintfln(w, "return nil")
+				}
+				fprintfln(w, "}")
+			}
+		}
+
+		// Build the valuer function for each column
 		for _, f := range t.Columns {
 			var typeStr string
-			isBasic := g.isBasicType(f.Type)
-			switch vt := f.Type.(type) {
+			isBasic := g.isBasicType(f.GoType())
+			// underlyingType, _ := underlyingType(f.GoType())
+			switch vt := f.GoType().(type) {
 			// First level struct data type
 			case *types.Struct:
 				buf := strpool.AcquireString()
 				printStruct(buf, importPkgs, vt)
-				aliasname := t.GoName + f.GoName + "Field"
+				aliasname := t.GoName + f.GoName() + "InlineStruct"
 				fprintfln(w, "type %s = %s", aliasname, buf)
 				strpool.ReleaseString(buf)
 
-				fprintfln(w, "func (v %s) %s() sequel.ColumnConvertClause[%s] {", t.GoName, g.config.Getter.Prefix+f.GoName, aliasname)
+				fprintfln(w, "func (v %s) %s() sequel.ColumnConvertClause[%s] {", t.GoName, g.config.Getter.Prefix+f.GoName(), aliasname)
 				// fprintfln(w, "return sequel.Column(%s, v%s, func(val %s) any {", g.Quote(g.QuoteIdentifier(f.Name)), f.GoPath, aliasname)
 				typeStr = aliasname
 
 			default:
-				typeStr = f.Type.String()
+				typeStr = f.GoType().String()
 				if idx := strings.Index(typeStr, "."); idx > 0 {
 					typeStr = Expr(typeStr).Format(importPkgs)
 				}
 				if isBasic {
-					fprintfln(w, "func (v %s) %s() sequel.ColumnClause[%s] {", t.GoName, g.config.Getter.Prefix+f.GoName, typeStr)
+					fprintfln(w, "func (v %s) %s() sequel.ColumnClause[%s] {", t.GoName, g.config.Getter.Prefix+f.GoName(), typeStr)
 				} else {
-					fprintfln(w, "func (v %s) %s() sequel.ColumnConvertClause[%s] {", t.GoName, g.config.Getter.Prefix+f.GoName, typeStr)
+					fprintfln(w, "func (v %s) %s() sequel.ColumnConvertClause[%s] {", t.GoName, g.config.Getter.Prefix+f.GoName(), typeStr)
 				}
 			}
 
 			if isBasic {
-				fprintfln(w, "return sequel.BasicColumn(%s, v%s)", g.Quote(g.QuoteIdentifier(f.Name)), f.GoPath)
+				fprintfln(w, "return sequel.BasicColumn(%s, v.%s)", g.Quote(g.QuoteIdentifier(f.Name())), f.GoPath())
 			} else {
-				fprintfln(w, "return sequel.Column(%s, v%s, func(val %s) any {", g.Quote(g.QuoteIdentifier(f.Name)), f.GoPath, typeStr)
+				fprintfln(w, "return sequel.Column(%s, v.%s, func(val %s) any {", g.Quote(g.QuoteIdentifier(f.Name())), f.GoPath(), typeStr)
 				// fprintfln(w, "if val != nil {")
 				// fprintfln(w, "return %s", g.valuer(importPkgs, "*val", assertAsPtr[types.Pointer](f.Type).Elem()))
-				if f.IsPtr() {
+				if f.IsGoPtr() {
 					fprintfln(w, "if val != nil {")
 					// Deference the pointer value and return it
-					fprintfln(w, "return %s", g.valuer(importPkgs, "*val", assertAsPtr[types.Pointer](f.Type).Elem()))
+					fprintfln(w, "return %s", g.valuer(importPkgs, "*val", assertAsPtr[types.Pointer](f.GoType()).Elem()))
 					fprintfln(w, "}")
 					fprintfln(w, "return nil")
 				} else {
-					fmt.Fprintf(w, "return %s", g.valuer(importPkgs, "val", f.Type))
+					fmt.Fprintf(w, "return %s", g.valuer(importPkgs, "val", f.GoType()))
 				}
 				fprintfln(w, "})")
 			}
@@ -333,7 +350,6 @@ func (g *Generator) generateModels(
 		if err := w.Flush(); err != nil {
 			return err
 		}
-		schema.Tables = schema.Tables[1:]
 	}
 
 	if err := os.MkdirAll(dstDir, os.ModePerm); err != nil {
@@ -346,33 +362,37 @@ func (g *Generator) generateModels(
 	}
 	defer f.Close()
 
-	rw := bytes.NewBufferString(``)
-	g.buildHeader(rw)
-	fprintfln(rw, "package %s", schema.Pkg.Name)
+	fw := bytes.NewBufferString("")
+	g.buildHeader(fw)
+	fprintfln(fw, "package %s", pkg.Name)
 
 	if len(importPkgs.imports) > 0 {
-		fprintfln(rw, "import (")
+		fprintfln(fw, "import (")
 		for _, pkg := range importPkgs.imports {
 			if filepath.Base(pkg.Path()) == pkg.Name() {
-				fprintfln(rw, strconv.Quote(pkg.Path()))
+				fprintfln(fw, strconv.Quote(pkg.Path()))
 			} else {
 				// If the import is alias import path
-				fprintfln(rw, "%s %s", pkg.Name(), strconv.Quote(pkg.Path()))
+				fprintfln(fw, "%s %s", pkg.Name(), strconv.Quote(pkg.Path()))
 			}
 		}
-		fprintfln(rw, ")")
+		fprintfln(fw, ")")
 	}
 
-	mustNoError(rw.Write(bw.Bytes()))
+	if _, err := fw.Write(bw.Bytes()); err != nil {
+		return err
+	}
 	bw.Reset()
 
-	formatted, err := imports.Process("", rw.Bytes(), &imports.Options{Comments: true})
+	// println(fw.String())
+	formatted, err := imports.Process("", fw.Bytes(), &imports.Options{Comments: true})
 	if err != nil {
 		return err
 	}
 
-	mustNoError(f.Write(formatted))
-
+	if _, err := f.Write(formatted); err != nil {
+		return err
+	}
 	return f.Close()
 }
 
@@ -380,30 +400,28 @@ func (g *Generator) buildHeader(w io.Writer) {
 	fmt.Fprintf(w, "// Code generated by sqlgen. DO NOT EDIT.\n\n")
 }
 
-func (g *Generator) buildCompositeKeys(w io.Writer, importPkgs *Package, table *compiler.Table) {
-	fprintfln(w, "func (v %s) CompositeKey() ([]string, []int, []any) {", table.GoName)
-	fmt.Fprint(w, `return []string{`)
-	for i, f := range table.Keys {
-		if i > 0 {
-			fmt.Fprint(w, ",")
+func (g *Generator) buildCompositeKeys(w io.Writer, importPkgs *Package, goName string, k *compiler.CompositePrimaryKey) {
+	// column names, indexes, values
+	fprintfln(w, "func (v %s) CompositeKey() ([]string, []int, []any) {", goName)
+	w1 := strpool.AcquireString()
+	w2 := strpool.AcquireString()
+	w3 := strpool.AcquireString()
+	if n := len(k.Columns); n > 0 {
+		column := k.Columns[0]
+		fmt.Fprint(w1, g.Quote(column.Name()))
+		fmt.Fprint(w2, strconv.Itoa(column.Pos()))
+		fmt.Fprint(w3, g.valuer(importPkgs, "v."+column.GoPath(), column.GoType()))
+		for i := 1; i < n; i++ {
+			column := k.Columns[i]
+			fmt.Fprint(w1, ","+g.Quote(column.Name()))
+			fmt.Fprint(w2, ","+strconv.Itoa(column.Pos()))
+			fmt.Fprint(w3, ","+g.valuer(importPkgs, "v."+column.GoPath(), column.GoType()))
 		}
-		fmt.Fprint(w, g.Quote(f.Name))
 	}
-	fmt.Fprint(w, "}, []int{")
-	for i, f := range table.Keys {
-		if i > 0 {
-			fmt.Fprint(w, ",")
-		}
-		fmt.Fprint(w, strconv.Itoa(f.Pos))
-	}
-	fmt.Fprintf(w, "}, []any{")
-	for i, k := range table.Keys {
-		if i > 0 {
-			fmt.Fprint(w, ",")
-		}
-		fmt.Fprint(w, g.getOrValue(importPkgs, "v", k))
-	}
-	fprintfln(w, "}")
+	fprintfln(w, "return []string{%s}, []int{%s}, []any{%s}", w1, w2, w3)
+	strpool.ReleaseString(w3)
+	strpool.ReleaseString(w2)
+	strpool.ReleaseString(w1)
 	fprintfln(w, "}")
 }
 
@@ -419,19 +437,19 @@ func (g *Generator) buildSqlColumns(w io.Writer, t *compiler.Table) error {
 		if i > 0 {
 			fmt.Fprint(blr, ",")
 		}
-		t, _ := underlyingType(column.Type)
+		t, _ := underlyingType(column.GoType())
 		if typeMapper, ok := g.config.DataTypes[t.String()]; ok && typeMapper.SQLScanner != nil {
 			hasSQLScanner = true
 			t := template.Must(template.New("scanner").Parse(*typeMapper.SQLScanner))
 			buf := strpool.AcquireString()
-			if err := t.Execute(buf, g.QuoteIdentifier(column.Name)); err != nil {
+			if err := t.Execute(buf, g.MustQuoteIdentifier(column.Name())); err != nil {
 				strpool.ReleaseString(buf)
 				return err
 			}
 			fmt.Fprint(blr, g.Quote(buf.String()))
 			strpool.ReleaseString(buf)
 		} else {
-			fmt.Fprint(blr, g.Quote(g.QuoteIdentifier(column.Name)))
+			fmt.Fprint(blr, g.Quote(g.MustQuoteIdentifier(column.Name())))
 		}
 	}
 	if hasSQLScanner {
@@ -442,14 +460,13 @@ func (g *Generator) buildSqlColumns(w io.Writer, t *compiler.Table) error {
 	return nil
 }
 
-func (g *Generator) buildValuer(w io.Writer, importPkgs *Package, table *compiler.Table) {
-	columns := table.InsertColumns()
-	if len(columns) > 0 {
-		fprintfln(w, "func (v %s) %s() []any {", table.GoName, methodName(sqlValuer))
+func (g *Generator) buildValuer(w io.Writer, importPkgs *Package, t *compiler.Table) {
+	if n := len(t.Columns); n > 0 {
+		fprintfln(w, "func (v %s) %s() []any {", t.GoName, methodName(sqlValuer))
 		fprintfln(w, "return []any{")
-		tmpl := "%s, // %" + strwidth(len(columns)) + "d - %s"
-		for _, f := range columns {
-			fprintfln(w, tmpl, g.getOrValue(importPkgs, "v", f), f.Pos, f.Name)
+		tmpl := "%s, // %" + stfwidth(n) + "d - %s"
+		for _, f := range t.Columns {
+			fprintfln(w, tmpl, g.getOrValue(importPkgs, "v", f), f.Pos(), f.Name())
 		}
 		fprintfln(w, "}")
 		fprintfln(w, "}")
@@ -458,222 +475,249 @@ func (g *Generator) buildValuer(w io.Writer, importPkgs *Package, table *compile
 
 func (g *Generator) buildScanner(w io.Writer, importPkgs *Package, table *compiler.Table) {
 	fprintfln(w, "func (v *%s) %s() []any {", table.GoName, methodName(sqlScanner))
-	for _, f := range table.GoPtrPaths() {
-		fprintfln(w, "if v%s == nil {", f.GoPath)
-		fmt.Fprintf(w, `v%s = new(%s)`, f.GoPath, Expr(strings.TrimPrefix(f.Type.String(), "*")).Format(importPkgs, ExprParams{}))
+	// Initialize all pointer fields before we passed those property addr
+	for p := range table.ColumnGoPtrPaths() {
+		fprintfln(w, "if v.%s == nil {", p.GoPath())
+		fmt.Fprintf(w, "v.%s = new(%s)", p.GoPath(), Expr(strings.TrimPrefix(p.GoType().String(), "*")).Format(importPkgs, ExprParams{}))
 		fprintfln(w, "}")
 	}
 	fprintfln(w, "return []any{")
-	tmpl := "%s, // %" + strwidth(len(table.Columns)) + "d - %s"
+	tmpl := "%s, // %" + stfwidth(len(table.Columns)) + "d - %s"
 	for _, f := range table.Columns {
-		fprintfln(w, tmpl, g.scanner(importPkgs, "&v"+f.GoPath, f.Type), f.Pos, f.Name)
+		fprintfln(w, tmpl, g.scanner(importPkgs, "&v."+f.GoPath(), f.GoType()), f.Pos(), f.Name())
 	}
 	fprintfln(w, "}")
 	fprintfln(w, "}")
 }
 
 func (g *Generator) buildFindByPK(w io.Writer, importPkgs *Package, t *compiler.Table) error {
-	buf := strpool.AcquireString()
-	buf.WriteString("SELECT ")
-	for i, f := range t.Columns {
-		if i > 0 {
-			buf.WriteByte(',')
-		}
-		scanner, err := g.sqlScanner(f)
+	w1 := bytes.NewBufferString("")
+	defer w1.Reset()
+	fmt.Fprintf(w1, "%cSELECT ", g.quoteRune)
+	if n := len(t.Columns); n > 0 {
+		column := t.Columns[0]
+		scanner, err := g.sqlScanner(column)
 		if err != nil {
 			return err
 		}
-		buf.WriteString(scanner)
-	}
-	buf.WriteString(" FROM ")
-	var query string
-	if method, isWrongType := t.Implements(sqlTabler); isWrongType {
-		g.LogError(fmt.Errorf(`sqlgen: struct %q has function "TableName" but wrong footprint`, t.GoName))
-	} else if method != nil {
-		buf.WriteString(g.MustQuoteIdentifier(t.Name))
-	} else {
-		query = g.Quote(buf.String()) + "+ v.TableName() +"
-		buf.Reset()
-	}
-	buf.WriteString(" WHERE ")
-	if pk, ok := t.AutoIncrKey(); ok {
-		buf.WriteString(g.MustQuoteIdentifier(pk.Name) + " = " + g.dialect.QuoteVar(1))
-	} else if len(t.Keys) == 1 {
-		pk := t.Keys[0]
-		buf.WriteString(g.MustQuoteIdentifier(pk.Name) + " = " + g.dialect.QuoteVar(1))
-	} else {
-		keyNames := lo.Map(t.Keys, func(v *compiler.Column, _ int) string {
-			return g.MustQuoteIdentifier(v.Name)
-		})
-		buf.WriteString("(" + strings.Join(keyNames, ",") + ")" + " = ")
-		buf.WriteByte('(')
-		for i, k := range t.Keys {
-			if i > 0 {
-				buf.WriteByte(',')
-			}
-			valuer, err := g.sqlValuer(k, i)
+		fmt.Fprint(w1, scanner)
+		for i := 1; i < n; i++ {
+			column = t.Columns[i]
+			scanner, err := g.sqlScanner(column)
 			if err != nil {
 				return err
 			}
-			buf.WriteString(valuer)
+			fmt.Fprint(w1, ","+scanner)
 		}
-		buf.WriteByte(')')
+		fmt.Fprint(w1, " FROM ")
 	}
-	buf.WriteString(" LIMIT 1;")
-	fprintfln(w, "func (v "+t.GoName+") FindOneByPKStmt() (string, []any) {")
-	fmt.Fprintf(w, `return %s, []any{`, query+g.Quote(buf.String()))
-	strpool.ReleaseString(buf)
-	if pk, ok := t.AutoIncrKey(); ok {
-		fmt.Fprint(w, g.getOrValue(importPkgs, "v", pk))
+	if method, isWrongType := t.Implements(sqlTabler); isWrongType {
+		g.LogError(fmt.Errorf(`sqlgen: struct %q has function "TableName" but wrong footprint`, t.GoName))
+	} else if method != nil {
+		fmt.Fprint(w1, g.MustQuoteIdentifier(t.Name))
 	} else {
-		for i, f := range t.Keys {
-			if i > 0 {
-				fmt.Fprint(w, `,`)
+		fmt.Fprintf(w1, "%c+ v.TableName() +%c", g.quoteRune, g.quoteRune)
+	}
+	fmt.Fprint(w1, " WHERE ")
+	pk, ok := t.PK()
+	if !ok {
+		return fmt.Errorf(`sqlgen:`)
+	}
+	w2 := bytes.NewBufferString("")
+	defer w2.Reset()
+	switch v := pk.(type) {
+	case *compiler.AutoIncrPrimaryKey:
+		fmt.Fprint(w1, g.MustQuoteIdentifier(v.Name())+" = "+g.dialect.QuoteVar(1))
+		fmt.Fprint(w2, g.valuer(importPkgs, "v."+v.GoPath(), v.GoType()))
+	case *compiler.PrimaryKey:
+		fmt.Fprint(w1, g.MustQuoteIdentifier(v.Name())+" = "+g.dialect.QuoteVar(1))
+		fmt.Fprint(w2, g.valuer(importPkgs, "v."+v.GoPath(), v.GoType()))
+	case *compiler.CompositePrimaryKey:
+		if n := len(v.Columns); n > 0 {
+			w3 := strpool.AcquireString()
+			column := v.Columns[0]
+			fmt.Fprint(w1, "("+g.MustQuoteIdentifier(column.Name()))
+			fmt.Fprint(w2, g.valuer(importPkgs, "v."+column.GoPath(), column.GoType()))
+			fmt.Fprint(w3, g.dialect.QuoteVar(1))
+			for i := 1; i < n; i++ {
+				column = v.Columns[i]
+				fmt.Fprint(w1, ","+g.MustQuoteIdentifier(column.Name()))
+				fmt.Fprint(w2, ","+g.valuer(importPkgs, "v."+column.GoPath(), column.GoType()))
+				fmt.Fprint(w3, ","+g.dialect.QuoteVar(i+1))
 			}
-			fmt.Fprint(w, g.getOrValue(importPkgs, "v", f))
+			fmt.Fprintf(w1, ") = (%s)", w3)
+			strpool.ReleaseString(w3)
 		}
 	}
-	fprintfln(w, "}")
+	fmt.Fprintf(w1, " LIMIT 1;%c", g.quoteRune)
+	fprintfln(w, "func (v "+t.GoName+") FindOneByPKStmt() (string, []any) {")
+	fprintfln(w, "return %s, []any{%s}", w1, w2)
 	fprintfln(w, "}")
 	return nil
 }
 
 func (g *Generator) buildInsertOne(w io.Writer, importPkgs *Package, t *compiler.Table) error {
-	var query string
-	buf := strpool.AcquireString()
+	columns := t.InsertColumns()
+	noOfColumns := len(columns)
+	if noOfColumns == 0 {
+		return nil
+	}
+
+	// Build the insert statement
+	w1 := bytes.NewBufferString("")
+	defer w1.Reset()
 	if method, isWrongType := t.Implements(sqlTabler); isWrongType {
 		g.LogError(fmt.Errorf(`sqlgen: struct %q has function "TableName" but wrong footprint`, t.GoName))
+		fmt.Fprintf(w1, "%cINSERT INTO %s (", g.quoteRune, g.MustQuoteIdentifier(t.Name))
 	} else if method != nil {
-		buf.WriteString("INSERT INTO " + g.MustQuoteIdentifier(t.Name))
+		fmt.Fprintf(w1, "%cINSERT INTO %s (", g.quoteRune, g.MustQuoteIdentifier(t.Name))
 	} else {
-		query = g.Quote("INSERT INTO ") + "+ v.TableName() +"
+		fmt.Fprintf(w1, "%cINSERT INTO %c+ v.TableName() +%c (", g.quoteRune, g.quoteRune, g.quoteRune)
 	}
-	buf.WriteString(" (")
-	columns := t.InsertColumns()
-	for i, f := range columns {
-		if i > 0 {
-			buf.WriteByte(',')
-		}
-		buf.WriteString(g.MustQuoteIdentifier(f.Name))
-	}
-	buf.WriteString(") VALUES (")
-	for i, f := range columns {
-		if i > 0 {
-			buf.WriteByte(',')
-		}
-		valuer, err := g.sqlValuer(f, i)
+	w2 := bytes.NewBufferString("")
+	if g.config.Driver == Postgres {
+		w3 := bytes.NewBufferString("")
+		w4 := bytes.NewBufferString("")
+		defer w3.Reset()
+		defer w4.Reset()
+		column := columns[0]
+		valuer, err := g.sqlValuer(column, 0)
 		if err != nil {
 			return err
 		}
-		buf.WriteString(valuer)
-	}
-	buf.WriteByte(')')
-	if g.config.Driver == Postgres {
-		buf.WriteString(" RETURNING ")
-		for i, f := range t.Columns {
-			if i > 0 {
-				buf.WriteByte(',')
-			}
-			scanner, err := g.sqlScanner(f)
+		scanner, err := g.sqlScanner(column)
+		if err != nil {
+			return err
+		}
+		fmt.Fprint(w1, g.MustQuoteIdentifier(column.Name()))
+		fmt.Fprint(w2, g.getOrValue(importPkgs, "v", column))
+		fmt.Fprint(w3, valuer)
+		fmt.Fprint(w4, scanner)
+		for i := 1; i < noOfColumns; i++ {
+			column = columns[i]
+			valuer, err := g.sqlValuer(column, i)
 			if err != nil {
 				return err
 			}
-			buf.WriteString(scanner)
+			scanner, err := g.sqlScanner(column)
+			if err != nil {
+				return err
+			}
+			fmt.Fprint(w1, ","+g.MustQuoteIdentifier(column.Name()))
+			fmt.Fprint(w2, ","+g.getOrValue(importPkgs, "v", column))
+			fmt.Fprint(w3, ","+valuer)
+			fmt.Fprint(w4, ","+scanner)
 		}
+		fmt.Fprintf(w1, "(%s) VALUES (%s) RETURNING (%s)", w2, w3, w4)
+	} else {
+		column := columns[0]
+		valuer, err := g.sqlValuer(column, 0)
+		if err != nil {
+			return err
+		}
+		w3 := bytes.NewBufferString("")
+		defer w3.Reset()
+		fmt.Fprint(w1, g.MustQuoteIdentifier(column.Name()))
+		fmt.Fprint(w2, g.getOrValue(importPkgs, "v", column))
+		fmt.Fprint(w3, valuer)
+		for i := 1; i < noOfColumns; i++ {
+			column = columns[i]
+			valuer, err := g.sqlValuer(column, i)
+			if err != nil {
+				return err
+			}
+			fmt.Fprint(w1, ","+g.MustQuoteIdentifier(column.Name()))
+			fmt.Fprint(w2, ","+g.getOrValue(importPkgs, "v", column))
+			fmt.Fprint(w3, ","+valuer)
+		}
+		fmt.Fprintf(w1, ") VALUES (%s)", w3)
 	}
-	buf.WriteByte(';')
+	fmt.Fprintf(w1, ";%c", g.quoteRune)
 	// If the columns and after filter columns is the same
 	// mean it has no auto increment key
-	fprintfln(w, `func (v %s) InsertOneStmt() (string, []any) {`, t.GoName)
+	fprintfln(w, "func (v %s) InsertOneStmt() (string, []any) {", t.GoName)
 	if len(columns) == len(t.Columns) {
-		fprintfln(w, `return %s, v.Values()`, query+g.Quote(buf.String()))
-		strpool.ReleaseString(buf)
+		fprintfln(w, "return %s, v.Values()", w1)
 	} else {
-		fmt.Fprintf(w, `return %s, []any{`, query+g.Quote(buf.String()))
-		strpool.ReleaseString(buf)
-		for i, f := range columns {
-			if i > 0 {
-				fmt.Fprint(w, `,`)
-			}
-			fmt.Fprint(w, g.getOrValue(importPkgs, "v", f))
-		}
-		fprintfln(w, "}")
+		fprintfln(w, "return %s, []any{%s}", w1, w2)
 	}
 	fprintfln(w, "}")
 	return nil
 }
 
 func (g *Generator) buildUpdateByPK(w io.Writer, importPkgs *Package, t *compiler.Table) error {
-	buf := strpool.AcquireString()
-	var query string
+	columns := t.ColumnsExceptPK()
+	noOfColumns := len(columns)
+	if noOfColumns == 0 {
+		return nil
+	}
+	// Build the update statement
+	w1 := bytes.NewBufferString("")
+	defer w1.Reset()
 	if method, isWrongType := t.Implements(sqlTabler); isWrongType {
 		g.LogError(fmt.Errorf(`sqlgen: struct %q has function "TableName" but wrong footprint`, t.GoName))
 	} else if method != nil {
-		buf.WriteString("UPDATE " + g.MustQuoteIdentifier(t.Name))
+		fmt.Fprintf(w1, "%cUPDATE %s", g.quoteRune, g.MustQuoteIdentifier(t.Name))
 	} else {
-		query = g.Quote("UPDATE ") + "+ v.TableName() +"
+		fmt.Fprintf(w1, "%cUPDATE %c+ v.TableName() +%c", g.quoteRune, g.quoteRune, g.quoteRune)
 	}
-	buf.WriteString(" SET ")
-	columns := t.ColumnsWithoutPK()
-	for i, f := range columns {
-		if i > 0 {
-			buf.WriteByte(',')
-		}
-		valuer, err := g.sqlValuer(f, i)
+	fmt.Fprint(w1, " SET ")
+	w2 := bytes.NewBufferString("")
+	defer w2.Reset()
+	column := columns[0]
+	valuer, err := g.sqlValuer(column, 0)
+	if err != nil {
+		return err
+	}
+	fmt.Fprintf(w1, "%s = %s", g.MustQuoteIdentifier(column.Name()), valuer)
+	fmt.Fprint(w2, g.getOrValue(importPkgs, "v", column)+",")
+	for i := 1; i < noOfColumns; i++ {
+		column = columns[i]
+		valuer, err := g.sqlValuer(column, i)
 		if err != nil {
 			return err
 		}
-		buf.WriteString(g.MustQuoteIdentifier(f.Name) + " = " + valuer)
+		fmt.Fprintf(w1, ",%s = %s", g.MustQuoteIdentifier(column.Name()), valuer)
+		fmt.Fprint(w2, g.getOrValue(importPkgs, "v", column)+",")
 	}
-	buf.WriteString(" WHERE ")
-	if pk, ok := t.AutoIncrKey(); ok {
-		buf.WriteString(g.MustQuoteIdentifier(pk.Name) + " = " + g.dialect.QuoteVar(len(t.Columns)))
-		columns = append(columns, pk)
-	} else if len(t.Keys) == 1 {
-		pk := t.Keys[0]
-		buf.WriteString(g.MustQuoteIdentifier(pk.Name) + " = " + g.dialect.QuoteVar(len(t.Columns)))
-		columns = append(columns, pk)
-	} else {
-		keyNames := lo.Map(t.Keys, func(v *compiler.Column, _ int) string {
-			return g.MustQuoteIdentifier(v.Name)
-		})
-		buf.WriteString("(" + strings.Join(keyNames, ",") + ")" + " = ")
-		buf.WriteByte('(')
-		for i, k := range t.Keys {
-			if i > 0 {
-				buf.WriteByte(',')
+	fmt.Fprint(w1, " WHERE ")
+	switch pk := t.MustPK().(type) {
+	case *compiler.AutoIncrPrimaryKey:
+		fmt.Fprintf(w1, "%s = %s", g.MustQuoteIdentifier(pk.Name()), g.dialect.QuoteVar(noOfColumns))
+		fmt.Fprint(w2, g.getOrValue(importPkgs, "v", pk))
+	case *compiler.PrimaryKey:
+		fmt.Fprintf(w1, "%s = %s", g.MustQuoteIdentifier(pk.Name()), g.dialect.QuoteVar(noOfColumns))
+		fmt.Fprint(w2, g.getOrValue(importPkgs, "v", pk))
+	case *compiler.CompositePrimaryKey:
+		if n := len(pk.Columns); n > 0 {
+			column := pk.Columns[0]
+			w3 := strpool.AcquireString()
+			fmt.Fprintf(w1, "(%s", g.MustQuoteIdentifier(column.Name()))
+			fmt.Fprint(w2, g.getOrValue(importPkgs, "v", column))
+			fmt.Fprint(w3, g.dialect.QuoteVar(noOfColumns+1))
+			for i := 1; i < n; i++ {
+				column = pk.Columns[i]
+				fmt.Fprintf(w1, ",%s", g.MustQuoteIdentifier(column.Name()))
+				fmt.Fprintf(w2, ",%s", g.getOrValue(importPkgs, "v", column))
+				fmt.Fprintf(w3, ",%s", g.dialect.QuoteVar(noOfColumns+i+1))
 			}
-			valuer, err := g.sqlValuer(k, i+len(columns))
-			if err != nil {
-				return err
-			}
-			buf.WriteString(valuer)
-		}
-		buf.WriteByte(')')
-		columns = append(columns, t.Keys...)
-	}
-	buf.WriteByte(';')
-	fprintfln(w, `func (v %s) UpdateOneByPKStmt() (string, []any) {`, t.GoName)
-	fmt.Fprintf(w, "return %s, []any{", query+g.Quote(buf.String()))
-	strpool.ReleaseString(buf)
-	if len(columns) > 0 {
-		fmt.Fprint(w, g.getOrValue(importPkgs, "v", columns[0]))
-		for i := 1; i < len(columns); i++ {
-			fmt.Fprint(w, ","+g.getOrValue(importPkgs, "v", columns[i]))
+			fmt.Fprintf(w1, ") = (%s)", w3)
+			strpool.ReleaseString(w3)
 		}
 	}
+	fmt.Fprintf(w1, ";%c", g.quoteRune)
+	fprintfln(w, "func (v %s) UpdateOneByPKStmt() (string, []any) {", t.GoName)
+	fprintfln(w, "return %s, []any{%s}", w1, w2)
 	fprintfln(w, "}")
-	fprintfln(w, "}")
-	strpool.ReleaseString(buf)
 	return nil
 }
 
-func (g *Generator) getOrValue(importPkgs *Package, obj string, f *compiler.Column) string {
-	goPath := obj + f.GoPath
+func (g *Generator) getOrValue(importPkgs *Package, obj string, f compiler.Column) string {
+	goPath := obj + "." + f.GoPath()
 	if f.IsUnderlyingPtr() {
 		return obj + "." + valueFunc(f)
 	}
-	return g.valuer(importPkgs, goPath, f.Type)
+	return g.valuer(importPkgs, goPath, f.GoType())
 }
 
 func (g *Generator) isBasicType(t types.Type) bool {
@@ -742,22 +786,22 @@ func (g *Generator) scanner(importPkgs *Package, goPath string, t types.Type) st
 	return Expr(g.defaultColumnTypes["*"].Scanner).Format(importPkgs, ExprParams{GoPath: goPath, Type: t, IsPtr: isPtr})
 }
 
-func (g *Generator) sqlScanner(column *compiler.Column) (string, error) {
-	t, _ := underlyingType(column.Type)
+func (g *Generator) sqlScanner(column compiler.Column) (string, error) {
+	t, _ := underlyingType(column.GoType())
 	if typeMapper, ok := g.config.DataTypes[t.String()]; ok && typeMapper.SQLScanner != nil {
 		t := template.Must(template.New("scanner").Parse(*typeMapper.SQLScanner))
 		buf := strpool.AcquireString()
 		defer strpool.ReleaseString(buf)
-		if err := t.Execute(buf, g.MustQuoteIdentifier(column.Name)); err != nil {
+		if err := t.Execute(buf, g.MustQuoteIdentifier(column.Name())); err != nil {
 			return "", err
 		}
 		return buf.String(), nil
 	}
-	return g.MustQuoteIdentifier(column.Name), nil
+	return g.MustQuoteIdentifier(column.Name()), nil
 }
 
-func (g *Generator) sqlValuer(column *compiler.Column, idx int) (string, error) {
-	t, _ := underlyingType(column.Type)
+func (g *Generator) sqlValuer(column compiler.Column, idx int) (string, error) {
+	t, _ := underlyingType(column.GoType())
 	if typeMapper, ok := g.config.DataTypes[t.String()]; ok && typeMapper.SQLValuer != nil {
 		t := template.Must(template.New("valuer").Parse(*typeMapper.SQLValuer))
 		buf := strpool.AcquireString()
@@ -813,11 +857,11 @@ func methodName(i *types.Interface) string {
 	return i.Method(0).Name()
 }
 
-func valueFunc(f *compiler.Column) string {
-	return f.GoName + "Value()"
+func valueFunc(f compiler.Column) string {
+	return f.GoName() + "Value()"
 }
 
-func strwidth(n int) string {
+func stfwidth(n int) string {
 	str := strconv.Itoa(n)
 	return strconv.Itoa(len(str))
 }

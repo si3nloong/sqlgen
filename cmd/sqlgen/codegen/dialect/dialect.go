@@ -6,19 +6,21 @@ import (
 	"go/types"
 	"io"
 	"sync"
+
+	"github.com/si3nloong/sqlgen/cmd/sqlgen/compiler"
 )
 
 var (
-	dialectMap     = new(sync.Map)
+	dialectMap     sync.Map
 	defaultDialect = "mysql"
 
-	ErrNoNewMigration = errors.New("no migration required")
+	ErrSkipMigration = errors.New("no migration required")
 )
 
-type Writer interface {
-	io.StringWriter
-	io.Writer
-}
+type UpFunc func(w io.Writer) error
+type DownFunc func(w io.Writer) error
+
+type GoExpr string
 
 type Dialect interface {
 	// SQL driver name
@@ -38,7 +40,15 @@ type Dialect interface {
 	ColumnDataTypes() map[string]*ColumnType
 
 	// To create migration
-	// Migrate(dsn string, w Writer, m TableMigrator) error
+	// Migrate(ctx context.Context, t *compiler.Table) (UpFunc, DownFunc)
+}
+
+type Column interface {
+	DataType(column compiler.Column) string
+	Scanner() GoExpr
+	Valuer() GoExpr
+	SQLScanner() (GoExpr, bool)
+	SQLValuer() (GoExpr, bool)
 }
 
 type ColumnType struct {
@@ -47,31 +57,6 @@ type ColumnType struct {
 	Valuer     string
 	SQLScanner *string
 	SQLValuer  *string
-}
-
-type Index interface {
-	// Indexed columns
-	Columns() []string
-
-	// Whether the index is unique
-	Unique() bool
-}
-
-type TableMigrator interface {
-	DBName() string
-
-	// Table name
-	TableName() string
-
-	// Return the columns of the table
-	Columns() []string
-
-	// Return the table primary key
-	PK() []string
-
-	ColumnByIndex(i int) GoColumn
-
-	RangeIndex(func(Index, int))
 }
 
 type GoColumn interface {

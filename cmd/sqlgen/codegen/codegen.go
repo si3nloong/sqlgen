@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log"
 	"log/slog"
 	"os"
 	"os/exec"
@@ -19,7 +20,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/samber/lo"
 	"github.com/si3nloong/sqlgen/cmd/sqlgen/codegen/dialect"
-	"github.com/si3nloong/sqlgen/cmd/sqlgen/internal/compiler"
+	"github.com/si3nloong/sqlgen/cmd/sqlgen/compiler"
 	"github.com/si3nloong/sqlgen/cmd/sqlgen/internal/fileutil"
 )
 
@@ -149,6 +150,7 @@ func Generate(c *Config) error {
 		}
 
 		if err := parseGoPackage(generator, rootDir, dirs, matcher); err != nil {
+			log.Println("debug ->", err)
 			return err
 		}
 
@@ -203,6 +205,7 @@ func parseGoPackage(
 
 	for len(dirs) > 0 {
 		dir = path.Join(rootDir, dirs[0])
+		dirs = dirs[1:]
 
 		// Sometimes user might place db destination in the source as well
 		// In this situation, we're not process the folder, we will skip it
@@ -212,14 +215,12 @@ func parseGoPackage(
 			path.Join(pwd, g.config.Database.Dir),
 			path.Join(pwd, g.config.Database.Operator.Dir),
 		}, dir); idx >= 0 {
-			dirs = dirs[1:]
 			continue
 		}
 
 		slog.Info("Process", "dir", dir)
 		if fileutil.IsDirEmptyFiles(dir, g.config.Exec.Filename) {
 			slog.Info("Folder is empty, so not processing")
-			dirs = dirs[1:]
 			continue
 		}
 
@@ -230,29 +231,28 @@ func parseGoPackage(
 		slog.Info("Parse go package", "dir", dir)
 		// Since we're loading one directory at a time,
 		// the return results will only return one package back
-		schema, err := compiler.Parse(dir, &compiler.Config{
+		pkg, tables, err := compiler.ParseDir(dir, &compiler.Config{
 			Tag:        g.config.Tag,
 			RenameFunc: rename,
 			Matcher:    matcher,
 		})
 		if errors.Is(err, compiler.ErrSkip) {
-			goto nextDir
+			continue
 		} else if err != nil {
 			return err
 		}
 
-		if err := g.generateModels(dir, schema); err != nil {
+		if err := g.generateModels(dir, pkg, tables); errors.Is(err, compiler.ErrSkip) {
+			continue
+		} else if err != nil {
 			return err
 		}
 
-		// If the `skip_empty` is true,
-		// we do not generate the go file
-		if g.config.Exec.SkipEmpty {
-			goto nextDir
-		}
-
-	nextDir:
-		dirs = dirs[1:]
+		// 	// If the `skip_empty` is true,
+		// 	// we do not generate the go file
+		// 	if g.config.Exec.SkipEmpty {
+		// 		goto nextDir
+		// 	}
 	}
 	return nil
 }

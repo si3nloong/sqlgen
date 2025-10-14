@@ -3,7 +3,6 @@ package sequel
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"io"
 )
 
@@ -60,6 +59,11 @@ type Keyer interface {
 	HasPK()
 }
 
+type AutoIncrKeyer interface {
+	PrimaryKeyer
+	IsAutoIncr()
+}
+
 type PrimaryKeyer interface {
 	Keyer
 	PK() (string, int, any)
@@ -68,11 +72,6 @@ type PrimaryKeyer interface {
 type CompositeKeyer interface {
 	Keyer
 	CompositeKey() ([]string, []int, []any)
-}
-
-type AutoIncrKeyer interface {
-	PrimaryKeyer
-	IsAutoIncr()
 }
 
 type KeyFinder interface {
@@ -95,7 +94,9 @@ type SingleInserter interface {
 }
 
 type Inserter interface {
-	ColumnValuer
+	Tabler
+	Columner
+	Valuer
 	InsertPlaceholders(row int) string
 }
 
@@ -103,6 +104,12 @@ type ColumnValuer interface {
 	Tabler
 	Columner
 	Valuer
+}
+
+type KeyScanner interface {
+	Keyer
+	Tabler
+	Columner
 }
 
 type KeyValuer interface {
@@ -117,6 +124,11 @@ type KeyValueScanner[T any] interface {
 	PtrScanner[T]
 }
 
+type KeyPtrScanner[T any] interface {
+	KeyScanner
+	PtrScanner[T]
+}
+
 type RowLevelLocker interface {
 	LockMode() string
 }
@@ -124,7 +136,7 @@ type RowLevelLocker interface {
 type StmtWriter interface {
 	io.Writer
 	io.StringWriter
-	io.ByteWriter
+	Quote(v string) string
 	Var(v any) string
 	// Vars will group the valus in parenthesis
 	Vars(vals []any) string
@@ -132,7 +144,6 @@ type StmtWriter interface {
 
 type Stmt interface {
 	StmtWriter
-	fmt.Formatter
 	Query() string
 	Args() []any
 	Reset()

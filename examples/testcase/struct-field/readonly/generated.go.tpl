@@ -14,8 +14,9 @@ func (Model) Columns() []string {
 }
 func (v Model) Values() []any {
 	return []any{
-		v.A, // 0 - a
-		v.B, // 1 - b
+		v.A,        // 0 - a
+		v.B,        // 1 - b
+		v.ReadOnly, // 2 - read_only
 	}
 }
 func (v *Model) Addrs() []any {

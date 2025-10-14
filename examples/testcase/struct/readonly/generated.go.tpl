@@ -12,36 +12,12 @@ func (Model) TableName() string {
 func (Model) Columns() []string {
 	return []string{"a", "b", "read_only"} // 3
 }
-func (v Model) Values() []any {
-	return []any{
-		v.A, // 0 - a
-		v.B, // 1 - b
-	}
-}
 func (v *Model) Addrs() []any {
 	return []any{
 		&v.A,        // 0 - a
 		&v.B,        // 1 - b
 		&v.ReadOnly, // 2 - read_only
 	}
-}
-func (Model) InsertColumns() []string {
-	return []string{"a", "b"} // 2
-}
-func (Model) InsertPlaceholders(row int) string {
-	return "(?,?)" // 2
-}
-func (v Model) InsertOneStmt() (string, []any) {
-	return "INSERT INTO `model` (`a`,`b`) VALUES (?,?);", []any{v.A, v.B}
-}
-func (v Model) AValue() any {
-	return v.A
-}
-func (v Model) BValue() any {
-	return v.B
-}
-func (v Model) ReadOnlyValue() any {
-	return v.ReadOnly
 }
 func (v Model) ColumnA() sequel.ColumnClause[string] {
 	return sequel.BasicColumn("a", v.A)

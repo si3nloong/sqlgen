@@ -22,6 +22,11 @@ func (v Model) PK() (string, int, any) {
 func (Model) Columns() []string {
 	return []string{"id"} // 1
 }
+func (v Model) Values() []any {
+	return []any{
+		(int64)(v.ID), // 0 - id
+	}
+}
 func (v *Model) Addrs() []any {
 	return []any{
 		encoding.Int16Scanner[int16](&v.ID), // 0 - id

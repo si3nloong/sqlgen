@@ -25,8 +25,9 @@ func (Slice) Columns() []string {
 }
 func (v Slice) Values() []any {
 	return []any{
-		(sqltype.BoolSlice[bool])(v.BoolList),             //  1 - bool_list
-		(sqltype.StringSlice[string])(v.StrList),          //  2 - str_list
+		v.ID,                                     //  0 - id
+		(sqltype.BoolSlice[bool])(v.BoolList),    //  1 - bool_list
+		(sqltype.StringSlice[string])(v.StrList), //  2 - str_list
 		(sqltype.StringSlice[customStr])(v.CustomStrList), //  3 - custom_str_list
 		(sqltype.IntSlice[int])(v.IntList),                //  4 - int_list
 		(sqltype.Int8Slice[int8])(v.Int8List),             //  5 - int_8_list

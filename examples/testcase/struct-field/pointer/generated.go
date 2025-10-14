@@ -22,10 +22,11 @@ func (v Ptr) PK() (string, int, any) {
 	return "id", 0, v.ID
 }
 func (Ptr) Columns() []string {
-	return []string{"id", "str", "bytes", "bool", "int", "int_8", "int_16", "int_32", "int_64", "uint", "uint_8", "uint_16", "uint_32", "uint_64", "f_32", "f_64", "time", "nested", "embedded_time", "any_time"} // 20
+	return []string{"id", "str", "bytes", "bool", "int", "int_8", "int_16", "int_32", "int_64", "uint", "uint_8", "uint_16", "uint_32", "uint_64", "f_32", "f_64", "time", "nested", "embedded_time", "any_time", "ptr_str"} // 21
 }
 func (v Ptr) Values() []any {
 	return []any{
+		v.ID,                  //  0 - id
 		v.StrValue(),          //  1 - str
 		v.BytesValue(),        //  2 - bytes
 		v.BoolValue(),         //  3 - bool
@@ -45,6 +46,7 @@ func (v Ptr) Values() []any {
 		v.NestedValue(),       // 17 - nested
 		v.EmbeddedTimeValue(), // 18 - embedded_time
 		v.AnyTimeValue(),      // 19 - any_time
+		v.PtrStrValue(),       // 20 - ptr_str
 	}
 }
 func (v *Ptr) Addrs() []any {
@@ -108,43 +110,47 @@ func (v *Ptr) Addrs() []any {
 	if v.deepNested.embedded.EmbeddedTime == nil {
 		v.deepNested.embedded.EmbeddedTime = new(time.Time)
 	}
+	if v.deepNested.embedded.PtrStr == nil {
+		v.deepNested.embedded.PtrStr = new(string)
+	}
 	return []any{
-		&v.ID,                                                     //  0 - id
-		encoding.StringScanner[string](&v.Str),                    //  1 - str
-		encoding.StringScanner[[]byte](&v.Bytes),                  //  2 - bytes
-		encoding.BoolScanner[bool](&v.Bool),                       //  3 - bool
-		encoding.IntScanner[int](&v.Int),                          //  4 - int
-		encoding.Int8Scanner[int8](&v.Int8),                       //  5 - int_8
-		encoding.Int16Scanner[int16](&v.Int16),                    //  6 - int_16
-		encoding.Int32Scanner[int32](&v.Int32),                    //  7 - int_32
-		encoding.Int64Scanner[int64](&v.Int64),                    //  8 - int_64
-		encoding.UintScanner[uint](&v.Uint),                       //  9 - uint
-		encoding.Uint8Scanner[uint8](&v.Uint8),                    // 10 - uint_8
-		encoding.Uint16Scanner[uint16](&v.Uint16),                 // 11 - uint_16
-		encoding.Uint32Scanner[uint32](&v.Uint32),                 // 12 - uint_32
-		encoding.Uint64Scanner[uint64](&v.Uint64),                 // 13 - uint_64
-		encoding.Float32Scanner[float32](&v.F32),                  // 14 - f_32
-		encoding.Float64Scanner[float64](&v.F64),                  // 15 - f_64
-		encoding.TimeScanner(&v.Time),                             // 16 - time
-		encoding.JSONScanner(&v.Nested),                           // 17 - nested
-		encoding.TimeScanner(&v.deepNested.embedded.EmbeddedTime), // 18 - embedded_time
-		&v.deepNested.embedded.AnyTime,                            // 19 - any_time
+		&v.ID,                                                         //  0 - id
+		encoding.StringScanner[string](&v.Str),                        //  1 - str
+		encoding.StringScanner[[]byte](&v.Bytes),                      //  2 - bytes
+		encoding.BoolScanner[bool](&v.Bool),                           //  3 - bool
+		encoding.IntScanner[int](&v.Int),                              //  4 - int
+		encoding.Int8Scanner[int8](&v.Int8),                           //  5 - int_8
+		encoding.Int16Scanner[int16](&v.Int16),                        //  6 - int_16
+		encoding.Int32Scanner[int32](&v.Int32),                        //  7 - int_32
+		encoding.Int64Scanner[int64](&v.Int64),                        //  8 - int_64
+		encoding.UintScanner[uint](&v.Uint),                           //  9 - uint
+		encoding.Uint8Scanner[uint8](&v.Uint8),                        // 10 - uint_8
+		encoding.Uint16Scanner[uint16](&v.Uint16),                     // 11 - uint_16
+		encoding.Uint32Scanner[uint32](&v.Uint32),                     // 12 - uint_32
+		encoding.Uint64Scanner[uint64](&v.Uint64),                     // 13 - uint_64
+		encoding.Float32Scanner[float32](&v.F32),                      // 14 - f_32
+		encoding.Float64Scanner[float64](&v.F64),                      // 15 - f_64
+		encoding.TimeScanner(&v.Time),                                 // 16 - time
+		encoding.JSONScanner(&v.Nested),                               // 17 - nested
+		encoding.TimeScanner(&v.deepNested.embedded.EmbeddedTime),     // 18 - embedded_time
+		&v.deepNested.embedded.AnyTime,                                // 19 - any_time
+		encoding.StringScanner[string](&v.deepNested.embedded.PtrStr), // 20 - ptr_str
 	}
 }
 func (Ptr) InsertColumns() []string {
-	return []string{"str", "bytes", "bool", "int", "int_8", "int_16", "int_32", "int_64", "uint", "uint_8", "uint_16", "uint_32", "uint_64", "f_32", "f_64", "time", "nested", "embedded_time", "any_time"} // 19
+	return []string{"str", "bytes", "bool", "int", "int_8", "int_16", "int_32", "int_64", "uint", "uint_8", "uint_16", "uint_32", "uint_64", "f_32", "f_64", "time", "nested", "embedded_time", "any_time", "ptr_str"} // 20
 }
 func (Ptr) InsertPlaceholders(row int) string {
-	return "(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)" // 19
+	return "(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)" // 20
 }
 func (v Ptr) InsertOneStmt() (string, []any) {
-	return "INSERT INTO `ptr` (`str`,`bytes`,`bool`,`int`,`int_8`,`int_16`,`int_32`,`int_64`,`uint`,`uint_8`,`uint_16`,`uint_32`,`uint_64`,`f_32`,`f_64`,`time`,`nested`,`embedded_time`,`any_time`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);", []any{v.StrValue(), v.BytesValue(), v.BoolValue(), v.IntValue(), v.Int8Value(), v.Int16Value(), v.Int32Value(), v.Int64Value(), v.UintValue(), v.Uint8Value(), v.Uint16Value(), v.Uint32Value(), v.Uint64Value(), v.F32Value(), v.F64Value(), v.TimeValue(), v.NestedValue(), v.EmbeddedTimeValue(), v.AnyTimeValue()}
+	return "INSERT INTO `ptr` (`str`,`bytes`,`bool`,`int`,`int_8`,`int_16`,`int_32`,`int_64`,`uint`,`uint_8`,`uint_16`,`uint_32`,`uint_64`,`f_32`,`f_64`,`time`,`nested`,`embedded_time`,`any_time`,`ptr_str`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);", []any{v.StrValue(), v.BytesValue(), v.BoolValue(), v.IntValue(), v.Int8Value(), v.Int16Value(), v.Int32Value(), v.Int64Value(), v.UintValue(), v.Uint8Value(), v.Uint16Value(), v.Uint32Value(), v.Uint64Value(), v.F32Value(), v.F64Value(), v.TimeValue(), v.NestedValue(), v.EmbeddedTimeValue(), v.AnyTimeValue(), v.PtrStrValue()}
 }
 func (v Ptr) FindOneByPKStmt() (string, []any) {
-	return "SELECT `id`,`str`,`bytes`,`bool`,`int`,`int_8`,`int_16`,`int_32`,`int_64`,`uint`,`uint_8`,`uint_16`,`uint_32`,`uint_64`,`f_32`,`f_64`,`time`,`nested`,`embedded_time`,`any_time` FROM `ptr` WHERE `id` = ? LIMIT 1;", []any{v.ID}
+	return "SELECT `id`,`str`,`bytes`,`bool`,`int`,`int_8`,`int_16`,`int_32`,`int_64`,`uint`,`uint_8`,`uint_16`,`uint_32`,`uint_64`,`f_32`,`f_64`,`time`,`nested`,`embedded_time`,`any_time`,`ptr_str` FROM `ptr` WHERE `id` = ? LIMIT 1;", []any{v.ID}
 }
 func (v Ptr) UpdateOneByPKStmt() (string, []any) {
-	return "UPDATE `ptr` SET `str` = ?,`bytes` = ?,`bool` = ?,`int` = ?,`int_8` = ?,`int_16` = ?,`int_32` = ?,`int_64` = ?,`uint` = ?,`uint_8` = ?,`uint_16` = ?,`uint_32` = ?,`uint_64` = ?,`f_32` = ?,`f_64` = ?,`time` = ?,`nested` = ?,`embedded_time` = ?,`any_time` = ? WHERE `id` = ?;", []any{v.StrValue(), v.BytesValue(), v.BoolValue(), v.IntValue(), v.Int8Value(), v.Int16Value(), v.Int32Value(), v.Int64Value(), v.UintValue(), v.Uint8Value(), v.Uint16Value(), v.Uint32Value(), v.Uint64Value(), v.F32Value(), v.F64Value(), v.TimeValue(), v.NestedValue(), v.EmbeddedTimeValue(), v.AnyTimeValue(), v.ID}
+	return "UPDATE `ptr` SET `str` = ?,`bytes` = ?,`bool` = ?,`int` = ?,`int_8` = ?,`int_16` = ?,`int_32` = ?,`int_64` = ?,`uint` = ?,`uint_8` = ?,`uint_16` = ?,`uint_32` = ?,`uint_64` = ?,`f_32` = ?,`f_64` = ?,`time` = ?,`nested` = ?,`embedded_time` = ?,`any_time` = ?,`ptr_str` = ? WHERE `id` = ?;", []any{v.StrValue(), v.BytesValue(), v.BoolValue(), v.IntValue(), v.Int8Value(), v.Int16Value(), v.Int32Value(), v.Int64Value(), v.UintValue(), v.Uint8Value(), v.Uint16Value(), v.Uint32Value(), v.Uint64Value(), v.F32Value(), v.F64Value(), v.TimeValue(), v.NestedValue(), v.EmbeddedTimeValue(), v.AnyTimeValue(), v.PtrStrValue(), v.ID}
 }
 func (v Ptr) IDValue() any {
 	return v.ID
@@ -265,6 +271,16 @@ func (v Ptr) AnyTimeValue() any {
 	if v.deepNested != nil {
 		if v.deepNested.embedded != nil {
 			return v.deepNested.embedded.AnyTime
+		}
+	}
+	return nil
+}
+func (v Ptr) PtrStrValue() any {
+	if v.deepNested != nil {
+		if v.deepNested.embedded != nil {
+			if v.deepNested.embedded.PtrStr != nil {
+				return *v.deepNested.embedded.PtrStr
+			}
 		}
 	}
 	return nil
@@ -418,4 +434,12 @@ func (v Ptr) ColumnEmbeddedTime() sequel.ColumnConvertClause[*time.Time] {
 }
 func (v Ptr) ColumnAnyTime() sequel.ColumnClause[time.Time] {
 	return sequel.BasicColumn("any_time", v.deepNested.embedded.AnyTime)
+}
+func (v Ptr) ColumnPtrStr() sequel.ColumnConvertClause[*string] {
+	return sequel.Column("ptr_str", v.deepNested.embedded.PtrStr, func(val *string) any {
+		if val != nil {
+			return *val
+		}
+		return nil
+	})
 }
