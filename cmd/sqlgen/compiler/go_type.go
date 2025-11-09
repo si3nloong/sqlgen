@@ -2,7 +2,9 @@ package compiler
 
 import (
 	"fmt"
+	"go/importer"
 	"go/types"
+	"strings"
 )
 
 type GoType struct {
@@ -28,71 +30,92 @@ func (g GoType) GoSize() int64 {
 }
 
 func (g GoType) GoString() string {
-	switch v := any(g.Type).(type) {
-	case *types.Basic:
-		return v.String()
-	case *types.Named:
-		return ""
-	case *types.Array:
-		return "[...]"
-	case nil:
-		return "*"
-	default:
-		return g.Type.String()
+	var (
+		prev    = g.Type
+		typeStr string
+	)
+
+loop:
+	for prev != nil {
+		switch v := prev.(type) {
+		case *types.Basic:
+			typeStr += v.String()
+			break loop
+		case *types.Named:
+			if _, ok := v.Underlying().(*types.Struct); ok {
+				typeStr += v.String()
+				break loop
+			}
+			prev = v.Underlying()
+		case *types.Pointer:
+			typeStr += "*"
+			prev = v.Elem()
+			continue
+		case *types.Slice:
+			typeStr += "[]"
+			prev = v.Elem()
+			continue
+		case *types.Array:
+			typeStr += "[...]"
+			prev = v.Elem()
+			continue
+		case *types.Alias:
+			prev = v.Rhs()
+			continue
+		default:
+			break loop
+		}
 	}
+	return typeStr
 }
 
 var (
-	Rune         = GoType{types.Typ[types.Rune]}
-	Byte         = GoType{types.Typ[types.Byte]}
-	String       = GoType{types.Typ[types.String]}
-	Bool         = GoType{types.Typ[types.Bool]}
-	Int          = GoType{types.Typ[types.Int]}
-	Int8         = GoType{types.Typ[types.Int8]}
-	Int16        = GoType{types.Typ[types.Int16]}
-	Int32        = GoType{types.Typ[types.Int32]}
-	Int64        = GoType{types.Typ[types.Int64]}
-	Uint         = GoType{types.Typ[types.Uint]}
-	Uint8        = GoType{types.Typ[types.Uint8]}
-	Uint16       = GoType{types.Typ[types.Uint16]}
-	Uint32       = GoType{types.Typ[types.Uint32]}
-	Uint64       = GoType{types.Typ[types.Uint64]}
-	Float32      = GoType{types.Typ[types.Float32]}
-	Float64      = GoType{types.Typ[types.Float64]}
-	Time         = GoType{types.Typ[types.Float32]}
-	RuneArray    = GoType{types.NewArray(types.Typ[types.Rune], 1)}
-	ByteArray    = GoType{types.NewArray(types.Typ[types.Byte], 1)}
-	StringArray  = GoType{types.NewArray(types.Typ[types.String], 1)}
-	BoolArray    = GoType{types.NewArray(types.Typ[types.Bool], 1)}
-	IntArray     = GoType{types.NewArray(types.Typ[types.Int], 1)}
-	Int8Array    = GoType{types.NewArray(types.Typ[types.Int8], 1)}
-	Int16Array   = GoType{types.NewArray(types.Typ[types.Int16], 1)}
-	Int32Array   = GoType{types.NewArray(types.Typ[types.Int32], 1)}
-	Int64Array   = GoType{types.NewArray(types.Typ[types.Int64], 1)}
-	UintArray    = GoType{types.NewArray(types.Typ[types.Uint], 1)}
-	Uint8Array   = GoType{types.NewArray(types.Typ[types.Uint8], 1)}
-	Uint16Array  = GoType{types.NewArray(types.Typ[types.Uint16], 1)}
-	Uint32Array  = GoType{types.NewArray(types.Typ[types.Uint32], 1)}
-	Uint64Array  = GoType{types.NewArray(types.Typ[types.Uint64], 1)}
-	Float32Array = GoType{types.NewArray(types.Typ[types.Float32], 1)}
-	Float64Array = GoType{types.NewArray(types.Typ[types.Float64], 1)}
-	// TimeArray    GoType = "[...]time.Time"
-	Runes        = GoType{types.NewSlice(types.Typ[types.Rune])}
-	Bytes        = GoType{types.NewSlice(types.Typ[types.Byte])}
-	StringSlice  = GoType{types.NewSlice(types.Typ[types.String])}
-	BoolSlice    = GoType{types.NewSlice(types.Typ[types.Bool])}
-	IntSlice     = GoType{types.NewSlice(types.Typ[types.Int])}
-	Int8Slice    = GoType{types.NewSlice(types.Typ[types.Int8])}
-	Int16Slice   = GoType{types.NewSlice(types.Typ[types.Int16])}
-	Int32Slice   = GoType{types.NewSlice(types.Typ[types.Int32])}
-	Int64Slice   = GoType{types.NewSlice(types.Typ[types.Int64])}
-	UintSlice    = GoType{types.NewSlice(types.Typ[types.Uint])}
-	Uint8Slice   = GoType{types.NewSlice(types.Typ[types.Uint8])}
-	Uint16Slice  = GoType{types.NewSlice(types.Typ[types.Uint16])}
-	Uint32Slice  = GoType{types.NewSlice(types.Typ[types.Uint32])}
-	Uint64Slice  = GoType{types.NewSlice(types.Typ[types.Uint64])}
-	Float32Slice = GoType{types.NewSlice(types.Typ[types.Float32])}
-	Float64Slice = GoType{types.NewSlice(types.Typ[types.Float64])}
-	Any          = GoType{}
-	// TimeSlice    GoType = "[]time.Time"
+	Rune         = types.Typ[types.Rune].String()
+	Byte         = types.Typ[types.Byte].String()
+	Bool         = types.Typ[types.Bool].String()
+	String       = types.Typ[types.String].String()
+	Int          = types.Typ[types.Int].String()
+	Int8         = types.Typ[types.Int8].String()
+	Int16        = types.Typ[types.Int16].String()
+	Int32        = types.Typ[types.Int32].String()
+	Int64        = types.Typ[types.Int64].String()
+	Uint         = types.Typ[types.Uint].String()
+	Uint8        = types.Typ[types.Uint8].String()
+	Uint16       = types.Typ[types.Uint16].String()
+	Uint32       = types.Typ[types.Uint32].String()
+	Uint64       = types.Typ[types.Uint64].String()
+	Float32      = types.Typ[types.Float32].String()
+	Float64      = types.Typ[types.Float64].String()
+	Complex64    = types.Typ[types.Complex64].String()
+	Complex128   = types.Typ[types.Complex128].String()
+	Time         = typeNamed("time.Time").String()
+	RuneSlice    = types.NewSlice(types.Typ[types.Rune]).String()
+	ByteSlice    = types.NewSlice(types.Typ[types.Byte]).String()
+	StringSlice  = types.NewSlice(types.Typ[types.String]).String()
+	BoolSlice    = types.NewSlice(types.Typ[types.Bool]).String()
+	IntSlice     = types.NewSlice(types.Typ[types.Int]).String()
+	Int8Slice    = types.NewSlice(types.Typ[types.Int8]).String()
+	Int16Slice   = types.NewSlice(types.Typ[types.Int16]).String()
+	Int32Slice   = types.NewSlice(types.Typ[types.Int32]).String()
+	Int64Slice   = types.NewSlice(types.Typ[types.Int64]).String()
+	UintSlice    = types.NewSlice(types.Typ[types.Uint]).String()
+	Uint8Slice   = types.NewSlice(types.Typ[types.Uint8]).String()
+	Uint16Slice  = types.NewSlice(types.Typ[types.Uint16]).String()
+	Uint32Slice  = types.NewSlice(types.Typ[types.Uint32]).String()
+	Uint64Slice  = types.NewSlice(types.Typ[types.Uint64]).String()
+	Float32Slice = types.NewSlice(types.Typ[types.Float32]).String()
+	Float64Slice = types.NewSlice(types.Typ[types.Float64]).String()
+	Any          = "any"
 )
+
+func typeNamed(path string) *types.Named {
+	paths := strings.SplitN(path, ".", 2)
+	if len(paths) != 2 {
+		panic(`invalid package path`)
+	}
+	pkg, err := importer.Default().Import(paths[0])
+	if err != nil {
+		panic(err)
+	}
+	return pkg.Scope().Lookup(paths[1]).Type().(*types.Named)
+}

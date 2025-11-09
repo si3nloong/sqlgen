@@ -19,6 +19,7 @@ import (
 	"github.com/si3nloong/sqlgen/cmd/sqlgen/codegen/dialect"
 	"github.com/si3nloong/sqlgen/cmd/sqlgen/compiler"
 	"github.com/si3nloong/sqlgen/cmd/sqlgen/internal/goutil"
+	"github.com/si3nloong/sqlgen/cmd/sqlgen/internal/strfmt"
 	"github.com/si3nloong/sqlgen/sequel/encoding"
 	"github.com/si3nloong/sqlgen/sequel/strpool"
 	"golang.org/x/tools/go/packages"
@@ -113,7 +114,55 @@ func (g *Generator) QuoteIdentifier(str string) string {
 	return g.dialect.QuoteIdentifier(str)
 }
 
-// Generate model functions
+func (g *Generator) GenerateMigrations(
+	dstDir string,
+	pkg *packages.Package,
+	tables iter.Seq2[*compiler.Table, error],
+) error {
+	next, stop := iter.Pull2(tables)
+	defer stop()
+
+loop:
+	for {
+		t, err, ok := next()
+		if err != nil {
+			return err
+		} else if !ok {
+			break loop
+		}
+
+		fileDest := filepath.Join(dstDir, strfmt.ToSnakeCase(t.Name)+".sql")
+		if err := g.generateMigrationFile(fileDest, t); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (g *Generator) generateMigrationFile(
+	filename string,
+	table *compiler.Table,
+) error {
+	f, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_TRUNC, os.ModePerm)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	w := bufio.NewWriter(f)
+	defer w.Reset(w)
+
+	up, down := g.dialect.Migrate(table)
+	up(w)
+	fmt.Fprintln(w, "")
+	down(w)
+	if err := w.Flush(); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Generate models function
 func (g *Generator) generateModels(
 	dstDir string,
 	pkg *packages.Package,
@@ -384,7 +433,6 @@ loop:
 	}
 	bw.Reset()
 
-	// println(fw.String())
 	formatted, err := imports.Process("", fw.Bytes(), &imports.Options{Comments: true})
 	if err != nil {
 		return err

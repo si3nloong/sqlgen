@@ -1,5 +1,21 @@
 package sqlite
 
+import (
+	"io"
+
+	"github.com/si3nloong/sqlgen/cmd/sqlgen/codegen/dialect"
+	"github.com/si3nloong/sqlgen/cmd/sqlgen/compiler"
+)
+
+func (s *sqliteDriver) Migrate(t *compiler.Table) (dialect.UpFunc, dialect.DownFunc) {
+	// TODO: Need to add up and down migration
+	return func(w io.Writer) error {
+			return nil
+		}, func(w io.Writer) error {
+			return nil
+		}
+}
+
 // func (s *sqliteDriver) Migrate(ctx context.Context, w io.Writer, t *compiler.Table) error {
 // 	// TODO: Need to add up and down migration
 // 	fmt.Fprint(w, "CREATE TABLE "+s.QuoteIdentifier(t.Name)+" (\n")

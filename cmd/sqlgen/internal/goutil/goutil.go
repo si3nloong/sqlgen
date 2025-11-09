@@ -1,6 +1,7 @@
 package goutil
 
 import (
+	"go/types"
 	"reflect"
 	"regexp"
 	"runtime"
@@ -31,4 +32,13 @@ func GenericFuncName(i any, genericType string, args ...string) string {
 	}
 	str = str + "(" + strings.Join(args, ",") + ")"
 	return str
+}
+
+func PointerUnderlyingType(t types.Type) (ut types.Type) {
+	v, ok := t.(*types.Pointer)
+	if ok {
+		t = PointerUnderlyingType(v.Elem())
+		return t
+	}
+	return t
 }

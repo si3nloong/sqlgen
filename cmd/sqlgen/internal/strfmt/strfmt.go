@@ -1,9 +1,30 @@
 package strfmt
 
-import "strings"
+import (
+	"fmt"
+	"io"
+	"strings"
+)
+
+const (
+	NoSpace = 0
+	Tab     = 4
+)
 
 var uppercaseAcronym = map[string]string{
 	"ID": "id",
+}
+
+func Fprintfln(w io.Writer, format string, values ...any) {
+	fmt.Fprintf(w, format+"\n", values...)
+}
+
+func Fwprintfln(w io.Writer, space int, format string, values ...any) {
+	fmt.Fprintf(w, "\n"+strings.Repeat(" ", space)+format, values...)
+}
+
+func Fwprintf(w io.Writer, space int, format string, values ...any) {
+	fmt.Fprintf(w, strings.Repeat(" ", space)+format, values...)
 }
 
 // Converts a string to CamelCase

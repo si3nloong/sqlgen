@@ -2,13 +2,18 @@ package codegen
 
 import (
 	"io/fs"
+	"iter"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 
+	"github.com/si3nloong/sqlgen/cmd/sqlgen/compiler"
 	"github.com/si3nloong/sqlgen/cmd/sqlgen/internal/fileutil"
+	"golang.org/x/tools/go/packages"
 )
+
+type WalkFunc func(*Generator, *packages.Package, iter.Seq2[*compiler.Table, error]) error
 
 type Matcher interface {
 	Match(v string) bool

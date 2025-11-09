@@ -1,48 +1,41 @@
 package main
 
 import (
+	"fmt"
 	"iter"
-	"log"
+	"os"
 
 	"github.com/si3nloong/sqlgen/cmd/sqlgen/codegen"
 	"github.com/si3nloong/sqlgen/cmd/sqlgen/compiler"
 	"github.com/spf13/cobra"
+	"golang.org/x/tools/go/packages"
 )
 
 var (
 	migrateCmd = &cobra.Command{
-		Use:   "migrate [path]",
+		Use:   "migrate [src] [outDir]",
 		Short: "Print the version string",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			log.Println("Args ->", args)
-			path := args[0]
-			matcher, err := codegen.PathResolver(path)
-			if err != nil {
+			source := args[0]
+			outDir := args[1]
+			stat, err := os.Stat(outDir)
+			if err != nil && !os.IsNotExist(err) {
+				return err
+			} else if stat != nil && !stat.IsDir() {
+				return fmt.Errorf(`sqlgen: "outDir" must be a directory`)
+			}
+
+			if err := os.MkdirAll(outDir, os.ModePerm); err != nil {
 				return err
 			}
 
-			goPkg, tables, err := compiler.ParseDir(path, &compiler.Config{
-				Matcher: matcher,
+			cfg := codegen.DefaultConfig()
+			cfg.Source = []string{source}
+
+			return codegen.Walk(cfg, func(gen *codegen.Generator, pkg *packages.Package, tables iter.Seq2[*compiler.Table, error]) error {
+				return gen.GenerateMigrations(outDir, pkg, tables)
 			})
-			if err != nil {
-				return err
-			}
-
-			_ = goPkg
-			next, stop := iter.Pull2(tables)
-			defer stop()
-
-			for {
-				t, err, ok := next()
-				if err != nil {
-					return err
-				} else if !ok {
-					return nil
-				} else {
-					log.Println(t)
-				}
-			}
 		},
 	}
 )

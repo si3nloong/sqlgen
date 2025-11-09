@@ -1,7 +1,6 @@
 package postgres
 
 import (
-	"context"
 	"io"
 
 	"github.com/si3nloong/sqlgen/cmd/sqlgen/codegen/dialect"
@@ -13,8 +12,13 @@ type columnInfo struct {
 	newColumn dialect.GoColumn
 }
 
-func (s *postgresDriver) Migrate(ctx context.Context, w io.Writer, t *compiler.Table) error {
-	return nil
+func (s *postgresDriver) Migrate(t *compiler.Table) (dialect.UpFunc, dialect.DownFunc) {
+	// TODO: Need to add up and down migration
+	return func(w io.Writer) error {
+			return nil
+		}, func(w io.Writer) error {
+			return nil
+		}
 }
 
 // func (s *postgresDriver) Migrate2(ctx context.Context, dsn string, w dialect.Writer, schema dialect.TableMigrator) error {

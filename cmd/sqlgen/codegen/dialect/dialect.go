@@ -31,7 +31,7 @@ type Dialect interface {
 	Var() string
 
 	// Character to escape table, column name
-	QuoteIdentifier(v string) string
+	QuoteIdentifier(s string) string
 
 	// Quote rune can be ' or " or `
 	QuoteRune() rune
@@ -40,7 +40,7 @@ type Dialect interface {
 	ColumnDataTypes() map[string]*ColumnType
 
 	// To create migration
-	// Migrate(ctx context.Context, t *compiler.Table) (UpFunc, DownFunc)
+	Migrate(t *compiler.Table) (UpFunc, DownFunc)
 }
 
 type Column interface {

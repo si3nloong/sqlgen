@@ -4,45 +4,38 @@
 package mysql
 
 import (
-	"fmt"
-	"go/types"
-	"log"
-
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/si3nloong/sqlgen/cmd/sqlgen/codegen/dialect"
 	"github.com/si3nloong/sqlgen/cmd/sqlgen/compiler"
 )
 
-type mysqlDriver struct {
-	typeMap map[fmt.GoStringer]*dialect.ColumnType
-}
+type mysqlDriver struct{}
 
 var (
-	_ dialect.Dialect = (*mysqlDriver)(nil)
+	_       dialect.Dialect = (*mysqlDriver)(nil)
+	typeMap                 = map[string]string{
+		compiler.Byte:    "CHAR",
+		compiler.Rune:    "CHAR",
+		compiler.String:  "VARCHAR(255)",
+		compiler.Bool:    "BOOL",
+		compiler.Int:     "INTEGER",
+		compiler.Int8:    "TINYINT",
+		compiler.Int16:   "SMALLINT",
+		compiler.Int32:   "MEDIUMINT",
+		compiler.Int64:   "BIGINT",
+		compiler.Uint:    "INTEGER UNSIGNED",
+		compiler.Uint8:   "TINYINT UNSIGNED",
+		compiler.Uint16:  "SMALLINT UNSIGNED",
+		compiler.Uint32:  "MEDIUMINT UNSIGNED",
+		compiler.Uint64:  "BIGINT UNSIGNED",
+		compiler.Float32: "FLOAT",
+		compiler.Float64: "FLOAT",
+		compiler.Time:    "DATETIME(6)",
+	}
 )
 
 func init() {
-	dialect.RegisterDialect("mysql", &mysqlDriver{
-		typeMap: map[fmt.GoStringer]*dialect.ColumnType{
-			compiler.Byte:    &dialect.ColumnType{},
-			compiler.Rune:    nil,
-			compiler.String:  nil,
-			compiler.Bool:    nil,
-			compiler.Int:     nil,
-			compiler.Int8:    nil,
-			compiler.Int16:   nil,
-			compiler.Int32:   nil,
-			compiler.Int64:   nil,
-			compiler.Uint:    nil,
-			compiler.Uint8:   nil,
-			compiler.Uint16:  nil,
-			compiler.Uint32:  nil,
-			compiler.Uint64:  nil,
-			compiler.Float32: nil,
-			compiler.Float64: nil,
-			compiler.Any:     nil,
-		},
-	})
+	dialect.RegisterDialect("mysql", &mysqlDriver{})
 }
 
 func (mysqlDriver) Driver() string {
@@ -67,13 +60,4 @@ func (mysqlDriver) QuoteIdentifier(v string) string {
 
 func (mysqlDriver) QuoteRune() rune {
 	return '`'
-}
-
-func (s *mysqlDriver) TypeMapper(t types.Type) {
-	v, ok := s.typeMap[compiler.GoType{Type: t}]
-	if !ok {
-		return
-	}
-	log.Println(v)
-	return
 }
