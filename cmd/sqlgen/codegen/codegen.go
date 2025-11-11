@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"log"
 	"log/slog"
 	"os"
 	"os/exec"
@@ -67,7 +66,6 @@ func Walk(cfg *Config, walkFunc WalkFunc) error {
 	for len(sources) > 0 {
 		srcDir = strings.TrimSpace(sources[0])
 		sources = sources[1:]
-		println("Source ->", srcDir)
 		if srcDir == "" {
 			return fmt.Errorf("sqlgen: source directory %q is empty path", srcDir)
 		}
@@ -263,7 +261,6 @@ func Generate(c *Config) error {
 		}
 
 		if err := parseGoPackage(generator, rootDir, dirs, matcher); err != nil {
-			log.Println("debug ->", err)
 			return err
 		}
 
