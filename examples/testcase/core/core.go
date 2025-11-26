@@ -55,7 +55,7 @@ type embed struct {
 		}
 	}
 	T time.Time
-	*deepNested
+	deepNested
 }
 
 type deepNested struct {

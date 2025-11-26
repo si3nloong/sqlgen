@@ -1,6 +1,7 @@
 package sqltype
 
 import (
+	"bytes"
 	"database/sql"
 	"database/sql/driver"
 	"fmt"
@@ -66,6 +67,7 @@ func (a *BoolSlice[T]) scanBytes(src []byte) error {
 	} else {
 		b := make(BoolSlice[T], len(elems))
 		for i, v := range elems {
+			v = bytes.TrimSpace(v)
 			if len(v) != 1 {
 				return fmt.Errorf("sqltype: could not parse boolean array index %d: invalid boolean %q", i, v)
 			}

@@ -21,7 +21,6 @@ const (
 	Postgres SqlDriver = "postgres"
 	Sqlite   SqlDriver = "sqlite"
 	MsSQL    SqlDriver = "mssql"
-	DuckDB   SqlDriver = "duckdb"
 )
 
 type naming string

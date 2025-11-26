@@ -555,6 +555,10 @@ func (r *Pager[T, Ptr]) Prev(ctx context.Context, db sequel.DB, cursor ...T) ite
 			v         T
 			hasCursor bool
 			maxLimit  = r.stmt.Limit
+			rows      *sql.Rows
+			err       error
+			noOfData  int
+			data      = make([]T, 0, r.stmt.Limit+1) // Add one to limit to find prev cursor
 		)
 		if len(cursor) > 0 {
 			v = cursor[0]
@@ -565,7 +569,7 @@ func (r *Pager[T, Ptr]) Prev(ctx context.Context, db sequel.DB, cursor ...T) ite
 
 		for {
 			if hasCursor {
-				if err := FindByPK(ctx, db, Ptr(&v)); err != nil {
+				if err = FindByPK(ctx, db, Ptr(&v)); err != nil {
 					yield(nil, err)
 					return
 				}
@@ -661,14 +665,13 @@ func (r *Pager[T, Ptr]) Prev(ctx context.Context, db sequel.DB, cursor ...T) ite
 			// Add one to limit to find next cursor
 			blr.WriteString(" LIMIT " + strconv.Itoa((int)(r.stmt.Limit+1)) + ";")
 
-			rows, err := db.QueryContext(ctx, blr.Query(), blr.Args()...)
+			rows, err = db.QueryContext(ctx, blr.Query(), blr.Args()...)
 			blr.Reset()
 			if err != nil {
 				yield(nil, err)
 				return
 			}
 
-			data := make([]T, 0, r.stmt.Limit+1)
 			for rows.Next() {
 				var v T
 				if err := rows.Scan(Ptr(&v).Addrs()...); err != nil {
@@ -678,29 +681,27 @@ func (r *Pager[T, Ptr]) Prev(ctx context.Context, db sequel.DB, cursor ...T) ite
 				}
 				data = append(data, v)
 			}
-			if err := rows.Close(); err != nil {
+			if err = rows.Close(); err != nil {
 				yield(nil, err)
 				return
 			}
-			if err := rows.Err(); err != nil {
+			if err = rows.Err(); err != nil {
 				yield(nil, err)
 				return
 			}
 
-			noOfRecord := len(data)
-			if uint16(noOfRecord) <= maxLimit {
-				if !yield(data, nil) {
-					return
-				}
+			noOfData = len(data)
+			if uint16(noOfData) <= maxLimit {
+				yield(data, nil)
 				return
 			}
 
-			if !yield(data[:noOfRecord-1], nil) {
+			if !yield(data[:noOfData-1], nil) {
 				return
 			}
 
-			v = data[noOfRecord-1] // Set next cursor
-			data = nil             // Reset result
+			v = data[noOfData-1] // Set previous cursor
+			data = data[:0]      // Reset result
 			hasCursor = true
 		}
 	}
@@ -712,6 +713,10 @@ func (r *Pager[T, Ptr]) Next(ctx context.Context, db sequel.DB, cursor ...T) ite
 			v         T
 			hasCursor bool
 			maxLimit  = r.stmt.Limit
+			rows      *sql.Rows
+			err       error
+			noOfData  int
+			data      = make([]T, 0, r.stmt.Limit+1) // Add one to limit to find next cursor
 		)
 		if len(cursor) > 0 {
 			v = cursor[0]
@@ -722,7 +727,7 @@ func (r *Pager[T, Ptr]) Next(ctx context.Context, db sequel.DB, cursor ...T) ite
 
 		for {
 			if hasCursor {
-				if err := FindByPK(ctx, db, Ptr(&v)); err != nil {
+				if err = FindByPK(ctx, db, Ptr(&v)); err != nil {
 					yield(nil, err)
 					return
 				}
@@ -828,49 +833,45 @@ func (r *Pager[T, Ptr]) Next(ctx context.Context, db sequel.DB, cursor ...T) ite
 					panic("unreachable")
 				}
 			}
-			// Add one to limit to find next cursor
 			blr.WriteString(" LIMIT " + strconv.Itoa((int)(r.stmt.Limit+1)) + ";")
 
-			rows, err := db.QueryContext(ctx, blr.Query(), blr.Args()...)
+			rows, err = db.QueryContext(ctx, blr.Query(), blr.Args()...)
 			blr.Reset()
 			if err != nil {
 				yield(nil, err)
 				return
 			}
 
-			data := make([]T, 0, r.stmt.Limit+1)
 			for rows.Next() {
 				var v T
-				if err := rows.Scan(Ptr(&v).Addrs()...); err != nil {
+				if err = rows.Scan(Ptr(&v).Addrs()...); err != nil {
 					rows.Close()
 					yield(nil, err)
 					return
 				}
 				data = append(data, v)
 			}
-			if err := rows.Close(); err != nil {
+			if err = rows.Close(); err != nil {
 				yield(nil, err)
 				return
 			}
-			if err := rows.Err(); err != nil {
+			if err = rows.Err(); err != nil {
 				yield(nil, err)
 				return
 			}
 
-			noOfRecord := len(data)
-			if uint16(noOfRecord) <= maxLimit {
-				if !yield(data, nil) {
-					return
-				}
+			noOfData = len(data)
+			if uint16(noOfData) <= maxLimit {
+				yield(data, nil)
 				return
 			}
 
-			if !yield(data[:noOfRecord-1], nil) {
+			if !yield(data[:noOfData-1], nil) {
 				return
 			}
 
-			v = data[noOfRecord-1] // Set next cursor
-			data = nil             // Reset result
+			v = data[noOfData-1] // Set next cursor
+			data = data[:0]      // Reset result
 			hasCursor = true
 		}
 	}

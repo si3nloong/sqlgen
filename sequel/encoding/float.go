@@ -50,6 +50,18 @@ func (f *float32Scanner[T, Addr]) Scan(v any) error {
 		default:
 			panic("unreachable")
 		}
+	case float32:
+		val := T(vi)
+		switch any(f.addr).(type) {
+		case **T:
+			*(**T)(unsafe.Pointer(f.addr)) = &val
+			return nil
+		case *T:
+			*(*T)(unsafe.Pointer(f.addr)) = val
+			return nil
+		default:
+			panic("unreachable")
+		}
 	case float64:
 		val := T(vi)
 		switch any(f.addr).(type) {
@@ -133,6 +145,18 @@ func (f *float64Scanner[T, Addr]) Scan(v any) error {
 		case *T:
 			var v T
 			*(*T)(unsafe.Pointer(f.addr)) = v
+			return nil
+		default:
+			panic("unreachable")
+		}
+	case float32:
+		val := T(vi)
+		switch any(f.addr).(type) {
+		case **T:
+			*(**T)(unsafe.Pointer(f.addr)) = &val
+			return nil
+		case *T:
+			*(*T)(unsafe.Pointer(f.addr)) = val
 			return nil
 		default:
 			panic("unreachable")

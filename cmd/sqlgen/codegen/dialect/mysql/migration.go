@@ -60,7 +60,7 @@ func getDataType(pk *compiler.AutoIncrPrimaryKey, column compiler.Column) string
 	}
 	switch v := column.(type) {
 	case *compiler.BasicColumn:
-		if !v.IsNullable() {
+		if !v.IsUnderlyingPtr() && !v.IsNullable() {
 			str += " NOT NULL"
 		}
 	case *compiler.GeneratedColumn:

@@ -4,6 +4,7 @@ import (
 	"database/sql/driver"
 	"fmt"
 	"strconv"
+	"strings"
 	"unsafe"
 )
 
@@ -58,7 +59,7 @@ func (a *Float32Slice[T]) scanBytes(src []byte) error {
 	} else {
 		b := make(Float32Slice[T], len(elems))
 		for i, v := range elems {
-			f, err := strconv.ParseFloat(unsafe.String(unsafe.SliceData(v), len(v)), 32)
+			f, err := strconv.ParseFloat(strings.TrimSpace(unsafe.String(unsafe.SliceData(v), len(v))), 32)
 			if err != nil {
 				return fmt.Errorf("sqltype: parsing array element index %d: %v", i, err)
 			}
@@ -121,7 +122,7 @@ func (a *Float64Slice[T]) scanBytes(src []byte) error {
 	} else {
 		b := make(Float64Slice[T], len(elems))
 		for i, v := range elems {
-			f, err := strconv.ParseFloat(unsafe.String(unsafe.SliceData(v), len(v)), 64)
+			f, err := strconv.ParseFloat(strings.TrimSpace(unsafe.String(unsafe.SliceData(v), len(v))), 64)
 			if err != nil {
 				return fmt.Errorf("sqltype: parsing array element index %d: %v", i, err)
 			}

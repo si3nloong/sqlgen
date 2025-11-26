@@ -40,7 +40,8 @@ func runInitCommand(cmd *cobra.Command, args []string) error {
 				Name: "driver",
 				Prompt: &survey.Select{
 					Message: "What is your sql driver:",
-					Options: []string{string(codegen.MySQL), string(codegen.Postgres), string(codegen.Sqlite), string(codegen.MsSQL), string(codegen.DuckDB)},
+					Options: []string{
+						string(codegen.MySQL), string(codegen.Postgres), string(codegen.Sqlite), string(codegen.MsSQL)},
 					Default: string(codegen.MySQL),
 				},
 			},

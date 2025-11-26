@@ -4,6 +4,7 @@ import (
 	"database/sql/driver"
 	"fmt"
 	"strconv"
+	"strings"
 	"unsafe"
 )
 
@@ -77,7 +78,7 @@ func scanBytes[T ~int | ~int8 | ~int16 | ~int32 | ~int64 |
 	} else {
 		b := make([]T, len(elems))
 		for i, v := range elems {
-			n, err := strconv.ParseInt(unsafe.String(unsafe.SliceData(v), len(v)), 10, 64)
+			n, err := strconv.ParseInt(strings.TrimSpace(unsafe.String(unsafe.SliceData(v), len(v))), 10, 64)
 			if err != nil {
 				return fmt.Errorf("sqltype: parsing array element index %d: %v", i, err)
 			}
