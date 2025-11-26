@@ -1,4 +1,4 @@
-package main
+package core
 
 import (
 	"reflect"
@@ -30,23 +30,39 @@ const (
 // 	Info  LogLevel = "info"
 // )
 
-type HouseUnit struct {
-	No        uint
-	BuildTime time.Time
-	Address   Address
-	Kind      reflect.Kind
-	Type      HouseUnitType
-	Chan      reflect.ChanDir
-	// Lvl       LogLevel
-	// Condition Condition
-	Inner struct {
+type User struct {
+	ID         int64 `sql:",pk,auto_increment"`
+	No         uint
+	JoinedTime time.Time
+	Address    Address
+	Kind       reflect.Kind
+	Type       HouseUnitType
+	Chan       reflect.ChanDir
+	PostalCode *string
+	ExtraInfo  struct {
 		Flag bool
 	}
-	Arr   [2]string
-	Slice []float64
-	Map   map[string]float64
+	Nicknames [2]string
+	Slice     []float64
+	Map       map[string]float64
+	embed
 }
 
+type embed struct {
+	Nested *struct {
+		Deep struct {
+			Bool bool
+		}
+	}
+	T time.Time
+	deepNested
+}
+
+type deepNested struct {
+	Name string
+}
+
+// +sql:ignore
 type Address struct {
 	Line1       string
 	Line2       string

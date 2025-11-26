@@ -19,7 +19,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/samber/lo"
 	"github.com/si3nloong/sqlgen/cmd/sqlgen/codegen/dialect"
-	"github.com/si3nloong/sqlgen/cmd/sqlgen/internal/compiler"
+	"github.com/si3nloong/sqlgen/cmd/sqlgen/compiler"
 	"github.com/si3nloong/sqlgen/cmd/sqlgen/internal/fileutil"
 )
 
@@ -39,6 +39,118 @@ var (
 	// goTagRegexp   = regexp.MustCompile(`(?i)^([a-z][a-z_]*[a-z])(\:(\w+))?$`)
 	// sqlFuncRegexp = regexp.MustCompile(`(?i)\s*(\w+\()(\w+\s*\,\s*)?(\{\})(\s*\,\s*\w+)?(\))\s*`)
 )
+
+func Walk(cfg *Config, walkFunc WalkFunc) error {
+	vldr := validator.New()
+	if err := vldr.Struct(cfg); err != nil {
+		return err
+	}
+
+	dialect, ok := dialect.GetDialect((string)(cfg.Driver))
+	if !ok {
+		return fmt.Errorf("sqlgen: missing dialect, please register dialect %q", cfg.Driver)
+	}
+
+	gen, err := newGenerator(cfg, dialect)
+	if err != nil {
+		return err
+	}
+
+	var (
+		srcDir  string
+		sources = make([]string, 0, len(cfg.Source))
+	)
+	sources = append(sources, cfg.Source...)
+
+	// Resolve every source provided
+	for len(sources) > 0 {
+		srcDir = strings.TrimSpace(sources[0])
+		sources = sources[1:]
+		if srcDir == "" {
+			return fmt.Errorf("sqlgen: source directory %q is empty path", srcDir)
+		}
+
+		if srcDir == "." {
+			srcDir = fileutil.Getpwd()
+			// If the prefix is ".", mean it's refer to current directory
+		} else if srcDir[0] == '.' {
+			srcDir = fileutil.Getpwd() + srcDir[1:]
+		} else if srcDir[0] != '/' {
+			srcDir = filepath.Join(fileutil.Getpwd(), srcDir)
+		}
+
+		// If suffix is *, we will add go extension to it
+		if srcDir[len(srcDir)-1] == '*' {
+			srcDir = srcDir + ".go"
+		}
+
+		slog.Info("Processing", "dir", srcDir)
+
+		// File: examples/testdata/test.go
+		// Folder: examples/testdata
+		// Wildcard: [examples/**, examples/testdata/**/*.go,  examples/testdata/**/*]
+		// File wildcard: [examples/testdata/*model.go, examples/testdata/*_model.go]
+		var (
+			rootDir string
+			// TODO: need to support unicode file name
+			r                  = regexp.MustCompile(`(?i)((?:\/)([a-z][a-z0-9-_.]+\/)*)\w*\*\w*(?:\.go)`)
+			subMatches         = r.FindStringSubmatch(srcDir)
+			matcher    Matcher = new(EmptyMatcher)
+			dirs               = make([]string, 0)
+		)
+
+		if strings.Contains(srcDir, "**") {
+			paths := strings.SplitN(srcDir, "**", 2)
+			rootDir = strings.TrimSuffix(strings.TrimSpace(paths[0]), "/")
+			suffix := `(?:[\\/]\w+\.\w+)`
+			if paths[1] != "" {
+				suffix = path2Regex.Replace(paths[1])
+			}
+			if err := filepath.WalkDir(rootDir, func(path string, d fs.DirEntry, err error) error {
+				// If the directory is not exists, the "d" will be nil
+				if d == nil || !d.IsDir() {
+					// If it's not a folder, we skip!
+					return nil
+				}
+				dirs = append(dirs, strings.TrimPrefix(path, rootDir))
+				return nil
+			}); err != nil {
+				return fmt.Errorf(`sqlgen: failed to walk schema %s: %w`, paths[0], err)
+			}
+			matcher = &RegexMatcher{regexp.MustCompile(path2Regex.Replace(rootDir) + `([\\/][a-z0-9_-]+)*` + suffix)}
+		} else if len(subMatches) > 0 {
+			rootDir = strings.TrimSuffix(subMatches[1], "/")
+			dirs = append(dirs, "")
+			slog.Info("Submatch", "rootDir", rootDir, "dir", path2Regex.Replace(srcDir))
+			matcher = &RegexMatcher{regexp.MustCompile(path2Regex.Replace(srcDir))}
+		} else {
+			fi, err := os.Stat(srcDir)
+			// If the file or folder not exists, we skip!
+			if os.IsNotExist(err) {
+				continue
+			} else if err != nil {
+				return err
+			}
+
+			if fi.IsDir() {
+				// If it's just a folder
+				matcher = FolderMatcher(srcDir)
+			} else {
+				// If it's just a file
+				srcDir = filepath.Dir(srcDir)
+				matcher = FileMatcher{filepath.Join(srcDir, fi.Name()): struct{}{}}
+			}
+
+			rootDir = srcDir
+			dirs = append(dirs, "")
+		}
+
+		if err := gen.parseGoPackageV2(rootDir, dirs, matcher, walkFunc); err != nil {
+			return err
+		}
+	}
+	return nil
+}
 
 func Generate(c *Config) error {
 	vldr := validator.New()
@@ -203,6 +315,7 @@ func parseGoPackage(
 
 	for len(dirs) > 0 {
 		dir = path.Join(rootDir, dirs[0])
+		dirs = dirs[1:]
 
 		// Sometimes user might place db destination in the source as well
 		// In this situation, we're not process the folder, we will skip it
@@ -212,14 +325,12 @@ func parseGoPackage(
 			path.Join(pwd, g.config.Database.Dir),
 			path.Join(pwd, g.config.Database.Operator.Dir),
 		}, dir); idx >= 0 {
-			dirs = dirs[1:]
 			continue
 		}
 
 		slog.Info("Process", "dir", dir)
 		if fileutil.IsDirEmptyFiles(dir, g.config.Exec.Filename) {
 			slog.Info("Folder is empty, so not processing")
-			dirs = dirs[1:]
 			continue
 		}
 
@@ -230,39 +341,83 @@ func parseGoPackage(
 		slog.Info("Parse go package", "dir", dir)
 		// Since we're loading one directory at a time,
 		// the return results will only return one package back
-		schema, err := compiler.Parse(dir, &compiler.Config{
+		pkg, tables, err := compiler.ParseDir(dir, &compiler.Config{
 			Tag:        g.config.Tag,
 			RenameFunc: rename,
 			Matcher:    matcher,
 		})
 		if errors.Is(err, compiler.ErrSkip) {
-			goto nextDir
+			continue
 		} else if err != nil {
 			return err
 		}
 
-		if err := g.generateModels(dir, schema); err != nil {
+		if err := g.generateModels(dir, pkg, tables); errors.Is(err, compiler.ErrSkip) {
+			continue
+		} else if err != nil {
 			return err
 		}
 
-		// If the `skip_empty` is true,
-		// we do not generate the go file
-		if g.config.Exec.SkipEmpty {
-			goto nextDir
+		// 	// If the `skip_empty` is true,
+		// 	// we do not generate the go file
+		// 	if g.config.Exec.SkipEmpty {
+		// 		goto nextDir
+		// 	}
+	}
+	return nil
+}
+
+func (g *Generator) parseGoPackageV2(
+	rootDir string,
+	dirs []string,
+	matcher Matcher,
+	walkFunc WalkFunc,
+) error {
+	var dir string
+	var filename string
+	rename := g.config.RenameFunc()
+
+	for len(dirs) > 0 {
+		dir = path.Join(rootDir, dirs[0])
+		dirs = dirs[1:]
+
+		// Sometimes user might place db destination in the source as well
+		// In this situation, we're not process the folder, we will skip it
+		// if the file is exists in db folder
+		pwd := fileutil.Getpwd()
+		if idx := lo.IndexOf([]string{
+			path.Join(pwd, g.config.Database.Dir),
+			path.Join(pwd, g.config.Database.Operator.Dir),
+		}, dir); idx >= 0 {
+			continue
 		}
 
-		// if g.config.Migration != nil {
-		// 	if err := os.MkdirAll(g.config.Migration.Dir, os.ModePerm); err != nil {
-		// 		return err
-		// 	}
+		slog.Info("Process", "dir", dir)
+		if fileutil.IsDirEmptyFiles(dir, g.config.Exec.Filename) {
+			slog.Info("Folder is empty, so not processing")
+			continue
+		}
 
-		// 	if err := g.genMigrations(schema); err != nil {
-		// 		return err
-		// 	}
-		// }
+		filename = path.Join(dir, g.config.Exec.Filename)
+		// Unlink the generated file, ignore the error
+		_ = syscall.Unlink(filename)
 
-	nextDir:
-		dirs = dirs[1:]
+		slog.Info("Parse go package", "dir", dir)
+		// Since we're loading one directory at a time,
+		// the return results will only return one package back
+		pkg, tables, err := compiler.ParseDir(dir, &compiler.Config{
+			Tag:        g.config.Tag,
+			RenameFunc: rename,
+			Matcher:    matcher,
+		})
+		if errors.Is(err, compiler.ErrSkip) {
+			continue
+		} else if err != nil {
+			return err
+		}
+		if err := walkFunc(g, pkg, tables); err != nil {
+			return err
+		}
 	}
 	return nil
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/bits"
 	"strconv"
+	"strings"
 	"unsafe"
 )
 
@@ -77,7 +78,7 @@ func scanUBytes[T ~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr, Arr i
 	} else {
 		b := make([]T, len(elems))
 		for i, v := range elems {
-			n, err := strconv.ParseUint(unsafe.String(unsafe.SliceData(v), len(v)), 10, bitSize)
+			n, err := strconv.ParseUint(strings.TrimSpace(unsafe.String(unsafe.SliceData(v), len(v))), 10, bitSize)
 			if err != nil {
 				return fmt.Errorf("sqltype: parsing array element index %d: %v", i, err)
 			}
