@@ -1,6 +1,7 @@
 package valuer
 
 import (
+	"database/sql"
 	"database/sql/driver"
 	"testing"
 
@@ -48,10 +49,40 @@ func Test(t *testing.T) {
 		require.Equal(t, "Hello WORLD!!", values[3])
 	})
 
-	t.Run("Addrs shouldn't be nil", func(t *testing.T) {
-		b := B{}
-		for _, addr := range b.Addrs() {
-			require.NotNil(t, addr)
-		}
+	t.Run("Addrs", func(t *testing.T) {
+		t.Run("Every address value shouldn't be nil", func(t *testing.T) {
+			b := B{}
+			addrs := b.Addrs()
+			for i := range addrs {
+				require.NotNil(t, addrs[i])
+			}
+		})
+
+		t.Run("Values should tally after scan", func(t *testing.T) {
+			// Before scan
+			b := B{}
+			b.N = "TESTING"
+			b.PtrValue = new(anyType)
+
+			addrs := b.Addrs()
+
+			// After scan
+			i64 := int64(1_000)
+			*(addrs[0].(*int64)) = i64
+			require.Equal(t, i64, b.ID)
+			require.Equal(t, i64, b.IDValue())
+			addrs[1].(sql.Scanner).Scan(true)
+			require.NotNil(t, b.Value)
+			val, err := b.ValueValue().(driver.Valuer).Value()
+			require.NoError(t, err)
+			require.Equal(t, "any", val)
+			addrs[2].(sql.Scanner).Scan(nil)
+			require.Nil(t, b.PtrValue)
+			require.Nil(t, b.PtrValueValue())
+			*(addrs[3].(*string)) = `HELLO WORLD`
+			require.Equal(t, `HELLO WORLD`, b.N)
+			require.Equal(t, `HELLO WORLD`, b.NValue())
+		})
 	})
+
 }

@@ -1,6 +1,6 @@
 # sqlgen
 
-[![Build](https://github.com/si3nloong/sqlgen/workflows/test/badge.svg?branch=main)](https://github.com/si3nloong/sqlgen/actions?query=workflow%3Atest)
+[![Build](https://img.shields.io/github/actions/workflow/status/si3nloong/sqlgen/test.yml?branch=main)](https://github.com/si3nloong/sqlgen/actions?query=workflow%3ATest)
 [![Go Report](https://goreportcard.com/badge/github.com/si3nloong/sqlgen)](https://goreportcard.com/report/github.com/si3nloong/sqlgen)
 [![Go Coverage](https://codecov.io/gh/si3nloong/sqlgen/branch/main/graph/badge.svg)](https://codecov.io/gh/si3nloong/sqlgen)
 [![LICENSE](https://img.shields.io/github/license/si3nloong/sqlgen)](https://github.com/si3nloong/sqlgen/blob/main/LICENSE)
@@ -14,6 +14,8 @@
 - **sqlgen prioritizes Performance** — Most of the things will define in compile time instead of runtime.
 - **sqlgen embrace Generics** — We use generics to eliminate runtime reflection costs and reduce memory allocation.
 - **sqlgen eliminates Side Effects** - You will get expected results instead of side effects when mutate your models.
+- **sqlgen has ZERO Dependencies** - It has no dependencies at all, it only rely on the standard library.
+- **sqlgen support dynamic query** - It provide [multiple insert](/docs/ADVANCED_USAGE.md#multiple-insert), [multiple upsert](/docs/ADVANCED_USAGE.md#multiple-upsert) and [cursor-based pagination](/docs/ADVANCED_USAGE.md#pagination) which [sqlc](https://github.com/sqlc-dev/sqlc) doesn't able to provide.
 
 ## SQL driver support
 
@@ -22,6 +24,7 @@
 | `mysql`    |   ✅    |
 | `postgres` |   ✅    |
 | `sqlite`   |   ✅    |
+| `mssql`    |   ❌    |
 
 ## Quick start
 
@@ -98,12 +101,17 @@ More help to get started:
 - [CLI guide](/docs/CLI.md) - the CLI commands.
 - [FAQ](/docs/FAQ.md) - frequent ask questions.
 - [Configuration file](/docs/CONFIGURATION.md) - configure code generation.
+- [Advanced usages](/docs/ADVANCED_USAGE.md) - advanced API.
 
 ## Benchmark
 
 <img src="./docs/images/orm_benchmark.jpg" />
 
 As you can see, [sqlgen](https://github.com/si3nloong/sqlgen) is perform as close as Raw query, and having low memory allocations.
+
+## Road Map
+
+- [ ] Support Mssql
 
 ## Reporting Issues
 
@@ -112,12 +120,6 @@ If you think you've found a bug, or something isn't behaving the way you think i
 ## Contributing
 
 We welcome contributions, Read our [Contribution Guidelines](https://github.com/si3nloong/sqlgen/blob/main/CONTRIBUTING.md) to learn more about contributing to **sqlgen**
-
-## Big Thanks To
-
-Thanks to these awesome companies for their support of Open Source developers ❤
-
-[![GitHub](https://jstools.dev/img/badges/github.svg)](https://github.com/open-source)
 
 ## Inspired By
 

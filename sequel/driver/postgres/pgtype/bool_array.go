@@ -48,7 +48,7 @@ func (a *BoolArray[T]) Scan(src interface{}) error {
 	case []byte:
 		return a.scanBytes(src)
 	case string:
-		return a.scanBytes([]byte(src))
+		return a.scanBytes(unsafe.Slice(unsafe.StringData(src), len(src)))
 	case nil:
 		*a = nil
 		return nil

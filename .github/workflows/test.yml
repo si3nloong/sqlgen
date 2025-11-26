@@ -7,15 +7,15 @@ jobs:
       matrix:
         # os: [ubuntu-latest, windows-latest]
         os: [ubuntu-latest]
-        go: ["1.23", "1.24"]
+        go: ["1.23", "1.24", "1.25"]
     runs-on: ${{ matrix.os }}
     continue-on-error: false
     steps:
       - name: Check out code into the Go module directory
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Set up Go ${{ matrix.go }}
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.go }}
 

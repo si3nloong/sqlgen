@@ -58,7 +58,7 @@ func (a *Float32Array[T]) scanBytes(src []byte) error {
 	} else {
 		b := make(Float32Array[T], len(elems))
 		for i, v := range elems {
-			f, err := strconv.ParseFloat(string(v), 32)
+			f, err := strconv.ParseFloat(unsafe.String(unsafe.SliceData(v), len(v)), 32)
 			if err != nil {
 				return fmt.Errorf("pgtype: parsing array element index %d: %v", i, err)
 			}
@@ -121,7 +121,7 @@ func (a *Float64Array[T]) scanBytes(src []byte) error {
 	} else {
 		b := make(Float64Array[T], len(elems))
 		for i, v := range elems {
-			f, err := strconv.ParseFloat(string(v), 64)
+			f, err := strconv.ParseFloat(unsafe.String(unsafe.SliceData(v), len(v)), 64)
 			if err != nil {
 				return fmt.Errorf("pgtype: parsing array element index %d: %v", i, err)
 			}

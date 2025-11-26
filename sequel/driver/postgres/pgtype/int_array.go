@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"strconv"
 	"unsafe"
-
-	"golang.org/x/exp/constraints"
 )
 
 // Int64Array represents a one-dimensional array of the PostgreSQL integer types.
@@ -68,7 +66,8 @@ func (a *Int64Array[T]) Scan(src any) error {
 	return arrayScan(a, src, "Int64Array")
 }
 
-func scanBytes[T constraints.Integer, Arr interface{ ~[]T }](a *Arr, src []byte, t string) error {
+func scanBytes[T ~int | ~int8 | ~int16 | ~int32 | ~int64 |
+	~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr, Arr interface{ ~[]T }](a *Arr, src []byte, t string) error {
 	elems, err := scanLinearArray(src, []byte{','}, t)
 	if err != nil {
 		return err
