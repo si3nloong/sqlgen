@@ -42,7 +42,7 @@ func (v User) Values() []any {
 		encoding.JSONValue(v.Map),                // 11 - map
 		v.NestedValue(),                          // 12 - nested
 		v.embed.T,                                // 13 - t
-		v.NameValue(),                            // 14 - name
+		v.embed.deepNested.Name,                  // 14 - name
 	}
 }
 func (v *User) Addrs() []any {
@@ -51,9 +51,6 @@ func (v *User) Addrs() []any {
 	}
 	if v.embed.Nested == nil {
 		v.embed.Nested = new(struct{ Deep struct{ Bool bool } })
-	}
-	if v.embed.deepNested == nil {
-		v.embed.deepNested = new(deepNested)
 	}
 	return []any{
 		&v.ID,                             //  0 - id
@@ -80,13 +77,13 @@ func (User) InsertPlaceholders(row int) string {
 	return "(?,?,?,?,?,?,?,?,?,?,?,?,?,?)" // 14
 }
 func (v User) InsertOneStmt() (string, []any) {
-	return "INSERT INTO `user` (`no`,`joined_time`,`address`,`kind`,`type`,`chan`,`postal_code`,`extra_info`,`nicknames`,`slice`,`map`,`nested`,`t`,`name`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?);", []any{(int64)(v.No), v.JoinedTime, encoding.JSONValue(v.Address), (int64)(v.Kind), (int64)(v.Type), (int64)(v.Chan), v.PostalCodeValue(), encoding.JSONValue(v.ExtraInfo), encoding.JSONValue(v.Nicknames), (sqltype.Float64Slice[float64])(v.Slice), encoding.JSONValue(v.Map), v.NestedValue(), v.embed.T, v.NameValue()}
+	return "INSERT INTO `user` (`no`,`joined_time`,`address`,`kind`,`type`,`chan`,`postal_code`,`extra_info`,`nicknames`,`slice`,`map`,`nested`,`t`,`name`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?);", []any{(int64)(v.No), v.JoinedTime, encoding.JSONValue(v.Address), (int64)(v.Kind), (int64)(v.Type), (int64)(v.Chan), v.PostalCodeValue(), encoding.JSONValue(v.ExtraInfo), encoding.JSONValue(v.Nicknames), (sqltype.Float64Slice[float64])(v.Slice), encoding.JSONValue(v.Map), v.NestedValue(), v.embed.T, v.embed.deepNested.Name}
 }
 func (v User) FindOneByPKStmt() (string, []any) {
 	return "SELECT `id`,`no`,`joined_time`,`address`,`kind`,`type`,`chan`,`postal_code`,`extra_info`,`nicknames`,`slice`,`map`,`nested`,`t`,`name` FROM `user` WHERE `id` = ? LIMIT 1;", []any{v.ID}
 }
 func (v User) UpdateOneByPKStmt() (string, []any) {
-	return "UPDATE `user` SET `no` = ?,`joined_time` = ?,`address` = ?,`kind` = ?,`type` = ?,`chan` = ?,`postal_code` = ?,`extra_info` = ?,`nicknames` = ?,`slice` = ?,`map` = ?,`nested` = ?,`t` = ?,`name` = ? WHERE `id` = ?;", []any{(int64)(v.No), v.JoinedTime, encoding.JSONValue(v.Address), (int64)(v.Kind), (int64)(v.Type), (int64)(v.Chan), v.PostalCodeValue(), encoding.JSONValue(v.ExtraInfo), encoding.JSONValue(v.Nicknames), (sqltype.Float64Slice[float64])(v.Slice), encoding.JSONValue(v.Map), v.NestedValue(), v.embed.T, v.NameValue(), v.ID}
+	return "UPDATE `user` SET `no` = ?,`joined_time` = ?,`address` = ?,`kind` = ?,`type` = ?,`chan` = ?,`postal_code` = ?,`extra_info` = ?,`nicknames` = ?,`slice` = ?,`map` = ?,`nested` = ?,`t` = ?,`name` = ? WHERE `id` = ?;", []any{(int64)(v.No), v.JoinedTime, encoding.JSONValue(v.Address), (int64)(v.Kind), (int64)(v.Type), (int64)(v.Chan), v.PostalCodeValue(), encoding.JSONValue(v.ExtraInfo), encoding.JSONValue(v.Nicknames), (sqltype.Float64Slice[float64])(v.Slice), encoding.JSONValue(v.Map), v.NestedValue(), v.embed.T, v.embed.deepNested.Name, v.ID}
 }
 func (v User) IDValue() any {
 	return v.ID
@@ -137,10 +134,7 @@ func (v User) TValue() any {
 	return v.embed.T
 }
 func (v User) NameValue() any {
-	if v.embed.deepNested != nil {
-		return v.embed.deepNested.Name
-	}
-	return nil
+	return v.embed.deepNested.Name
 }
 func (v User) ColumnID() sequel.ColumnClause[int64] {
 	return sequel.BasicColumn("id", v.ID)
