@@ -138,7 +138,7 @@ type StmtWriter interface {
 	io.StringWriter
 	Quote(v string) string
 	Var(v any) string
-	// Vars will group the valus in parenthesis
+	// Vars will group the values in parenthesis
 	Vars(vals []any) string
 }
 
