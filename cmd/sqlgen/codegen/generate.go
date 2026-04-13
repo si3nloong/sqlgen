@@ -235,6 +235,13 @@ loop:
 			}
 		}
 
+		// Build the "SQLColumns" function which return the column SQL query
+		if method, isWrongType := t.Implements(sqlQueryColumner); isWrongType {
+			g.LogError(fmt.Errorf(`sqlgen: struct %q has function "SQLColumns" but wrong footprint`, t.Name))
+		} else if method != nil && !isWrongType {
+			g.buildSqlColumns(w, t)
+		}
+
 		// Build the "Columns" function which return the column names
 		if method, isWrongType := t.Implements(sqlColumner); isWrongType {
 			g.LogError(fmt.Errorf(`sqlgen: struct %q has function "Columns" but wrong footprint`, t.Name))
@@ -307,13 +314,6 @@ loop:
 			if !t.Readonly {
 				g.buildUpdateByPK(w, importPkgs, t)
 			}
-		}
-
-		// Build the "SQLColumns" function which return the column SQL query
-		if method, isWrongType := t.Implements(sqlQueryColumner); isWrongType {
-			g.LogError(fmt.Errorf(`sqlgen: struct %q has function "SQLColumns" but wrong footprint`, t.Name))
-		} else if method != nil && !isWrongType {
-			g.buildSqlColumns(w, t)
 		}
 
 		// Build getter function for each column
