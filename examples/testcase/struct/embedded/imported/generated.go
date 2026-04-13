@@ -39,12 +39,15 @@ func (v B) TimeValue() any {
 	return encoding.TextValue(v.DateTime.Time)
 }
 func (v B) ColumnDate() sequel.ColumnConvertClause[civil.Date] {
-	return sequel.Column("date", v.DateTime.Date, func(val civil.Date) any {
-		return encoding.TextValue(val)
-	})
+	return sequel.Column("date", v.DateTime.Date, convertCivilDateToValue)
 }
 func (v B) ColumnTime() sequel.ColumnConvertClause[civil.Time] {
-	return sequel.Column("time", v.DateTime.Time, func(val civil.Time) any {
-		return encoding.TextValue(val)
-	})
+	return sequel.Column("time", v.DateTime.Time, convertCivilTimeToValue)
+}
+
+func convertCivilTimeToValue(val civil.Time) any {
+	return encoding.TextValue(val)
+}
+func convertCivilDateToValue(val civil.Date) any {
+	return encoding.TextValue(val)
 }

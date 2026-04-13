@@ -67,7 +67,9 @@ func (v Composite) ColumnCol2() sequel.ColumnClause[bool] {
 	return sequel.BasicColumn("col_2", v.Col2)
 }
 func (v Composite) ColumnCol3() sequel.ColumnConvertClause[uuid.UUID] {
-	return sequel.Column("col_3", v.Col3, func(val uuid.UUID) any {
-		return val
-	})
+	return sequel.Column("col_3", v.Col3, convertUuidUuidToValue)
+}
+
+func convertUuidUuidToValue(val uuid.UUID) any {
+	return val
 }

@@ -10,6 +10,7 @@ import (
 	"iter"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"text/template"
@@ -180,6 +181,8 @@ func (g *Generator) generateModels(
 	next, stop := iter.Pull2(tables)
 	defer stop()
 
+	anonymousFuncs := make(map[string][2]string)
+
 loop:
 	for {
 		t, err, ok := next()
@@ -233,13 +236,6 @@ loop:
 				panic("unreachable")
 
 			}
-		}
-
-		// Build the "SQLColumns" function which return the column SQL query
-		if method, isWrongType := t.Implements(sqlQueryColumner); isWrongType {
-			g.LogError(fmt.Errorf(`sqlgen: struct %q has function "SQLColumns" but wrong footprint`, t.Name))
-		} else if method != nil && !isWrongType {
-			g.buildSqlColumns(w, t)
 		}
 
 		// Build the "Columns" function which return the column names
@@ -316,6 +312,13 @@ loop:
 			}
 		}
 
+		// Build the "SQLColumns" function which return the column SQL query
+		if method, isWrongType := t.Implements(sqlQueryColumner); isWrongType {
+			g.LogError(fmt.Errorf(`sqlgen: struct %q has function "SQLColumns" but wrong footprint`, t.Name))
+		} else if method != nil && !isWrongType {
+			g.buildSqlColumns(w, t)
+		}
+
 		// Build getter function for each column
 		if !t.Readonly {
 			for _, f := range t.Columns {
@@ -379,19 +382,40 @@ loop:
 			if isBasic {
 				fprintfln(w, "return sequel.BasicColumn(%s, v.%s)", g.Quote(g.QuoteIdentifier(f.Name())), f.GoPath())
 			} else {
-				fprintfln(w, "return sequel.Column(%s, v.%s, func(val %s) any {", g.Quote(g.QuoteIdentifier(f.Name())), f.GoPath(), typeStr)
-				// fprintfln(w, "if val != nil {")
-				// fprintfln(w, "return %s", g.valuer(importPkgs, "*val", assertAsPtr[types.Pointer](f.Type).Elem()))
-				if f.IsGoPtr() {
-					fprintfln(w, "if val != nil {")
-					// Deference the pointer value and return it
-					fprintfln(w, "return %s", g.valuer(importPkgs, "*val", assertAsPtr[types.Pointer](f.GoType()).Elem()))
-					fprintfln(w, "}")
-					fprintfln(w, "return nil")
-				} else {
-					fmt.Fprintf(w, "return %s", g.valuer(importPkgs, "val", f.GoType()))
+				typeName := f.GoType().String()
+				// Generate anonymous function
+				funcName := fmt.Sprintf("convert%sToValue", normalize(typeStr))
+				fprintfln(w, "return sequel.Column(%s, v.%s, %s)", g.Quote(g.QuoteIdentifier(f.Name())), f.GoPath(), funcName)
+				if _, exists := anonymousFuncs[typeName]; !exists {
+					w2 := strpool.AcquireString()
+					fprintfln(w2, `func %s(val %s) any {`, funcName, typeStr)
+					if f.IsGoPtr() {
+						fprintfln(w2, "if val != nil {")
+						// Deference the pointer value and return it
+						fprintfln(w2, "return %s", g.valuer(importPkgs, "*val", assertAsPtr[types.Pointer](f.GoType()).Elem()))
+						fprintfln(w2, "}")
+						fprintfln(w2, "return nil")
+					} else {
+						fprintfln(w2, "return %s", g.valuer(importPkgs, "val", f.GoType()))
+					}
+					fprintfln(w2, "}")
+					anonymousFuncs[typeName] = [2]string{funcName, w2.String()}
+					strpool.ReleaseString(w2)
 				}
-				fprintfln(w, "})")
+
+				// fprintfln(w2, "return sequel.Column(%s, v.%s, func(val %s) any {", g.Quote(g.QuoteIdentifier(f.Name())), f.GoPath(), typeStr)
+				// // fprintfln(w, "if val != nil {")
+				// // fprintfln(w, "return %s", g.valuer(importPkgs, "*val", assertAsPtr[types.Pointer](f.Type).Elem()))
+				// if f.IsGoPtr() {
+				// 	fprintfln(w2, "if val != nil {")
+				// 	// Deference the pointer value and return it
+				// 	fprintfln(w2, "return %s", g.valuer(importPkgs, "*val", assertAsPtr[types.Pointer](f.GoType()).Elem()))
+				// 	fprintfln(w2, "}")
+				// 	fprintfln(w2, "return nil")
+				// } else {
+				// 	fmt.Fprintf(w2, "return %s", g.valuer(importPkgs, "val", f.GoType()))
+				// }
+				// fprintfln(w2, "})")
 			}
 			fprintfln(w, "}")
 		}
@@ -399,6 +423,25 @@ loop:
 		if err := w.Flush(); err != nil {
 			return err
 		}
+	}
+
+	if n := len(anonymousFuncs); n > 0 {
+		funcNames := make([][2]string, n)
+		for _, v := range anonymousFuncs {
+			funcNames = append(funcNames, [2]string{v[0], v[1]})
+		}
+		sort.Slice(funcNames, func(i, j int) bool {
+			return funcNames[i][0] > funcNames[j][0]
+		})
+		fmt.Fprintf(w, "\n")
+		for i := range funcNames {
+			fmt.Fprint(w, funcNames[i][1])
+		}
+		clear(anonymousFuncs)
+	}
+
+	if err := w.Flush(); err != nil {
+		return err
 	}
 
 	if err := os.MkdirAll(dstDir, os.ModePerm); err != nil {

@@ -36,7 +36,9 @@ func (v A) ColumnTime() sequel.ColumnClause[time.Time] {
 	return sequel.BasicColumn("time", v.Time)
 }
 func (v A) ColumnDec() sequel.ColumnConvertClause[decimal.Decimal] {
-	return sequel.Column("dec", v.Dec, func(val decimal.Decimal) any {
-		return val
-	})
+	return sequel.Column("dec", v.Dec, convertDecimalDecimalToValue)
+}
+
+func convertDecimalDecimalToValue(val decimal.Decimal) any {
+	return val
 }

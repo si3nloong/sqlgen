@@ -46,10 +46,12 @@ func (v Customer) ColumnName() sequel.ColumnClause[string] {
 	return sequel.BasicColumn("name", v.Name)
 }
 func (v Customer) ColumnAge() sequel.ColumnConvertClause[uint8] {
-	return sequel.Column("age", v.Age, func(val uint8) any {
-		return (int64)(val)
-	})
+	return sequel.Column("age", v.Age, convertUint8ToValue)
 }
 func (v Customer) ColumnMarried() sequel.ColumnClause[bool] {
 	return sequel.BasicColumn("married", v.Married)
+}
+
+func convertUint8ToValue(val uint8) any {
+	return (int64)(val)
 }

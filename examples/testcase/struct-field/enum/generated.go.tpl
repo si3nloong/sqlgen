@@ -43,17 +43,21 @@ func (v Custom) NumValue() any {
 	return (int64)(v.Num)
 }
 func (v Custom) ColumnStr() sequel.ColumnConvertClause[longText] {
-	return sequel.Column("text", v.Str, func(val longText) any {
-		return (string)(val)
-	})
+	return sequel.Column("text", v.Str, convertLongTextToValue)
 }
 func (v Custom) ColumnEnum() sequel.ColumnConvertClause[Enum] {
-	return sequel.Column("e", v.Enum, func(val Enum) any {
-		return (int64)(val)
-	})
+	return sequel.Column("e", v.Enum, convertEnumToValue)
 }
 func (v Custom) ColumnNum() sequel.ColumnConvertClause[uint16] {
-	return sequel.Column("num", v.Num, func(val uint16) any {
-		return (int64)(val)
-	})
+	return sequel.Column("num", v.Num, convertUint16ToValue)
+}
+
+func convertUint16ToValue(val uint16) any {
+	return (int64)(val)
+}
+func convertLongTextToValue(val longText) any {
+	return (string)(val)
+}
+func convertEnumToValue(val Enum) any {
+	return (int64)(val)
 }

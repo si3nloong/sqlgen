@@ -40,12 +40,15 @@ func (v JSON) RawBytesValue() any {
 	return v.RawBytes
 }
 func (v JSON) ColumnNum() sequel.ColumnConvertClause[json.Number] {
-	return sequel.Column("num", v.Num, func(val json.Number) any {
-		return val.String()
-	})
+	return sequel.Column("num", v.Num, convertJsonNumberToValue)
 }
 func (v JSON) ColumnRawBytes() sequel.ColumnConvertClause[json.RawMessage] {
-	return sequel.Column("raw_bytes", v.RawBytes, func(val json.RawMessage) any {
-		return val
-	})
+	return sequel.Column("raw_bytes", v.RawBytes, convertJsonRawMessageToValue)
+}
+
+func convertJsonRawMessageToValue(val json.RawMessage) any {
+	return val
+}
+func convertJsonNumberToValue(val json.Number) any {
+	return val.String()
 }

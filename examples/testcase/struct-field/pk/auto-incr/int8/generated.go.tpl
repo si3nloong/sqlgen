@@ -39,7 +39,9 @@ func (v Model) IDValue() any {
 	return (int64)(v.ID)
 }
 func (v Model) ColumnID() sequel.ColumnConvertClause[int8] {
-	return sequel.Column("id", v.ID, func(val int8) any {
-		return (int64)(val)
-	})
+	return sequel.Column("id", v.ID, convertInt8ToValue)
+}
+
+func convertInt8ToValue(val int8) any {
+	return (int64)(val)
 }

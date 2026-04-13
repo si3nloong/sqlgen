@@ -75,32 +75,22 @@ func (v Address) ColumnLine1() sequel.ColumnClause[string] {
 	return sequel.BasicColumn("line_1", v.Line1)
 }
 func (v Address) ColumnLine2() sequel.ColumnConvertClause[sql.NullString] {
-	return sequel.Column("line_2", v.Line2, func(val sql.NullString) any {
-		return val
-	})
+	return sequel.Column("line_2", v.Line2, convertSqlNullStringToValue)
 }
 func (v Address) ColumnCity() sequel.ColumnClause[string] {
 	return sequel.BasicColumn("city", v.City)
 }
 func (v Address) ColumnPostCode() sequel.ColumnConvertClause[uint] {
-	return sequel.Column("post_code", v.PostCode, func(val uint) any {
-		return (int64)(val)
-	})
+	return sequel.Column("post_code", v.PostCode, convertUintToValue)
 }
 func (v Address) ColumnStateCode() sequel.ColumnConvertClause[StateCode] {
-	return sequel.Column("state_code", v.StateCode, func(val StateCode) any {
-		return (string)(val)
-	})
+	return sequel.Column("state_code", v.StateCode, convertStateCodeToValue)
 }
 func (v Address) ColumnGeoPoint() sequel.ColumnConvertClause[orb.Point] {
-	return sequel.Column("geo_point", v.GeoPoint, func(val orb.Point) any {
-		return ewkb.Value(val, 4326)
-	})
+	return sequel.Column("geo_point", v.GeoPoint, convertOrbPointToValue)
 }
 func (v Address) ColumnCountryCode() sequel.ColumnConvertClause[CountryCode] {
-	return sequel.Column("country_code", v.CountryCode, func(val CountryCode) any {
-		return (string)(val)
-	})
+	return sequel.Column("country_code", v.CountryCode, convertCountryCodeToValue)
 }
 
 func (Customer) TableName() string {
@@ -162,28 +152,48 @@ func (v Customer) ColumnID() sequel.ColumnClause[int64] {
 	return sequel.BasicColumn("id", v.ID)
 }
 func (v Customer) ColumnAge() sequel.ColumnConvertClause[uint8] {
-	return sequel.Column("howOld", v.Age, func(val uint8) any {
-		return (int64)(val)
-	})
+	return sequel.Column("howOld", v.Age, convertUint8ToValue)
 }
 func (v Customer) ColumnName() sequel.ColumnConvertClause[longText] {
-	return sequel.Column("name", v.Name, func(val longText) any {
-		return val
-	})
+	return sequel.Column("name", v.Name, convertLongTextToValue)
 }
 func (v Customer) ColumnAddress() sequel.ColumnConvertClause[Addresses] {
-	return sequel.Column("address", v.Address, func(val Addresses) any {
-		return val
-	})
+	return sequel.Column("address", v.Address, convertAddressesToValue)
 }
 func (v Customer) ColumnNicknames() sequel.ColumnConvertClause[[]longText] {
-	return sequel.Column("nicknames", v.Nicknames, func(val []longText) any {
-		return (sqltype.StringSlice[longText])(val)
-	})
+	return sequel.Column("nicknames", v.Nicknames, convertArraylongTextToValue)
 }
 func (v Customer) ColumnStatus() sequel.ColumnClause[string] {
 	return sequel.BasicColumn("status", v.Status)
 }
 func (v Customer) ColumnJoinAt() sequel.ColumnClause[time.Time] {
 	return sequel.BasicColumn("join_at", v.JoinAt)
+}
+
+func convertUintToValue(val uint) any {
+	return (int64)(val)
+}
+func convertUint8ToValue(val uint8) any {
+	return (int64)(val)
+}
+func convertStateCodeToValue(val StateCode) any {
+	return (string)(val)
+}
+func convertSqlNullStringToValue(val sql.NullString) any {
+	return val
+}
+func convertOrbPointToValue(val orb.Point) any {
+	return ewkb.Value(val, 4326)
+}
+func convertLongTextToValue(val longText) any {
+	return val
+}
+func convertCountryCodeToValue(val CountryCode) any {
+	return (string)(val)
+}
+func convertArraylongTextToValue(val []longText) any {
+	return (sqltype.StringSlice[longText])(val)
+}
+func convertAddressesToValue(val Addresses) any {
+	return val
 }

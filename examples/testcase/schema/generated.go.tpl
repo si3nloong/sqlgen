@@ -49,9 +49,7 @@ func (v A) ColumnID() sequel.ColumnClause[string] {
 	return sequel.BasicColumn("id", v.ID)
 }
 func (v A) ColumnText() sequel.ColumnConvertClause[LongText] {
-	return sequel.Column("text", v.Text, func(val LongText) any {
-		return (string)(val)
-	})
+	return sequel.Column("text", v.Text, convertLongTextToValue)
 }
 func (v A) ColumnCreatedAt() sequel.ColumnClause[time.Time] {
 	return sequel.BasicColumn("created_at", v.CreatedAt)
@@ -163,7 +161,12 @@ func (v D) IDValue() any {
 	return v.ID
 }
 func (v D) ColumnID() sequel.ColumnConvertClause[sql.NullString] {
-	return sequel.Column("id", v.ID, func(val sql.NullString) any {
-		return val
-	})
+	return sequel.Column("id", v.ID, convertSqlNullStringToValue)
+}
+
+func convertSqlNullStringToValue(val sql.NullString) any {
+	return val
+}
+func convertLongTextToValue(val LongText) any {
+	return (string)(val)
 }

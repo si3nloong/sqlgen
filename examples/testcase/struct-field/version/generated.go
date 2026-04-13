@@ -40,7 +40,9 @@ func (v Version) IDValue() any {
 	return v.ID
 }
 func (v Version) ColumnID() sequel.ColumnConvertClause[uuid.UUID] {
-	return sequel.Column("id", v.ID, func(val uuid.UUID) any {
-		return val
-	})
+	return sequel.Column("id", v.ID, convertUuidUuidToValue)
+}
+
+func convertUuidUuidToValue(val uuid.UUID) any {
+	return val
 }

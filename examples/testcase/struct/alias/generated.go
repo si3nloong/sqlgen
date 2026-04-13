@@ -36,14 +36,10 @@ func (v A) TimeValue() any {
 	return encoding.TextValue(v.Time)
 }
 func (v A) ColumnDate() sequel.ColumnConvertClause[civil.Date] {
-	return sequel.Column("date", v.Date, func(val civil.Date) any {
-		return encoding.TextValue(val)
-	})
+	return sequel.Column("date", v.Date, convertCivilDateToValue)
 }
 func (v A) ColumnTime() sequel.ColumnConvertClause[civil.Time] {
-	return sequel.Column("time", v.Time, func(val civil.Time) any {
-		return encoding.TextValue(val)
-	})
+	return sequel.Column("time", v.Time, convertCivilTimeToValue)
 }
 
 func (C) TableName() string {
@@ -81,4 +77,11 @@ func (v C) ColumnString() sequel.ColumnClause[string] {
 }
 func (v C) ColumnValid() sequel.ColumnClause[bool] {
 	return sequel.BasicColumn("valid", v.Valid)
+}
+
+func convertCivilTimeToValue(val civil.Time) any {
+	return encoding.TextValue(val)
+}
+func convertCivilDateToValue(val civil.Date) any {
+	return encoding.TextValue(val)
 }

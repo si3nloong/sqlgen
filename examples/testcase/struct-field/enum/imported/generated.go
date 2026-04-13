@@ -35,7 +35,9 @@ func (v ImportedEnum) WeekdayValue() any {
 	return (int64)(v.Weekday)
 }
 func (v ImportedEnum) ColumnWeekday() sequel.ColumnConvertClause[time.Weekday] {
-	return sequel.Column("weekday", v.Weekday, func(val time.Weekday) any {
-		return (int64)(val)
-	})
+	return sequel.Column("weekday", v.Weekday, convertTimeWeekdayToValue)
+}
+
+func convertTimeWeekdayToValue(val time.Weekday) any {
+	return (int64)(val)
 }

@@ -87,34 +87,22 @@ func (v AliasStruct) ColumnID() sequel.ColumnClause[int64] {
 	return sequel.BasicColumn("Id", v.pk.ID)
 }
 func (v AliasStruct) ColumnHeader() sequel.ColumnConvertClause[aliasStr] {
-	return sequel.Column("header", v.Header, func(val aliasStr) any {
-		return (string)(val)
-	})
+	return sequel.Column("header", v.Header, convertAliasStrToValue)
 }
 func (v AliasStruct) ColumnRaw() sequel.ColumnConvertClause[sql.RawBytes] {
-	return sequel.Column("raw", v.Raw, func(val sql.RawBytes) any {
-		return val
-	})
+	return sequel.Column("raw", v.Raw, convertSqlRawBytesToValue)
 }
 func (v AliasStruct) ColumnText() sequel.ColumnConvertClause[customStr] {
-	return sequel.Column("text", v.Text, func(val customStr) any {
-		return (string)(val)
-	})
+	return sequel.Column("text", v.Text, convertCustomStrToValue)
 }
 func (v AliasStruct) ColumnNullStr() sequel.ColumnConvertClause[sql.NullString] {
-	return sequel.Column("null_str", v.NullStr, func(val sql.NullString) any {
-		return val
-	})
+	return sequel.Column("null_str", v.NullStr, convertSqlNullStringToValue)
 }
 func (v AliasStruct) ColumnCreated() sequel.ColumnConvertClause[DT] {
-	return sequel.Column("created", v.model.Created, func(val DT) any {
-		return (time.Time)(val)
-	})
+	return sequel.Column("created", v.model.Created, convertDtToValue)
 }
 func (v AliasStruct) ColumnUpdated() sequel.ColumnConvertClause[DT] {
-	return sequel.Column("updated", v.model.Updated, func(val DT) any {
-		return (time.Time)(val)
-	})
+	return sequel.Column("updated", v.model.Updated, convertDtToValue)
 }
 
 func (B) TableName() string {
@@ -173,4 +161,20 @@ func (v C) IDValue() any {
 }
 func (v C) ColumnID() sequel.ColumnClause[int64] {
 	return sequel.BasicColumn("id", v.ID)
+}
+
+func convertSqlRawBytesToValue(val sql.RawBytes) any {
+	return val
+}
+func convertSqlNullStringToValue(val sql.NullString) any {
+	return val
+}
+func convertDtToValue(val DT) any {
+	return (time.Time)(val)
+}
+func convertCustomStrToValue(val customStr) any {
+	return (string)(val)
+}
+func convertAliasStrToValue(val aliasStr) any {
+	return (string)(val)
 }

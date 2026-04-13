@@ -140,40 +140,25 @@ func (v User) ColumnID() sequel.ColumnClause[int64] {
 	return sequel.BasicColumn("id", v.ID)
 }
 func (v User) ColumnNo() sequel.ColumnConvertClause[uint] {
-	return sequel.Column("no", v.No, func(val uint) any {
-		return (int64)(val)
-	})
+	return sequel.Column("no", v.No, convertUintToValue)
 }
 func (v User) ColumnJoinedTime() sequel.ColumnClause[time.Time] {
 	return sequel.BasicColumn("joined_time", v.JoinedTime)
 }
 func (v User) ColumnAddress() sequel.ColumnConvertClause[Address] {
-	return sequel.Column("address", v.Address, func(val Address) any {
-		return encoding.JSONValue(val)
-	})
+	return sequel.Column("address", v.Address, convertAddressToValue)
 }
 func (v User) ColumnKind() sequel.ColumnConvertClause[reflect.Kind] {
-	return sequel.Column("kind", v.Kind, func(val reflect.Kind) any {
-		return (int64)(val)
-	})
+	return sequel.Column("kind", v.Kind, convertReflectKindToValue)
 }
 func (v User) ColumnType() sequel.ColumnConvertClause[HouseUnitType] {
-	return sequel.Column("type", v.Type, func(val HouseUnitType) any {
-		return (int64)(val)
-	})
+	return sequel.Column("type", v.Type, convertHouseUnitTypeToValue)
 }
 func (v User) ColumnChan() sequel.ColumnConvertClause[reflect.ChanDir] {
-	return sequel.Column("chan", v.Chan, func(val reflect.ChanDir) any {
-		return (int64)(val)
-	})
+	return sequel.Column("chan", v.Chan, convertReflectChanDirToValue)
 }
 func (v User) ColumnPostalCode() sequel.ColumnConvertClause[*string] {
-	return sequel.Column("postal_code", v.PostalCode, func(val *string) any {
-		if val != nil {
-			return *val
-		}
-		return nil
-	})
+	return sequel.Column("postal_code", v.PostalCode, convertPtrstringToValue)
 }
 
 type UserExtraInfoInlineStruct = struct {
@@ -181,36 +166,63 @@ type UserExtraInfoInlineStruct = struct {
 }
 
 func (v User) ColumnExtraInfo() sequel.ColumnConvertClause[UserExtraInfoInlineStruct] {
-	return sequel.Column("extra_info", v.ExtraInfo, func(val UserExtraInfoInlineStruct) any {
-		return encoding.JSONValue(val)
-	})
+	return sequel.Column("extra_info", v.ExtraInfo, convertUserExtraInfoInlineStructToValue)
 }
 func (v User) ColumnNicknames() sequel.ColumnConvertClause[[2]string] {
-	return sequel.Column("nicknames", v.Nicknames, func(val [2]string) any {
-		return encoding.JSONValue(val)
-	})
+	return sequel.Column("nicknames", v.Nicknames, convert2stringToValue)
 }
 func (v User) ColumnSlice() sequel.ColumnConvertClause[[]float64] {
-	return sequel.Column("slice", v.Slice, func(val []float64) any {
-		return (sqltype.Float64Slice[float64])(val)
-	})
+	return sequel.Column("slice", v.Slice, convertArrayfloat64ToValue)
 }
 func (v User) ColumnMap() sequel.ColumnConvertClause[map[string]float64] {
-	return sequel.Column("map", v.Map, func(val map[string]float64) any {
-		return encoding.JSONValue(val)
-	})
+	return sequel.Column("map", v.Map, convertMapstringfloat64ToValue)
 }
 func (v User) ColumnNested() sequel.ColumnConvertClause[*struct{ Deep struct{ Bool bool } }] {
-	return sequel.Column("nested", v.embed.Nested, func(val *struct{ Deep struct{ Bool bool } }) any {
-		if val != nil {
-			return encoding.JSONValue(*val)
-		}
-		return nil
-	})
+	return sequel.Column("nested", v.embed.Nested, convertPtrstructDeepStructBoolBoolToValue)
 }
 func (v User) ColumnT() sequel.ColumnClause[time.Time] {
 	return sequel.BasicColumn("t", v.embed.T)
 }
 func (v User) ColumnName() sequel.ColumnClause[string] {
 	return sequel.BasicColumn("name", v.embed.deepNested.Name)
+}
+
+func convertUserExtraInfoInlineStructToValue(val UserExtraInfoInlineStruct) any {
+	return encoding.JSONValue(val)
+}
+func convertUintToValue(val uint) any {
+	return (int64)(val)
+}
+func convertReflectKindToValue(val reflect.Kind) any {
+	return (int64)(val)
+}
+func convertReflectChanDirToValue(val reflect.ChanDir) any {
+	return (int64)(val)
+}
+func convertPtrstructDeepStructBoolBoolToValue(val *struct{ Deep struct{ Bool bool } }) any {
+	if val != nil {
+		return encoding.JSONValue(*val)
+	}
+	return nil
+}
+func convertPtrstringToValue(val *string) any {
+	if val != nil {
+		return *val
+	}
+	return nil
+}
+func convertMapstringfloat64ToValue(val map[string]float64) any {
+	return encoding.JSONValue(val)
+}
+func convertHouseUnitTypeToValue(val HouseUnitType) any {
+	return (int64)(val)
+}
+func convertArrayfloat64ToValue(val []float64) any {
+	return (sqltype.Float64Slice[float64])(val)
+}
+func convertAddressToValue(val Address) any {
+	return encoding.JSONValue(val)
+}
+func convert2stringToValue(val [2]string) any {
+	return encoding.JSONValue(val)
 }

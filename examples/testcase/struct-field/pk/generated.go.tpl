@@ -60,17 +60,13 @@ func (v Car) ManucDateValue() any {
 	return v.ManucDate
 }
 func (v Car) ColumnID() sequel.ColumnConvertClause[PK] {
-	return sequel.Column("id", v.ID, func(val PK) any {
-		return val
-	})
+	return sequel.Column("id", v.ID, convertPkToValue)
 }
 func (v Car) ColumnNo() sequel.ColumnClause[string] {
 	return sequel.BasicColumn("no", v.No)
 }
 func (v Car) ColumnColor() sequel.ColumnConvertClause[Color] {
-	return sequel.Column("color", v.Color, func(val Color) any {
-		return (int64)(val)
-	})
+	return sequel.Column("color", v.Color, convertColorToValue)
 }
 func (v Car) ColumnManucDate() sequel.ColumnClause[time.Time] {
 	return sequel.BasicColumn("manuc_date", v.ManucDate)
@@ -117,9 +113,7 @@ func (v House) NoValue() any {
 	return v.No
 }
 func (v House) ColumnID() sequel.ColumnConvertClause[uint] {
-	return sequel.Column("id", v.ID, func(val uint) any {
-		return (int64)(val)
-	})
+	return sequel.Column("id", v.ID, convertUintToValue)
 }
 func (v House) ColumnNo() sequel.ColumnClause[string] {
 	return sequel.BasicColumn("no", v.No)
@@ -179,15 +173,27 @@ func (v User) ColumnID() sequel.ColumnClause[int64] {
 	return sequel.BasicColumn("id", v.ID)
 }
 func (v User) ColumnName() sequel.ColumnConvertClause[LongText] {
-	return sequel.Column("name", v.Name, func(val LongText) any {
-		return (string)(val)
-	})
+	return sequel.Column("name", v.Name, convertLongTextToValue)
 }
 func (v User) ColumnAge() sequel.ColumnConvertClause[uint8] {
-	return sequel.Column("age", v.Age, func(val uint8) any {
-		return (int64)(val)
-	})
+	return sequel.Column("age", v.Age, convertUint8ToValue)
 }
 func (v User) ColumnEmail() sequel.ColumnClause[string] {
 	return sequel.BasicColumn("email", v.Email)
+}
+
+func convertUintToValue(val uint) any {
+	return (int64)(val)
+}
+func convertUint8ToValue(val uint8) any {
+	return (int64)(val)
+}
+func convertPkToValue(val PK) any {
+	return val
+}
+func convertLongTextToValue(val LongText) any {
+	return (string)(val)
+}
+func convertColorToValue(val Color) any {
+	return (int64)(val)
 }

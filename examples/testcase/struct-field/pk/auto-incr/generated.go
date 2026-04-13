@@ -66,20 +66,24 @@ func (v Model) NValue() any {
 	return v.N
 }
 func (v Model) ColumnName() sequel.ColumnConvertClause[LongText] {
-	return sequel.Column("name", v.Name, func(val LongText) any {
-		return (string)(val)
-	})
+	return sequel.Column("name", v.Name, convertLongTextToValue)
 }
 func (v Model) ColumnF() sequel.ColumnConvertClause[Flag] {
-	return sequel.Column("f", v.F, func(val Flag) any {
-		return (bool)(val)
-	})
+	return sequel.Column("f", v.F, convertFlagToValue)
 }
 func (v Model) ColumnID() sequel.ColumnConvertClause[uint] {
-	return sequel.Column("id", v.ID, func(val uint) any {
-		return (int64)(val)
-	})
+	return sequel.Column("id", v.ID, convertUintToValue)
 }
 func (v Model) ColumnN() sequel.ColumnClause[int64] {
 	return sequel.BasicColumn("n", v.N)
+}
+
+func convertUintToValue(val uint) any {
+	return (int64)(val)
+}
+func convertLongTextToValue(val LongText) any {
+	return (string)(val)
+}
+func convertFlagToValue(val Flag) any {
+	return (bool)(val)
 }

@@ -58,9 +58,7 @@ type DeepNestedModelNestedInlineStruct = struct {
 }
 
 func (v DeepNestedModel) ColumnNested() sequel.ColumnConvertClause[DeepNestedModelNestedInlineStruct] {
-	return sequel.Column("nested", v.Nested, func(val DeepNestedModelNestedInlineStruct) any {
-		return encoding.JSONValue(val)
-	})
+	return sequel.Column("nested", v.Nested, convertDeepNestedModelNestedInlineStructToValue)
 }
 
 func (NestedModel) TableName() string {
@@ -96,9 +94,7 @@ type NestedModelNestedInlineStruct = struct {
 }
 
 func (v NestedModel) ColumnNested() sequel.ColumnConvertClause[NestedModelNestedInlineStruct] {
-	return sequel.Column("nested", v.Nested, func(val NestedModelNestedInlineStruct) any {
-		return encoding.JSONValue(val)
-	})
+	return sequel.Column("nested", v.Nested, convertNestedModelNestedInlineStructToValue)
 }
 
 func (NestedModelWithTag) TableName() string {
@@ -135,7 +131,15 @@ type NestedModelWithTagNestedInlineStruct = struct {
 }
 
 func (v NestedModelWithTag) ColumnNested() sequel.ColumnConvertClause[NestedModelWithTagNestedInlineStruct] {
-	return sequel.Column("nested", v.Nested, func(val NestedModelWithTagNestedInlineStruct) any {
-		return encoding.JSONValue(val)
-	})
+	return sequel.Column("nested", v.Nested, convertNestedModelWithTagNestedInlineStructToValue)
+}
+
+func convertNestedModelWithTagNestedInlineStructToValue(val NestedModelWithTagNestedInlineStruct) any {
+	return encoding.JSONValue(val)
+}
+func convertNestedModelNestedInlineStructToValue(val NestedModelNestedInlineStruct) any {
+	return encoding.JSONValue(val)
+}
+func convertDeepNestedModelNestedInlineStructToValue(val DeepNestedModelNestedInlineStruct) any {
+	return encoding.JSONValue(val)
 }

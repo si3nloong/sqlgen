@@ -38,10 +38,12 @@ func (v User) NameValue() any {
 	return v.Name
 }
 func (v User) ColumnID() sequel.ColumnConvertClause[uuid.UUID] {
-	return sequel.Column("id", v.ID, func(val uuid.UUID) any {
-		return val
-	})
+	return sequel.Column("id", v.ID, convertUuidUuidToValue)
 }
 func (v User) ColumnName() sequel.ColumnClause[string] {
 	return sequel.BasicColumn("name", v.Name)
+}
+
+func convertUuidUuidToValue(val uuid.UUID) any {
+	return val
 }

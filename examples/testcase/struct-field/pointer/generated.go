@@ -289,157 +289,165 @@ func (v Ptr) ColumnID() sequel.ColumnClause[int64] {
 	return sequel.BasicColumn("id", v.ID)
 }
 func (v Ptr) ColumnStr() sequel.ColumnConvertClause[*string] {
-	return sequel.Column("str", v.Str, func(val *string) any {
-		if val != nil {
-			return *val
-		}
-		return nil
-	})
+	return sequel.Column("str", v.Str, convertPtrstringToValue)
 }
 func (v Ptr) ColumnBytes() sequel.ColumnConvertClause[*[]byte] {
-	return sequel.Column("bytes", v.Bytes, func(val *[]byte) any {
-		if val != nil {
-			return *val
-		}
-		return nil
-	})
+	return sequel.Column("bytes", v.Bytes, convertPtrArraybyteToValue)
 }
 func (v Ptr) ColumnBool() sequel.ColumnConvertClause[*bool] {
-	return sequel.Column("bool", v.Bool, func(val *bool) any {
-		if val != nil {
-			return *val
-		}
-		return nil
-	})
+	return sequel.Column("bool", v.Bool, convertPtrboolToValue)
 }
 func (v Ptr) ColumnInt() sequel.ColumnConvertClause[*int] {
-	return sequel.Column("int", v.Int, func(val *int) any {
-		if val != nil {
-			return (int64)(*val)
-		}
-		return nil
-	})
+	return sequel.Column("int", v.Int, convertPtrintToValue)
 }
 func (v Ptr) ColumnInt8() sequel.ColumnConvertClause[*int8] {
-	return sequel.Column("int_8", v.Int8, func(val *int8) any {
-		if val != nil {
-			return (int64)(*val)
-		}
-		return nil
-	})
+	return sequel.Column("int_8", v.Int8, convertPtrint8ToValue)
 }
 func (v Ptr) ColumnInt16() sequel.ColumnConvertClause[*int16] {
-	return sequel.Column("int_16", v.Int16, func(val *int16) any {
-		if val != nil {
-			return (int64)(*val)
-		}
-		return nil
-	})
+	return sequel.Column("int_16", v.Int16, convertPtrint16ToValue)
 }
 func (v Ptr) ColumnInt32() sequel.ColumnConvertClause[*int32] {
-	return sequel.Column("int_32", v.Int32, func(val *int32) any {
-		if val != nil {
-			return (int64)(*val)
-		}
-		return nil
-	})
+	return sequel.Column("int_32", v.Int32, convertPtrint32ToValue)
 }
 func (v Ptr) ColumnInt64() sequel.ColumnConvertClause[*int64] {
-	return sequel.Column("int_64", v.Int64, func(val *int64) any {
-		if val != nil {
-			return *val
-		}
-		return nil
-	})
+	return sequel.Column("int_64", v.Int64, convertPtrint64ToValue)
 }
 func (v Ptr) ColumnUint() sequel.ColumnConvertClause[*uint] {
-	return sequel.Column("uint", v.Uint, func(val *uint) any {
-		if val != nil {
-			return (int64)(*val)
-		}
-		return nil
-	})
+	return sequel.Column("uint", v.Uint, convertPtruintToValue)
 }
 func (v Ptr) ColumnUint8() sequel.ColumnConvertClause[*uint8] {
-	return sequel.Column("uint_8", v.Uint8, func(val *uint8) any {
-		if val != nil {
-			return (int64)(*val)
-		}
-		return nil
-	})
+	return sequel.Column("uint_8", v.Uint8, convertPtruint8ToValue)
 }
 func (v Ptr) ColumnUint16() sequel.ColumnConvertClause[*uint16] {
-	return sequel.Column("uint_16", v.Uint16, func(val *uint16) any {
-		if val != nil {
-			return (int64)(*val)
-		}
-		return nil
-	})
+	return sequel.Column("uint_16", v.Uint16, convertPtruint16ToValue)
 }
 func (v Ptr) ColumnUint32() sequel.ColumnConvertClause[*uint32] {
-	return sequel.Column("uint_32", v.Uint32, func(val *uint32) any {
-		if val != nil {
-			return (int64)(*val)
-		}
-		return nil
-	})
+	return sequel.Column("uint_32", v.Uint32, convertPtruint32ToValue)
 }
 func (v Ptr) ColumnUint64() sequel.ColumnConvertClause[*uint64] {
-	return sequel.Column("uint_64", v.Uint64, func(val *uint64) any {
-		if val != nil {
-			return *val
-		}
-		return nil
-	})
+	return sequel.Column("uint_64", v.Uint64, convertPtruint64ToValue)
 }
 func (v Ptr) ColumnF32() sequel.ColumnConvertClause[*float32] {
-	return sequel.Column("f_32", v.F32, func(val *float32) any {
-		if val != nil {
-			return (float64)(*val)
-		}
-		return nil
-	})
+	return sequel.Column("f_32", v.F32, convertPtrfloat32ToValue)
 }
 func (v Ptr) ColumnF64() sequel.ColumnConvertClause[*float64] {
-	return sequel.Column("f_64", v.F64, func(val *float64) any {
-		if val != nil {
-			return *val
-		}
-		return nil
-	})
+	return sequel.Column("f_64", v.F64, convertPtrfloat64ToValue)
 }
 func (v Ptr) ColumnTime() sequel.ColumnConvertClause[*time.Time] {
-	return sequel.Column("time", v.Time, func(val *time.Time) any {
-		if val != nil {
-			return *val
-		}
-		return nil
-	})
+	return sequel.Column("time", v.Time, convertPtrtimeTimeToValue)
 }
 func (v Ptr) ColumnNested() sequel.ColumnConvertClause[*nested] {
-	return sequel.Column("nested", v.Nested, func(val *nested) any {
-		if val != nil {
-			return encoding.JSONValue(*val)
-		}
-		return nil
-	})
+	return sequel.Column("nested", v.Nested, convertPtrnestedToValue)
 }
 func (v Ptr) ColumnEmbeddedTime() sequel.ColumnConvertClause[*time.Time] {
-	return sequel.Column("embedded_time", v.deepNested.embedded.EmbeddedTime, func(val *time.Time) any {
-		if val != nil {
-			return *val
-		}
-		return nil
-	})
+	return sequel.Column("embedded_time", v.deepNested.embedded.EmbeddedTime, convertPtrtimeTimeToValue)
 }
 func (v Ptr) ColumnAnyTime() sequel.ColumnClause[time.Time] {
 	return sequel.BasicColumn("any_time", v.deepNested.embedded.AnyTime)
 }
 func (v Ptr) ColumnPtrStr() sequel.ColumnConvertClause[*string] {
-	return sequel.Column("ptr_str", v.deepNested.embedded.PtrStr, func(val *string) any {
-		if val != nil {
-			return *val
-		}
-		return nil
-	})
+	return sequel.Column("ptr_str", v.deepNested.embedded.PtrStr, convertPtrstringToValue)
+}
+
+func convertPtruintToValue(val *uint) any {
+	if val != nil {
+		return (int64)(*val)
+	}
+	return nil
+}
+func convertPtruint8ToValue(val *uint8) any {
+	if val != nil {
+		return (int64)(*val)
+	}
+	return nil
+}
+func convertPtruint64ToValue(val *uint64) any {
+	if val != nil {
+		return *val
+	}
+	return nil
+}
+func convertPtruint32ToValue(val *uint32) any {
+	if val != nil {
+		return (int64)(*val)
+	}
+	return nil
+}
+func convertPtruint16ToValue(val *uint16) any {
+	if val != nil {
+		return (int64)(*val)
+	}
+	return nil
+}
+func convertPtrtimeTimeToValue(val *time.Time) any {
+	if val != nil {
+		return *val
+	}
+	return nil
+}
+func convertPtrstringToValue(val *string) any {
+	if val != nil {
+		return *val
+	}
+	return nil
+}
+func convertPtrnestedToValue(val *nested) any {
+	if val != nil {
+		return encoding.JSONValue(*val)
+	}
+	return nil
+}
+func convertPtrintToValue(val *int) any {
+	if val != nil {
+		return (int64)(*val)
+	}
+	return nil
+}
+func convertPtrint8ToValue(val *int8) any {
+	if val != nil {
+		return (int64)(*val)
+	}
+	return nil
+}
+func convertPtrint64ToValue(val *int64) any {
+	if val != nil {
+		return *val
+	}
+	return nil
+}
+func convertPtrint32ToValue(val *int32) any {
+	if val != nil {
+		return (int64)(*val)
+	}
+	return nil
+}
+func convertPtrint16ToValue(val *int16) any {
+	if val != nil {
+		return (int64)(*val)
+	}
+	return nil
+}
+func convertPtrfloat64ToValue(val *float64) any {
+	if val != nil {
+		return *val
+	}
+	return nil
+}
+func convertPtrfloat32ToValue(val *float32) any {
+	if val != nil {
+		return (float64)(*val)
+	}
+	return nil
+}
+func convertPtrboolToValue(val *bool) any {
+	if val != nil {
+		return *val
+	}
+	return nil
+}
+func convertPtrArraybyteToValue(val *[]byte) any {
+	if val != nil {
+		return *val
+	}
+	return nil
 }
