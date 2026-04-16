@@ -32,12 +32,19 @@ func InsertOne[T sequel.ColumnValuer, Ptr interface {
 	default:
 		columns, args := model.Columns(), model.Values()
 		stmt := strpool.AcquireString()
-		stmt.WriteString("INSERT INTO " + DbTable(model) + " (" + strings.Join(columns, ",") + ") VALUES ($1")
+		stmt.WriteString("INSERT INTO ")
+		stmt.WriteString(DbTable(model))
+		stmt.WriteString(" (")
+		stmt.WriteString(strings.Join(columns, ","))
+		stmt.WriteString(") VALUES ($1")
 		noOfArgs := len(args)
 		for i := 1; i < noOfArgs; i++ {
-			stmt.WriteString("," + wrapVar(i+1))
+			stmt.WriteString(",")
+			stmt.WriteString(wrapVar(i + 1))
 		}
-		stmt.WriteString(") RETURNING " + strings.Join(TableColumns(model), ",") + ";")
+		stmt.WriteString(") RETURNING ")
+		stmt.WriteString(strings.Join(TableColumns(model), ","))
+		stmt.WriteString(";")
 		row := db.QueryRowContext(ctx, stmt.String(), args...)
 		strpool.ReleaseString(stmt)
 		args = nil
@@ -63,20 +70,25 @@ func Insert[T sequel.Inserter, Ptr sequel.PtrScanner[T]](ctx context.Context, db
 		noOfCols := len(columns)
 		cols := strings.Join(columns, ",")
 		args := make([]any, 0, noOfCols*noOfData)
-		stmt.WriteString("INSERT INTO " + DbTable(model) + " (" + cols + ") VALUES ")
+		stmt.WriteString("INSERT INTO ")
+		stmt.WriteString(DbTable(model))
+		stmt.WriteString(" (" + cols + ") VALUES ")
 		if n := len(data); n > 0 {
 			stmt.WriteString(model.InsertPlaceholders(1))
 			values := data[0].Values()
 			values = append(values[:idx], values[idx+1:]...)
 			args = append(args, values...)
 			for i := 1; i < n; i++ {
-				stmt.WriteString("," + model.InsertPlaceholders(i+1))
+				stmt.WriteString(",")
+				stmt.WriteString(model.InsertPlaceholders(i + 1))
 				values := data[i].Values()
 				values = append(values[:idx], values[idx+1:]...)
 				args = append(args, values...)
 			}
 		}
-		stmt.WriteString(" RETURNING " + strings.Join(TableColumns(model), ",") + ";")
+		stmt.WriteString(" RETURNING ")
+		stmt.WriteString(strings.Join(TableColumns(model), ","))
+		stmt.WriteString(";")
 		rows, err := db.QueryContext(ctx, stmt.String(), args...)
 		// Cleanup
 		args = nil
@@ -105,10 +117,13 @@ func Insert[T sequel.Inserter, Ptr sequel.PtrScanner[T]](ctx context.Context, db
 		stmt.WriteString("INSERT INTO " + DbTable(model) + " (" + strings.Join(columns, ",") + ") VALUES " + model.InsertPlaceholders(0))
 		args = append(args, data[0].Values()...)
 		for i := 1; i < noOfData; i++ {
-			stmt.WriteString("," + model.InsertPlaceholders(i))
+			stmt.WriteString(",")
+			stmt.WriteString(model.InsertPlaceholders(i))
 			args = append(args, data[i].Values()...)
 		}
-		stmt.WriteString(" RETURNING " + strings.Join(TableColumns(model), ",") + ";")
+		stmt.WriteString(" RETURNING ")
+		stmt.WriteString(strings.Join(TableColumns(model), ","))
+		stmt.WriteString(";")
 		rows, err := db.QueryContext(ctx, stmt.String(), args...)
 		// Cleanup
 		args = nil
@@ -564,6 +579,7 @@ func (r *Pager[T, Ptr]) Prev(ctx context.Context, db sequel.DB, cursor ...T) ite
 			v = cursor[0]
 			hasCursor = true
 		}
+
 		blr := AcquireStmt()
 		defer ReleaseStmt(blr)
 
@@ -575,7 +591,11 @@ func (r *Pager[T, Ptr]) Prev(ctx context.Context, db sequel.DB, cursor ...T) ite
 				}
 			}
 
-			blr.WriteString("SELECT " + strings.Join(TableColumns(v), ",") + " FROM " + DbTable(v) + " WHERE ")
+			blr.WriteString("SELECT ")
+			blr.WriteString(strings.Join(TableColumns(v), ","))
+			blr.WriteString(" FROM ")
+			blr.WriteString(DbTable(v))
+			blr.WriteString(" WHERE ")
 			if r.stmt.Where != nil {
 				r.stmt.Where(blr)
 			}
@@ -595,12 +615,24 @@ func (r *Pager[T, Ptr]) Prev(ctx context.Context, db sequel.DB, cursor ...T) ite
 					value := values[colDict[columnName]]
 					if orderedColumn.Asc() {
 						// If ascending
-						blr.WriteString(columnName + " <= " + blr.Var(value) + " AND ")
-						buf.WriteString(columnName + " < " + blr.Var(value) + " OR ")
+						blr.WriteString(columnName)
+						blr.WriteString(" <= ")
+						blr.WriteString(blr.Var(value))
+						blr.WriteString(" AND ")
+						buf.WriteString(columnName)
+						buf.WriteString(" < ")
+						buf.WriteString(blr.Var(value))
+						buf.WriteString(" OR ")
 					} else {
 						// If descending
-						blr.WriteString(columnName + " >= " + blr.Var(value) + " AND ")
-						buf.WriteString(columnName + " > " + blr.Var(value) + " OR ")
+						blr.WriteString(columnName)
+						blr.WriteString(" >= ")
+						blr.WriteString(blr.Var(value))
+						blr.WriteString(" AND ")
+						buf.WriteString(columnName)
+						buf.WriteString(" > ")
+						buf.WriteString(blr.Var(value))
+						buf.WriteString(" OR ")
 					}
 				}
 				clear(colDict)
@@ -938,10 +970,12 @@ func QueryStmt[T any, Ptr sequel.PtrScanner[T]](ctx context.Context, db sequel.D
 		}
 	}
 	if stmt.Limit > 0 {
-		blr.WriteString(" LIMIT " + strconv.Itoa((int)(stmt.Limit)))
+		blr.WriteString(" LIMIT ")
+		blr.WriteString(strconv.Itoa((int)(stmt.Limit)))
 	}
 	if stmt.Offset > 0 {
-		blr.WriteString(" OFFSET " + strconv.FormatUint(stmt.Offset, 10))
+		blr.WriteString(" OFFSET ")
+		blr.WriteString(strconv.FormatUint(stmt.Offset, 10))
 	}
 	blr.WriteString(";")
 	rows, err := db.QueryContext(ctx, blr.Query(), blr.Args()...)
@@ -992,11 +1026,14 @@ func QueryOneStmt[T any, Ptr sequel.PtrScanner[T]](ctx context.Context, db seque
 		}
 	}
 	if stmt.FromTable != "" {
-		blr.WriteString(" FROM " + dbName(v) + stmt.FromTable)
+		blr.WriteString(" FROM ")
+		blr.WriteString(dbName(v))
+		blr.WriteString(stmt.FromTable)
 	} else {
 		switch vj := any(v).(type) {
 		case sequel.Tabler:
-			blr.WriteString(" FROM " + DbTable(vj))
+			blr.WriteString(" FROM ")
+			blr.WriteString(DbTable(vj))
 		default:
 			return nil, fmt.Errorf("missing table name for model %T", v)
 		}
@@ -1006,22 +1043,30 @@ func QueryOneStmt[T any, Ptr sequel.PtrScanner[T]](ctx context.Context, db seque
 		stmt.Where(blr)
 	}
 	if n := len(stmt.GroupBy); n > 0 {
-		blr.WriteString(" GROUP BY " + stmt.GroupBy[0])
+		blr.WriteString(" GROUP BY ")
+		blr.WriteString(stmt.GroupBy[0])
 		for i := 1; i < n; i++ {
-			blr.WriteString("," + stmt.GroupBy[i])
+			blr.WriteString(",")
+			blr.WriteString(stmt.GroupBy[i])
 		}
 	}
 	if n := len(stmt.OrderBy); n > 0 {
 		if stmt.OrderBy[0].Asc() {
-			blr.WriteString(" ORDER BY " + stmt.OrderBy[0].ColumnName())
+			blr.WriteString(" ORDER BY ")
+			blr.WriteString(stmt.OrderBy[0].ColumnName())
 		} else {
-			blr.WriteString(" ORDER BY " + stmt.OrderBy[0].ColumnName() + " DESC")
+			blr.WriteString(" ORDER BY ")
+			blr.WriteString(stmt.OrderBy[0].ColumnName())
+			blr.WriteString(" DESC")
 		}
 		for i := 1; i < n; i++ {
 			if stmt.OrderBy[i].Asc() {
-				blr.WriteString("," + stmt.OrderBy[i].ColumnName() + " ASC")
+				blr.WriteString(",")
+				blr.WriteString(stmt.OrderBy[i].ColumnName())
 			} else {
-				blr.WriteString("," + stmt.OrderBy[i].ColumnName() + " DESC")
+				blr.WriteString(",")
+				blr.WriteString(stmt.OrderBy[i].ColumnName())
+				blr.WriteString(" DESC")
 			}
 		}
 	}
@@ -1058,9 +1103,12 @@ func ExecStmt[T any, Stmt interface {
 	switch vi := any(stmt).(type) {
 	case UpdateStmt:
 		if vt, ok := any(v).(sequel.Tabler); ok {
-			blr.WriteString("UPDATE " + DbTable(vt))
+			blr.WriteString("UPDATE ")
+			blr.WriteString(DbTable(vt))
 		} else {
-			blr.WriteString("UPDATE " + dbName(v) + vi.Table)
+			blr.WriteString("UPDATE ")
+			blr.WriteString(dbName(v))
+			blr.WriteString(vi.Table)
 		}
 		if len(vi.Set) > 0 {
 			blr.WriteString(" SET ")
@@ -1076,23 +1124,33 @@ func ExecStmt[T any, Stmt interface {
 		}
 		if n := len(vi.OrderBy); n > 0 {
 			if vi.OrderBy[0].Asc() {
-				blr.WriteString(" ORDER BY " + vi.OrderBy[0].ColumnName())
+				blr.WriteString(" ORDER BY ")
+				blr.WriteString(vi.OrderBy[0].ColumnName())
 			} else {
-				blr.WriteString(" ORDER BY " + vi.OrderBy[0].ColumnName() + " DESC")
+				blr.WriteString(" ORDER BY ")
+				blr.WriteString(vi.OrderBy[0].ColumnName())
+				blr.WriteString(" DESC")
 			}
 			for i := 1; i < n; i++ {
 				if vi.OrderBy[i].Asc() {
-					blr.WriteString("," + vi.OrderBy[i].ColumnName() + " ASC")
+					blr.WriteString(",")
+					blr.WriteString(vi.OrderBy[i].ColumnName())
+					blr.WriteString(" ASC")
 				} else {
-					blr.WriteString("," + vi.OrderBy[i].ColumnName() + " DESC")
+					blr.WriteString(",")
+					blr.WriteString(vi.OrderBy[i].ColumnName())
+					blr.WriteString(" DESC")
 				}
 			}
 		}
 	case DeleteStmt:
 		if vt, ok := any(v).(sequel.Tabler); ok {
-			blr.WriteString("DELETE FROM " + DbTable(vt))
+			blr.WriteString("DELETE FROM ")
+			blr.WriteString(DbTable(vt))
 		} else {
-			blr.WriteString("DELETE FROM " + dbName(v) + vi.FromTable)
+			blr.WriteString("DELETE FROM ")
+			blr.WriteString(dbName(v))
+			blr.WriteString(vi.FromTable)
 		}
 		if vi.Where != nil {
 			blr.WriteString(" WHERE ")
@@ -1100,15 +1158,21 @@ func ExecStmt[T any, Stmt interface {
 		}
 		if n := len(vi.OrderBy); n > 0 {
 			if vi.OrderBy[0].Asc() {
-				blr.WriteString(" ORDER BY " + vi.OrderBy[0].ColumnName())
+				blr.WriteString(" ORDER BY ")
+				blr.WriteString(vi.OrderBy[0].ColumnName())
 			} else {
-				blr.WriteString(" ORDER BY " + vi.OrderBy[0].ColumnName() + " DESC")
+				blr.WriteString(" ORDER BY ")
+				blr.WriteString(vi.OrderBy[0].ColumnName())
+				blr.WriteString(" DESC")
 			}
 			for i := 1; i < n; i++ {
 				if vi.OrderBy[i].Asc() {
-					blr.WriteString("," + vi.OrderBy[i].ColumnName() + " ASC")
+					blr.WriteString(",")
+					blr.WriteString(vi.OrderBy[i].ColumnName())
 				} else {
-					blr.WriteString("," + vi.OrderBy[i].ColumnName() + " DESC")
+					blr.WriteString(",")
+					blr.WriteString(vi.OrderBy[i].ColumnName())
+					blr.WriteString(" DESC")
 				}
 			}
 		}

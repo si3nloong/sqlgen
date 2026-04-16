@@ -3,6 +3,7 @@ package sequel
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"io"
 )
 
@@ -136,6 +137,7 @@ type RowLevelLocker interface {
 type StmtWriter interface {
 	io.Writer
 	io.StringWriter
+	fmt.Formatter
 	Quote(v string) string
 	Var(v any) string
 	// Vars will group the values in parenthesis
