@@ -336,7 +336,7 @@ func Upsert[T interface {
 			stmt.WriteString(DbTable(model))
 			stmt.WriteString(" (" + strings.Join(columns, ",") + ") VALUES ")
 		}
-		stmt.WriteString(model.SQLInsertPlaceholders(1))
+		stmt.WriteString(model.SQLInsertPlaceholders(0))
 		args = append(args, data[0].Values()...)
 		for i := 1; i < noOfData; i++ {
 			stmt.WriteString(",")
@@ -357,7 +357,7 @@ func Upsert[T interface {
 			stmt.WriteString(strings.Join(columns, ","))
 			stmt.WriteString(") VALUES ")
 		}
-		stmt.WriteString(model.SQLInsertPlaceholders(1))
+		stmt.WriteString(model.SQLInsertPlaceholders(0))
 		args = append(args, data[0].Values()...)
 		for i := 1; i < noOfData; i++ {
 			stmt.WriteString(",")

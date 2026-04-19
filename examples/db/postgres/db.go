@@ -78,7 +78,7 @@ func Insert[T sequel.Inserter, Ptr sequel.PtrScanner[T]](ctx context.Context, db
 		stmt.WriteString(" (")
 		stmt.WriteString(model.SQLInsertColumns())
 		stmt.WriteString(") VALUES ")
-		stmt.WriteString(model.SQLInsertPlaceholders(1))
+		stmt.WriteString(model.SQLInsertPlaceholders(0))
 		values := data[0].Values()
 		values = append(values[:idx], values[idx+1:]...)
 		args = append(args, values...)
@@ -102,7 +102,7 @@ func Insert[T sequel.Inserter, Ptr sequel.PtrScanner[T]](ctx context.Context, db
 		stmt.WriteString(" (")
 		stmt.WriteString(model.SQLInsertColumns())
 		stmt.WriteString(") VALUES ")
-		stmt.WriteString(model.SQLInsertPlaceholders(1))
+		stmt.WriteString(model.SQLInsertPlaceholders(0))
 		args = append(args, data[0].Values()...)
 		for i := 1; i < noOfData; i++ {
 			stmt.WriteString(",")
@@ -215,7 +215,7 @@ func UpsertOne[T sequel.KeyValuer, Ptr interface {
 	default:
 		panic("unreachable")
 	}
-	stmt.WriteString(model.SQLInsertPlaceholders(1))
+	stmt.WriteString(model.SQLInsertPlaceholders(0))
 	if len(opt.duplicateKeys) > 0 {
 		stmt.WriteString(" ON CONFLICT(")
 		stmt.WriteString(strings.Join(opt.duplicateKeys, ","))
@@ -308,7 +308,7 @@ func Upsert[T interface {
 		stmt.WriteString(" (")
 		stmt.WriteString(model.SQLInsertColumns())
 		stmt.WriteString(") VALUES ")
-		stmt.WriteString(model.SQLInsertPlaceholders(1))
+		stmt.WriteString(model.SQLInsertPlaceholders(0))
 		values := data[0].Values()
 		values = append(values[:idx], values[idx+1:]...)
 		args = append(args, values...)
@@ -327,7 +327,7 @@ func Upsert[T interface {
 		stmt.WriteString(" (")
 		stmt.WriteString(model.SQLInsertColumns())
 		stmt.WriteString(") VALUES ")
-		stmt.WriteString(model.SQLInsertPlaceholders(1))
+		stmt.WriteString(model.SQLInsertPlaceholders(0))
 		args = append(args, data[0].Values()...)
 		for i := 1; i < noOfData; i++ {
 			stmt.WriteString(",")
@@ -342,7 +342,7 @@ func Upsert[T interface {
 		stmt.WriteString(" (")
 		stmt.WriteString(model.SQLInsertColumns())
 		stmt.WriteString(") VALUES ")
-		stmt.WriteString(model.SQLInsertPlaceholders(1))
+		stmt.WriteString(model.SQLInsertPlaceholders(0))
 		args = append(args, data[0].Values()...)
 		for i := 1; i < noOfData; i++ {
 			stmt.WriteString(",")

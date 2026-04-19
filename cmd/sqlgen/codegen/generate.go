@@ -292,13 +292,13 @@ loop:
 				if g.staticVar {
 					fprintfln(w, `return "(%s)" // %d`, strings.Repeat(","+g.dialect.QuoteVar(0), len(insertColumns))[1:], len(insertColumns))
 				} else {
-					fprintfln(w, "const noOfColumn = %d", len(insertColumns))
-					fmt.Fprint(w, `return "("+`)
+					fprintfln(w, "pos := row * %d", len(insertColumns))
+					fmt.Fprintf(w, `return "(%c"+`, g.dialect.VarRune())
 					for i := range insertColumns {
 						if i > 0 {
-							fmt.Fprint(w, `+","+`)
+							fmt.Fprintf(w, `+",%c"+`, g.dialect.VarRune())
 						}
-						fmt.Fprintf(w, `%c+ strconv.Itoa((row * noOfColumn) + %d)`, g.dialect.VarRune(), i+1)
+						fmt.Fprintf(w, `strconv.Itoa(pos + %d)`, i+1)
 					}
 					fmt.Fprint(w, `+")"`)
 				}
