@@ -25,7 +25,7 @@ func (v *A) Addrs() []any {
 		&v.Name, // 1 - name
 	}
 }
-func (A) InsertPlaceholders(row int) string {
+func (A) SQLInsertPlaceholders(row int) string {
 	return "(?,?)" // 2
 }
 func (v A) InsertOneStmt() (string, []any) {
@@ -63,7 +63,7 @@ func (v *Model) Addrs() []any {
 		&v.Name, // 0 - name
 	}
 }
-func (Model) InsertPlaceholders(row int) string {
+func (Model) SQLInsertPlaceholders(row int) string {
 	return "(?)" // 1
 }
 func (v Model) InsertOneStmt() (string, []any) {

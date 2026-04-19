@@ -31,7 +31,7 @@ func (v *User) Addrs() []any {
 		encoding.TextScanner[civil.Date](&v.BirthDate), // 1 - birth_date
 	}
 }
-func (User) InsertPlaceholders(row int) string {
+func (User) SQLInsertPlaceholders(row int) string {
 	return "(?,?)" // 2
 }
 func (v User) InsertOneStmt() (string, []any) {

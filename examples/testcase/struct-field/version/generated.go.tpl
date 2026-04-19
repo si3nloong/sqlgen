@@ -27,7 +27,7 @@ func (v *Version) Addrs() []any {
 		&v.ID, // 0 - id
 	}
 }
-func (Version) InsertPlaceholders(row int) string {
+func (Version) SQLInsertPlaceholders(row int) string {
 	return "(?)" // 1
 }
 func (v Version) InsertOneStmt() (string, []any) {

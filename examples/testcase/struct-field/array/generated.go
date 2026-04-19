@@ -31,7 +31,7 @@ func (v *Array) Addrs() []any {
 		encoding.JSONScanner(&v.Str),                  // 4 - str
 	}
 }
-func (Array) InsertPlaceholders(row int) string {
+func (Array) SQLInsertPlaceholders(row int) string {
 	return "(?,?,?,?,?)" // 5
 }
 func (v Array) InsertOneStmt() (string, []any) {

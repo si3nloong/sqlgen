@@ -273,20 +273,22 @@ loop:
 		// If the struct has readonly columns
 		if !t.Readonly {
 			insertColumns := t.InsertColumns()
-			if n := len(insertColumns); n > 0 {
+			if noOfCols := len(insertColumns); noOfCols > 0 {
 				// If the insertable columns is not tally with the table columns means the struct has readonly columns
-				if n != len(t.Columns) {
-					fprintfln(w, "func (%s) InsertColumns() []string {", t.GoName)
-					fmt.Fprint(w, "return []string{")
-					fmt.Fprint(w, g.Quote(g.QuoteIdentifier(insertColumns[0].Name())))
-					for i := 1; i < n; i++ {
-						fmt.Fprint(w, ","+g.Quote(g.QuoteIdentifier(insertColumns[i].Name())))
+				if noOfCols != len(t.Columns) {
+					fprintfln(w, "func (%s) SQLInsertColumns() string {", t.GoName)
+					stmt := strpool.AcquireString()
+					stmt.WriteString(g.MustQuoteIdentifier(insertColumns[0].Name()))
+					for i := 1; i < noOfCols; i++ {
+						stmt.WriteString(",")
+						stmt.WriteString(g.MustQuoteIdentifier(insertColumns[i].Name()))
 					}
-					fprintfln(w, "} // %d", n)
+					fmt.Fprintf(w, "return %s", g.Quote(stmt.String()))
+					strpool.ReleaseString(stmt)
 					fprintfln(w, "}")
 				}
 
-				fprintfln(w, "func (%s) InsertPlaceholders(row int) string {", t.GoName)
+				fprintfln(w, "func (%s) SQLInsertPlaceholders(row int) string {", t.GoName)
 				if g.staticVar {
 					fprintfln(w, `return "(%s)" // %d`, strings.Repeat(","+g.dialect.QuoteVar(0), len(insertColumns))[1:], len(insertColumns))
 				} else {

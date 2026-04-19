@@ -32,7 +32,7 @@ func (v *B) Addrs() []any {
 		&v.ts.OK,      // 4 - ok
 	}
 }
-func (B) InsertPlaceholders(row int) string {
+func (B) SQLInsertPlaceholders(row int) string {
 	return "(?,?,?,?,?)" // 5
 }
 func (v B) InsertOneStmt() (string, []any) {

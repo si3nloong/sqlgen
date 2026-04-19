@@ -70,10 +70,10 @@ func (v *User) Addrs() []any {
 		&v.embed.deepNested.Name,                      // 14 - name
 	}
 }
-func (User) InsertColumns() []string {
-	return []string{"no", "joined_time", "address", "kind", "type", "chan", "postal_code", "extra_info", "nicknames", "slice", "map", "nested", "t", "name"} // 14
+func (User) SQLInsertColumns() string {
+	return "`no`,`joined_time`,`address`,`kind`,`type`,`chan`,`postal_code`,`extra_info`,`nicknames`,`slice`,`map`,`nested`,`t`,`name`"
 }
-func (User) InsertPlaceholders(row int) string {
+func (User) SQLInsertPlaceholders(row int) string {
 	return "(?,?,?,?,?,?,?,?,?,?,?,?,?,?)" // 14
 }
 func (v User) InsertOneStmt() (string, []any) {

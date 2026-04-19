@@ -44,7 +44,7 @@ func (v *AliasStruct) Addrs() []any {
 		encoding.TimeScanner(&v.model.Updated), // 7 - updated
 	}
 }
-func (AliasStruct) InsertPlaceholders(row int) string {
+func (AliasStruct) SQLInsertPlaceholders(row int) string {
 	return "(?,?,?,?,?,?,?,?)" // 8
 }
 func (v AliasStruct) InsertOneStmt() (string, []any) {
@@ -121,7 +121,7 @@ func (v *B) Addrs() []any {
 		&v.Name, // 0 - name
 	}
 }
-func (B) InsertPlaceholders(row int) string {
+func (B) SQLInsertPlaceholders(row int) string {
 	return "(?)" // 1
 }
 func (v B) InsertOneStmt() (string, []any) {
@@ -150,7 +150,7 @@ func (v *C) Addrs() []any {
 		&v.ID, // 0 - id
 	}
 }
-func (C) InsertPlaceholders(row int) string {
+func (C) SQLInsertPlaceholders(row int) string {
 	return "(?)" // 1
 }
 func (v C) InsertOneStmt() (string, []any) {

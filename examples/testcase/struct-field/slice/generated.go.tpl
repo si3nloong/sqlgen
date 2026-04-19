@@ -63,10 +63,10 @@ func (v *Slice) Addrs() []any {
 		(*sqltype.Float64Slice[float64])(&v.F64List),        // 15 - f_64_list
 	}
 }
-func (Slice) InsertColumns() []string {
-	return []string{"bool_list", "str_list", "custom_str_list", "int_list", "int_8_list", "int_16_list", "int_32_list", "int_64_list", "uint_list", "uint_8_list", "uint_16_list", "uint_32_list", "uint_64_list", "f_32_list", "f_64_list"} // 15
+func (Slice) SQLInsertColumns() string {
+	return "`bool_list`,`str_list`,`custom_str_list`,`int_list`,`int_8_list`,`int_16_list`,`int_32_list`,`int_64_list`,`uint_list`,`uint_8_list`,`uint_16_list`,`uint_32_list`,`uint_64_list`,`f_32_list`,`f_64_list`"
 }
-func (Slice) InsertPlaceholders(row int) string {
+func (Slice) SQLInsertPlaceholders(row int) string {
 	return "(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)" // 15
 }
 func (v Slice) InsertOneStmt() (string, []any) {

@@ -6,7 +6,7 @@ import (
 	"github.com/si3nloong/sqlgen/sequel"
 )
 
-func (A) InsertPlaceholders(row int) string {
+func (A) SQLInsertPlaceholders(row int) string {
 	return "(?)" // 1
 }
 func (v A) InsertOneStmt() (string, []any) {

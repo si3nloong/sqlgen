@@ -27,7 +27,7 @@ func (v *Customer) Addrs() []any {
 		&v.Married,                           // 2 - married
 	}
 }
-func (Customer) InsertPlaceholders(row int) string {
+func (Customer) SQLInsertPlaceholders(row int) string {
 	return "(?,?,?)" // 3
 }
 func (v Customer) InsertOneStmt() (string, []any) {

@@ -22,7 +22,7 @@ func (v *CustomTableName1) Addrs() []any {
 		&v.Text, // 0 - text
 	}
 }
-func (CustomTableName1) InsertPlaceholders(row int) string {
+func (CustomTableName1) SQLInsertPlaceholders(row int) string {
 	return "(?)" // 1
 }
 func (v CustomTableName1) InsertOneStmt() (string, []any) {
@@ -51,7 +51,7 @@ func (v *CustomTableName2) Addrs() []any {
 		&v.Text, // 0 - text
 	}
 }
-func (CustomTableName2) InsertPlaceholders(row int) string {
+func (CustomTableName2) SQLInsertPlaceholders(row int) string {
 	return "(?)" // 1
 }
 func (v CustomTableName2) InsertOneStmt() (string, []any) {
@@ -80,7 +80,7 @@ func (v *CustomTableName3) Addrs() []any {
 		&v.Text, // 0 - text
 	}
 }
-func (CustomTableName3) InsertPlaceholders(row int) string {
+func (CustomTableName3) SQLInsertPlaceholders(row int) string {
 	return "(?)" // 1
 }
 func (v CustomTableName3) InsertOneStmt() (string, []any) {

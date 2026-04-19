@@ -28,7 +28,7 @@ func (v *Size) Addrs() []any {
 		&v.Time,      // 2 - time
 	}
 }
-func (Size) InsertPlaceholders(row int) string {
+func (Size) SQLInsertPlaceholders(row int) string {
 	return "(?,?,?)" // 3
 }
 func (v Size) InsertOneStmt() (string, []any) {

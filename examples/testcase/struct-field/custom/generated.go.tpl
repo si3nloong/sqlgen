@@ -41,7 +41,7 @@ func (v *Address) Addrs() []any {
 		encoding.StringScanner[CountryCode](&v.CountryCode), // 6 - country_code
 	}
 }
-func (Address) InsertPlaceholders(row int) string {
+func (Address) SQLInsertPlaceholders(row int) string {
 	return "(?,?,?,?,?,?,?)" // 7
 }
 func (v Address) InsertOneStmt() (string, []any) {
@@ -121,7 +121,7 @@ func (v *Customer) Addrs() []any {
 		&v.JoinAt, // 6 - join_at
 	}
 }
-func (Customer) InsertPlaceholders(row int) string {
+func (Customer) SQLInsertPlaceholders(row int) string {
 	return "(?,?,?,?,?,?,?)" // 7
 }
 func (v Customer) InsertOneStmt() (string, []any) {

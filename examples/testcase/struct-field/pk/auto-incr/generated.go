@@ -38,10 +38,10 @@ func (v *Model) Addrs() []any {
 		&v.N,                                      // 3 - n
 	}
 }
-func (Model) InsertColumns() []string {
-	return []string{"name", "f", "n"} // 3
+func (Model) SQLInsertColumns() string {
+	return "`name`,`f`,`n`"
 }
-func (Model) InsertPlaceholders(row int) string {
+func (Model) SQLInsertPlaceholders(row int) string {
 	return "(?,?,?)" // 3
 }
 func (v Model) InsertOneStmt() (string, []any) {

@@ -55,7 +55,7 @@ func (v *Primitive) Addrs() []any {
 		&v.Time,                                   // 15 - time
 	}
 }
-func (Primitive) InsertPlaceholders(row int) string {
+func (Primitive) SQLInsertPlaceholders(row int) string {
 	return "(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)" // 16
 }
 func (v Primitive) InsertOneStmt() (string, []any) {

@@ -30,7 +30,7 @@ func (v *A) Addrs() []any {
 		&v.CreatedAt, // 2 - created_at
 	}
 }
-func (A) InsertPlaceholders(row int) string {
+func (A) SQLInsertPlaceholders(row int) string {
 	return "(?,?,?)" // 3
 }
 func (v A) InsertOneStmt() (string, []any) {
@@ -73,7 +73,7 @@ func (v *B) Addrs() []any {
 		&v.CreatedAt, // 1 - created_at
 	}
 }
-func (B) InsertPlaceholders(row int) string {
+func (B) SQLInsertPlaceholders(row int) string {
 	return "(?,?)" // 2
 }
 func (v B) InsertOneStmt() (string, []any) {
@@ -112,7 +112,7 @@ func (v *C) Addrs() []any {
 		&v.ID, // 0 - id
 	}
 }
-func (C) InsertPlaceholders(row int) string {
+func (C) SQLInsertPlaceholders(row int) string {
 	return "(?)" // 1
 }
 func (v C) InsertOneStmt() (string, []any) {
@@ -148,7 +148,7 @@ func (v *D) Addrs() []any {
 		&v.ID, // 0 - id
 	}
 }
-func (D) InsertPlaceholders(row int) string {
+func (D) SQLInsertPlaceholders(row int) string {
 	return "(?)" // 1
 }
 func (v D) InsertOneStmt() (string, []any) {

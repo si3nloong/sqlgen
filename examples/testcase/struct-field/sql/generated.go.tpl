@@ -53,10 +53,10 @@ func (v *AutoPkLocation) Addrs() []any {
 		encoding.TextScanner[civil.Date](&v.PtrDate), // 4 - ptr_date
 	}
 }
-func (AutoPkLocation) InsertColumns() []string {
-	return []string{"geo_point", "ptr_geo_point", "ptr_uuid", "ptr_date"} // 4
+func (AutoPkLocation) SQLInsertColumns() string {
+	return "`geo_point`,`ptr_geo_point`,`ptr_uuid`,`ptr_date`"
 }
-func (AutoPkLocation) InsertPlaceholders(row int) string {
+func (AutoPkLocation) SQLInsertPlaceholders(row int) string {
 	return "(?,?,?,?)" // 4
 }
 func (v AutoPkLocation) InsertOneStmt() (string, []any) {
@@ -135,7 +135,7 @@ func (v *Location) Addrs() []any {
 		&v.UUID,                               // 2 - uuid
 	}
 }
-func (Location) InsertPlaceholders(row int) string {
+func (Location) SQLInsertPlaceholders(row int) string {
 	return "(?,?,?)" // 3
 }
 func (v Location) InsertOneStmt() (string, []any) {

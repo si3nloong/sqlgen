@@ -26,7 +26,7 @@ func (v *B) Addrs() []any {
 		encoding.TextScanner[civil.Time](&v.DateTime.Time), // 1 - time
 	}
 }
-func (B) InsertPlaceholders(row int) string {
+func (B) SQLInsertPlaceholders(row int) string {
 	return "(?,?)" // 2
 }
 func (v B) InsertOneStmt() (string, []any) {

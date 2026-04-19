@@ -26,10 +26,10 @@ func (v *Model) Addrs() []any {
 		&v.ReadOnly, // 2 - read_only
 	}
 }
-func (Model) InsertColumns() []string {
-	return []string{"a", "b"} // 2
+func (Model) SQLInsertColumns() string {
+	return "`a`,`b`"
 }
-func (Model) InsertPlaceholders(row int) string {
+func (Model) SQLInsertPlaceholders(row int) string {
 	return "(?,?)" // 2
 }
 func (v Model) InsertOneStmt() (string, []any) {

@@ -27,7 +27,7 @@ func (v *Custom) Addrs() []any {
 		encoding.Uint16Scanner[uint16](&v.Num),   // 2 - num
 	}
 }
-func (Custom) InsertPlaceholders(row int) string {
+func (Custom) SQLInsertPlaceholders(row int) string {
 	return "(?,?,?)" // 3
 }
 func (v Custom) InsertOneStmt() (string, []any) {

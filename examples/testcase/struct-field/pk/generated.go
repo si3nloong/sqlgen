@@ -35,7 +35,7 @@ func (v *Car) Addrs() []any {
 		&v.ManucDate,                         // 3 - manuc_date
 	}
 }
-func (Car) InsertPlaceholders(row int) string {
+func (Car) SQLInsertPlaceholders(row int) string {
 	return "(?,?,?,?)" // 4
 }
 func (v Car) InsertOneStmt() (string, []any) {
@@ -94,7 +94,7 @@ func (v *House) Addrs() []any {
 		&v.No,                             // 1 - no
 	}
 }
-func (House) InsertPlaceholders(row int) string {
+func (House) SQLInsertPlaceholders(row int) string {
 	return "(?,?)" // 2
 }
 func (v House) InsertOneStmt() (string, []any) {
@@ -145,7 +145,7 @@ func (v *User) Addrs() []any {
 		&v.Email,                                  // 3 - email
 	}
 }
-func (User) InsertPlaceholders(row int) string {
+func (User) SQLInsertPlaceholders(row int) string {
 	return "(?,?,?,?)" // 4
 }
 func (v User) InsertOneStmt() (string, []any) {

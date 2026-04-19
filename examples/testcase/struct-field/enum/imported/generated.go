@@ -25,7 +25,7 @@ func (v *ImportedEnum) Addrs() []any {
 		encoding.IntScanner[time.Weekday](&v.Weekday), // 0 - weekday
 	}
 }
-func (ImportedEnum) InsertPlaceholders(row int) string {
+func (ImportedEnum) SQLInsertPlaceholders(row int) string {
 	return "(?)" // 1
 }
 func (v ImportedEnum) InsertOneStmt() (string, []any) {

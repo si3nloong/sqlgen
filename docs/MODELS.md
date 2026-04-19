@@ -124,7 +124,7 @@ func (v *User) Addrs() []any {
 func (User) InsertColumns() []string {
 	return []string{"name", "age", "email", "address", "money_in_bank", "created_at"} // 6
 }
-func (User) InsertPlaceholders(row int) string {
+func (User) SQLInsertPlaceholders(row int) string {
 	return "(?,?,?,?,?,?)" // 6
 }
 func (v User) InsertOneStmt() (string, []any) {

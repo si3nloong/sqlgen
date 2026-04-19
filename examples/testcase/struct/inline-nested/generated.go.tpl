@@ -28,7 +28,7 @@ func (v *DeepNestedModel) Addrs() []any {
 		encoding.JSONScanner(&v.Nested), // 0 - nested
 	}
 }
-func (DeepNestedModel) InsertPlaceholders(row int) string {
+func (DeepNestedModel) SQLInsertPlaceholders(row int) string {
 	return "(?)" // 1
 }
 func (v DeepNestedModel) InsertOneStmt() (string, []any) {
@@ -77,7 +77,7 @@ func (v *NestedModel) Addrs() []any {
 		encoding.JSONScanner(&v.Nested), // 0 - nested
 	}
 }
-func (NestedModel) InsertPlaceholders(row int) string {
+func (NestedModel) SQLInsertPlaceholders(row int) string {
 	return "(?)" // 1
 }
 func (v NestedModel) InsertOneStmt() (string, []any) {
@@ -113,7 +113,7 @@ func (v *NestedModelWithTag) Addrs() []any {
 		encoding.JSONScanner(&v.Nested), // 0 - nested
 	}
 }
-func (NestedModelWithTag) InsertPlaceholders(row int) string {
+func (NestedModelWithTag) SQLInsertPlaceholders(row int) string {
 	return "(?)" // 1
 }
 func (v NestedModelWithTag) InsertOneStmt() (string, []any) {

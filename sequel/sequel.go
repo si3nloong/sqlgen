@@ -98,7 +98,8 @@ type Inserter interface {
 	Tabler
 	Columner
 	Valuer
-	InsertPlaceholders(row int) string
+	SQLInsertColumns() string
+	SQLInsertPlaceholders(row int) string
 }
 
 type ColumnValuer interface {

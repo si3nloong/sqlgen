@@ -23,7 +23,7 @@ func (v *A) Addrs() []any {
 		encoding.TextScanner[civil.Time](&v.Time), // 1 - time
 	}
 }
-func (A) InsertPlaceholders(row int) string {
+func (A) SQLInsertPlaceholders(row int) string {
 	return "(?,?)" // 2
 }
 func (v A) InsertOneStmt() (string, []any) {
@@ -60,7 +60,7 @@ func (v *C) Addrs() []any {
 		&v.Valid,  // 1 - valid
 	}
 }
-func (C) InsertPlaceholders(row int) string {
+func (C) SQLInsertPlaceholders(row int) string {
 	return "(?,?)" // 2
 }
 func (v C) InsertOneStmt() (string, []any) {

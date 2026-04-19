@@ -27,7 +27,7 @@ func (v *JSON) Addrs() []any {
 		encoding.StringScanner[json.RawMessage](&v.RawBytes), // 1 - raw_bytes
 	}
 }
-func (JSON) InsertPlaceholders(row int) string {
+func (JSON) SQLInsertPlaceholders(row int) string {
 	return "(?,?)" // 2
 }
 func (v JSON) InsertOneStmt() (string, []any) {

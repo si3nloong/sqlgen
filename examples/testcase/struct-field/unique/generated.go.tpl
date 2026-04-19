@@ -29,7 +29,7 @@ func (v *User) Addrs() []any {
 		&v.LastName,                          // 3 - last_name
 	}
 }
-func (User) InsertPlaceholders(row int) string {
+func (User) SQLInsertPlaceholders(row int) string {
 	return "(?,?,?,?)" // 4
 }
 func (v User) InsertOneStmt() (string, []any) {

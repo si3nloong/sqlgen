@@ -33,7 +33,7 @@ func (v *Composite) Addrs() []any {
 		&v.Col3, // 3 - col_3
 	}
 }
-func (Composite) InsertPlaceholders(row int) string {
+func (Composite) SQLInsertPlaceholders(row int) string {
 	return "(?,?,?,?)" // 4
 }
 func (v Composite) InsertOneStmt() (string, []any) {
