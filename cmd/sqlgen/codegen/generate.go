@@ -584,26 +584,30 @@ func (g *Generator) buildScanner(w io.Writer, importPkgs *Package, table *compil
 }
 
 func (g *Generator) buildFindByPK(w io.Writer, importPkgs *Package, t *compiler.Table) error {
+	noOfColumns := len(t.Columns)
+	if noOfColumns == 0 {
+		return nil
+	}
+
+	// Build the select statement
 	w1 := bytes.NewBufferString("")
 	defer w1.Reset()
 	fmt.Fprintf(w1, "%cSELECT ", g.quoteRune)
-	if n := len(t.Columns); n > 0 {
-		column := t.Columns[0]
+	column := t.Columns[0]
+	scanner, err := g.sqlScanner(column)
+	if err != nil {
+		return err
+	}
+	fmt.Fprint(w1, scanner)
+	for i := 1; i < noOfColumns; i++ {
+		column = t.Columns[i]
 		scanner, err := g.sqlScanner(column)
 		if err != nil {
 			return err
 		}
-		fmt.Fprint(w1, scanner)
-		for i := 1; i < n; i++ {
-			column = t.Columns[i]
-			scanner, err := g.sqlScanner(column)
-			if err != nil {
-				return err
-			}
-			fmt.Fprint(w1, ","+scanner)
-		}
-		fmt.Fprint(w1, " FROM ")
+		fmt.Fprint(w1, ","+scanner)
 	}
+	fmt.Fprint(w1, " FROM ")
 	if method, isWrongType := t.Implements(sqlTabler); isWrongType {
 		g.LogError(fmt.Errorf(`sqlgen: struct %q has function "TableName" but wrong footprint`, t.GoName))
 	} else if method != nil {
@@ -614,7 +618,7 @@ func (g *Generator) buildFindByPK(w io.Writer, importPkgs *Package, t *compiler.
 	fmt.Fprint(w1, " WHERE ")
 	pk, ok := t.PK()
 	if !ok {
-		return fmt.Errorf(`sqlgen:`)
+		return fmt.Errorf(`sqlgen: struct %q has no primary key`, t.GoName)
 	}
 	w2 := bytes.NewBufferString("")
 	defer w2.Reset()
@@ -701,7 +705,7 @@ func (g *Generator) buildInsertOne(w io.Writer, importPkgs *Package, t *compiler
 			fmt.Fprint(w3, ","+valuer)
 			fmt.Fprint(w4, ","+scanner)
 		}
-		fmt.Fprintf(w1, "(%s) VALUES (%s) RETURNING (%s)", w2, w3, w4)
+		fmt.Fprintf(w1, ") VALUES (%s) RETURNING (%s)", w3, w4)
 	} else {
 		column := columns[0]
 		valuer, err := g.sqlValuer(column, 0)
@@ -776,10 +780,10 @@ func (g *Generator) buildUpdateByPK(w io.Writer, importPkgs *Package, t *compile
 	fmt.Fprint(w1, " WHERE ")
 	switch pk := t.MustPK().(type) {
 	case *compiler.AutoIncrPrimaryKey:
-		fmt.Fprintf(w1, "%s = %s", g.MustQuoteIdentifier(pk.Name()), g.dialect.QuoteVar(noOfColumns))
+		fmt.Fprintf(w1, "%s = %s", g.MustQuoteIdentifier(pk.Name()), g.dialect.QuoteVar(noOfColumns+1))
 		fmt.Fprint(w2, g.getOrValue(importPkgs, "v", pk))
 	case *compiler.PrimaryKey:
-		fmt.Fprintf(w1, "%s = %s", g.MustQuoteIdentifier(pk.Name()), g.dialect.QuoteVar(noOfColumns))
+		fmt.Fprintf(w1, "%s = %s", g.MustQuoteIdentifier(pk.Name()), g.dialect.QuoteVar(noOfColumns+1))
 		fmt.Fprint(w2, g.getOrValue(importPkgs, "v", pk))
 	case *compiler.CompositePrimaryKey:
 		if n := len(pk.Columns); n > 0 {
