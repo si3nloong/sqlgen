@@ -45,11 +45,11 @@ func (v Model) ReadOnlyValue() any {
 	return v.ReadOnly
 }
 func (v Model) ColumnA() sequel.ColumnClause[string] {
-	return sequel.BasicColumn("a", v.A)
+	return sequel.PrimitiveColumn("a", v.A)
 }
 func (v Model) ColumnB() sequel.ColumnClause[bool] {
-	return sequel.BasicColumn("b", v.B)
+	return sequel.PrimitiveColumn("b", v.B)
 }
 func (v Model) ColumnReadOnly() sequel.ColumnClause[string] {
-	return sequel.BasicColumn("read_only", v.ReadOnly)
+	return sequel.PrimitiveColumn("read_only", v.ReadOnly)
 }

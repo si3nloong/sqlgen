@@ -354,9 +354,10 @@ loop:
 		// Build the valuer function for each column
 		for _, f := range t.Columns {
 			var typeStr string
-			isBasic := g.isBasicType(f.GoType())
+			ft := f.GoType()
+			isBasic := g.isBasicType(ft)
 			// underlyingType, _ := underlyingType(f.GoType())
-			switch vt := f.GoType().(type) {
+			switch vt := ft.(type) {
 			// First level struct data type
 			case *types.Struct:
 				buf := strpool.AcquireString()
@@ -376,13 +377,17 @@ loop:
 				}
 				if isBasic {
 					fprintfln(w, "func (v %s) %s() sequel.ColumnClause[%s] {", t.GoName, g.config.Getter.Prefix+f.GoName(), typeStr)
+				} else if g.peekTypeIsValuer(ft) {
+					fprintfln(w, "func (v %s) %s() sequel.ColumnClause[%s] {", t.GoName, g.config.Getter.Prefix+f.GoName(), typeStr)
 				} else {
 					fprintfln(w, "func (v %s) %s() sequel.ColumnConvertClause[%s] {", t.GoName, g.config.Getter.Prefix+f.GoName(), typeStr)
 				}
 			}
 
 			if isBasic {
-				fprintfln(w, "return sequel.BasicColumn(%s, v.%s)", g.Quote(g.QuoteIdentifier(f.Name())), f.GoPath())
+				fprintfln(w, "return sequel.PrimitiveColumn(%s, v.%s)", g.Quote(g.QuoteIdentifier(f.Name())), f.GoPath())
+			} else if g.peekTypeIsValuer(ft) {
+				fprintfln(w, "return sequel.ValueColumn(%s, v.%s)", g.Quote(g.QuoteIdentifier(f.Name())), f.GoPath())
 			} else {
 				typeName := f.GoType().String()
 				// Generate anonymous function
@@ -831,6 +836,18 @@ func (g *Generator) isBasicType(t types.Type) bool {
 		}
 	}
 	return false
+}
+
+func (g *Generator) peekTypeIsValuer(t types.Type) bool {
+	switch t.(type) {
+	case *types.Pointer:
+		return false
+	default:
+		if _, wrong := types.MissingMethod(t, goSqlValuer, true); wrong {
+			return true
+		}
+		return false
+	}
 }
 
 func (g *Generator) valuer(importPkgs *Package, goPath string, t types.Type) string {

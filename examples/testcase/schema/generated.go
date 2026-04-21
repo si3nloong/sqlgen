@@ -46,13 +46,13 @@ func (v A) CreatedAtValue() any {
 	return v.CreatedAt
 }
 func (v A) ColumnID() sequel.ColumnClause[string] {
-	return sequel.BasicColumn("id", v.ID)
+	return sequel.PrimitiveColumn("id", v.ID)
 }
 func (v A) ColumnText() sequel.ColumnConvertClause[LongText] {
 	return sequel.Column("text", v.Text, convertLongTextToValue)
 }
 func (v A) ColumnCreatedAt() sequel.ColumnClause[time.Time] {
-	return sequel.BasicColumn("created_at", v.CreatedAt)
+	return sequel.PrimitiveColumn("created_at", v.CreatedAt)
 }
 
 func (B) TableName() string {
@@ -86,10 +86,10 @@ func (v B) CreatedAtValue() any {
 	return v.CreatedAt
 }
 func (v B) ColumnID() sequel.ColumnClause[string] {
-	return sequel.BasicColumn("id", v.ID)
+	return sequel.PrimitiveColumn("id", v.ID)
 }
 func (v B) ColumnCreatedAt() sequel.ColumnClause[time.Time] {
-	return sequel.BasicColumn("created_at", v.CreatedAt)
+	return sequel.PrimitiveColumn("created_at", v.CreatedAt)
 }
 
 func (C) TableName() string {
@@ -125,7 +125,7 @@ func (v C) IDValue() any {
 	return v.ID
 }
 func (v C) ColumnID() sequel.ColumnClause[int64] {
-	return sequel.BasicColumn("id", v.ID)
+	return sequel.PrimitiveColumn("id", v.ID)
 }
 
 func (D) TableName() string {
@@ -160,13 +160,10 @@ func (v D) FindOneByPKStmt() (string, []any) {
 func (v D) IDValue() any {
 	return v.ID
 }
-func (v D) ColumnID() sequel.ColumnConvertClause[sql.NullString] {
-	return sequel.Column("id", v.ID, convertSqlNullStringToValue)
+func (v D) ColumnID() sequel.ColumnClause[sql.NullString] {
+	return sequel.ValueColumn("id", v.ID)
 }
 
-func convertSqlNullStringToValue(val sql.NullString) any {
-	return val
-}
 func convertLongTextToValue(val LongText) any {
 	return (string)(val)
 }

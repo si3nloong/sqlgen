@@ -32,7 +32,7 @@ func (v CustomTableName1) TextValue() any {
 	return v.Text
 }
 func (v CustomTableName1) ColumnText() sequel.ColumnClause[string] {
-	return sequel.BasicColumn("text", v.Text)
+	return sequel.PrimitiveColumn("text", v.Text)
 }
 
 func (CustomTableName2) TableName() string {
@@ -61,7 +61,7 @@ func (v CustomTableName2) TextValue() any {
 	return v.Text
 }
 func (v CustomTableName2) ColumnText() sequel.ColumnClause[string] {
-	return sequel.BasicColumn("text", v.Text)
+	return sequel.PrimitiveColumn("text", v.Text)
 }
 
 func (CustomTableName3) TableName() string {
@@ -90,5 +90,5 @@ func (v CustomTableName3) TextValue() any {
 	return v.Text
 }
 func (v CustomTableName3) ColumnText() sequel.ColumnClause[string] {
-	return sequel.BasicColumn("text", v.Text)
+	return sequel.PrimitiveColumn("text", v.Text)
 }

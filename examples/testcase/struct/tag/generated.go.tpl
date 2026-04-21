@@ -30,15 +30,11 @@ func (v A) FindOneByPKStmt() (string, []any) {
 	return "SELECT `id`,`time`,`dec` FROM `a` WHERE `id` = ? LIMIT 1;", []any{v.ID}
 }
 func (v A) ColumnID() sequel.ColumnClause[string] {
-	return sequel.BasicColumn("id", v.ID)
+	return sequel.PrimitiveColumn("id", v.ID)
 }
 func (v A) ColumnTime() sequel.ColumnClause[time.Time] {
-	return sequel.BasicColumn("time", v.Time)
+	return sequel.PrimitiveColumn("time", v.Time)
 }
-func (v A) ColumnDec() sequel.ColumnConvertClause[decimal.Decimal] {
-	return sequel.Column("dec", v.Dec, convertDecimalDecimalToValue)
-}
-
-func convertDecimalDecimalToValue(val decimal.Decimal) any {
-	return val
+func (v A) ColumnDec() sequel.ColumnClause[decimal.Decimal] {
+	return sequel.ValueColumn("dec", v.Dec)
 }

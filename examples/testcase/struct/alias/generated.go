@@ -73,10 +73,10 @@ func (v C) ValidValue() any {
 	return v.Valid
 }
 func (v C) ColumnString() sequel.ColumnClause[string] {
-	return sequel.BasicColumn("string", v.String)
+	return sequel.PrimitiveColumn("string", v.String)
 }
 func (v C) ColumnValid() sequel.ColumnClause[bool] {
-	return sequel.BasicColumn("valid", v.Valid)
+	return sequel.PrimitiveColumn("valid", v.Valid)
 }
 
 func convertCivilTimeToValue(val civil.Time) any {

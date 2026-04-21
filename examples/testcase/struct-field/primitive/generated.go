@@ -110,13 +110,13 @@ func (v Primitive) TimeValue() any {
 	return v.Time
 }
 func (v Primitive) ColumnStr() sequel.ColumnClause[string] {
-	return sequel.BasicColumn("str", v.Str)
+	return sequel.PrimitiveColumn("str", v.Str)
 }
 func (v Primitive) ColumnBytes() sequel.ColumnConvertClause[[]byte] {
 	return sequel.Column("bytes", v.Bytes, convertSlicebyteToValue)
 }
 func (v Primitive) ColumnBool() sequel.ColumnClause[bool] {
-	return sequel.BasicColumn("bool", v.Bool)
+	return sequel.PrimitiveColumn("bool", v.Bool)
 }
 func (v Primitive) ColumnInt() sequel.ColumnConvertClause[int] {
 	return sequel.Column("int", v.Int, convertIntToValue)
@@ -131,7 +131,7 @@ func (v Primitive) ColumnInt32() sequel.ColumnConvertClause[int32] {
 	return sequel.Column("int_32", v.Int32, convertInt32ToValue)
 }
 func (v Primitive) ColumnInt64() sequel.ColumnClause[int64] {
-	return sequel.BasicColumn("int_64", v.Int64)
+	return sequel.PrimitiveColumn("int_64", v.Int64)
 }
 func (v Primitive) ColumnUint() sequel.ColumnConvertClause[uint] {
 	return sequel.Column("uint", v.Uint, convertUintToValue)
@@ -152,10 +152,10 @@ func (v Primitive) ColumnF32() sequel.ColumnConvertClause[float32] {
 	return sequel.Column("f_32", v.F32, convertFloat32ToValue)
 }
 func (v Primitive) ColumnF64() sequel.ColumnClause[float64] {
-	return sequel.BasicColumn("f_64", v.F64)
+	return sequel.PrimitiveColumn("f_64", v.F64)
 }
 func (v Primitive) ColumnTime() sequel.ColumnClause[time.Time] {
-	return sequel.BasicColumn("time", v.Time)
+	return sequel.PrimitiveColumn("time", v.Time)
 }
 
 func convertUintToValue(val uint) any {

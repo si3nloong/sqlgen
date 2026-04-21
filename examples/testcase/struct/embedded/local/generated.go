@@ -54,17 +54,17 @@ func (v B) OKValue() any {
 	return v.ts.OK
 }
 func (v B) ColumnID() sequel.ColumnClause[int64] {
-	return sequel.BasicColumn("id", v.a.ID)
+	return sequel.PrimitiveColumn("id", v.a.ID)
 }
 func (v B) ColumnName() sequel.ColumnClause[string] {
-	return sequel.BasicColumn("name", v.a.Name)
+	return sequel.PrimitiveColumn("name", v.a.Name)
 }
 func (v B) ColumnZ() sequel.ColumnClause[bool] {
-	return sequel.BasicColumn("z", v.a.Z)
+	return sequel.PrimitiveColumn("z", v.a.Z)
 }
 func (v B) ColumnCreated() sequel.ColumnClause[time.Time] {
-	return sequel.BasicColumn("created", v.ts.Created)
+	return sequel.PrimitiveColumn("created", v.ts.Created)
 }
 func (v B) ColumnOK() sequel.ColumnClause[bool] {
-	return sequel.BasicColumn("ok", v.ts.OK)
+	return sequel.PrimitiveColumn("ok", v.ts.OK)
 }

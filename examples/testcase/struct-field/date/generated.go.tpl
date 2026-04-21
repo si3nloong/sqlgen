@@ -49,16 +49,13 @@ func (v User) IDValue() any {
 func (v User) BirthDateValue() any {
 	return encoding.TextValue(v.BirthDate)
 }
-func (v User) ColumnID() sequel.ColumnConvertClause[uuid.UUID] {
-	return sequel.Column("id", v.ID, convertUuidUuidToValue)
+func (v User) ColumnID() sequel.ColumnClause[uuid.UUID] {
+	return sequel.ValueColumn("id", v.ID)
 }
 func (v User) ColumnBirthDate() sequel.ColumnConvertClause[civil.Date] {
 	return sequel.Column("birth_date", v.BirthDate, convertCivilDateToValue)
 }
 
-func convertUuidUuidToValue(val uuid.UUID) any {
-	return val
-}
 func convertCivilDateToValue(val civil.Date) any {
 	return encoding.TextValue(val)
 }

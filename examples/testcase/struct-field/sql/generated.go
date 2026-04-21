@@ -165,13 +165,10 @@ func (v Location) ColumnID() sequel.ColumnConvertClause[uint64] {
 func (v Location) ColumnGeoPoint() sequel.ColumnConvertClause[orb.Point] {
 	return sequel.Column("geo_point", v.GeoPoint, convertOrbPointToValue)
 }
-func (v Location) ColumnUUID() sequel.ColumnConvertClause[uuid.UUID] {
-	return sequel.Column("uuid", v.UUID, convertUuidUuidToValue)
+func (v Location) ColumnUUID() sequel.ColumnClause[uuid.UUID] {
+	return sequel.ValueColumn("uuid", v.UUID)
 }
 
-func convertUuidUuidToValue(val uuid.UUID) any {
-	return val
-}
 func convertUint64ToValue(val uint64) any {
 	return val
 }

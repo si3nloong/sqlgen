@@ -75,7 +75,7 @@ func (v Model) ColumnID() sequel.ColumnConvertClause[uint] {
 	return sequel.Column("id", v.ID, convertUintToValue)
 }
 func (v Model) ColumnN() sequel.ColumnClause[int64] {
-	return sequel.BasicColumn("n", v.N)
+	return sequel.PrimitiveColumn("n", v.N)
 }
 
 func convertUintToValue(val uint) any {

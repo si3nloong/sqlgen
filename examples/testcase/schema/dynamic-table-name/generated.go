@@ -44,10 +44,10 @@ func (v A) NameValue() any {
 	return v.Name
 }
 func (v A) ColumnID() sequel.ColumnClause[int64] {
-	return sequel.BasicColumn("id", v.ID)
+	return sequel.PrimitiveColumn("id", v.ID)
 }
 func (v A) ColumnName() sequel.ColumnClause[string] {
-	return sequel.BasicColumn("name", v.Name)
+	return sequel.PrimitiveColumn("name", v.Name)
 }
 
 func (Model) Columns() []string {
@@ -73,5 +73,5 @@ func (v Model) NameValue() any {
 	return v.Name
 }
 func (v Model) ColumnName() sequel.ColumnClause[string] {
-	return sequel.BasicColumn("name", v.Name)
+	return sequel.PrimitiveColumn("name", v.Name)
 }

@@ -137,13 +137,13 @@ func (v User) NameValue() any {
 	return v.embed.deepNested.Name
 }
 func (v User) ColumnID() sequel.ColumnClause[int64] {
-	return sequel.BasicColumn("id", v.ID)
+	return sequel.PrimitiveColumn("id", v.ID)
 }
 func (v User) ColumnNo() sequel.ColumnConvertClause[uint] {
 	return sequel.Column("no", v.No, convertUintToValue)
 }
 func (v User) ColumnJoinedTime() sequel.ColumnClause[time.Time] {
-	return sequel.BasicColumn("joined_time", v.JoinedTime)
+	return sequel.PrimitiveColumn("joined_time", v.JoinedTime)
 }
 func (v User) ColumnAddress() sequel.ColumnConvertClause[Address] {
 	return sequel.Column("address", v.Address, convertAddressToValue)
@@ -181,10 +181,10 @@ func (v User) ColumnNested() sequel.ColumnConvertClause[*struct{ Deep struct{ Bo
 	return sequel.Column("nested", v.embed.Nested, convertPtrstructDeepStructBoolBoolToValue)
 }
 func (v User) ColumnT() sequel.ColumnClause[time.Time] {
-	return sequel.BasicColumn("t", v.embed.T)
+	return sequel.PrimitiveColumn("t", v.embed.T)
 }
 func (v User) ColumnName() sequel.ColumnClause[string] {
-	return sequel.BasicColumn("name", v.embed.deepNested.Name)
+	return sequel.PrimitiveColumn("name", v.embed.deepNested.Name)
 }
 
 func convertUserExtraInfoInlineStructToValue(val UserExtraInfoInlineStruct) any {

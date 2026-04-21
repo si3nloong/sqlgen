@@ -16,5 +16,5 @@ func (v A) NameValue() any {
 	return v.Name
 }
 func (v A) ColumnName() sequel.ColumnClause[string] {
-	return sequel.BasicColumn("name", v.Name)
+	return sequel.PrimitiveColumn("name", v.Name)
 }

@@ -81,10 +81,10 @@ func (v AliasStruct) UpdatedValue() any {
 	return (time.Time)(v.model.Updated)
 }
 func (v AliasStruct) ColumnB() sequel.ColumnClause[float64] {
-	return sequel.BasicColumn("b", v.B)
+	return sequel.PrimitiveColumn("b", v.B)
 }
 func (v AliasStruct) ColumnID() sequel.ColumnClause[int64] {
-	return sequel.BasicColumn("Id", v.pk.ID)
+	return sequel.PrimitiveColumn("Id", v.pk.ID)
 }
 func (v AliasStruct) ColumnHeader() sequel.ColumnConvertClause[aliasStr] {
 	return sequel.Column("header", v.Header, convertAliasStrToValue)
@@ -95,8 +95,8 @@ func (v AliasStruct) ColumnRaw() sequel.ColumnConvertClause[sql.RawBytes] {
 func (v AliasStruct) ColumnText() sequel.ColumnConvertClause[customStr] {
 	return sequel.Column("text", v.Text, convertCustomStrToValue)
 }
-func (v AliasStruct) ColumnNullStr() sequel.ColumnConvertClause[sql.NullString] {
-	return sequel.Column("null_str", v.NullStr, convertSqlNullStringToValue)
+func (v AliasStruct) ColumnNullStr() sequel.ColumnClause[sql.NullString] {
+	return sequel.ValueColumn("null_str", v.NullStr)
 }
 func (v AliasStruct) ColumnCreated() sequel.ColumnConvertClause[DT] {
 	return sequel.Column("created", v.model.Created, convertDtToValue)
@@ -131,7 +131,7 @@ func (v B) NameValue() any {
 	return v.Name
 }
 func (v B) ColumnName() sequel.ColumnClause[string] {
-	return sequel.BasicColumn("name", v.Name)
+	return sequel.PrimitiveColumn("name", v.Name)
 }
 
 func (C) TableName() string {
@@ -160,13 +160,10 @@ func (v C) IDValue() any {
 	return v.ID
 }
 func (v C) ColumnID() sequel.ColumnClause[int64] {
-	return sequel.BasicColumn("id", v.ID)
+	return sequel.PrimitiveColumn("id", v.ID)
 }
 
 func convertSqlRawBytesToValue(val sql.RawBytes) any {
-	return val
-}
-func convertSqlNullStringToValue(val sql.NullString) any {
 	return val
 }
 func convertDtToValue(val DT) any {

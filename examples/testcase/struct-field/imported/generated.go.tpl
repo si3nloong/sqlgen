@@ -70,29 +70,29 @@ func (v Model) Float64Value() any {
 func (v Model) TimeValue() any {
 	return v.Time
 }
-func (v Model) ColumnStr() sequel.ColumnConvertClause[sql.NullString] {
-	return sequel.Column("str", v.Str, convertSqlNullStringToValue)
+func (v Model) ColumnStr() sequel.ColumnClause[sql.NullString] {
+	return sequel.ValueColumn("str", v.Str)
 }
-func (v Model) ColumnBool() sequel.ColumnConvertClause[sql.NullBool] {
-	return sequel.Column("bool", v.Bool, convertSqlNullBoolToValue)
+func (v Model) ColumnBool() sequel.ColumnClause[sql.NullBool] {
+	return sequel.ValueColumn("bool", v.Bool)
 }
 func (v Model) ColumnRawBytes() sequel.ColumnConvertClause[sql.RawBytes] {
 	return sequel.Column("raw_bytes", v.RawBytes, convertSqlRawBytesToValue)
 }
-func (v Model) ColumnInt16() sequel.ColumnConvertClause[sql.NullInt16] {
-	return sequel.Column("int_16", v.Int16, convertSqlNullInt16ToValue)
+func (v Model) ColumnInt16() sequel.ColumnClause[sql.NullInt16] {
+	return sequel.ValueColumn("int_16", v.Int16)
 }
-func (v Model) ColumnInt32() sequel.ColumnConvertClause[sql.NullInt32] {
-	return sequel.Column("int_32", v.Int32, convertSqlNullInt32ToValue)
+func (v Model) ColumnInt32() sequel.ColumnClause[sql.NullInt32] {
+	return sequel.ValueColumn("int_32", v.Int32)
 }
-func (v Model) ColumnInt64() sequel.ColumnConvertClause[sql.NullInt64] {
-	return sequel.Column("int_64", v.Int64, convertSqlNullInt64ToValue)
+func (v Model) ColumnInt64() sequel.ColumnClause[sql.NullInt64] {
+	return sequel.ValueColumn("int_64", v.Int64)
 }
-func (v Model) ColumnFloat64() sequel.ColumnConvertClause[sql.NullFloat64] {
-	return sequel.Column("float_64", v.Float64, convertSqlNullFloat64ToValue)
+func (v Model) ColumnFloat64() sequel.ColumnClause[sql.NullFloat64] {
+	return sequel.ValueColumn("float_64", v.Float64)
 }
-func (v Model) ColumnTime() sequel.ColumnConvertClause[sql.NullTime] {
-	return sequel.Column("time", v.Time, convertSqlNullTimeToValue)
+func (v Model) ColumnTime() sequel.ColumnClause[sql.NullTime] {
+	return sequel.ValueColumn("time", v.Time)
 }
 
 func (Some) TableName() string {
@@ -120,34 +120,10 @@ func (v Some) InsertOneStmt() (string, []any) {
 func (v Some) IDValue() any {
 	return v.ID
 }
-func (v Some) ColumnID() sequel.ColumnConvertClause[uuid.UUID] {
-	return sequel.Column("id", v.ID, convertUuidUuidToValue)
+func (v Some) ColumnID() sequel.ColumnClause[uuid.UUID] {
+	return sequel.ValueColumn("id", v.ID)
 }
 
-func convertUuidUuidToValue(val uuid.UUID) any {
-	return val
-}
 func convertSqlRawBytesToValue(val sql.RawBytes) any {
-	return val
-}
-func convertSqlNullTimeToValue(val sql.NullTime) any {
-	return val
-}
-func convertSqlNullStringToValue(val sql.NullString) any {
-	return val
-}
-func convertSqlNullInt64ToValue(val sql.NullInt64) any {
-	return val
-}
-func convertSqlNullInt32ToValue(val sql.NullInt32) any {
-	return val
-}
-func convertSqlNullInt16ToValue(val sql.NullInt16) any {
-	return val
-}
-func convertSqlNullFloat64ToValue(val sql.NullFloat64) any {
-	return val
-}
-func convertSqlNullBoolToValue(val sql.NullBool) any {
 	return val
 }

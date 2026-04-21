@@ -286,7 +286,7 @@ func (v Ptr) PtrStrValue() any {
 	return nil
 }
 func (v Ptr) ColumnID() sequel.ColumnClause[int64] {
-	return sequel.BasicColumn("id", v.ID)
+	return sequel.PrimitiveColumn("id", v.ID)
 }
 func (v Ptr) ColumnStr() sequel.ColumnConvertClause[*string] {
 	return sequel.Column("str", v.Str, convertPtrstringToValue)
@@ -343,7 +343,7 @@ func (v Ptr) ColumnEmbeddedTime() sequel.ColumnConvertClause[*time.Time] {
 	return sequel.Column("embedded_time", v.deepNested.embedded.EmbeddedTime, convertPtrtimeTimeToValue)
 }
 func (v Ptr) ColumnAnyTime() sequel.ColumnClause[time.Time] {
-	return sequel.BasicColumn("any_time", v.deepNested.embedded.AnyTime)
+	return sequel.PrimitiveColumn("any_time", v.deepNested.embedded.AnyTime)
 }
 func (v Ptr) ColumnPtrStr() sequel.ColumnConvertClause[*string] {
 	return sequel.Column("ptr_str", v.deepNested.embedded.PtrStr, convertPtrstringToValue)

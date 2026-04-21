@@ -48,16 +48,16 @@ func (v User) LastNameValue() any {
 	return v.LastName
 }
 func (v User) ColumnEmail() sequel.ColumnClause[string] {
-	return sequel.BasicColumn("email", v.Email)
+	return sequel.PrimitiveColumn("email", v.Email)
 }
 func (v User) ColumnAge() sequel.ColumnConvertClause[uint8] {
 	return sequel.Column("age", v.Age, convertUint8ToValue)
 }
 func (v User) ColumnFirstName() sequel.ColumnClause[string] {
-	return sequel.BasicColumn("first_name", v.FirstName)
+	return sequel.PrimitiveColumn("first_name", v.FirstName)
 }
 func (v User) ColumnLastName() sequel.ColumnClause[string] {
-	return sequel.BasicColumn("last_name", v.LastName)
+	return sequel.PrimitiveColumn("last_name", v.LastName)
 }
 
 func convertUint8ToValue(val uint8) any {

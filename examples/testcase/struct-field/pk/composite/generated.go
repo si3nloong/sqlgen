@@ -58,18 +58,14 @@ func (v Composite) Col3Value() any {
 	return v.Col3
 }
 func (v Composite) ColumnFlag() sequel.ColumnClause[bool] {
-	return sequel.BasicColumn("flag", v.Flag)
+	return sequel.PrimitiveColumn("flag", v.Flag)
 }
 func (v Composite) ColumnCol1() sequel.ColumnClause[string] {
-	return sequel.BasicColumn("col_1", v.Col1)
+	return sequel.PrimitiveColumn("col_1", v.Col1)
 }
 func (v Composite) ColumnCol2() sequel.ColumnClause[bool] {
-	return sequel.BasicColumn("col_2", v.Col2)
+	return sequel.PrimitiveColumn("col_2", v.Col2)
 }
-func (v Composite) ColumnCol3() sequel.ColumnConvertClause[uuid.UUID] {
-	return sequel.Column("col_3", v.Col3, convertUuidUuidToValue)
-}
-
-func convertUuidUuidToValue(val uuid.UUID) any {
-	return val
+func (v Composite) ColumnCol3() sequel.ColumnClause[uuid.UUID] {
+	return sequel.ValueColumn("col_3", v.Col3)
 }

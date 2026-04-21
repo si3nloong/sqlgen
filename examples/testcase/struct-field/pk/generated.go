@@ -59,17 +59,17 @@ func (v Car) ColorValue() any {
 func (v Car) ManucDateValue() any {
 	return v.ManucDate
 }
-func (v Car) ColumnID() sequel.ColumnConvertClause[PK] {
-	return sequel.Column("id", v.ID, convertPkToValue)
+func (v Car) ColumnID() sequel.ColumnClause[PK] {
+	return sequel.ValueColumn("id", v.ID)
 }
 func (v Car) ColumnNo() sequel.ColumnClause[string] {
-	return sequel.BasicColumn("no", v.No)
+	return sequel.PrimitiveColumn("no", v.No)
 }
 func (v Car) ColumnColor() sequel.ColumnConvertClause[Color] {
 	return sequel.Column("color", v.Color, convertColorToValue)
 }
 func (v Car) ColumnManucDate() sequel.ColumnClause[time.Time] {
-	return sequel.BasicColumn("manuc_date", v.ManucDate)
+	return sequel.PrimitiveColumn("manuc_date", v.ManucDate)
 }
 
 func (House) TableName() string {
@@ -116,7 +116,7 @@ func (v House) ColumnID() sequel.ColumnConvertClause[uint] {
 	return sequel.Column("id", v.ID, convertUintToValue)
 }
 func (v House) ColumnNo() sequel.ColumnClause[string] {
-	return sequel.BasicColumn("no", v.No)
+	return sequel.PrimitiveColumn("no", v.No)
 }
 
 func (User) TableName() string {
@@ -170,7 +170,7 @@ func (v User) EmailValue() any {
 	return v.Email
 }
 func (v User) ColumnID() sequel.ColumnClause[int64] {
-	return sequel.BasicColumn("id", v.ID)
+	return sequel.PrimitiveColumn("id", v.ID)
 }
 func (v User) ColumnName() sequel.ColumnConvertClause[LongText] {
 	return sequel.Column("name", v.Name, convertLongTextToValue)
@@ -179,7 +179,7 @@ func (v User) ColumnAge() sequel.ColumnConvertClause[uint8] {
 	return sequel.Column("age", v.Age, convertUint8ToValue)
 }
 func (v User) ColumnEmail() sequel.ColumnClause[string] {
-	return sequel.BasicColumn("email", v.Email)
+	return sequel.PrimitiveColumn("email", v.Email)
 }
 
 func convertUintToValue(val uint) any {
@@ -187,9 +187,6 @@ func convertUintToValue(val uint) any {
 }
 func convertUint8ToValue(val uint8) any {
 	return (int64)(val)
-}
-func convertPkToValue(val PK) any {
-	return val
 }
 func convertLongTextToValue(val LongText) any {
 	return (string)(val)
