@@ -84,7 +84,7 @@ func Insert[T sequel.Inserter, Ptr sequel.PtrScanner[T]](ctx context.Context, db
 		args = append(args, values...)
 		for i := 1; i < noOfData; i++ {
 			stmt.WriteString(",")
-			stmt.WriteString(model.SQLInsertPlaceholders(i + 1))
+			stmt.WriteString(model.SQLInsertPlaceholders(i))
 			values := data[i].Values()
 			values = append(values[:idx], values[idx+1:]...)
 			args = append(args, values...)

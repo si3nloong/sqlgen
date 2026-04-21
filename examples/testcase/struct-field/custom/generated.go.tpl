@@ -161,7 +161,7 @@ func (v Customer) ColumnAddress() sequel.ColumnConvertClause[Addresses] {
 	return sequel.Column("address", v.Address, convertAddressesToValue)
 }
 func (v Customer) ColumnNicknames() sequel.ColumnConvertClause[[]longText] {
-	return sequel.Column("nicknames", v.Nicknames, convertArraylongTextToValue)
+	return sequel.Column("nicknames", v.Nicknames, convertSlicelongTextToValue)
 }
 func (v Customer) ColumnStatus() sequel.ColumnClause[string] {
 	return sequel.BasicColumn("status", v.Status)
@@ -182,6 +182,9 @@ func convertStateCodeToValue(val StateCode) any {
 func convertSqlNullStringToValue(val sql.NullString) any {
 	return val
 }
+func convertSlicelongTextToValue(val []longText) any {
+	return (sqltype.StringSlice[longText])(val)
+}
 func convertOrbPointToValue(val orb.Point) any {
 	return ewkb.Value(val, 4326)
 }
@@ -190,9 +193,6 @@ func convertLongTextToValue(val longText) any {
 }
 func convertCountryCodeToValue(val CountryCode) any {
 	return (string)(val)
-}
-func convertArraylongTextToValue(val []longText) any {
-	return (sqltype.StringSlice[longText])(val)
 }
 func convertAddressesToValue(val Addresses) any {
 	return val

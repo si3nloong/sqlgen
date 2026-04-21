@@ -113,7 +113,7 @@ func (v Primitive) ColumnStr() sequel.ColumnClause[string] {
 	return sequel.BasicColumn("str", v.Str)
 }
 func (v Primitive) ColumnBytes() sequel.ColumnConvertClause[[]byte] {
-	return sequel.Column("bytes", v.Bytes, convertArraybyteToValue)
+	return sequel.Column("bytes", v.Bytes, convertSlicebyteToValue)
 }
 func (v Primitive) ColumnBool() sequel.ColumnClause[bool] {
 	return sequel.BasicColumn("bool", v.Bool)
@@ -173,6 +173,9 @@ func convertUint32ToValue(val uint32) any {
 func convertUint16ToValue(val uint16) any {
 	return (int64)(val)
 }
+func convertSlicebyteToValue(val []byte) any {
+	return val
+}
 func convertIntToValue(val int) any {
 	return (int64)(val)
 }
@@ -187,7 +190,4 @@ func convertInt16ToValue(val int16) any {
 }
 func convertFloat32ToValue(val float32) any {
 	return (float64)(val)
-}
-func convertArraybyteToValue(val []byte) any {
-	return val
 }

@@ -292,7 +292,7 @@ func (v Ptr) ColumnStr() sequel.ColumnConvertClause[*string] {
 	return sequel.Column("str", v.Str, convertPtrstringToValue)
 }
 func (v Ptr) ColumnBytes() sequel.ColumnConvertClause[*[]byte] {
-	return sequel.Column("bytes", v.Bytes, convertPtrArraybyteToValue)
+	return sequel.Column("bytes", v.Bytes, convertPtrSlicebyteToValue)
 }
 func (v Ptr) ColumnBool() sequel.ColumnConvertClause[*bool] {
 	return sequel.Column("bool", v.Bool, convertPtrboolToValue)
@@ -445,7 +445,7 @@ func convertPtrboolToValue(val *bool) any {
 	}
 	return nil
 }
-func convertPtrArraybyteToValue(val *[]byte) any {
+func convertPtrSlicebyteToValue(val *[]byte) any {
 	if val != nil {
 		return *val
 	}

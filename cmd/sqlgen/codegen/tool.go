@@ -128,7 +128,7 @@ func mustNoError[T any](_ T, err error) {
 
 func normalize(v string) string {
 	v = strings.Replace(v, "*", "Ptr", -1)
-	v = strings.Replace(v, "[]", "Array", -1)
+	v = strings.Replace(v, "[]", "Slice", -1)
 	reg := regexp.MustCompile(`[^a-zA-Z0-9]+`)
 	return reg.ReplaceAllString(strfmt.ToPascalCase(v), "")
 }

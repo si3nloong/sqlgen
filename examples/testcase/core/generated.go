@@ -172,7 +172,7 @@ func (v User) ColumnNicknames() sequel.ColumnConvertClause[[2]string] {
 	return sequel.Column("nicknames", v.Nicknames, convert2stringToValue)
 }
 func (v User) ColumnSlice() sequel.ColumnConvertClause[[]float64] {
-	return sequel.Column("slice", v.Slice, convertArrayfloat64ToValue)
+	return sequel.Column("slice", v.Slice, convertSlicefloat64ToValue)
 }
 func (v User) ColumnMap() sequel.ColumnConvertClause[map[string]float64] {
 	return sequel.Column("map", v.Map, convertMapstringfloat64ToValue)
@@ -192,6 +192,9 @@ func convertUserExtraInfoInlineStructToValue(val UserExtraInfoInlineStruct) any 
 }
 func convertUintToValue(val uint) any {
 	return (int64)(val)
+}
+func convertSlicefloat64ToValue(val []float64) any {
+	return (sqltype.Float64Slice[float64])(val)
 }
 func convertReflectKindToValue(val reflect.Kind) any {
 	return (int64)(val)
@@ -216,9 +219,6 @@ func convertMapstringfloat64ToValue(val map[string]float64) any {
 }
 func convertHouseUnitTypeToValue(val HouseUnitType) any {
 	return (int64)(val)
-}
-func convertArrayfloat64ToValue(val []float64) any {
-	return (sqltype.Float64Slice[float64])(val)
 }
 func convertAddressToValue(val Address) any {
 	return encoding.JSONValue(val)
