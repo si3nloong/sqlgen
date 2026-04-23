@@ -14,8 +14,6 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/Masterminds/semver/v3"
-
 	"github.com/go-playground/validator/v10"
 	"github.com/samber/lo"
 	"github.com/si3nloong/sqlgen/cmd/sqlgen/codegen/dialect"
@@ -34,8 +32,8 @@ var (
 		`\`, `[\\/]`,
 		`/`, `[\\/]`,
 	)
-	nameRegex = regexp.MustCompile(`(?i)^[a-z]+[a-z0-9\_]*$`)
-	go121     = lo.Must1(semver.NewConstraint(">= 1.2.1"))
+	// nameRegex = regexp.MustCompile(`(?i)^[a-z]+[a-z0-9\_]*$`)
+	// go121     = lo.Must1(semver.NewConstraint(">= 1.2.1"))
 	// goTagRegexp   = regexp.MustCompile(`(?i)^([a-z][a-z_]*[a-z])(\:(\w+))?$`)
 	// sqlFuncRegexp = regexp.MustCompile(`(?i)\s*(\w+\()(\w+\s*\,\s*)?(\{\})(\s*\,\s*\w+)?(\))\s*`)
 )
