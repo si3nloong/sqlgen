@@ -759,39 +759,16 @@ func ParseDir(dir string, cfg *Config) (*packages.Package, iter.Seq2[*Table, err
 						// we will inspect it
 						importPkg, ok := f.pkg.Imports[types.ExprString(fv.X)]
 						if ok {
-							_ = importPkg
-							// 	for _, file := range importPkg.Syntax {
-							// 		ast.Inspect(file, func(n ast.Node) bool {
-							// 			mapEnumIfExists(importPkg, n, enumMap)
-							// 			return true
-							// 		})
-							// 	}
+							if constValue, ok := findFirstConstValueInPackage(importPkg, fv.Sel.Name); ok {
+								field.defaultValue = constValue
+							}
 						}
 
 					// Local types
 					case *ast.Ident:
 						if fv.Obj != nil {
-							scope := pkg.Types.Scope()
-							constants := make([]*types.Const, 0, len(scope.Names()))
-
-							// 1. Collect all constants of the custom type
-							for _, name := range scope.Names() {
-								obj := scope.Lookup(name)
-								if constant, ok := obj.(*types.Const); ok {
-									if named, ok := constant.Type().(*types.Named); ok && named.Obj().Name() == fv.Name {
-										constants = append(constants, constant)
-									}
-								}
-							}
-
-							if len(constants) > 0 {
-								// 2. Sort by the global FileSet position
-								// This automatically handles file order (alphabetical) and line order.
-								sort.Slice(constants, func(i, j int) bool {
-									return constants[i].Pos() < constants[j].Pos()
-								})
-
-								field.defaultValue = constants[0]
+							if constValue, ok := findFirstConstValueInPackage(pkg, fv.Obj.Name); ok {
+								field.defaultValue = constValue
 							}
 						}
 
@@ -978,4 +955,30 @@ func ParseDir(dir string, cfg *Config) (*packages.Package, iter.Seq2[*Table, err
 			}
 		}
 	}, nil
+}
+
+func findFirstConstValueInPackage(pkg *packages.Package, typeName string) (*types.Const, bool) {
+	scope := pkg.Types.Scope()
+	constants := make([]*types.Const, 0, len(scope.Names()))
+
+	// 1. Collect all constants of the custom type
+	for _, name := range scope.Names() {
+		obj := scope.Lookup(name)
+		if constant, ok := obj.(*types.Const); ok {
+			if named, ok := constant.Type().(*types.Named); ok && named.Obj().Name() == typeName {
+				constants = append(constants, constant)
+			}
+		}
+	}
+
+	if len(constants) > 0 {
+		// 2. Sort by the global FileSet position
+		// This automatically handles file order (alphabetical) and line order.
+		sort.Slice(constants, func(i, j int) bool {
+			return constants[i].Pos() < constants[j].Pos()
+		})
+
+		return constants[0], true
+	}
+	return nil, false
 }

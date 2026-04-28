@@ -28,7 +28,7 @@ const (
 )
 
 type Value interface {
-	Name() string
+	GoPath() string
 	Kind() Kind
 	Value() string
 }
@@ -143,9 +143,9 @@ func (c BasicColumn) DefaultValue() (Value, bool) {
 	case *types.Const:
 		switch v.Val().Kind() {
 		case constant.Int:
-			return constantValue{name: v.Name(), kind: KindInt, value: v.Val().String()}, true
+			return constantValue{goPath: v.Pkg().Path() + "." + v.Name(), kind: KindInt, value: v.Val().String()}, true
 		case constant.String:
-			return constantValue{name: v.Name(), kind: KindString, value: v.Val().String()}, true
+			return constantValue{goPath: v.Pkg().Path() + "." + v.Name(), kind: KindString, value: v.Val().String()}, true
 		}
 	}
 	return nil, true
@@ -166,11 +166,11 @@ func (c GeneratedColumn) DefaultValue() (Value, bool) {
 func (GeneratedColumn) columnType() {}
 
 type constantValue struct {
-	name  string
-	kind  Kind
-	value string
+	goPath string
+	kind   Kind
+	value  string
 }
 
-func (v constantValue) Name() string  { return v.name }
-func (v constantValue) Kind() Kind    { return v.kind }
-func (v constantValue) Value() string { return v.value }
+func (v constantValue) GoPath() string { return v.goPath }
+func (v constantValue) Kind() Kind     { return v.kind }
+func (v constantValue) Value() string  { return v.value }

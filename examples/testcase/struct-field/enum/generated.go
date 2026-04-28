@@ -11,14 +11,15 @@ func (Custom) TableName() string {
 	return "custom"
 }
 func (Custom) Columns() []string {
-	return []string{"text", "e", "ptr_str", "num"} // 4
+	return []string{"text", "e", "ptr_str", "uint_16", "num"} // 5
 }
 func (v Custom) Values() []any {
 	return []any{
 		v.StrValue(),    // 0 - text
 		v.EnumValue(),   // 1 - e
 		v.PtrStrValue(), // 2 - ptr_str
-		(int64)(v.Num),  // 3 - num
+		v.Uint16Value(), // 3 - uint_16
+		(int64)(v.Num),  // 4 - num
 	}
 }
 func (v *Custom) Addrs() []any {
@@ -26,17 +27,18 @@ func (v *Custom) Addrs() []any {
 		v.PtrStr = new(longText)
 	}
 	return []any{
-		encoding.StringScanner[longText](&v.Str), // 0 - text
-		encoding.IntScanner[Enum](&v.Enum),       // 1 - e
-		encoding.JSONScanner(&v.PtrStr),          // 2 - ptr_str
-		encoding.Uint16Scanner[uint16](&v.Num),   // 3 - num
+		encoding.StringScanner[longText](&v.Str),      // 0 - text
+		encoding.IntScanner[Enum](&v.Enum),            // 1 - e
+		encoding.JSONScanner(&v.PtrStr),               // 2 - ptr_str
+		encoding.Uint16Scanner[uint16Enum](&v.Uint16), // 3 - uint_16
+		encoding.Uint16Scanner[uint16](&v.Num),        // 4 - num
 	}
 }
 func (Custom) SQLInsertPlaceholders(row int) string {
-	return "(?,?,?,?)" // 4
+	return "(?,?,?,?,?)" // 5
 }
 func (v Custom) InsertOneStmt() (string, []any) {
-	return "INSERT INTO `custom` (`text`,`e`,`ptr_str`,`num`) VALUES (?,?,?,?);", v.Values()
+	return "INSERT INTO `custom` (`text`,`e`,`ptr_str`,`uint_16`,`num`) VALUES (?,?,?,?,?);", v.Values()
 }
 func (v Custom) StrValue() any {
 	if v.Str == "" {
@@ -56,6 +58,9 @@ func (v Custom) PtrStrValue() any {
 	}
 	return nil
 }
+func (v Custom) Uint16Value() any {
+	return (int64)(v.Uint16)
+}
 func (v Custom) NumValue() any {
 	return (int64)(v.Num)
 }
@@ -68,11 +73,17 @@ func (v Custom) ColumnEnum() sequel.ColumnConvertClause[Enum] {
 func (v Custom) ColumnPtrStr() sequel.ColumnConvertClause[*longText] {
 	return sequel.Column("ptr_str", v.PtrStr, convertPtrlongTextToValue)
 }
+func (v Custom) ColumnUint16() sequel.ColumnConvertClause[uint16Enum] {
+	return sequel.Column("uint_16", v.Uint16, convertUint16EnumToValue)
+}
 func (v Custom) ColumnNum() sequel.ColumnConvertClause[uint16] {
 	return sequel.Column("num", v.Num, convertUint16ToValue)
 }
 
 func convertUint16ToValue(val uint16) any {
+	return (int64)(val)
+}
+func convertUint16EnumToValue(val uint16Enum) any {
 	return (int64)(val)
 }
 func convertPtrlongTextToValue(val *longText) any {

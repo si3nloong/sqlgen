@@ -328,12 +328,14 @@ loop:
 				if defaultValue, ok := f.DefaultValue(); ok {
 					switch defaultValue.Kind() {
 					case compiler.KindInt:
-						fprintfln(w, "if v.%s == 0 {", f.GoName())
-						fprintfln(w, "return %s", g.valuer(importPkgs, defaultValue.Name(), f.GoType()))
-						fprintfln(w, "}")
+						if defaultValue.Value() != "0" {
+							fprintfln(w, "if v.%s == 0 {", f.GoName())
+							fprintfln(w, "return %s", g.valuer(importPkgs, defaultValue.GoPath(), f.GoType()))
+							fprintfln(w, "}")
+						}
 					case compiler.KindString:
 						fprintfln(w, `if v.%s == "" {`, f.GoName())
-						fprintfln(w, "return %s", g.valuer(importPkgs, defaultValue.Name(), f.GoType()))
+						fprintfln(w, "return %s", g.valuer(importPkgs, defaultValue.GoPath(), f.GoType()))
 						fprintfln(w, "}")
 					}
 				}
@@ -414,11 +416,11 @@ loop:
 							switch defaultValue.Kind() {
 							case compiler.KindInt:
 								fprintfln(w2, "if *val == 0 {")
-								fprintfln(w2, "return %s", g.valuer(importPkgs, defaultValue.Name(), f.GoType()))
+								fprintfln(w2, "return %s", g.valuer(importPkgs, defaultValue.GoPath(), f.GoType()))
 								fprintfln(w2, "}")
 							case compiler.KindString:
 								fprintfln(w2, `if *val == "" {`)
-								fprintfln(w2, "return %s", g.valuer(importPkgs, defaultValue.Name(), f.GoType()))
+								fprintfln(w2, "return %s", g.valuer(importPkgs, defaultValue.GoPath(), f.GoType()))
 								fprintfln(w2, "}")
 							}
 						}
@@ -430,12 +432,14 @@ loop:
 						if defaultValue, ok := f.DefaultValue(); ok {
 							switch defaultValue.Kind() {
 							case compiler.KindInt:
-								fprintfln(w2, "if val == 0 {")
-								fprintfln(w2, "return %s", g.valuer(importPkgs, defaultValue.Name(), f.GoType()))
-								fprintfln(w2, "}")
+								if defaultValue.Value() != "0" {
+									fprintfln(w2, "if val == 0 {")
+									fprintfln(w2, "return %s", g.valuer(importPkgs, defaultValue.GoPath(), f.GoType()))
+									fprintfln(w2, "}")
+								}
 							case compiler.KindString:
 								fprintfln(w2, `if val == "" {`)
-								fprintfln(w2, "return %s", g.valuer(importPkgs, defaultValue.Name(), f.GoType()))
+								fprintfln(w2, "return %s", g.valuer(importPkgs, defaultValue.GoPath(), f.GoType()))
 								fprintfln(w2, "}")
 							}
 						}
