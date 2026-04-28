@@ -21,10 +21,10 @@ func (Car) Columns() []string {
 }
 func (v Car) Values() []any {
 	return []any{
-		v.ID,             // 0 - id
-		v.No,             // 1 - no
-		(int64)(v.Color), // 2 - color
-		v.ManucDate,      // 3 - manuc_date
+		v.ID,           // 0 - id
+		v.No,           // 1 - no
+		v.ColorValue(), // 2 - color
+		v.ManucDate,    // 3 - manuc_date
 	}
 }
 func (v *Car) Addrs() []any {

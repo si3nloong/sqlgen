@@ -745,41 +745,39 @@ func ParseDir(dir string, cfg *Config) (*packages.Package, iter.Seq2[*Table, err
 						}
 					}
 
-					field := &structField{
-						t:      f.pkg.TypesInfo.TypeOf(fi.Type),
-						parent: f.prev,
-						tag:    tag,
-					}
-
-					// Every struct field
-					switch fv := fi.Type.(type) {
-					// Imported types
-					case *ast.SelectorExpr:
-						// If the field type is a Go imported enum,
-						// we will inspect it
-						importPkg, ok := f.pkg.Imports[types.ExprString(fv.X)]
-						if ok {
-							if constValue, ok := findFirstConstValueInPackage(importPkg, fv.Sel.Name); ok {
-								field.defaultValue = constValue
-							}
-						}
-
-					// Local types
-					case *ast.Ident:
-						if fv.Obj != nil {
-							if constValue, ok := findFirstConstValueInPackage(pkg, fv.Obj.Name); ok {
-								field.defaultValue = constValue
-							}
-						}
-
-					case *ast.StarExpr:
-						// If it's a pointer, we need to get the underlying type
-					}
-
 					for j, n := range fi.Names {
-						field.name = types.ExprString(n)
-						field.index = append(f.idx, i+j)
-						field.exported = n.IsExported()
+						field := &structField{
+							t:        f.pkg.TypesInfo.TypeOf(fi.Type),
+							parent:   f.prev,
+							tag:      tag,
+							name:     types.ExprString(n),
+							index:    append(f.idx, i+j),
+							exported: n.IsExported(),
+						}
+						// Every struct field
+						switch fv := fi.Type.(type) {
+						// Imported types
+						case *ast.SelectorExpr:
+							// If the field type is a Go imported enum,
+							// we will inspect it
+							importPkg, ok := f.pkg.Imports[types.ExprString(fv.X)]
+							if ok {
+								if constValue, ok := findFirstConstValueInPackage(importPkg, fv.Sel.Name); ok {
+									field.defaultValue = constValue
+								}
+							}
+
+						// Local types
+						case *ast.Ident:
+							if fv.Obj != nil {
+								if constValue, ok := findFirstConstValueInPackage(pkg, fv.Obj.Name); ok {
+									field.defaultValue = constValue
+								}
+							}
+
+							// case *ast.StarExpr:
+							// If it's a pointer, we need to get the underlying type
+						}
 
 						structFields = append(structFields, field)
 					}

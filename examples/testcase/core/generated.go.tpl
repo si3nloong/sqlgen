@@ -32,9 +32,9 @@ func (v User) Values() []any {
 		(int64)(v.No),                            //  1 - no
 		v.JoinedTime,                             //  2 - joined_time
 		encoding.JSONValue(v.Address),            //  3 - address
-		(int64)(v.Kind),                          //  4 - kind
-		(int64)(v.Type),                          //  5 - type
-		(int64)(v.Chan),                          //  6 - chan
+		v.KindValue(),                            //  4 - kind
+		v.TypeValue(),                            //  5 - type
+		v.ChanValue(),                            //  6 - chan
 		v.PostalCodeValue(),                      //  7 - postal_code
 		encoding.JSONValue(v.ExtraInfo),          //  8 - extra_info
 		encoding.JSONValue(v.Nicknames),          //  9 - nicknames
@@ -101,9 +101,15 @@ func (v User) KindValue() any {
 	return (int64)(v.Kind)
 }
 func (v User) TypeValue() any {
+	if v.Type == 0 {
+		return (int64)(HouseUnitTypeA)
+	}
 	return (int64)(v.Type)
 }
 func (v User) ChanValue() any {
+	if v.Chan == 0 {
+		return (int64)(reflect.RecvDir)
+	}
 	return (int64)(v.Chan)
 }
 func (v User) PostalCodeValue() any {
@@ -200,6 +206,9 @@ func convertReflectKindToValue(val reflect.Kind) any {
 	return (int64)(val)
 }
 func convertReflectChanDirToValue(val reflect.ChanDir) any {
+	if val == 0 {
+		return (int64)(reflect.RecvDir)
+	}
 	return (int64)(val)
 }
 func convertPtrstructDeepStructBoolBoolToValue(val *struct{ Deep struct{ Bool bool } }) any {
@@ -218,6 +227,9 @@ func convertMapstringfloat64ToValue(val map[string]float64) any {
 	return encoding.JSONValue(val)
 }
 func convertHouseUnitTypeToValue(val HouseUnitType) any {
+	if val == 0 {
+		return (int64)(HouseUnitTypeA)
+	}
 	return (int64)(val)
 }
 func convertAddressToValue(val Address) any {
