@@ -325,6 +325,18 @@ loop:
 		if !t.Readonly {
 			for _, f := range t.Columns {
 				fprintfln(w, "func (v %s) %s any {", t.GoName, valueFunc(f))
+				if defaultValue, ok := f.DefaultValue(); ok {
+					switch defaultValue.Kind() {
+					case compiler.KindInt:
+						fprintfln(w, "if v.%s == 0 {", f.GoName())
+						fprintfln(w, "return %s", g.valuer(importPkgs, defaultValue.Name(), f.GoType()))
+						fprintfln(w, "}")
+					case compiler.KindString:
+						fprintfln(w, `if v.%s == "" {`, f.GoName())
+						fprintfln(w, "return %s", g.valuer(importPkgs, defaultValue.Name(), f.GoType()))
+						fprintfln(w, "}")
+					}
+				}
 				queue := []string{}
 				// Find all the possible pointer paths
 				for _, paths := range f.GoPtrPaths() {
@@ -398,11 +410,36 @@ loop:
 					fprintfln(w2, `func %s(val %s) any {`, funcName, typeStr)
 					if f.IsGoPtr() {
 						fprintfln(w2, "if val != nil {")
+						if defaultValue, ok := f.DefaultValue(); ok {
+							switch defaultValue.Kind() {
+							case compiler.KindInt:
+								fprintfln(w2, "if *val == 0 {")
+								fprintfln(w2, "return %s", g.valuer(importPkgs, defaultValue.Name(), f.GoType()))
+								fprintfln(w2, "}")
+							case compiler.KindString:
+								fprintfln(w2, `if *val == "" {`)
+								fprintfln(w2, "return %s", g.valuer(importPkgs, defaultValue.Name(), f.GoType()))
+								fprintfln(w2, "}")
+							}
+						}
 						// Deference the pointer value and return it
 						fprintfln(w2, "return %s", g.valuer(importPkgs, "*val", assertAsPtr[types.Pointer](f.GoType()).Elem()))
 						fprintfln(w2, "}")
 						fprintfln(w2, "return nil")
 					} else {
+						if defaultValue, ok := f.DefaultValue(); ok {
+							switch defaultValue.Kind() {
+							case compiler.KindInt:
+								fprintfln(w2, "if val == 0 {")
+								fprintfln(w2, "return %s", g.valuer(importPkgs, defaultValue.Name(), f.GoType()))
+								fprintfln(w2, "}")
+							case compiler.KindString:
+								fprintfln(w2, `if val == "" {`)
+								fprintfln(w2, "return %s", g.valuer(importPkgs, defaultValue.Name(), f.GoType()))
+								fprintfln(w2, "}")
+							}
+						}
+
 						fprintfln(w2, "return %s", g.valuer(importPkgs, "val", f.GoType()))
 					}
 					fprintfln(w2, "}")
@@ -564,6 +601,10 @@ func (g *Generator) buildValuer(w io.Writer, importPkgs *Package, t *compiler.Ta
 		fprintfln(w, "return []any{")
 		tmpl := "%s, // %" + stfwidth(n) + "d - %s"
 		for _, f := range t.Columns {
+			if _, ok := f.DefaultValue(); ok {
+				fprintfln(w, tmpl, fmt.Sprintf("v.%sValue()", f.GoName()), f.Pos(), f.Name())
+				continue
+			}
 			fprintfln(w, tmpl, g.getOrValue(importPkgs, "v", f), f.Pos(), f.Name())
 		}
 		fprintfln(w, "}")
@@ -629,30 +670,30 @@ func (g *Generator) buildFindByPK(w io.Writer, importPkgs *Package, t *compiler.
 	defer w2.Reset()
 	switch v := pk.(type) {
 	case *compiler.AutoIncrPrimaryKey:
-		fmt.Fprint(w1, g.MustQuoteIdentifier(v.Name())+" = "+g.dialect.QuoteVar(1))
+		fmt.Fprintf(w1, "%s = %s", g.MustQuoteIdentifier(v.Name()), g.dialect.QuoteVar(1))
 		fmt.Fprint(w2, g.valuer(importPkgs, "v."+v.GoPath(), v.GoType()))
 	case *compiler.PrimaryKey:
-		fmt.Fprint(w1, g.MustQuoteIdentifier(v.Name())+" = "+g.dialect.QuoteVar(1))
+		fmt.Fprintf(w1, "%s = %s", g.MustQuoteIdentifier(v.Name()), g.dialect.QuoteVar(1))
 		fmt.Fprint(w2, g.valuer(importPkgs, "v."+v.GoPath(), v.GoType()))
 	case *compiler.CompositePrimaryKey:
 		if n := len(v.Columns); n > 0 {
 			w3 := strpool.AcquireString()
 			column := v.Columns[0]
-			fmt.Fprint(w1, "("+g.MustQuoteIdentifier(column.Name()))
+			fmt.Fprintf(w1, "(%s", g.MustQuoteIdentifier(column.Name()))
 			fmt.Fprint(w2, g.valuer(importPkgs, "v."+column.GoPath(), column.GoType()))
 			fmt.Fprint(w3, g.dialect.QuoteVar(1))
 			for i := 1; i < n; i++ {
 				column = v.Columns[i]
-				fmt.Fprint(w1, ","+g.MustQuoteIdentifier(column.Name()))
-				fmt.Fprint(w2, ","+g.valuer(importPkgs, "v."+column.GoPath(), column.GoType()))
-				fmt.Fprint(w3, ","+g.dialect.QuoteVar(i+1))
+				fmt.Fprintf(w1, ",%s", g.MustQuoteIdentifier(column.Name()))
+				fmt.Fprintf(w2, ",%s", g.valuer(importPkgs, "v."+column.GoPath(), column.GoType()))
+				fmt.Fprintf(w3, ",%s", g.dialect.QuoteVar(i+1))
 			}
 			fmt.Fprintf(w1, ") = (%s)", w3)
 			strpool.ReleaseString(w3)
 		}
 	}
 	fmt.Fprintf(w1, " LIMIT 1;%c", g.quoteRune)
-	fprintfln(w, "func (v "+t.GoName+") FindOneByPKStmt() (string, []any) {")
+	fprintfln(w, "func (v %s) FindOneByPKStmt() (string, []any) {", t.GoName)
 	fprintfln(w, "return %s, []any{%s}", w1, w2)
 	fprintfln(w, "}")
 	return nil
@@ -972,7 +1013,7 @@ func methodName(i *types.Interface) string {
 }
 
 func valueFunc(f compiler.Column) string {
-	return f.GoName() + "Value()"
+	return fmt.Sprintf("%sValue()", f.GoName())
 }
 
 func stfwidth(n int) string {

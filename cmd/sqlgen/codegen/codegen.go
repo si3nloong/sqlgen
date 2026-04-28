@@ -180,6 +180,7 @@ func Generate(c *Config) error {
 	// Resolve every source provided
 	for len(sources) > 0 {
 		srcDir = strings.TrimSpace(sources[0])
+		sources = sources[1:]
 		if srcDir == "" {
 			return fmt.Errorf("sqlgen: source directory %q is empty path", srcDir)
 		}
@@ -240,7 +241,7 @@ func Generate(c *Config) error {
 			fi, err := os.Stat(srcDir)
 			// If the file or folder not exists, we skip!
 			if os.IsNotExist(err) {
-				goto nextSrc
+				continue
 			} else if err != nil {
 				return err
 			}
@@ -261,9 +262,6 @@ func Generate(c *Config) error {
 		if err := parseGoPackage(generator, rootDir, dirs, matcher); err != nil {
 			return err
 		}
-
-	nextSrc:
-		sources = sources[1:]
 	}
 
 	if cfg.Database != nil {

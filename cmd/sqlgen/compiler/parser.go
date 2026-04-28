@@ -6,7 +6,6 @@ import (
 	"go/token"
 	"go/types"
 	"iter"
-	"log"
 	"reflect"
 	"regexp"
 	"sort"
@@ -672,7 +671,7 @@ func ParseDir(dir string, cfg *Config) (*packages.Package, iter.Seq2[*Table, err
 							t := obj.Decl.(*ast.TypeSpec)
 							switch t.Type.(type) {
 							case *ast.StructType:
-								ft := &structField{
+								field := &structField{
 									name:  types.ExprString(vi),
 									t:     f.pkg.TypesInfo.TypeOf(fi.Type),
 									index: append(f.idx, i),
@@ -682,11 +681,11 @@ func ParseDir(dir string, cfg *Config) (*packages.Package, iter.Seq2[*Table, err
 									parent:   f.prev,
 									tag:      tag,
 								}
-								structFields = append(structFields, ft)
+								structFields = append(structFields, field)
 
 								q = append(q, typeQueue{
 									idx:  append(f.idx, i),
-									prev: ft,
+									prev: field,
 									t:    t.Type.(*ast.StructType),
 									pkg:  f.pkg,
 								})
@@ -746,6 +745,12 @@ func ParseDir(dir string, cfg *Config) (*packages.Package, iter.Seq2[*Table, err
 						}
 					}
 
+					field := &structField{
+						t:      f.pkg.TypesInfo.TypeOf(fi.Type),
+						parent: f.prev,
+						tag:    tag,
+					}
+
 					// Every struct field
 					switch fv := fi.Type.(type) {
 					// Imported types
@@ -754,7 +759,7 @@ func ParseDir(dir string, cfg *Config) (*packages.Package, iter.Seq2[*Table, err
 						// we will inspect it
 						importPkg, ok := f.pkg.Imports[types.ExprString(fv.X)]
 						if ok {
-							log.Println(importPkg)
+							_ = importPkg
 							// 	for _, file := range importPkg.Syntax {
 							// 		ast.Inspect(file, func(n ast.Node) bool {
 							// 			mapEnumIfExists(importPkg, n, enumMap)
@@ -766,19 +771,40 @@ func ParseDir(dir string, cfg *Config) (*packages.Package, iter.Seq2[*Table, err
 					// Local types
 					case *ast.Ident:
 						if fv.Obj != nil {
+							scope := pkg.Types.Scope()
+							constants := make([]*types.Const, 0, len(scope.Names()))
 
+							// 1. Collect all constants of the custom type
+							for _, name := range scope.Names() {
+								obj := scope.Lookup(name)
+								if constant, ok := obj.(*types.Const); ok {
+									if named, ok := constant.Type().(*types.Named); ok && named.Obj().Name() == fv.Name {
+										constants = append(constants, constant)
+									}
+								}
+							}
+
+							if len(constants) > 0 {
+								// 2. Sort by the global FileSet position
+								// This automatically handles file order (alphabetical) and line order.
+								sort.Slice(constants, func(i, j int) bool {
+									return constants[i].Pos() < constants[j].Pos()
+								})
+
+								field.defaultValue = constants[0]
+							}
 						}
+
+					case *ast.StarExpr:
+						// If it's a pointer, we need to get the underlying type
 					}
 
 					for j, n := range fi.Names {
-						structFields = append(structFields, &structField{
-							name:     types.ExprString(n),
-							t:        f.pkg.TypesInfo.TypeOf(fi.Type),
-							index:    append(f.idx, i+j),
-							exported: n.IsExported(),
-							parent:   f.prev,
-							tag:      tag,
-						})
+						field.name = types.ExprString(n)
+						field.index = append(f.idx, i+j)
+						field.exported = n.IsExported()
+
+						structFields = append(structFields, field)
 					}
 				}
 			}
@@ -907,10 +933,11 @@ func ParseDir(dir string, cfg *Config) (*packages.Package, iter.Seq2[*Table, err
 
 				tag := parseTag(tagPaths)
 				column := &BasicColumn{
-					goInfo:   columnMap[f],
-					Readonly: tag.hasOpts(TagOptionReadonly),
-					name:     name,
-					pos:      pos,
+					goInfo:       columnMap[f],
+					Readonly:     tag.hasOpts(TagOptionReadonly),
+					defaultValue: f.defaultValue,
+					name:         name,
+					pos:          pos,
 				}
 
 				if tag.hasOpts(TagOptionAutoIncrement, TagOptionPK, TagOptionPKAlias) {

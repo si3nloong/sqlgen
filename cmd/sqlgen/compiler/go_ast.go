@@ -1,6 +1,7 @@
 package compiler
 
 import (
+	"go/constant"
 	"go/types"
 	"strings"
 )
@@ -17,11 +18,27 @@ type GoDecl interface {
 	GoPtrPaths() [][]GoDecl
 }
 
+type Kind int
+
+const (
+	KindUnknown Kind = iota
+	KindInt
+	KindString
+	KindSQL
+)
+
+type Value interface {
+	Name() string
+	Kind() Kind
+	Value() string
+}
+
 type Column interface {
 	GoDecl
 	IsUnderlyingPtr() bool
 	Pos() int
 	Name() string
+	DefaultValue() (Value, bool)
 	columnType()
 }
 
@@ -104,9 +121,10 @@ func mapToGoInfo(s *structField) *goInfo {
 
 type BasicColumn struct {
 	*goInfo
-	Readonly bool
-	name     string
-	pos      int
+	Readonly     bool
+	name         string
+	defaultValue types.Object
+	pos          int
 }
 
 func (c BasicColumn) GoSize() (int64, bool) {
@@ -117,7 +135,22 @@ func (c BasicColumn) GoSize() (int64, bool) {
 }
 func (c BasicColumn) Name() string { return c.name }
 func (c BasicColumn) Pos() int     { return c.pos }
-func (BasicColumn) columnType()    {}
+func (c BasicColumn) DefaultValue() (Value, bool) {
+	if c.defaultValue == nil {
+		return nil, false
+	}
+	switch v := c.defaultValue.(type) {
+	case *types.Const:
+		switch v.Val().Kind() {
+		case constant.Int:
+			return constantValue{name: v.Name(), kind: KindInt, value: v.Val().String()}, true
+		case constant.String:
+			return constantValue{name: v.Name(), kind: KindString, value: v.Val().String()}, true
+		}
+	}
+	return nil, true
+}
+func (BasicColumn) columnType() {}
 
 type GeneratedColumn struct {
 	*goInfo
@@ -127,4 +160,17 @@ type GeneratedColumn struct {
 
 func (c GeneratedColumn) Name() string { return c.name }
 func (c GeneratedColumn) Pos() int     { return c.pos }
-func (GeneratedColumn) columnType()    {}
+func (c GeneratedColumn) DefaultValue() (Value, bool) {
+	return nil, false
+}
+func (GeneratedColumn) columnType() {}
+
+type constantValue struct {
+	name  string
+	kind  Kind
+	value string
+}
+
+func (v constantValue) Name() string  { return v.name }
+func (v constantValue) Kind() Kind    { return v.kind }
+func (v constantValue) Value() string { return v.value }
