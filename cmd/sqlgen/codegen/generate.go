@@ -621,13 +621,13 @@ func (g *Generator) buildScanner(w io.Writer, importPkgs *Package, table *compil
 	// Initialize all pointer fields before we passed those property addr
 	for p := range table.ColumnGoPtrPaths() {
 		fprintfln(w, "if v.%s == nil {", p.GoPath())
-		fmt.Fprintf(w, "v.%s = new(%s)", p.GoPath(), Expr(strings.TrimPrefix(p.GoType().String(), "*")).Format(importPkgs, ExprParams{}))
+		fmt.Fprintf(w, "v.%s = new(%s)", p.GoPath(), Expr(strings.TrimPrefix(p.GoType().String(), "*")).Format(importPkgs))
 		fprintfln(w, "}")
 	}
 	fprintfln(w, "return []any{")
 	tmpl := "%s, // %" + stfwidth(len(table.Columns)) + "d - %s"
 	for _, f := range table.Columns {
-		fprintfln(w, tmpl, g.scanner(importPkgs, "&v."+f.GoPath(), f.GoType()), f.Pos(), f.Name())
+		fprintfln(w, tmpl, g.scanner(importPkgs, fmt.Sprintf("&v.%s", f.GoPath()), f.GoType()), f.Pos(), f.Name())
 	}
 	fprintfln(w, "}")
 	fprintfln(w, "}")

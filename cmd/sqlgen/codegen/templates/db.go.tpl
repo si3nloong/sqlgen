@@ -20,13 +20,27 @@ func InsertOne[T sequel.ColumnValuer, Ptr interface {
 	case sequel.SingleInserter:
 		query, args := v.InsertOneStmt()
 		return db.QueryRowContext(ctx, query, args...).Scan(model.Addrs()...)
+	case sequel.Inserter:
+		stmt := strpool.AcquireString()
+		stmt.WriteString("INSERT INTO ") 
+		stmt.WriteString(DbTable(model))
+		stmt.WriteString(v.SQLInsertColumns())
+		stmt.WriteString(" VALUES ")
+		stmt.WriteString(v.SQLInsertPlaceholders(0))
+		stmt.WriteString(" RETURNING ")
+		stmt.WriteString(strings.Join(TableColumns(model), ","))
+		stmt.WriteString(";")
+		row := db.QueryRowContext(ctx, stmt.String(), v.SQLInsertValues()...)
+		strpool.ReleaseString(stmt) // Cleanup
+		return row.Scan(model.Addrs()...)
 	default:
-		columns, args := model.Columns(), model.Values()
+		columns, args := TableColumns(model), model.Values()
+		columnSQL := strings.Join(columns, ",")
 		stmt := strpool.AcquireString()
 		stmt.WriteString("INSERT INTO ") 
 		stmt.WriteString(DbTable(model))
 		stmt.WriteString(" (")
-		stmt.WriteString(strings.Join(columns, ","))
+		stmt.WriteString(columnSQL)
 		stmt.WriteString(") VALUES ({{ quoteVar 1 }}")
 		noOfArgs := len(args)
 		for i := 1; i < noOfArgs; i++ {
@@ -34,7 +48,7 @@ func InsertOne[T sequel.ColumnValuer, Ptr interface {
 			stmt.WriteString(wrapVar(i+1))
 		}
 		stmt.WriteString(") RETURNING ")
-		stmt.WriteString(strings.Join(TableColumns(model), ","))
+		stmt.WriteString(columnSQL)
 		stmt.WriteString(";")
 		row := db.QueryRowContext(ctx, stmt.String(), args...)
 		strpool.ReleaseString(stmt) // Cleanup
@@ -68,8 +82,19 @@ func InsertOne[T sequel.ColumnValuer, Ptr interface {
 	case sequel.SingleInserter:
 		query, args := v.InsertOneStmt()
 		return db.ExecContext(ctx, query, args...)
+	case sequel.Inserter:
+		stmt := strpool.AcquireString()
+		stmt.WriteString("INSERT INTO ") 
+		stmt.WriteString(DbTable(model))
+		stmt.WriteString(v.SQLInsertColumns())
+		stmt.WriteString(" VALUES ")
+		stmt.WriteString(v.SQLInsertPlaceholders(0))
+		stmt.WriteString(";")
+		result, err := db.ExecContext(ctx, stmt.String(), v.SQLInsertValues()...)
+		strpool.ReleaseString(stmt) // Cleanup
+		return result, err
 	default:
-		columns, args := model.Columns(), model.Values()
+		columns, args := TableColumns(model), model.Values()
 		stmt := strpool.AcquireString()
 		stmt.WriteString("INSERT INTO ")
 		stmt.WriteString(DbTable(model))
@@ -81,10 +106,7 @@ func InsertOne[T sequel.ColumnValuer, Ptr interface {
 		result, err := db.ExecContext(ctx, stmt.String(), args...)
 		strpool.ReleaseString(stmt) // Cleanup
 		args = nil // Cleanup
-		if err != nil {
-			return nil, err
-		}
-		return result, nil
+		return result, err
 	}
 }
 {{ end }}
@@ -92,14 +114,14 @@ func InsertOne[T sequel.ColumnValuer, Ptr interface {
 {{ if eq driver "postgres" -}}
 {{- /* postgres */ -}}
 // Insert is a helper function to insert multiple records.
-func Insert[T sequel.Inserter, Ptr sequel.PtrScanner[T]](ctx context.Context, db sequel.DB, data []T) (sql.Result, error) {
+func Insert[T sequel.ColumnValuer, Ptr sequel.PtrScanner[T]](ctx context.Context, db sequel.DB, data []T) (sql.Result, error) {
 	noOfData := len(data)
 	if noOfData == 0 {
 		return new(sequel.EmptyResult), nil
 	}
 
 	model := data[0]
-	columns := model.Columns()
+	columns := TableColumns(model)
 	stmt := strpool.AcquireString()
 
 	var (
@@ -107,29 +129,23 @@ func Insert[T sequel.Inserter, Ptr sequel.PtrScanner[T]](ctx context.Context, db
 		err  error
 	)
 	switch v := any(model).(type) {
-	case sequel.AutoIncrKeyer:
-		_, idx, _ := v.PK()
-		columns = append(columns[:idx], columns[idx+1:]...)
+	case sequel.Inserter:
 		noOfCols := len(columns)
 		args := make([]any, 0, noOfCols*noOfData)
 		stmt.WriteString("INSERT INTO ")
 		stmt.WriteString(DbTable(model))
 		stmt.WriteString(" (")
-		stmt.WriteString(model.SQLInsertColumns())
+		stmt.WriteString(v.SQLInsertColumns())
 		stmt.WriteString(") VALUES ")
-		stmt.WriteString(model.SQLInsertPlaceholders(0))
-		values := data[0].Values()
-		values = append(values[:idx], values[idx+1:]...)
-		args = append(args, values...)
+		stmt.WriteString(v.SQLInsertPlaceholders(0))
+		args = append(args, data[0].Values()...)
 		for i := 1; i < noOfData; i++ {
 			stmt.WriteString(",")
-			stmt.WriteString(model.SQLInsertPlaceholders(i))
-			values := data[i].Values()
-			values = append(values[:idx], values[idx+1:]...)
-			args = append(args, values...)
+			stmt.WriteString(v.SQLInsertPlaceholders(i))
+			args = append(args, data[i].Values()...)
 		}
 		stmt.WriteString(" RETURNING ")
-		stmt.WriteString(strings.Join(TableColumns(model), ","))
+		stmt.WriteString(strings.Join(columns, ","))
 		stmt.WriteString(";")
 		rows, err = db.QueryContext(ctx, stmt.String(), args...)
 		args = nil // Cleanup
@@ -139,17 +155,26 @@ func Insert[T sequel.Inserter, Ptr sequel.PtrScanner[T]](ctx context.Context, db
 		stmt.WriteString("INSERT INTO ")
 		stmt.WriteString(DbTable(model))
 		stmt.WriteString(" (")
-		stmt.WriteString(model.SQLInsertColumns())
-		stmt.WriteString(") VALUES ")
-		stmt.WriteString(model.SQLInsertPlaceholders(0))
+		stmt.WriteString(strings.Join(columns, ","))
+		stmt.WriteString(") VALUES ({{ quoteVar 1 }}")
+		for i := 1; i < noOfCols; i++ {
+			stmt.WriteString(",")
+			stmt.WriteString(wrapVar(i+1))
+		}
+		stmt.WriteString(")")
 		args = append(args, data[0].Values()...)
 		for i := 1; i < noOfData; i++ {
-			stmt.WriteString(",")
-			stmt.WriteString(model.SQLInsertPlaceholders(i))
+			stmt.WriteString(",(")
+			stmt.WriteString(wrapVar(i*noOfCols + 1))
+			for j := 1; j < noOfCols; j++ {
+				stmt.WriteString(",")
+				stmt.WriteString(wrapVar(i*noOfCols + j + 1))
+			}
+			stmt.WriteString(")")
 			args = append(args, data[i].Values()...)
 		}
 		stmt.WriteString(" RETURNING ")
-		stmt.WriteString(strings.Join(TableColumns(model), ","))
+		stmt.WriteString(strings.Join(columns, ","))
 		stmt.WriteString(";")
 		rows, err = db.QueryContext(ctx, stmt.String(), args...)
 		args = nil // Cleanup
@@ -219,7 +244,12 @@ func Insert[T sequel.ColumnValuer](ctx context.Context, db sequel.DB, data []T) 
 		noOfColumns := len(columns)
 		args := make([]any, 0, noOfColumns*noOfData)
 		placeholder := "(" + strings.Repeat(",{{ quoteVar 1 }}", noOfColumns)[1:] + ")"
-		stmt.WriteString("INSERT INTO " + DbTable(model) + " (" + strings.Join(columns, ",") + ") VALUES "+ placeholder)
+		stmt.WriteString("INSERT INTO ")
+		stmt.WriteString(DbTable(model))
+		stmt.WriteString(" (")
+		stmt.WriteString(strings.Join(columns, ","))
+		stmt.WriteString(") VALUES ")
+		stmt.WriteString(placeholder)
 		args = append(args, data[0].Values()...)
 		for i := 1; i < noOfData; i++ {
 			stmt.WriteString(",")
@@ -743,11 +773,15 @@ func Upsert[T interface {
 		if override {
 			stmt.WriteString("INSERT INTO ")
 			stmt.WriteString(DbTable(model))
-			stmt.WriteString(" (" + strings.Join(columns, ",") + ") VALUES ")
+			stmt.WriteString(" (")
+			stmt.WriteString(strings.Join(columns, ","))
+			stmt.WriteString(") VALUES ")
 		} else {
 			stmt.WriteString("INSERT IGNORE INTO ")
 			stmt.WriteString(DbTable(model))
-			stmt.WriteString(" (" + strings.Join(columns, ",") + ") VALUES ")
+			stmt.WriteString(" (")
+			stmt.WriteString(strings.Join(columns, ","))
+			stmt.WriteString(") VALUES ")
 		}
 		stmt.WriteString(model.SQLInsertPlaceholders(0))
 		args = append(args, data[0].Values()...)
@@ -797,9 +831,16 @@ func Upsert[T interface {
 				continue
 			}
 			if first {
-				stmt.WriteString(columns[i] + "=VALUES(" + columns[i] + ")")
+				stmt.WriteString(columns[i])
+				stmt.WriteString("=VALUES(")
+				stmt.WriteString(columns[i])
+				stmt.WriteString(")")
 			} else {
-				stmt.WriteString(","+ columns[i] + "=VALUES(" + columns[i] + ")")
+				stmt.WriteString(",")
+				stmt.WriteString(columns[i])
+				stmt.WriteString("=VALUES(")
+				stmt.WriteString(columns[i])
+				stmt.WriteString(")")
 			}
 			first = false
 		}
@@ -847,10 +888,17 @@ func FindByPK[T sequel.KeyScanner, Ptr sequel.KeyPtrScanner[T]](ctx context.Cont
 		return row.Scan(model.Addrs()...)
 		{{ else -}}
 		stmt := strpool.AcquireString()
-		stmt.WriteString("SELECT " + strings.Join(TableColumns(model), ",") + " FROM " + DbTable(model) + " WHERE ("+ strings.Join(keyNames, ",") +") = ({{ quoteVar 1 }}")
-		noOfKey := len(keyNames)
-		for i := 1; i < noOfKey; i++ {
-			stmt.WriteString(","+ wrapVar(i+1))
+		stmt.WriteString("SELECT ")
+		stmt.WriteString(strings.Join(TableColumns(model), ","))
+		stmt.WriteString(" FROM ")
+		stmt.WriteString(DbTable(model))
+		stmt.WriteString(" WHERE (")
+		stmt.WriteString(strings.Join(keyNames, ","))
+		stmt.WriteString(") = ({{ quoteVar 1 }}")
+		noOfKeys := len(keyNames)
+		for i := 1; i < noOfKeys; i++ {
+			stmt.WriteString(",")
+			stmt.WriteString(wrapVar(i+1))
 		}
 		stmt.WriteString(") LIMIT 1;")
 		row := db.QueryRowContext(ctx, stmt.String(), keys...)
@@ -957,23 +1005,46 @@ func DeleteByPK[T sequel.KeyValuer](ctx context.Context, db sequel.DB, model T) 
 		return db.ExecContext(ctx, query, args...)
 	case sequel.PrimaryKeyer:
 		pkName, _, pk := v.PK()
-		query := "DELETE FROM "+DbTable(model)+" WHERE "+pkName+" = {{ quoteVar 1 }};"
-		return db.ExecContext(ctx, query, pk)
+		stmt := strpool.AcquireString()
+		stmt.WriteString("DELETE FROM ")
+		stmt.WriteString(DbTable(model))
+		stmt.WriteString(" WHERE ")
+		stmt.WriteString(pkName)
+		stmt.WriteString(" = {{ quoteVar 1 }};")
+		result, err := db.ExecContext(ctx, stmt.String(), pk)
+		strpool.ReleaseString(stmt)
+		return result, err
 	case sequel.CompositeKeyer:
 		keyNames, _, keys := v.CompositeKey()
 		{{ if isStaticVar -}}
-		query := "DELETE FROM "+DbTable(model)+" WHERE ("+strings.Join(keyNames, ",")+") = ({{ quoteVar 1 }}"+strings.Repeat(",{{ quoteVar 1 }}", len(keyNames)-1)+");"
-		return db.ExecContext(ctx, query, keys...)
+		stmt := strpool.AcquireString()
+		stmt.WriteString("DELETE FROM ")
+		stmt.WriteString(DbTable(model))
+		stmt.WriteString(" WHERE (")
+		stmt.WriteString(strings.Join(keyNames, ","))
+		stmt.WriteString(") = ({{ quoteVar 1 }}")
+		stmt.WriteString(strings.Repeat(",{{ quoteVar 1 }}", len(keyNames)-1))
+		stmt.WriteString(");")
+		result, err := db.ExecContext(ctx, stmt.String(), keys...)
+		strpool.ReleaseString(stmt)
+		return result, err
 		{{ else -}}
 		stmt := strpool.AcquireString()
-		defer strpool.ReleaseString(stmt)
-		stmt.WriteString("DELETE FROM "+DbTable(model)+" WHERE ("+ strings.Join(keyNames, ",") +") = ({{ quoteVar 1 }}")
+		stmt.WriteString("DELETE FROM ")
+		stmt.WriteString(DbTable(model))
+		stmt.WriteString(" WHERE (")
+		stmt.WriteString(strings.Join(keyNames, ","))
+		stmt.WriteString(") = ({{ quoteVar 1 }}")
 		noOfKey := len(keyNames)
 		for i := 1; i < noOfKey; i++ {
-			stmt.WriteString(","+ wrapVar(i+1))
+			stmt.WriteString(",")
+			stmt.WriteString(wrapVar(i+1))
 		}
 		stmt.WriteString(");")
-		return db.ExecContext(ctx, stmt.String(), keys...)
+		result, err := db.ExecContext(ctx, stmt.String(), keys...)
+		strpool.ReleaseString(stmt) // Clean up
+		keys = nil // Clean up
+		return result, err
 		{{ end -}}
 	default:
 		panic("unreachable")

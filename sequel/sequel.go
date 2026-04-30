@@ -99,6 +99,7 @@ type Inserter interface {
 	Columner
 	Valuer
 	SQLInsertColumns() string
+	SQLInsertValues() []any
 	SQLInsertPlaceholders(row int) string
 }
 

@@ -45,8 +45,19 @@ func InsertOne[T sequel.ColumnValuer, Ptr interface {
 	case sequel.SingleInserter:
 		query, args := v.InsertOneStmt()
 		return db.ExecContext(ctx, query, args...)
+	case sequel.Inserter:
+		stmt := strpool.AcquireString()
+		stmt.WriteString("INSERT INTO ")
+		stmt.WriteString(DbTable(model))
+		stmt.WriteString(v.SQLInsertColumns())
+		stmt.WriteString(" VALUES ")
+		stmt.WriteString(v.SQLInsertPlaceholders(0))
+		stmt.WriteString(";")
+		result, err := db.ExecContext(ctx, stmt.String(), v.SQLInsertValues()...)
+		strpool.ReleaseString(stmt) // Cleanup
+		return result, err
 	default:
-		columns, args := model.Columns(), model.Values()
+		columns, args := TableColumns(model), model.Values()
 		stmt := strpool.AcquireString()
 		stmt.WriteString("INSERT INTO ")
 		stmt.WriteString(DbTable(model))
@@ -58,10 +69,7 @@ func InsertOne[T sequel.ColumnValuer, Ptr interface {
 		result, err := db.ExecContext(ctx, stmt.String(), args...)
 		strpool.ReleaseString(stmt) // Cleanup
 		args = nil                  // Cleanup
-		if err != nil {
-			return nil, err
-		}
-		return result, nil
+		return result, err
 	}
 }
 
@@ -109,7 +117,12 @@ func Insert[T sequel.ColumnValuer](ctx context.Context, db sequel.DB, data []T) 
 		noOfColumns := len(columns)
 		args := make([]any, 0, noOfColumns*noOfData)
 		placeholder := "(" + strings.Repeat(",?", noOfColumns)[1:] + ")"
-		stmt.WriteString("INSERT INTO " + DbTable(model) + " (" + strings.Join(columns, ",") + ") VALUES " + placeholder)
+		stmt.WriteString("INSERT INTO ")
+		stmt.WriteString(DbTable(model))
+		stmt.WriteString(" (")
+		stmt.WriteString(strings.Join(columns, ","))
+		stmt.WriteString(") VALUES ")
+		stmt.WriteString(placeholder)
 		args = append(args, data[0].Values()...)
 		for i := 1; i < noOfData; i++ {
 			stmt.WriteString(",")
@@ -330,11 +343,15 @@ func Upsert[T interface {
 		if override {
 			stmt.WriteString("INSERT INTO ")
 			stmt.WriteString(DbTable(model))
-			stmt.WriteString(" (" + strings.Join(columns, ",") + ") VALUES ")
+			stmt.WriteString(" (")
+			stmt.WriteString(strings.Join(columns, ","))
+			stmt.WriteString(") VALUES ")
 		} else {
 			stmt.WriteString("INSERT IGNORE INTO ")
 			stmt.WriteString(DbTable(model))
-			stmt.WriteString(" (" + strings.Join(columns, ",") + ") VALUES ")
+			stmt.WriteString(" (")
+			stmt.WriteString(strings.Join(columns, ","))
+			stmt.WriteString(") VALUES ")
 		}
 		stmt.WriteString(model.SQLInsertPlaceholders(0))
 		args = append(args, data[0].Values()...)
@@ -384,9 +401,16 @@ func Upsert[T interface {
 				continue
 			}
 			if first {
-				stmt.WriteString(columns[i] + "=VALUES(" + columns[i] + ")")
+				stmt.WriteString(columns[i])
+				stmt.WriteString("=VALUES(")
+				stmt.WriteString(columns[i])
+				stmt.WriteString(")")
 			} else {
-				stmt.WriteString("," + columns[i] + "=VALUES(" + columns[i] + ")")
+				stmt.WriteString(",")
+				stmt.WriteString(columns[i])
+				stmt.WriteString("=VALUES(")
+				stmt.WriteString(columns[i])
+				stmt.WriteString(")")
 			}
 			first = false
 		}
@@ -474,12 +498,28 @@ func DeleteByPK[T sequel.KeyValuer](ctx context.Context, db sequel.DB, model T) 
 		return db.ExecContext(ctx, query, args...)
 	case sequel.PrimaryKeyer:
 		pkName, _, pk := v.PK()
-		query := "DELETE FROM " + DbTable(model) + " WHERE " + pkName + " = ?;"
-		return db.ExecContext(ctx, query, pk)
+		stmt := strpool.AcquireString()
+		stmt.WriteString("DELETE FROM ")
+		stmt.WriteString(DbTable(model))
+		stmt.WriteString(" WHERE ")
+		stmt.WriteString(pkName)
+		stmt.WriteString(" = ?;")
+		result, err := db.ExecContext(ctx, stmt.String(), pk)
+		strpool.ReleaseString(stmt)
+		return result, err
 	case sequel.CompositeKeyer:
 		keyNames, _, keys := v.CompositeKey()
-		query := "DELETE FROM " + DbTable(model) + " WHERE (" + strings.Join(keyNames, ",") + ") = (?" + strings.Repeat(",?", len(keyNames)-1) + ");"
-		return db.ExecContext(ctx, query, keys...)
+		stmt := strpool.AcquireString()
+		stmt.WriteString("DELETE FROM ")
+		stmt.WriteString(DbTable(model))
+		stmt.WriteString(" WHERE (")
+		stmt.WriteString(strings.Join(keyNames, ","))
+		stmt.WriteString(") = (?")
+		stmt.WriteString(strings.Repeat(",?", len(keyNames)-1))
+		stmt.WriteString(");")
+		result, err := db.ExecContext(ctx, stmt.String(), keys...)
+		strpool.ReleaseString(stmt)
+		return result, err
 	default:
 		panic("unreachable")
 	}
