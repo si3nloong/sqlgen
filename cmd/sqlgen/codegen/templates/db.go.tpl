@@ -391,9 +391,14 @@ func UpsertOne[T sequel.KeyValuer, Ptr interface{
 				continue
 			}
 			if first {
-				stmt.WriteString(columns[i] + " = EXCLUDED." + columns[i])
+				stmt.WriteString(columns[i])
+				stmt.WriteString(" = EXCLUDED.")
+				stmt.WriteString(columns[i])
 			} else {
-				stmt.WriteString("," + columns[i] + " = EXCLUDED." + columns[i])
+				stmt.WriteString(",")
+				stmt.WriteString(columns[i])
+				stmt.WriteString(" = EXCLUDED.")
+				stmt.WriteString(columns[i])
 			}
 			first = false
 		}
