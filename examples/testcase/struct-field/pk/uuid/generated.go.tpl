@@ -10,6 +10,13 @@ import (
 func (User) TableName() string {
 	return "user"
 }
+func (User) HasPK() {}
+func (v *User) SetPK(val uuid.UUID) {
+	v.ID = val
+}
+func (v User) PK() (string, int, any) {
+	return "id", 0, v.ID
+}
 func (User) Columns() []string {
 	return []string{"id", "name"} // 2
 }
@@ -30,6 +37,12 @@ func (User) SQLInsertPlaceholders(row int) string {
 }
 func (v User) InsertOneStmt() (string, []any) {
 	return "INSERT INTO `user` (`id`,`name`) VALUES (?,?);", v.Values()
+}
+func (v User) FindOneByPKStmt() (string, []any) {
+	return "SELECT `id`,`name` FROM `user` WHERE `id` = ? LIMIT 1;", []any{v.ID}
+}
+func (v User) UpdateOneByPKStmt() (string, []any) {
+	return "UPDATE `user` SET `name` = ? WHERE `id` = ?;", []any{v.Name, v.ID}
 }
 func (v User) IDValue() any {
 	return v.ID

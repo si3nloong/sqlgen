@@ -623,10 +623,6 @@ func (g *Generator) buildValuer(w io.Writer, importPkgs *Package, t *compiler.Ta
 		fprintfln(w, "return []any{")
 		tmpl := "%s, // %" + stfwidth(n) + "d - %s"
 		for _, f := range t.Columns {
-			if _, ok := f.DefaultValue(); ok {
-				fprintfln(w, tmpl, fmt.Sprintf("v.%sValue()", f.GoName()), f.Pos(), f.Name())
-				continue
-			}
 			fprintfln(w, tmpl, g.getOrValue(importPkgs, "v", f), f.Pos(), f.Name())
 		}
 		fprintfln(w, "}")
@@ -768,10 +764,10 @@ func (g *Generator) buildInsertOne(w io.Writer, importPkgs *Package, t *compiler
 			if err != nil {
 				return err
 			}
-			fmt.Fprint(w1, ","+g.MustQuoteIdentifier(column.Name()))
-			fmt.Fprint(w2, ","+g.getOrValue(importPkgs, "v", column))
-			fmt.Fprint(w3, ","+valuer)
-			fmt.Fprint(w4, ","+scanner)
+			fmt.Fprintf(w1, ",%s", g.MustQuoteIdentifier(column.Name()))
+			fmt.Fprintf(w2, ",%s", g.getOrValue(importPkgs, "v", column))
+			fmt.Fprintf(w3, ",%s", valuer)
+			fmt.Fprintf(w4, ",%s", scanner)
 		}
 		fmt.Fprintf(w1, ") VALUES (%s) RETURNING (%s)", w3, w4)
 	} else {
@@ -791,9 +787,9 @@ func (g *Generator) buildInsertOne(w io.Writer, importPkgs *Package, t *compiler
 			if err != nil {
 				return err
 			}
-			fmt.Fprint(w1, ","+g.MustQuoteIdentifier(column.Name()))
-			fmt.Fprint(w2, ","+g.getOrValue(importPkgs, "v", column))
-			fmt.Fprint(w3, ","+valuer)
+			fmt.Fprintf(w1, ",%s", g.MustQuoteIdentifier(column.Name()))
+			fmt.Fprintf(w2, ",%s", g.getOrValue(importPkgs, "v", column))
+			fmt.Fprintf(w3, ",%s", valuer)
 		}
 		fmt.Fprintf(w1, ") VALUES (%s)", w3)
 	}
@@ -802,7 +798,7 @@ func (g *Generator) buildInsertOne(w io.Writer, importPkgs *Package, t *compiler
 	// mean it has no auto increment key
 	fprintfln(w, "func (v %s) InsertOneStmt() (string, []any) {", t.GoName)
 	if len(columns) == len(t.Columns) {
-		fprintfln(w, "return %s, v.Values()", w1)
+		fprintfln(w, "return %s, v.%s()", w1, methodName(sqlValuer))
 	} else {
 		fprintfln(w, "return %s, []any{%s}", w1, w2)
 	}
@@ -878,6 +874,9 @@ func (g *Generator) buildUpdateByPK(w io.Writer, importPkgs *Package, t *compile
 }
 
 func (g *Generator) getOrValue(importPkgs *Package, obj string, f compiler.Column) string {
+	if _, ok := f.DefaultValue(); ok {
+		return fmt.Sprintf("%s.%sValue()", obj, f.GoName())
+	}
 	goPath := obj + "." + f.GoPath()
 	if f.IsUnderlyingPtr() {
 		return obj + "." + valueFunc(f)

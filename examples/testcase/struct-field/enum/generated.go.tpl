@@ -10,16 +10,24 @@ import (
 func (Custom) TableName() string {
 	return "custom"
 }
+func (Custom) HasPK() {}
+func (v *Custom) SetPK(val int) {
+	v.ID = val
+}
+func (v Custom) PK() (string, int, any) {
+	return "id", 0, (int64)(v.ID)
+}
 func (Custom) Columns() []string {
-	return []string{"text", "e", "ptr_str", "uint_16", "num"} // 5
+	return []string{"id", "text", "e", "ptr_str", "uint_16", "num"} // 6
 }
 func (v Custom) Values() []any {
 	return []any{
-		v.StrValue(),    // 0 - text
-		v.EnumValue(),   // 1 - e
-		v.PtrStrValue(), // 2 - ptr_str
-		v.Uint16Value(), // 3 - uint_16
-		(int64)(v.Num),  // 4 - num
+		(int64)(v.ID),   // 0 - id
+		v.StrValue(),    // 1 - text
+		v.EnumValue(),   // 2 - e
+		v.PtrStrValue(), // 3 - ptr_str
+		v.Uint16Value(), // 4 - uint_16
+		(int64)(v.Num),  // 5 - num
 	}
 }
 func (v *Custom) Addrs() []any {
@@ -27,18 +35,28 @@ func (v *Custom) Addrs() []any {
 		v.PtrStr = new(longText)
 	}
 	return []any{
-		encoding.StringScanner[longText](&v.Str),      // 0 - text
-		encoding.IntScanner[Enum](&v.Enum),            // 1 - e
-		encoding.JSONScanner(&v.PtrStr),               // 2 - ptr_str
-		encoding.Uint16Scanner[uint16Enum](&v.Uint16), // 3 - uint_16
-		encoding.Uint16Scanner[uint16](&v.Num),        // 4 - num
+		encoding.IntScanner[int](&v.ID),               // 0 - id
+		encoding.StringScanner[longText](&v.Str),      // 1 - text
+		encoding.IntScanner[Enum](&v.Enum),            // 2 - e
+		encoding.JSONScanner(&v.PtrStr),               // 3 - ptr_str
+		encoding.Uint16Scanner[uint16Enum](&v.Uint16), // 4 - uint_16
+		encoding.Uint16Scanner[uint16](&v.Num),        // 5 - num
 	}
 }
 func (Custom) SQLInsertPlaceholders(row int) string {
-	return "(?,?,?,?,?)" // 5
+	return "(?,?,?,?,?,?)" // 6
 }
 func (v Custom) InsertOneStmt() (string, []any) {
-	return "INSERT INTO `custom` (`text`,`e`,`ptr_str`,`uint_16`,`num`) VALUES (?,?,?,?,?);", v.Values()
+	return "INSERT INTO `custom` (`id`,`text`,`e`,`ptr_str`,`uint_16`,`num`) VALUES (?,?,?,?,?,?);", v.Values()
+}
+func (v Custom) FindOneByPKStmt() (string, []any) {
+	return "SELECT `id`,`text`,`e`,`ptr_str`,`uint_16`,`num` FROM `custom` WHERE `id` = ? LIMIT 1;", []any{(int64)(v.ID)}
+}
+func (v Custom) UpdateOneByPKStmt() (string, []any) {
+	return "UPDATE `custom` SET `text` = ?,`e` = ?,`ptr_str` = ?,`uint_16` = ?,`num` = ? WHERE `id` = ?;", []any{v.StrValue(), v.EnumValue(), v.PtrStrValue(), v.Uint16Value(), (int64)(v.Num), (int64)(v.ID)}
+}
+func (v Custom) IDValue() any {
+	return (int64)(v.ID)
 }
 func (v Custom) StrValue() any {
 	if v.Str == "" {
@@ -63,6 +81,9 @@ func (v Custom) Uint16Value() any {
 }
 func (v Custom) NumValue() any {
 	return (int64)(v.Num)
+}
+func (v Custom) ColumnID() sequel.ColumnConvertClause[int] {
+	return sequel.Column("id", v.ID, convertIntToValue)
 }
 func (v Custom) ColumnStr() sequel.ColumnConvertClause[longText] {
 	return sequel.Column("text", v.Str, convertLongTextToValue)
@@ -97,6 +118,9 @@ func convertLongTextToValue(val longText) any {
 		return (string)(otherStr)
 	}
 	return (string)(val)
+}
+func convertIntToValue(val int) any {
+	return (int64)(val)
 }
 func convertEnumToValue(val Enum) any {
 	if val == 0 {

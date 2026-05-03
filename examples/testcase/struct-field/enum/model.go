@@ -26,6 +26,7 @@ const (
 )
 
 type Custom struct {
+	ID     int       `sql:",pk"`
 	Str    longText  `sql:"text"`
 	Enum   Enum      `sql:"e"`
 	PtrStr *longText `sql:"ptr_str"`

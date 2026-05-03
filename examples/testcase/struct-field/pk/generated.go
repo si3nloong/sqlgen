@@ -20,35 +20,40 @@ func (v Car) PK() (string, int, any) {
 	return "id", 0, v.ID
 }
 func (Car) Columns() []string {
-	return []string{"id", "no", "color", "manuc_date"} // 4
+	return []string{"id", "no", "color", "year", "manuc_date"} // 5
 }
 func (v Car) Values() []any {
 	return []any{
 		v.ID,           // 0 - id
 		v.No,           // 1 - no
 		v.ColorValue(), // 2 - color
-		v.ManucDate,    // 3 - manuc_date
+		v.YearValue(),  // 3 - year
+		v.ManucDate,    // 4 - manuc_date
 	}
 }
 func (v *Car) Addrs() []any {
+	if v.Year == nil {
+		v.Year = new(int)
+	}
 	return []any{
 		encoding.Int64Scanner[PK](&v.ID),     // 0 - id
 		&v.No,                                // 1 - no
 		encoding.IntScanner[Color](&v.Color), // 2 - color
-		&v.ManucDate,                         // 3 - manuc_date
+		encoding.IntScanner[int](&v.Year),    // 3 - year
+		&v.ManucDate,                         // 4 - manuc_date
 	}
 }
 func (Car) SQLInsertPlaceholders(row int) string {
-	return "(?,?,?,?)" // 4
+	return "(?,?,?,?,?)" // 5
 }
 func (v Car) InsertOneStmt() (string, []any) {
-	return "INSERT INTO `car` (`id`,`no`,`color`,`manuc_date`) VALUES (?,?,?,?);", v.Values()
+	return "INSERT INTO `car` (`id`,`no`,`color`,`year`,`manuc_date`) VALUES (?,?,?,?,?);", v.Values()
 }
 func (v Car) FindOneByPKStmt() (string, []any) {
-	return "SELECT `id`,`no`,`color`,`manuc_date` FROM `car` WHERE `id` = ? LIMIT 1;", []any{v.ID}
+	return "SELECT `id`,`no`,`color`,`year`,`manuc_date` FROM `car` WHERE `id` = ? LIMIT 1;", []any{v.ID}
 }
 func (v Car) UpdateOneByPKStmt() (string, []any) {
-	return "UPDATE `car` SET `no` = ?,`color` = ?,`manuc_date` = ? WHERE `id` = ?;", []any{v.No, (int64)(v.Color), v.ManucDate, v.ID}
+	return "UPDATE `car` SET `no` = ?,`color` = ?,`year` = ?,`manuc_date` = ? WHERE `id` = ?;", []any{v.No, v.ColorValue(), v.YearValue(), v.ManucDate, v.ID}
 }
 func (v Car) IDValue() any {
 	return v.ID
@@ -58,6 +63,12 @@ func (v Car) NoValue() any {
 }
 func (v Car) ColorValue() any {
 	return (int64)(v.Color)
+}
+func (v Car) YearValue() any {
+	if v.Year != nil {
+		return (int64)(*v.Year)
+	}
+	return nil
 }
 func (v Car) ManucDateValue() any {
 	return v.ManucDate
@@ -70,6 +81,9 @@ func (v Car) ColumnNo() sequel.ColumnClause[string] {
 }
 func (v Car) ColumnColor() sequel.ColumnConvertClause[Color] {
 	return sequel.Column("color", v.Color, convertColorToValue)
+}
+func (v Car) ColumnYear() sequel.ColumnConvertClause[*int] {
+	return sequel.Column("year", v.Year, convertPtrintToValue)
 }
 func (v Car) ColumnManucDate() sequel.ColumnClause[time.Time] {
 	return sequel.PrimitiveColumn("manuc_date", v.ManucDate)
@@ -196,6 +210,12 @@ func convertUintToValue(val uint) any {
 }
 func convertUint8ToValue(val uint8) any {
 	return (int64)(val)
+}
+func convertPtrintToValue(val *int) any {
+	if val != nil {
+		return (int64)(*val)
+	}
+	return nil
 }
 func convertLongTextToValue(val LongText) any {
 	return (string)(val)

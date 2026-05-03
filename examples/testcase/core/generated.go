@@ -80,13 +80,13 @@ func (User) SQLInsertPlaceholders(row int) string {
 	return "(?,?,?,?,?,?,?,?,?,?,?,?,?,?)" // 14
 }
 func (v User) InsertOneStmt() (string, []any) {
-	return "INSERT INTO `user` (`no`,`joined_time`,`address`,`kind`,`type`,`chan`,`postal_code`,`extra_info`,`nicknames`,`slice`,`map`,`nested`,`t`,`name`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?);", []any{(int64)(v.No), v.JoinedTime, encoding.JSONValue(v.Address), (int64)(v.Kind), (int64)(v.Type), (int64)(v.Chan), v.PostalCodeValue(), encoding.JSONValue(v.ExtraInfo), encoding.JSONValue(v.Nicknames), (sqltype.Float64Slice[float64])(v.Slice), encoding.JSONValue(v.Map), v.NestedValue(), v.embed.T, v.embed.deepNested.Name}
+	return "INSERT INTO `user` (`no`,`joined_time`,`address`,`kind`,`type`,`chan`,`postal_code`,`extra_info`,`nicknames`,`slice`,`map`,`nested`,`t`,`name`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?);", []any{(int64)(v.No), v.JoinedTime, encoding.JSONValue(v.Address), v.KindValue(), v.TypeValue(), v.ChanValue(), v.PostalCodeValue(), encoding.JSONValue(v.ExtraInfo), encoding.JSONValue(v.Nicknames), (sqltype.Float64Slice[float64])(v.Slice), encoding.JSONValue(v.Map), v.NestedValue(), v.embed.T, v.embed.deepNested.Name}
 }
 func (v User) FindOneByPKStmt() (string, []any) {
 	return "SELECT `id`,`no`,`joined_time`,`address`,`kind`,`type`,`chan`,`postal_code`,`extra_info`,`nicknames`,`slice`,`map`,`nested`,`t`,`name` FROM `user` WHERE `id` = ? LIMIT 1;", []any{v.ID}
 }
 func (v User) UpdateOneByPKStmt() (string, []any) {
-	return "UPDATE `user` SET `no` = ?,`joined_time` = ?,`address` = ?,`kind` = ?,`type` = ?,`chan` = ?,`postal_code` = ?,`extra_info` = ?,`nicknames` = ?,`slice` = ?,`map` = ?,`nested` = ?,`t` = ?,`name` = ? WHERE `id` = ?;", []any{(int64)(v.No), v.JoinedTime, encoding.JSONValue(v.Address), (int64)(v.Kind), (int64)(v.Type), (int64)(v.Chan), v.PostalCodeValue(), encoding.JSONValue(v.ExtraInfo), encoding.JSONValue(v.Nicknames), (sqltype.Float64Slice[float64])(v.Slice), encoding.JSONValue(v.Map), v.NestedValue(), v.embed.T, v.embed.deepNested.Name, v.ID}
+	return "UPDATE `user` SET `no` = ?,`joined_time` = ?,`address` = ?,`kind` = ?,`type` = ?,`chan` = ?,`postal_code` = ?,`extra_info` = ?,`nicknames` = ?,`slice` = ?,`map` = ?,`nested` = ?,`t` = ?,`name` = ? WHERE `id` = ?;", []any{(int64)(v.No), v.JoinedTime, encoding.JSONValue(v.Address), v.KindValue(), v.TypeValue(), v.ChanValue(), v.PostalCodeValue(), encoding.JSONValue(v.ExtraInfo), encoding.JSONValue(v.Nicknames), (sqltype.Float64Slice[float64])(v.Slice), encoding.JSONValue(v.Map), v.NestedValue(), v.embed.T, v.embed.deepNested.Name, v.ID}
 }
 func (v User) IDValue() any {
 	return v.ID
