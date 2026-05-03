@@ -14,6 +14,9 @@ func (AliasStruct) TableName() string {
 	return "alias_struct"
 }
 func (AliasStruct) HasPK() {}
+func (v *AliasStruct) SetPK(val int64) {
+	v.ID = val
+}
 func (v AliasStruct) PK() (string, int, any) {
 	return "Id", 1, v.pk.ID
 }

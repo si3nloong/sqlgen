@@ -96,6 +96,9 @@ func (C) TableName() string {
 	return "c"
 }
 func (C) HasPK() {}
+func (v *C) SetPK(val int64) {
+	v.ID = val
+}
 func (v C) PK() (string, int, any) {
 	return "id", 0, v.ID
 }
@@ -132,6 +135,9 @@ func (D) TableName() string {
 	return "d"
 }
 func (D) HasPK() {}
+func (v *D) SetPK(val sql.NullString) {
+	v.ID = val
+}
 func (v D) PK() (string, int, any) {
 	return "id", 0, v.ID
 }

@@ -9,7 +9,10 @@ import (
 func (Model) TableName() string {
 	return "model"
 }
-func (Model) HasPK()      {}
+func (Model) HasPK() {}
+func (v *Model) SetPK(val int64) {
+	v.ID = val
+}
 func (Model) IsAutoIncr() {}
 func (v *Model) ScanAutoIncr(val int64) error {
 	v.ID = int64(val)

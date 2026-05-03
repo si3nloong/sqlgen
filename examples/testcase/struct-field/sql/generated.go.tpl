@@ -14,7 +14,10 @@ import (
 func (AutoPkLocation) TableName() string {
 	return "auto_pk_location"
 }
-func (AutoPkLocation) HasPK()      {}
+func (AutoPkLocation) HasPK() {}
+func (v *AutoPkLocation) SetPK(val uint64) {
+	v.ID = val
+}
 func (AutoPkLocation) IsAutoIncr() {}
 func (v *AutoPkLocation) ScanAutoIncr(val int64) error {
 	v.ID = uint64(val)
@@ -115,6 +118,9 @@ func (Location) TableName() string {
 	return "location"
 }
 func (Location) HasPK() {}
+func (v *Location) SetPK(val uint64) {
+	v.ID = val
+}
 func (v Location) PK() (string, int, any) {
 	return "id", 0, v.ID
 }

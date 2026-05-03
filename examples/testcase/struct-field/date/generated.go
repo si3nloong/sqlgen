@@ -13,6 +13,9 @@ func (User) TableName() string {
 	return "user"
 }
 func (User) HasPK() {}
+func (v *User) SetPK(val uuid.UUID) {
+	v.ID = val
+}
 func (v User) PK() (string, int, any) {
 	return "id", 0, v.ID
 }

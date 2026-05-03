@@ -11,6 +11,10 @@ func (Composite) TableName() string {
 	return "composite"
 }
 func (Composite) HasPK() {}
+func (v *Composite) SetPK(val1 string, val2 uuid.UUID) {
+	v.Col1 = val1
+	v.Col3 = val2
+}
 func (v Composite) CompositeKey() ([]string, []int, []any) {
 	return []string{"col_1", "col_3"}, []int{1, 3}, []any{v.Col1, v.Col3}
 }

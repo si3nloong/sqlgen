@@ -13,6 +13,9 @@ func (Car) TableName() string {
 	return "car"
 }
 func (Car) HasPK() {}
+func (v *Car) SetPK(val PK) {
+	v.ID = val
+}
 func (v Car) PK() (string, int, any) {
 	return "id", 0, v.ID
 }
@@ -76,6 +79,9 @@ func (House) TableName() string {
 	return "house"
 }
 func (House) HasPK() {}
+func (v *House) SetPK(val uint) {
+	v.ID = val
+}
 func (v House) PK() (string, int, any) {
 	return "id", 0, (int64)(v.ID)
 }
@@ -123,6 +129,9 @@ func (User) TableName() string {
 	return "user"
 }
 func (User) HasPK() {}
+func (v *User) SetPK(val int64) {
+	v.ID = val
+}
 func (v User) PK() (string, int, any) {
 	return "id", 0, v.ID
 }

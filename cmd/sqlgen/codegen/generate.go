@@ -218,6 +218,9 @@ loop:
 			fprintfln(w, "func (%s) HasPK() {}", t.GoName)
 			switch v := pk.(type) {
 			case *compiler.AutoIncrPrimaryKey:
+				fprintfln(w, "func (v *%s) SetPK(val %s) {", t.GoName, v.GoType().String())
+				fprintfln(w, "v.%s = val", v.GoName())
+				fprintfln(w, "}")
 				fprintfln(w, "func (%s) IsAutoIncr() {}", t.GoName)
 				fprintfln(w, "func (v *%s) ScanAutoIncr(val int64) error {", t.GoName)
 				fprintfln(w, "v.%s = %s(val)", v.GoName(), v.GoType())
@@ -227,6 +230,9 @@ loop:
 				fprintfln(w, "return %s, %d, %s", g.Quote(g.QuoteIdentifier(v.Name())), v.Pos(), g.getOrValue(importPkgs, "v", v))
 				fprintfln(w, "}")
 			case *compiler.PrimaryKey:
+				fprintfln(w, "func (v *%s) SetPK(val %s) {", t.GoName, Expr(v.GoType().String()).Format(importPkgs))
+				fprintfln(w, "v.%s = val", v.GoName())
+				fprintfln(w, "}")
 				fprintfln(w, "func (v %s) PK() (string, int, any) {", t.GoName)
 				fprintfln(w, "return %s, %d, %s", g.Quote(g.QuoteIdentifier(v.Name())), v.Pos(), g.getOrValue(importPkgs, "v", v))
 				fprintfln(w, "}")
@@ -541,6 +547,18 @@ func (g *Generator) buildHeader(w io.Writer) {
 
 func (g *Generator) buildCompositeKeys(w io.Writer, importPkgs *Package, goName string, k *compiler.CompositePrimaryKey) {
 	// column names, indexes, values
+	fmt.Fprintf(w, "func (v *%s) SetPK(", goName)
+	for i, column := range k.Columns {
+		if i > 0 {
+			fmt.Fprint(w, ", ")
+		}
+		fmt.Fprintf(w, "val%d %s", i+1, Expr(column.GoType().String()).Format(importPkgs))
+	}
+	fprintfln(w, ") {")
+	for i, column := range k.Columns {
+		fprintfln(w, "v.%s = val%d", column.GoName(), i+1)
+	}
+	fprintfln(w, "}")
 	fprintfln(w, "func (v %s) CompositeKey() ([]string, []int, []any) {", goName)
 	w1 := strpool.AcquireString()
 	w2 := strpool.AcquireString()

@@ -11,6 +11,9 @@ func (Version) TableName() string {
 	return "version"
 }
 func (Version) HasPK() {}
+func (v *Version) SetPK(val uuid.UUID) {
+	v.ID = val
+}
 func (v Version) PK() (string, int, any) {
 	return "id", 0, v.ID
 }

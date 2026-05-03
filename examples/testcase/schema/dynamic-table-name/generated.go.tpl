@@ -7,6 +7,9 @@ import (
 )
 
 func (A) HasPK() {}
+func (v *A) SetPK(val int64) {
+	v.ID = val
+}
 func (v A) PK() (string, int, any) {
 	return "id", 0, v.ID
 }

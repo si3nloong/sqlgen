@@ -14,7 +14,10 @@ import (
 func (User) TableName() string {
 	return "user"
 }
-func (User) HasPK()      {}
+func (User) HasPK() {}
+func (v *User) SetPK(val int64) {
+	v.ID = val
+}
 func (User) IsAutoIncr() {}
 func (v *User) ScanAutoIncr(val int64) error {
 	v.ID = int64(val)

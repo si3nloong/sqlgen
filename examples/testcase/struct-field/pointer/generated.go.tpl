@@ -12,7 +12,10 @@ import (
 func (Ptr) TableName() string {
 	return "ptr"
 }
-func (Ptr) HasPK()      {}
+func (Ptr) HasPK() {}
+func (v *Ptr) SetPK(val int64) {
+	v.ID = val
+}
 func (Ptr) IsAutoIncr() {}
 func (v *Ptr) ScanAutoIncr(val int64) error {
 	v.ID = int64(val)

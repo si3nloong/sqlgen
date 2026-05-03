@@ -11,7 +11,10 @@ import (
 func (Slice) TableName() string {
 	return "slice"
 }
-func (Slice) HasPK()      {}
+func (Slice) HasPK() {}
+func (v *Slice) SetPK(val uint64) {
+	v.ID = val
+}
 func (Slice) IsAutoIncr() {}
 func (v *Slice) ScanAutoIncr(val int64) error {
 	v.ID = uint64(val)
