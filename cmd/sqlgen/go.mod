@@ -4,13 +4,12 @@ go 1.25.0
 
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.7
-	github.com/Masterminds/semver/v3 v3.4.0
 	github.com/go-playground/validator/v10 v10.27.0
 	github.com/go-sql-driver/mysql v1.9.3
 	github.com/goccy/go-yaml v1.18.0
 	github.com/jackc/pgx/v5 v5.9.2
 	github.com/mattn/go-sqlite3 v1.14.22
-	github.com/samber/lo v1.51.0
+	github.com/samber/lo v1.53.0
 	github.com/si3nloong/sqlgen v1.0.0-beta.0.0.20260419173412-8b71ef1df632
 	github.com/spf13/cobra v1.10.1
 	github.com/stretchr/testify v1.11.1
