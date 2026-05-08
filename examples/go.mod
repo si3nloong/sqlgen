@@ -12,7 +12,7 @@ require (
 	github.com/lib/pq v1.10.9
 	github.com/mattn/go-sqlite3 v1.14.22
 	github.com/ory/dockertest/v3 v3.12.0
-	github.com/paulmach/orb v0.11.1
+	github.com/paulmach/orb v0.13.0
 	github.com/shopspring/decimal v1.4.0
 	github.com/si3nloong/sqlgen v1.0.0-beta.1.0.20251006073110-36639e879431
 	github.com/si3nloong/sqlgen/cmd/sqlgen v0.0.0-20251006112000-22238720dfee
