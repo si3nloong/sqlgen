@@ -11,7 +11,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.44
 	github.com/samber/lo v1.53.0
 	github.com/si3nloong/sqlgen v1.0.0-beta.0.0.20260419173412-8b71ef1df632
-	github.com/spf13/cobra v1.10.1
+	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/exp v0.0.0-20250911091902-df9299821621
 	golang.org/x/tools v0.44.0
