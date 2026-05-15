@@ -49,11 +49,11 @@ func (v *AutoPkLocation) Addrs() []any {
 		v.PtrDate = new(civil.Date)
 	}
 	return []any{
-		encoding.Uint64Scanner[uint64](&v.ID),        // 0 - id
-		ewkb.Scanner(&v.GeoPoint),                    // 1 - geo_point
-		encoding.JSONScanner(&v.PtrGeoPoint),         // 2 - ptr_geo_point
-		encoding.PtrScanner(&v.PtrUUID),              // 3 - ptr_uuid
-		encoding.TextScanner[civil.Date](&v.PtrDate), // 4 - ptr_date
+		encoding.Uint64Scanner[uint64](&v.ID), // 0 - id
+		ewkb.Scanner(&v.GeoPoint),             // 1 - geo_point
+		encoding.JSONScanner(&v.PtrGeoPoint),  // 2 - ptr_geo_point
+		encoding.PtrScanner(&v.PtrUUID),       // 3 - ptr_uuid
+		encoding.PtrScanner(&v.PtrDate),       // 4 - ptr_date
 	}
 }
 func (AutoPkLocation) SQLInsertColumns() string {
@@ -94,7 +94,7 @@ func (v AutoPkLocation) PtrUUIDValue() any {
 }
 func (v AutoPkLocation) PtrDateValue() any {
 	if v.PtrDate != nil {
-		return encoding.TextValue(*v.PtrDate)
+		return *v.PtrDate
 	}
 	return nil
 }
@@ -192,7 +192,7 @@ func convertPtrorbPointToValue(val *orb.Point) any {
 }
 func convertPtrcivilDateToValue(val *civil.Date) any {
 	if val != nil {
-		return encoding.TextValue(*val)
+		return *val
 	}
 	return nil
 }

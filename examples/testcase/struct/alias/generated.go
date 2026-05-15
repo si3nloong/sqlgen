@@ -5,7 +5,6 @@ package aliasstruct
 import (
 	"cloud.google.com/go/civil"
 	"github.com/si3nloong/sqlgen/sequel"
-	"github.com/si3nloong/sqlgen/sequel/encoding"
 )
 
 func (A) Columns() []string {
@@ -13,14 +12,14 @@ func (A) Columns() []string {
 }
 func (v A) Values() []any {
 	return []any{
-		encoding.TextValue(v.Date), // 0 - date
-		encoding.TextValue(v.Time), // 1 - time
+		v.Date, // 0 - date
+		v.Time, // 1 - time
 	}
 }
 func (v *A) Addrs() []any {
 	return []any{
-		encoding.TextScanner[civil.Date](&v.Date), // 0 - date
-		encoding.TextScanner[civil.Time](&v.Time), // 1 - time
+		&v.Date, // 0 - date
+		&v.Time, // 1 - time
 	}
 }
 func (A) SQLInsertPlaceholders(row int) string {
@@ -30,16 +29,16 @@ func (v A) InsertOneStmt() (string, []any) {
 	return "INSERT INTO " + v.TableName() + " (`date`,`time`) VALUES (?,?);", v.Values()
 }
 func (v A) DateValue() any {
-	return encoding.TextValue(v.Date)
+	return v.Date
 }
 func (v A) TimeValue() any {
-	return encoding.TextValue(v.Time)
+	return v.Time
 }
-func (v A) ColumnDate() sequel.ColumnConvertClause[civil.Date] {
-	return sequel.Column("date", v.Date, convertCivilDateToValue)
+func (v A) ColumnDate() sequel.ColumnClause[civil.Date] {
+	return sequel.ValueColumn("date", v.Date)
 }
-func (v A) ColumnTime() sequel.ColumnConvertClause[civil.Time] {
-	return sequel.Column("time", v.Time, convertCivilTimeToValue)
+func (v A) ColumnTime() sequel.ColumnClause[civil.Time] {
+	return sequel.ValueColumn("time", v.Time)
 }
 
 func (C) TableName() string {
@@ -77,11 +76,4 @@ func (v C) ColumnString() sequel.ColumnClause[string] {
 }
 func (v C) ColumnValid() sequel.ColumnClause[bool] {
 	return sequel.PrimitiveColumn("valid", v.Valid)
-}
-
-func convertCivilTimeToValue(val civil.Time) any {
-	return encoding.TextValue(val)
-}
-func convertCivilDateToValue(val civil.Date) any {
-	return encoding.TextValue(val)
 }

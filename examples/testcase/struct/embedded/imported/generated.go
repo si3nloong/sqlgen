@@ -5,7 +5,6 @@ package embedded
 import (
 	"cloud.google.com/go/civil"
 	"github.com/si3nloong/sqlgen/sequel"
-	"github.com/si3nloong/sqlgen/sequel/encoding"
 )
 
 func (B) TableName() string {
@@ -16,14 +15,14 @@ func (B) Columns() []string {
 }
 func (v B) Values() []any {
 	return []any{
-		encoding.TextValue(v.DateTime.Date), // 0 - date
-		encoding.TextValue(v.DateTime.Time), // 1 - time
+		v.DateTime.Date, // 0 - date
+		v.DateTime.Time, // 1 - time
 	}
 }
 func (v *B) Addrs() []any {
 	return []any{
-		encoding.TextScanner[civil.Date](&v.DateTime.Date), // 0 - date
-		encoding.TextScanner[civil.Time](&v.DateTime.Time), // 1 - time
+		&v.DateTime.Date, // 0 - date
+		&v.DateTime.Time, // 1 - time
 	}
 }
 func (B) SQLInsertPlaceholders(row int) string {
@@ -33,21 +32,14 @@ func (v B) InsertOneStmt() (string, []any) {
 	return "INSERT INTO `b` (`date`,`time`) VALUES (?,?);", v.Values()
 }
 func (v B) DateValue() any {
-	return encoding.TextValue(v.DateTime.Date)
+	return v.DateTime.Date
 }
 func (v B) TimeValue() any {
-	return encoding.TextValue(v.DateTime.Time)
+	return v.DateTime.Time
 }
-func (v B) ColumnDate() sequel.ColumnConvertClause[civil.Date] {
-	return sequel.Column("date", v.DateTime.Date, convertCivilDateToValue)
+func (v B) ColumnDate() sequel.ColumnClause[civil.Date] {
+	return sequel.ValueColumn("date", v.DateTime.Date)
 }
-func (v B) ColumnTime() sequel.ColumnConvertClause[civil.Time] {
-	return sequel.Column("time", v.DateTime.Time, convertCivilTimeToValue)
-}
-
-func convertCivilTimeToValue(val civil.Time) any {
-	return encoding.TextValue(val)
-}
-func convertCivilDateToValue(val civil.Date) any {
-	return encoding.TextValue(val)
+func (v B) ColumnTime() sequel.ColumnClause[civil.Time] {
+	return sequel.ValueColumn("time", v.DateTime.Time)
 }
