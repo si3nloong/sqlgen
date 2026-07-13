@@ -8,7 +8,7 @@ require (
 	github.com/go-sql-driver/mysql v1.10.0
 	github.com/goccy/go-yaml v1.19.2
 	github.com/jackc/pgx/v5 v5.10.0
-	github.com/mattn/go-sqlite3 v1.14.47
+	github.com/mattn/go-sqlite3 v1.14.48
 	github.com/samber/lo v1.53.0
 	github.com/si3nloong/sqlgen v1.0.0-beta.0.0.20260419173412-8b71ef1df632
 	github.com/spf13/cobra v1.10.2
