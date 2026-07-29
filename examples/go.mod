@@ -10,7 +10,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/jaswdr/faker v1.19.1
 	github.com/lib/pq v1.12.3
-	github.com/mattn/go-sqlite3 v1.14.48
+	github.com/mattn/go-sqlite3 v1.14.49
 	github.com/ory/dockertest/v3 v3.12.0
 	github.com/paulmach/orb v0.13.0
 	github.com/shopspring/decimal v1.4.0
