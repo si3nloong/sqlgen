@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestClause(t *testing.T) {
+func TestColumn(t *testing.T) {
 	type Str string
 
 	var (
@@ -24,8 +24,8 @@ func TestClause(t *testing.T) {
 		require.Equal(t, text, cv.Convert(Str(text)))
 	})
 
-	t.Run("BasicColumn", func(t *testing.T) {
-		bc := BasicColumn(columnName, text)
+	t.Run("PrimitiveColumn", func(t *testing.T) {
+		bc := PrimitiveColumn(columnName, text)
 		require.Equal(t, columnName, bc.ColumnName())
 		require.Equal(t, text, bc.Value())
 	})

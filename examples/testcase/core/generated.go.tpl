@@ -14,7 +14,10 @@ import (
 func (User) TableName() string {
 	return "user"
 }
-func (User) HasPK()      {}
+func (User) HasPK() {}
+func (v *User) SetPK(val int64) {
+	v.ID = val
+}
 func (User) IsAutoIncr() {}
 func (v *User) ScanAutoIncr(val int64) error {
 	v.ID = int64(val)
@@ -32,9 +35,9 @@ func (v User) Values() []any {
 		(int64)(v.No),                            //  1 - no
 		v.JoinedTime,                             //  2 - joined_time
 		encoding.JSONValue(v.Address),            //  3 - address
-		(int64)(v.Kind),                          //  4 - kind
-		(int64)(v.Type),                          //  5 - type
-		(int64)(v.Chan),                          //  6 - chan
+		v.KindValue(),                            //  4 - kind
+		v.TypeValue(),                            //  5 - type
+		v.ChanValue(),                            //  6 - chan
 		v.PostalCodeValue(),                      //  7 - postal_code
 		encoding.JSONValue(v.ExtraInfo),          //  8 - extra_info
 		encoding.JSONValue(v.Nicknames),          //  9 - nicknames
@@ -70,20 +73,20 @@ func (v *User) Addrs() []any {
 		&v.embed.deepNested.Name,                      // 14 - name
 	}
 }
-func (User) InsertColumns() []string {
-	return []string{"no", "joined_time", "address", "kind", "type", "chan", "postal_code", "extra_info", "nicknames", "slice", "map", "nested", "t", "name"} // 14
+func (User) SQLInsertColumns() string {
+	return "`no`,`joined_time`,`address`,`kind`,`type`,`chan`,`postal_code`,`extra_info`,`nicknames`,`slice`,`map`,`nested`,`t`,`name`"
 }
-func (User) InsertPlaceholders(row int) string {
+func (User) SQLInsertPlaceholders(row int) string {
 	return "(?,?,?,?,?,?,?,?,?,?,?,?,?,?)" // 14
 }
 func (v User) InsertOneStmt() (string, []any) {
-	return "INSERT INTO `user` (`no`,`joined_time`,`address`,`kind`,`type`,`chan`,`postal_code`,`extra_info`,`nicknames`,`slice`,`map`,`nested`,`t`,`name`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?);", []any{(int64)(v.No), v.JoinedTime, encoding.JSONValue(v.Address), (int64)(v.Kind), (int64)(v.Type), (int64)(v.Chan), v.PostalCodeValue(), encoding.JSONValue(v.ExtraInfo), encoding.JSONValue(v.Nicknames), (sqltype.Float64Slice[float64])(v.Slice), encoding.JSONValue(v.Map), v.NestedValue(), v.embed.T, v.embed.deepNested.Name}
+	return "INSERT INTO `user` (`no`,`joined_time`,`address`,`kind`,`type`,`chan`,`postal_code`,`extra_info`,`nicknames`,`slice`,`map`,`nested`,`t`,`name`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?);", []any{(int64)(v.No), v.JoinedTime, encoding.JSONValue(v.Address), v.KindValue(), v.TypeValue(), v.ChanValue(), v.PostalCodeValue(), encoding.JSONValue(v.ExtraInfo), encoding.JSONValue(v.Nicknames), (sqltype.Float64Slice[float64])(v.Slice), encoding.JSONValue(v.Map), v.NestedValue(), v.embed.T, v.embed.deepNested.Name}
 }
 func (v User) FindOneByPKStmt() (string, []any) {
 	return "SELECT `id`,`no`,`joined_time`,`address`,`kind`,`type`,`chan`,`postal_code`,`extra_info`,`nicknames`,`slice`,`map`,`nested`,`t`,`name` FROM `user` WHERE `id` = ? LIMIT 1;", []any{v.ID}
 }
 func (v User) UpdateOneByPKStmt() (string, []any) {
-	return "UPDATE `user` SET `no` = ?,`joined_time` = ?,`address` = ?,`kind` = ?,`type` = ?,`chan` = ?,`postal_code` = ?,`extra_info` = ?,`nicknames` = ?,`slice` = ?,`map` = ?,`nested` = ?,`t` = ?,`name` = ? WHERE `id` = ?;", []any{(int64)(v.No), v.JoinedTime, encoding.JSONValue(v.Address), (int64)(v.Kind), (int64)(v.Type), (int64)(v.Chan), v.PostalCodeValue(), encoding.JSONValue(v.ExtraInfo), encoding.JSONValue(v.Nicknames), (sqltype.Float64Slice[float64])(v.Slice), encoding.JSONValue(v.Map), v.NestedValue(), v.embed.T, v.embed.deepNested.Name, v.ID}
+	return "UPDATE `user` SET `no` = ?,`joined_time` = ?,`address` = ?,`kind` = ?,`type` = ?,`chan` = ?,`postal_code` = ?,`extra_info` = ?,`nicknames` = ?,`slice` = ?,`map` = ?,`nested` = ?,`t` = ?,`name` = ? WHERE `id` = ?;", []any{(int64)(v.No), v.JoinedTime, encoding.JSONValue(v.Address), v.KindValue(), v.TypeValue(), v.ChanValue(), v.PostalCodeValue(), encoding.JSONValue(v.ExtraInfo), encoding.JSONValue(v.Nicknames), (sqltype.Float64Slice[float64])(v.Slice), encoding.JSONValue(v.Map), v.NestedValue(), v.embed.T, v.embed.deepNested.Name, v.ID}
 }
 func (v User) IDValue() any {
 	return v.ID
@@ -101,9 +104,15 @@ func (v User) KindValue() any {
 	return (int64)(v.Kind)
 }
 func (v User) TypeValue() any {
+	if v.Type == 0 {
+		return (int64)(HouseUnitTypeA)
+	}
 	return (int64)(v.Type)
 }
 func (v User) ChanValue() any {
+	if v.Chan == 0 {
+		return (int64)(reflect.RecvDir)
+	}
 	return (int64)(v.Chan)
 }
 func (v User) PostalCodeValue() any {
@@ -137,43 +146,28 @@ func (v User) NameValue() any {
 	return v.embed.deepNested.Name
 }
 func (v User) ColumnID() sequel.ColumnClause[int64] {
-	return sequel.BasicColumn("id", v.ID)
+	return sequel.PrimitiveColumn("id", v.ID)
 }
 func (v User) ColumnNo() sequel.ColumnConvertClause[uint] {
-	return sequel.Column("no", v.No, func(val uint) any {
-		return (int64)(val)
-	})
+	return sequel.Column("no", v.No, convertUintToValue)
 }
 func (v User) ColumnJoinedTime() sequel.ColumnClause[time.Time] {
-	return sequel.BasicColumn("joined_time", v.JoinedTime)
+	return sequel.PrimitiveColumn("joined_time", v.JoinedTime)
 }
 func (v User) ColumnAddress() sequel.ColumnConvertClause[Address] {
-	return sequel.Column("address", v.Address, func(val Address) any {
-		return encoding.JSONValue(val)
-	})
+	return sequel.Column("address", v.Address, convertAddressToValue)
 }
 func (v User) ColumnKind() sequel.ColumnConvertClause[reflect.Kind] {
-	return sequel.Column("kind", v.Kind, func(val reflect.Kind) any {
-		return (int64)(val)
-	})
+	return sequel.Column("kind", v.Kind, convertReflectKindToValue)
 }
 func (v User) ColumnType() sequel.ColumnConvertClause[HouseUnitType] {
-	return sequel.Column("type", v.Type, func(val HouseUnitType) any {
-		return (int64)(val)
-	})
+	return sequel.Column("type", v.Type, convertHouseUnitTypeToValue)
 }
 func (v User) ColumnChan() sequel.ColumnConvertClause[reflect.ChanDir] {
-	return sequel.Column("chan", v.Chan, func(val reflect.ChanDir) any {
-		return (int64)(val)
-	})
+	return sequel.Column("chan", v.Chan, convertReflectChanDirToValue)
 }
 func (v User) ColumnPostalCode() sequel.ColumnConvertClause[*string] {
-	return sequel.Column("postal_code", v.PostalCode, func(val *string) any {
-		if val != nil {
-			return *val
-		}
-		return nil
-	})
+	return sequel.Column("postal_code", v.PostalCode, convertPtrstringToValue)
 }
 
 type UserExtraInfoInlineStruct = struct {
@@ -181,36 +175,69 @@ type UserExtraInfoInlineStruct = struct {
 }
 
 func (v User) ColumnExtraInfo() sequel.ColumnConvertClause[UserExtraInfoInlineStruct] {
-	return sequel.Column("extra_info", v.ExtraInfo, func(val UserExtraInfoInlineStruct) any {
-		return encoding.JSONValue(val)
-	})
+	return sequel.Column("extra_info", v.ExtraInfo, convertUserExtraInfoInlineStructToValue)
 }
 func (v User) ColumnNicknames() sequel.ColumnConvertClause[[2]string] {
-	return sequel.Column("nicknames", v.Nicknames, func(val [2]string) any {
-		return encoding.JSONValue(val)
-	})
+	return sequel.Column("nicknames", v.Nicknames, convert2stringToValue)
 }
 func (v User) ColumnSlice() sequel.ColumnConvertClause[[]float64] {
-	return sequel.Column("slice", v.Slice, func(val []float64) any {
-		return (sqltype.Float64Slice[float64])(val)
-	})
+	return sequel.Column("slice", v.Slice, convertSlicefloat64ToValue)
 }
 func (v User) ColumnMap() sequel.ColumnConvertClause[map[string]float64] {
-	return sequel.Column("map", v.Map, func(val map[string]float64) any {
-		return encoding.JSONValue(val)
-	})
+	return sequel.Column("map", v.Map, convertMapstringfloat64ToValue)
 }
 func (v User) ColumnNested() sequel.ColumnConvertClause[*struct{ Deep struct{ Bool bool } }] {
-	return sequel.Column("nested", v.embed.Nested, func(val *struct{ Deep struct{ Bool bool } }) any {
-		if val != nil {
-			return encoding.JSONValue(*val)
-		}
-		return nil
-	})
+	return sequel.Column("nested", v.embed.Nested, convertPtrstructDeepStructBoolBoolToValue)
 }
 func (v User) ColumnT() sequel.ColumnClause[time.Time] {
-	return sequel.BasicColumn("t", v.embed.T)
+	return sequel.PrimitiveColumn("t", v.embed.T)
 }
 func (v User) ColumnName() sequel.ColumnClause[string] {
-	return sequel.BasicColumn("name", v.embed.deepNested.Name)
+	return sequel.PrimitiveColumn("name", v.embed.deepNested.Name)
+}
+
+func convertUserExtraInfoInlineStructToValue(val UserExtraInfoInlineStruct) any {
+	return encoding.JSONValue(val)
+}
+func convertUintToValue(val uint) any {
+	return (int64)(val)
+}
+func convertSlicefloat64ToValue(val []float64) any {
+	return (sqltype.Float64Slice[float64])(val)
+}
+func convertReflectKindToValue(val reflect.Kind) any {
+	return (int64)(val)
+}
+func convertReflectChanDirToValue(val reflect.ChanDir) any {
+	if val == 0 {
+		return (int64)(reflect.RecvDir)
+	}
+	return (int64)(val)
+}
+func convertPtrstructDeepStructBoolBoolToValue(val *struct{ Deep struct{ Bool bool } }) any {
+	if val != nil {
+		return encoding.JSONValue(*val)
+	}
+	return nil
+}
+func convertPtrstringToValue(val *string) any {
+	if val != nil {
+		return *val
+	}
+	return nil
+}
+func convertMapstringfloat64ToValue(val map[string]float64) any {
+	return encoding.JSONValue(val)
+}
+func convertHouseUnitTypeToValue(val HouseUnitType) any {
+	if val == 0 {
+		return (int64)(HouseUnitTypeA)
+	}
+	return (int64)(val)
+}
+func convertAddressToValue(val Address) any {
+	return encoding.JSONValue(val)
+}
+func convert2stringToValue(val [2]string) any {
+	return encoding.JSONValue(val)
 }

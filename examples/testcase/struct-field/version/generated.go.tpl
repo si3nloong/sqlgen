@@ -11,6 +11,9 @@ func (Version) TableName() string {
 	return "version"
 }
 func (Version) HasPK() {}
+func (v *Version) SetPK(val uuid.UUID) {
+	v.ID = val
+}
 func (v Version) PK() (string, int, any) {
 	return "id", 0, v.ID
 }
@@ -27,7 +30,7 @@ func (v *Version) Addrs() []any {
 		&v.ID, // 0 - id
 	}
 }
-func (Version) InsertPlaceholders(row int) string {
+func (Version) SQLInsertPlaceholders(row int) string {
 	return "(?)" // 1
 }
 func (v Version) InsertOneStmt() (string, []any) {
@@ -39,8 +42,6 @@ func (v Version) FindOneByPKStmt() (string, []any) {
 func (v Version) IDValue() any {
 	return v.ID
 }
-func (v Version) ColumnID() sequel.ColumnConvertClause[uuid.UUID] {
-	return sequel.Column("id", v.ID, func(val uuid.UUID) any {
-		return val
-	})
+func (v Version) ColumnID() sequel.ColumnClause[uuid.UUID] {
+	return sequel.ValueColumn("id", v.ID)
 }

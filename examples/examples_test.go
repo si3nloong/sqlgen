@@ -33,7 +33,7 @@ import (
 )
 
 var (
-	//go:embed migrate/*.sql
+	//go:embed migrations/*.sql
 	migrationFiles embed.FS
 	fake           = faker.New()
 	conn           *sql.DB

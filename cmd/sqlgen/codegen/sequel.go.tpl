@@ -3,6 +3,7 @@ package sequel
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"io"
 )
 
@@ -97,7 +98,8 @@ type Inserter interface {
 	Tabler
 	Columner
 	Valuer
-	InsertPlaceholders(row int) string
+	SQLInsertColumns() string
+	SQLInsertPlaceholders(row int) string
 }
 
 type ColumnValuer interface {
@@ -136,9 +138,10 @@ type RowLevelLocker interface {
 type StmtWriter interface {
 	io.Writer
 	io.StringWriter
+	fmt.Formatter
 	Quote(v string) string
 	Var(v any) string
-	// Vars will group the valus in parenthesis
+	// Vars will group the values in parenthesis
 	Vars(vals []any) string
 }
 

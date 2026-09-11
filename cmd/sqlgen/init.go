@@ -107,6 +107,8 @@ func runInitCommand(cmd *cobra.Command, args []string) error {
 		cfg.NamingConvention = codegen.PascalCase
 	case string(codegen.CamelCase):
 		cfg.NamingConvention = codegen.CamelCase
+	default:
+		cfg.NamingConvention = codegen.SnakeCase // default to snake_case
 	}
 	cfg.Tag = answer.Tag
 	cfg.Strict = &answer.Strict

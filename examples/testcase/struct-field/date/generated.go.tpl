@@ -6,13 +6,15 @@ import (
 	"cloud.google.com/go/civil"
 	"github.com/google/uuid"
 	"github.com/si3nloong/sqlgen/sequel"
-	"github.com/si3nloong/sqlgen/sequel/encoding"
 )
 
 func (User) TableName() string {
 	return "user"
 }
 func (User) HasPK() {}
+func (v *User) SetPK(val uuid.UUID) {
+	v.ID = val
+}
 func (v User) PK() (string, int, any) {
 	return "id", 0, v.ID
 }
@@ -21,17 +23,17 @@ func (User) Columns() []string {
 }
 func (v User) Values() []any {
 	return []any{
-		v.ID,                            // 0 - id
-		encoding.TextValue(v.BirthDate), // 1 - birth_date
+		v.ID,        // 0 - id
+		v.BirthDate, // 1 - birth_date
 	}
 }
 func (v *User) Addrs() []any {
 	return []any{
-		&v.ID, // 0 - id
-		encoding.TextScanner[civil.Date](&v.BirthDate), // 1 - birth_date
+		&v.ID,        // 0 - id
+		&v.BirthDate, // 1 - birth_date
 	}
 }
-func (User) InsertPlaceholders(row int) string {
+func (User) SQLInsertPlaceholders(row int) string {
 	return "(?,?)" // 2
 }
 func (v User) InsertOneStmt() (string, []any) {
@@ -41,21 +43,17 @@ func (v User) FindOneByPKStmt() (string, []any) {
 	return "SELECT `id`,`birth_date` FROM `user` WHERE `id` = ? LIMIT 1;", []any{v.ID}
 }
 func (v User) UpdateOneByPKStmt() (string, []any) {
-	return "UPDATE `user` SET `birth_date` = ? WHERE `id` = ?;", []any{encoding.TextValue(v.BirthDate), v.ID}
+	return "UPDATE `user` SET `birth_date` = ? WHERE `id` = ?;", []any{v.BirthDate, v.ID}
 }
 func (v User) IDValue() any {
 	return v.ID
 }
 func (v User) BirthDateValue() any {
-	return encoding.TextValue(v.BirthDate)
+	return v.BirthDate
 }
-func (v User) ColumnID() sequel.ColumnConvertClause[uuid.UUID] {
-	return sequel.Column("id", v.ID, func(val uuid.UUID) any {
-		return val
-	})
+func (v User) ColumnID() sequel.ColumnClause[uuid.UUID] {
+	return sequel.ValueColumn("id", v.ID)
 }
-func (v User) ColumnBirthDate() sequel.ColumnConvertClause[civil.Date] {
-	return sequel.Column("birth_date", v.BirthDate, func(val civil.Date) any {
-		return encoding.TextValue(val)
-	})
+func (v User) ColumnBirthDate() sequel.ColumnClause[civil.Date] {
+	return sequel.ValueColumn("birth_date", v.BirthDate)
 }

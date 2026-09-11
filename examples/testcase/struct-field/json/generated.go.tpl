@@ -27,7 +27,7 @@ func (v *JSON) Addrs() []any {
 		encoding.StringScanner[json.RawMessage](&v.RawBytes), // 1 - raw_bytes
 	}
 }
-func (JSON) InsertPlaceholders(row int) string {
+func (JSON) SQLInsertPlaceholders(row int) string {
 	return "(?,?)" // 2
 }
 func (v JSON) InsertOneStmt() (string, []any) {
@@ -40,12 +40,15 @@ func (v JSON) RawBytesValue() any {
 	return v.RawBytes
 }
 func (v JSON) ColumnNum() sequel.ColumnConvertClause[json.Number] {
-	return sequel.Column("num", v.Num, func(val json.Number) any {
-		return val.String()
-	})
+	return sequel.Column("num", v.Num, convertJsonNumberToValue)
 }
 func (v JSON) ColumnRawBytes() sequel.ColumnConvertClause[json.RawMessage] {
-	return sequel.Column("raw_bytes", v.RawBytes, func(val json.RawMessage) any {
-		return val
-	})
+	return sequel.Column("raw_bytes", v.RawBytes, convertJsonRawMessageToValue)
+}
+
+func convertJsonRawMessageToValue(val json.RawMessage) any {
+	return val
+}
+func convertJsonNumberToValue(val json.Number) any {
+	return val.String()
 }

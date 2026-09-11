@@ -30,7 +30,7 @@ func (v *A) Addrs() []any {
 		&v.CreatedAt, // 2 - created_at
 	}
 }
-func (A) InsertPlaceholders(row int) string {
+func (A) SQLInsertPlaceholders(row int) string {
 	return "(?,?,?)" // 3
 }
 func (v A) InsertOneStmt() (string, []any) {
@@ -46,15 +46,13 @@ func (v A) CreatedAtValue() any {
 	return v.CreatedAt
 }
 func (v A) ColumnID() sequel.ColumnClause[string] {
-	return sequel.BasicColumn("id", v.ID)
+	return sequel.PrimitiveColumn("id", v.ID)
 }
 func (v A) ColumnText() sequel.ColumnConvertClause[LongText] {
-	return sequel.Column("text", v.Text, func(val LongText) any {
-		return (string)(val)
-	})
+	return sequel.Column("text", v.Text, convertLongTextToValue)
 }
 func (v A) ColumnCreatedAt() sequel.ColumnClause[time.Time] {
-	return sequel.BasicColumn("created_at", v.CreatedAt)
+	return sequel.PrimitiveColumn("created_at", v.CreatedAt)
 }
 
 func (B) TableName() string {
@@ -75,7 +73,7 @@ func (v *B) Addrs() []any {
 		&v.CreatedAt, // 1 - created_at
 	}
 }
-func (B) InsertPlaceholders(row int) string {
+func (B) SQLInsertPlaceholders(row int) string {
 	return "(?,?)" // 2
 }
 func (v B) InsertOneStmt() (string, []any) {
@@ -88,16 +86,19 @@ func (v B) CreatedAtValue() any {
 	return v.CreatedAt
 }
 func (v B) ColumnID() sequel.ColumnClause[string] {
-	return sequel.BasicColumn("id", v.ID)
+	return sequel.PrimitiveColumn("id", v.ID)
 }
 func (v B) ColumnCreatedAt() sequel.ColumnClause[time.Time] {
-	return sequel.BasicColumn("created_at", v.CreatedAt)
+	return sequel.PrimitiveColumn("created_at", v.CreatedAt)
 }
 
 func (C) TableName() string {
 	return "c"
 }
 func (C) HasPK() {}
+func (v *C) SetPK(val int64) {
+	v.ID = val
+}
 func (v C) PK() (string, int, any) {
 	return "id", 0, v.ID
 }
@@ -114,7 +115,7 @@ func (v *C) Addrs() []any {
 		&v.ID, // 0 - id
 	}
 }
-func (C) InsertPlaceholders(row int) string {
+func (C) SQLInsertPlaceholders(row int) string {
 	return "(?)" // 1
 }
 func (v C) InsertOneStmt() (string, []any) {
@@ -127,13 +128,16 @@ func (v C) IDValue() any {
 	return v.ID
 }
 func (v C) ColumnID() sequel.ColumnClause[int64] {
-	return sequel.BasicColumn("id", v.ID)
+	return sequel.PrimitiveColumn("id", v.ID)
 }
 
 func (D) TableName() string {
 	return "d"
 }
 func (D) HasPK() {}
+func (v *D) SetPK(val sql.NullString) {
+	v.ID = val
+}
 func (v D) PK() (string, int, any) {
 	return "id", 0, v.ID
 }
@@ -150,7 +154,7 @@ func (v *D) Addrs() []any {
 		&v.ID, // 0 - id
 	}
 }
-func (D) InsertPlaceholders(row int) string {
+func (D) SQLInsertPlaceholders(row int) string {
 	return "(?)" // 1
 }
 func (v D) InsertOneStmt() (string, []any) {
@@ -162,8 +166,10 @@ func (v D) FindOneByPKStmt() (string, []any) {
 func (v D) IDValue() any {
 	return v.ID
 }
-func (v D) ColumnID() sequel.ColumnConvertClause[sql.NullString] {
-	return sequel.Column("id", v.ID, func(val sql.NullString) any {
-		return val
-	})
+func (v D) ColumnID() sequel.ColumnClause[sql.NullString] {
+	return sequel.ValueColumn("id", v.ID)
+}
+
+func convertLongTextToValue(val LongText) any {
+	return (string)(val)
 }

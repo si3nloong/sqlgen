@@ -10,7 +10,10 @@ import (
 func (Model) TableName() string {
 	return "model"
 }
-func (Model) HasPK()      {}
+func (Model) HasPK() {}
+func (v *Model) SetPK(val uint64) {
+	v.ID = val
+}
 func (Model) IsAutoIncr() {}
 func (v *Model) ScanAutoIncr(val int64) error {
 	v.ID = uint64(val)
@@ -39,7 +42,9 @@ func (v Model) IDValue() any {
 	return v.ID
 }
 func (v Model) ColumnID() sequel.ColumnConvertClause[uint64] {
-	return sequel.Column("id", v.ID, func(val uint64) any {
-		return val
-	})
+	return sequel.Column("id", v.ID, convertUint64ToValue)
+}
+
+func convertUint64ToValue(val uint64) any {
+	return val
 }

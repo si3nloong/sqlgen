@@ -5,7 +5,6 @@ package aliasstruct
 import (
 	"cloud.google.com/go/civil"
 	"github.com/si3nloong/sqlgen/sequel"
-	"github.com/si3nloong/sqlgen/sequel/encoding"
 )
 
 func (A) Columns() []string {
@@ -13,37 +12,33 @@ func (A) Columns() []string {
 }
 func (v A) Values() []any {
 	return []any{
-		encoding.TextValue(v.Date), // 0 - date
-		encoding.TextValue(v.Time), // 1 - time
+		v.Date, // 0 - date
+		v.Time, // 1 - time
 	}
 }
 func (v *A) Addrs() []any {
 	return []any{
-		encoding.TextScanner[civil.Date](&v.Date), // 0 - date
-		encoding.TextScanner[civil.Time](&v.Time), // 1 - time
+		&v.Date, // 0 - date
+		&v.Time, // 1 - time
 	}
 }
-func (A) InsertPlaceholders(row int) string {
+func (A) SQLInsertPlaceholders(row int) string {
 	return "(?,?)" // 2
 }
 func (v A) InsertOneStmt() (string, []any) {
 	return "INSERT INTO " + v.TableName() + " (`date`,`time`) VALUES (?,?);", v.Values()
 }
 func (v A) DateValue() any {
-	return encoding.TextValue(v.Date)
+	return v.Date
 }
 func (v A) TimeValue() any {
-	return encoding.TextValue(v.Time)
+	return v.Time
 }
-func (v A) ColumnDate() sequel.ColumnConvertClause[civil.Date] {
-	return sequel.Column("date", v.Date, func(val civil.Date) any {
-		return encoding.TextValue(val)
-	})
+func (v A) ColumnDate() sequel.ColumnClause[civil.Date] {
+	return sequel.ValueColumn("date", v.Date)
 }
-func (v A) ColumnTime() sequel.ColumnConvertClause[civil.Time] {
-	return sequel.Column("time", v.Time, func(val civil.Time) any {
-		return encoding.TextValue(val)
-	})
+func (v A) ColumnTime() sequel.ColumnClause[civil.Time] {
+	return sequel.ValueColumn("time", v.Time)
 }
 
 func (C) TableName() string {
@@ -64,7 +59,7 @@ func (v *C) Addrs() []any {
 		&v.Valid,  // 1 - valid
 	}
 }
-func (C) InsertPlaceholders(row int) string {
+func (C) SQLInsertPlaceholders(row int) string {
 	return "(?,?)" // 2
 }
 func (v C) InsertOneStmt() (string, []any) {
@@ -77,8 +72,8 @@ func (v C) ValidValue() any {
 	return v.Valid
 }
 func (v C) ColumnString() sequel.ColumnClause[string] {
-	return sequel.BasicColumn("string", v.String)
+	return sequel.PrimitiveColumn("string", v.String)
 }
 func (v C) ColumnValid() sequel.ColumnClause[bool] {
-	return sequel.BasicColumn("valid", v.Valid)
+	return sequel.PrimitiveColumn("valid", v.Valid)
 }

@@ -14,7 +14,10 @@ import (
 func (AutoPkLocation) TableName() string {
 	return "auto_pk_location"
 }
-func (AutoPkLocation) HasPK()      {}
+func (AutoPkLocation) HasPK() {}
+func (v *AutoPkLocation) SetPK(val uint64) {
+	v.ID = val
+}
 func (AutoPkLocation) IsAutoIncr() {}
 func (v *AutoPkLocation) ScanAutoIncr(val int64) error {
 	v.ID = uint64(val)
@@ -46,17 +49,17 @@ func (v *AutoPkLocation) Addrs() []any {
 		v.PtrDate = new(civil.Date)
 	}
 	return []any{
-		encoding.Uint64Scanner[uint64](&v.ID),        // 0 - id
-		ewkb.Scanner(&v.GeoPoint),                    // 1 - geo_point
-		encoding.JSONScanner(&v.PtrGeoPoint),         // 2 - ptr_geo_point
-		encoding.PtrScanner(&v.PtrUUID),              // 3 - ptr_uuid
-		encoding.TextScanner[civil.Date](&v.PtrDate), // 4 - ptr_date
+		encoding.Uint64Scanner[uint64](&v.ID), // 0 - id
+		ewkb.Scanner(&v.GeoPoint),             // 1 - geo_point
+		encoding.JSONScanner(&v.PtrGeoPoint),  // 2 - ptr_geo_point
+		encoding.PtrScanner(&v.PtrUUID),       // 3 - ptr_uuid
+		encoding.PtrScanner(&v.PtrDate),       // 4 - ptr_date
 	}
 }
-func (AutoPkLocation) InsertColumns() []string {
-	return []string{"geo_point", "ptr_geo_point", "ptr_uuid", "ptr_date"} // 4
+func (AutoPkLocation) SQLInsertColumns() string {
+	return "`geo_point`,`ptr_geo_point`,`ptr_uuid`,`ptr_date`"
 }
-func (AutoPkLocation) InsertPlaceholders(row int) string {
+func (AutoPkLocation) SQLInsertPlaceholders(row int) string {
 	return "(?,?,?,?)" // 4
 }
 func (v AutoPkLocation) InsertOneStmt() (string, []any) {
@@ -91,49 +94,33 @@ func (v AutoPkLocation) PtrUUIDValue() any {
 }
 func (v AutoPkLocation) PtrDateValue() any {
 	if v.PtrDate != nil {
-		return encoding.TextValue(*v.PtrDate)
+		return *v.PtrDate
 	}
 	return nil
 }
 func (v AutoPkLocation) ColumnID() sequel.ColumnConvertClause[uint64] {
-	return sequel.Column("id", v.ID, func(val uint64) any {
-		return val
-	})
+	return sequel.Column("id", v.ID, convertUint64ToValue)
 }
 func (v AutoPkLocation) ColumnGeoPoint() sequel.ColumnConvertClause[orb.Point] {
-	return sequel.Column("geo_point", v.GeoPoint, func(val orb.Point) any {
-		return ewkb.Value(val, 4326)
-	})
+	return sequel.Column("geo_point", v.GeoPoint, convertOrbPointToValue)
 }
 func (v AutoPkLocation) ColumnPtrGeoPoint() sequel.ColumnConvertClause[*orb.Point] {
-	return sequel.Column("ptr_geo_point", v.PtrGeoPoint, func(val *orb.Point) any {
-		if val != nil {
-			return ewkb.Value(*val, 4326)
-		}
-		return nil
-	})
+	return sequel.Column("ptr_geo_point", v.PtrGeoPoint, convertPtrorbPointToValue)
 }
 func (v AutoPkLocation) ColumnPtrUUID() sequel.ColumnConvertClause[*uuid.UUID] {
-	return sequel.Column("ptr_uuid", v.PtrUUID, func(val *uuid.UUID) any {
-		if val != nil {
-			return *val
-		}
-		return nil
-	})
+	return sequel.Column("ptr_uuid", v.PtrUUID, convertPtruuidUuidToValue)
 }
 func (v AutoPkLocation) ColumnPtrDate() sequel.ColumnConvertClause[*civil.Date] {
-	return sequel.Column("ptr_date", v.PtrDate, func(val *civil.Date) any {
-		if val != nil {
-			return encoding.TextValue(*val)
-		}
-		return nil
-	})
+	return sequel.Column("ptr_date", v.PtrDate, convertPtrcivilDateToValue)
 }
 
 func (Location) TableName() string {
 	return "location"
 }
 func (Location) HasPK() {}
+func (v *Location) SetPK(val uint64) {
+	v.ID = val
+}
 func (v Location) PK() (string, int, any) {
 	return "id", 0, v.ID
 }
@@ -154,7 +141,7 @@ func (v *Location) Addrs() []any {
 		&v.UUID,                               // 2 - uuid
 	}
 }
-func (Location) InsertPlaceholders(row int) string {
+func (Location) SQLInsertPlaceholders(row int) string {
 	return "(?,?,?)" // 3
 }
 func (v Location) InsertOneStmt() (string, []any) {
@@ -179,17 +166,36 @@ func (v Location) UUIDValue() any {
 	return v.UUID
 }
 func (v Location) ColumnID() sequel.ColumnConvertClause[uint64] {
-	return sequel.Column("id", v.ID, func(val uint64) any {
-		return val
-	})
+	return sequel.Column("id", v.ID, convertUint64ToValue)
 }
 func (v Location) ColumnGeoPoint() sequel.ColumnConvertClause[orb.Point] {
-	return sequel.Column("geo_point", v.GeoPoint, func(val orb.Point) any {
-		return ewkb.Value(val, 4326)
-	})
+	return sequel.Column("geo_point", v.GeoPoint, convertOrbPointToValue)
 }
-func (v Location) ColumnUUID() sequel.ColumnConvertClause[uuid.UUID] {
-	return sequel.Column("uuid", v.UUID, func(val uuid.UUID) any {
-		return val
-	})
+func (v Location) ColumnUUID() sequel.ColumnClause[uuid.UUID] {
+	return sequel.ValueColumn("uuid", v.UUID)
+}
+
+func convertUint64ToValue(val uint64) any {
+	return val
+}
+func convertPtruuidUuidToValue(val *uuid.UUID) any {
+	if val != nil {
+		return *val
+	}
+	return nil
+}
+func convertPtrorbPointToValue(val *orb.Point) any {
+	if val != nil {
+		return ewkb.Value(*val, 4326)
+	}
+	return nil
+}
+func convertPtrcivilDateToValue(val *civil.Date) any {
+	if val != nil {
+		return *val
+	}
+	return nil
+}
+func convertOrbPointToValue(val orb.Point) any {
+	return ewkb.Value(val, 4326)
 }

@@ -124,7 +124,7 @@ func (v *User) Addrs() []any {
 func (User) InsertColumns() []string {
 	return []string{"name", "age", "email", "address", "money_in_bank", "created_at"} // 6
 }
-func (User) InsertPlaceholders(row int) string {
+func (User) SQLInsertPlaceholders(row int) string {
 	return "(?,?,?,?,?,?)" // 6
 }
 func (v User) InsertOneStmt() (string, []any) {
@@ -161,10 +161,10 @@ func (v User) CreatedAtValue() any {
 	return v.CreatedAt
 }
 func (v User) ColumnID() sequel.ColumnClause[int64] {
-	return sequel.BasicColumn("id", v.ID)
+	return sequel.PrimitiveColumn("id", v.ID)
 }
 func (v User) ColumnName() sequel.ColumnClause[string] {
-	return sequel.BasicColumn("name", v.Name)
+	return sequel.PrimitiveColumn("name", v.Name)
 }
 func (v User) ColumnAge() sequel.ColumnConvertClause[*int] {
 	return sequel.Column("age", v.Age, func(val *int) any {
@@ -200,7 +200,7 @@ func (v User) ColumnMoneyInBank() sequel.ColumnConvertClause[decimal.Decimal] {
 	})
 }
 func (v User) ColumnCreatedAt() sequel.ColumnClause[time.Time] {
-	return sequel.BasicColumn("created_at", v.CreatedAt)
+	return sequel.PrimitiveColumn("created_at", v.CreatedAt)
 }
 ```
 

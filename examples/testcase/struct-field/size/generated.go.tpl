@@ -28,7 +28,7 @@ func (v *Size) Addrs() []any {
 		&v.Time,      // 2 - time
 	}
 }
-func (Size) InsertPlaceholders(row int) string {
+func (Size) SQLInsertPlaceholders(row int) string {
 	return "(?,?,?)" // 3
 }
 func (v Size) InsertOneStmt() (string, []any) {
@@ -44,11 +44,11 @@ func (v Size) TimeValue() any {
 	return v.Time
 }
 func (v Size) ColumnStr() sequel.ColumnClause[string] {
-	return sequel.BasicColumn("str", v.Str)
+	return sequel.PrimitiveColumn("str", v.Str)
 }
 func (v Size) ColumnTimestamp() sequel.ColumnClause[time.Time] {
-	return sequel.BasicColumn("timestamp", v.Timestamp)
+	return sequel.PrimitiveColumn("timestamp", v.Timestamp)
 }
 func (v Size) ColumnTime() sequel.ColumnClause[time.Time] {
-	return sequel.BasicColumn("time", v.Time)
+	return sequel.PrimitiveColumn("time", v.Time)
 }

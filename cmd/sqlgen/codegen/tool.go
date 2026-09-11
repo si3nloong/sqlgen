@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"go/types"
 	"regexp"
+	"strings"
 
 	"github.com/si3nloong/sqlgen/cmd/sqlgen/codegen/dialect"
+	"github.com/si3nloong/sqlgen/cmd/sqlgen/internal/strfmt"
 )
 
 var (
@@ -122,4 +124,11 @@ func mustNoError[T any](_ T, err error) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func normalize(v string) string {
+	v = strings.Replace(v, "*", "Ptr", -1)
+	v = strings.Replace(v, "[]", "Slice", -1)
+	reg := regexp.MustCompile(`[^a-zA-Z0-9]+`)
+	return reg.ReplaceAllString(strfmt.ToPascalCase(v), "")
 }

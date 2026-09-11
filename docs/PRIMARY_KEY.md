@@ -38,7 +38,7 @@ func (v *Location) Addrs() []any {
 func (Location) InsertColumns() []string {
 	return []string{"name"} // 1
 }
-func (Location) InsertPlaceholders(row int) string {
+func (Location) SQLInsertPlaceholders(row int) string {
 	return "(?)" // 1
 }
 func (v Location) InsertOneStmt() (string, []any) {
