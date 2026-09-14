@@ -26,10 +26,10 @@ func (v *Model) Addrs() []any {
 		&v.ReadOnly, // 2 - read_only
 	}
 }
-func (Model) InsertColumns() []string {
-	return []string{"a", "b"} // 2
+func (Model) SQLInsertColumns() string {
+	return "`a`,`b`"
 }
-func (Model) InsertPlaceholders(row int) string {
+func (Model) SQLInsertPlaceholders(row int) string {
 	return "(?,?)" // 2
 }
 func (v Model) InsertOneStmt() (string, []any) {
@@ -45,11 +45,11 @@ func (v Model) ReadOnlyValue() any {
 	return v.ReadOnly
 }
 func (v Model) ColumnA() sequel.ColumnClause[string] {
-	return sequel.BasicColumn("a", v.A)
+	return sequel.PrimitiveColumn("a", v.A)
 }
 func (v Model) ColumnB() sequel.ColumnClause[bool] {
-	return sequel.BasicColumn("b", v.B)
+	return sequel.PrimitiveColumn("b", v.B)
 }
 func (v Model) ColumnReadOnly() sequel.ColumnClause[string] {
-	return sequel.BasicColumn("read_only", v.ReadOnly)
+	return sequel.PrimitiveColumn("read_only", v.ReadOnly)
 }

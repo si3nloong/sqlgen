@@ -3,6 +3,7 @@
 package imported
 
 import (
+	"reflect"
 	"time"
 
 	"github.com/si3nloong/sqlgen/sequel"
@@ -13,29 +14,42 @@ func (ImportedEnum) TableName() string {
 	return "imported_enum"
 }
 func (ImportedEnum) Columns() []string {
-	return []string{"weekday"} // 1
+	return []string{"weekday", "kind"} // 2
 }
 func (v ImportedEnum) Values() []any {
 	return []any{
-		(int64)(v.Weekday), // 0 - weekday
+		v.WeekdayValue(), // 0 - weekday
+		v.KindValue(),    // 1 - kind
 	}
 }
 func (v *ImportedEnum) Addrs() []any {
 	return []any{
 		encoding.IntScanner[time.Weekday](&v.Weekday), // 0 - weekday
+		encoding.UintScanner[reflect.Kind](&v.Kind),   // 1 - kind
 	}
 }
-func (ImportedEnum) InsertPlaceholders(row int) string {
-	return "(?)" // 1
+func (ImportedEnum) SQLInsertPlaceholders(row int) string {
+	return "(?,?)" // 2
 }
 func (v ImportedEnum) InsertOneStmt() (string, []any) {
-	return "INSERT INTO `imported_enum` (`weekday`) VALUES (?);", v.Values()
+	return "INSERT INTO `imported_enum` (`weekday`,`kind`) VALUES (?,?);", v.Values()
 }
 func (v ImportedEnum) WeekdayValue() any {
 	return (int64)(v.Weekday)
 }
+func (v ImportedEnum) KindValue() any {
+	return (int64)(v.Kind)
+}
 func (v ImportedEnum) ColumnWeekday() sequel.ColumnConvertClause[time.Weekday] {
-	return sequel.Column("weekday", v.Weekday, func(val time.Weekday) any {
-		return (int64)(val)
-	})
+	return sequel.Column("weekday", v.Weekday, convertTimeWeekdayToValue)
+}
+func (v ImportedEnum) ColumnKind() sequel.ColumnConvertClause[reflect.Kind] {
+	return sequel.Column("kind", v.Kind, convertReflectKindToValue)
+}
+
+func convertTimeWeekdayToValue(val time.Weekday) any {
+	return (int64)(val)
+}
+func convertReflectKindToValue(val reflect.Kind) any {
+	return (int64)(val)
 }

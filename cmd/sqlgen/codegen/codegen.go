@@ -8,13 +8,10 @@ import (
 	"log/slog"
 	"os"
 	"os/exec"
-	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"syscall"
-
-	"github.com/Masterminds/semver/v3"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/samber/lo"
@@ -34,8 +31,8 @@ var (
 		`\`, `[\\/]`,
 		`/`, `[\\/]`,
 	)
-	nameRegex = regexp.MustCompile(`(?i)^[a-z]+[a-z0-9\_]*$`)
-	go121     = lo.Must1(semver.NewConstraint(">= 1.2.1"))
+	// nameRegex = regexp.MustCompile(`(?i)^[a-z]+[a-z0-9\_]*$`)
+	// go121     = lo.Must1(semver.NewConstraint(">= 1.2.1"))
 	// goTagRegexp   = regexp.MustCompile(`(?i)^([a-z][a-z_]*[a-z])(\:(\w+))?$`)
 	// sqlFuncRegexp = regexp.MustCompile(`(?i)\s*(\w+\()(\w+\s*\,\s*)?(\{\})(\s*\,\s*\w+)?(\))\s*`)
 )
@@ -153,17 +150,17 @@ func Walk(cfg *Config, walkFunc WalkFunc) error {
 }
 
 func Generate(c *Config) error {
-	vldr := validator.New()
-	if err := vldr.Struct(c); err != nil {
-		return err
-	}
+	// vldr := validator.New()
+	// if err := vldr.Struct(c); err != nil {
+	// 	return err
+	// }
 
 	cfg := DefaultConfig()
 	if c != nil {
 		cfg = cfg.Merge(c)
 	}
 
-	dialect, ok := dialect.GetDialect((string)(cfg.Driver))
+	dialect, ok := dialect.GetDialect(string(cfg.Driver))
 	if !ok {
 		return fmt.Errorf("sqlgen: missing dialect, please register dialect %q", cfg.Driver)
 	}
@@ -182,6 +179,7 @@ func Generate(c *Config) error {
 	// Resolve every source provided
 	for len(sources) > 0 {
 		srcDir = strings.TrimSpace(sources[0])
+		sources = sources[1:]
 		if srcDir == "" {
 			return fmt.Errorf("sqlgen: source directory %q is empty path", srcDir)
 		}
@@ -200,7 +198,7 @@ func Generate(c *Config) error {
 			srcDir = srcDir + ".go"
 		}
 
-		slog.Info("Processing", "dir", srcDir)
+		slog.Info(fmt.Sprintf("Processing %q", srcDir))
 
 		// File: examples/testdata/test.go
 		// Folder: examples/testdata
@@ -242,7 +240,7 @@ func Generate(c *Config) error {
 			fi, err := os.Stat(srcDir)
 			// If the file or folder not exists, we skip!
 			if os.IsNotExist(err) {
-				goto nextSrc
+				continue
 			} else if err != nil {
 				return err
 			}
@@ -263,9 +261,6 @@ func Generate(c *Config) error {
 		if err := parseGoPackage(generator, rootDir, dirs, matcher); err != nil {
 			return err
 		}
-
-	nextSrc:
-		sources = sources[1:]
 	}
 
 	if cfg.Database != nil {
@@ -314,7 +309,7 @@ func parseGoPackage(
 	rename := g.config.RenameFunc()
 
 	for len(dirs) > 0 {
-		dir = path.Join(rootDir, dirs[0])
+		dir = filepath.Join(rootDir, dirs[0])
 		dirs = dirs[1:]
 
 		// Sometimes user might place db destination in the source as well
@@ -322,8 +317,8 @@ func parseGoPackage(
 		// if the file is exists in db folder
 		pwd := fileutil.Getpwd()
 		if idx := lo.IndexOf([]string{
-			path.Join(pwd, g.config.Database.Dir),
-			path.Join(pwd, g.config.Database.Operator.Dir),
+			filepath.Join(pwd, g.config.Database.Dir),
+			filepath.Join(pwd, g.config.Database.Operator.Dir),
 		}, dir); idx >= 0 {
 			continue
 		}
@@ -334,7 +329,7 @@ func parseGoPackage(
 			continue
 		}
 
-		filename = path.Join(dir, g.config.Exec.Filename)
+		filename = filepath.Join(dir, g.config.Exec.Filename)
 		// Unlink the generated file, ignore the error
 		_ = syscall.Unlink(filename)
 
@@ -378,7 +373,7 @@ func (g *Generator) parseGoPackageV2(
 	rename := g.config.RenameFunc()
 
 	for len(dirs) > 0 {
-		dir = path.Join(rootDir, dirs[0])
+		dir = filepath.Join(rootDir, dirs[0])
 		dirs = dirs[1:]
 
 		// Sometimes user might place db destination in the source as well
@@ -386,8 +381,8 @@ func (g *Generator) parseGoPackageV2(
 		// if the file is exists in db folder
 		pwd := fileutil.Getpwd()
 		if idx := lo.IndexOf([]string{
-			path.Join(pwd, g.config.Database.Dir),
-			path.Join(pwd, g.config.Database.Operator.Dir),
+			filepath.Join(pwd, g.config.Database.Dir),
+			filepath.Join(pwd, g.config.Database.Operator.Dir),
 		}, dir); idx >= 0 {
 			continue
 		}
@@ -398,7 +393,7 @@ func (g *Generator) parseGoPackageV2(
 			continue
 		}
 
-		filename = path.Join(dir, g.config.Exec.Filename)
+		filename = filepath.Join(dir, g.config.Exec.Filename)
 		// Unlink the generated file, ignore the error
 		_ = syscall.Unlink(filename)
 

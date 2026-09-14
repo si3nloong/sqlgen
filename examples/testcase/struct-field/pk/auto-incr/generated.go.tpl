@@ -10,7 +10,10 @@ import (
 func (Model) TableName() string {
 	return "AutoIncrPK"
 }
-func (Model) HasPK()      {}
+func (Model) HasPK() {}
+func (v *Model) SetPK(val uint) {
+	v.ID = val
+}
 func (Model) IsAutoIncr() {}
 func (v *Model) ScanAutoIncr(val int64) error {
 	v.ID = uint(val)
@@ -38,10 +41,10 @@ func (v *Model) Addrs() []any {
 		&v.N,                                      // 3 - n
 	}
 }
-func (Model) InsertColumns() []string {
-	return []string{"name", "f", "n"} // 3
+func (Model) SQLInsertColumns() string {
+	return "`name`,`f`,`n`"
 }
-func (Model) InsertPlaceholders(row int) string {
+func (Model) SQLInsertPlaceholders(row int) string {
 	return "(?,?,?)" // 3
 }
 func (v Model) InsertOneStmt() (string, []any) {
@@ -66,20 +69,24 @@ func (v Model) NValue() any {
 	return v.N
 }
 func (v Model) ColumnName() sequel.ColumnConvertClause[LongText] {
-	return sequel.Column("name", v.Name, func(val LongText) any {
-		return (string)(val)
-	})
+	return sequel.Column("name", v.Name, convertLongTextToValue)
 }
 func (v Model) ColumnF() sequel.ColumnConvertClause[Flag] {
-	return sequel.Column("f", v.F, func(val Flag) any {
-		return (bool)(val)
-	})
+	return sequel.Column("f", v.F, convertFlagToValue)
 }
 func (v Model) ColumnID() sequel.ColumnConvertClause[uint] {
-	return sequel.Column("id", v.ID, func(val uint) any {
-		return (int64)(val)
-	})
+	return sequel.Column("id", v.ID, convertUintToValue)
 }
 func (v Model) ColumnN() sequel.ColumnClause[int64] {
-	return sequel.BasicColumn("n", v.N)
+	return sequel.PrimitiveColumn("n", v.N)
+}
+
+func convertUintToValue(val uint) any {
+	return (int64)(val)
+}
+func convertLongTextToValue(val LongText) any {
+	return (string)(val)
+}
+func convertFlagToValue(val Flag) any {
+	return (bool)(val)
 }

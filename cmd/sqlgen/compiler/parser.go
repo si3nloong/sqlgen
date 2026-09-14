@@ -6,7 +6,6 @@ import (
 	"go/token"
 	"go/types"
 	"iter"
-	"log"
 	"reflect"
 	"regexp"
 	"sort"
@@ -672,7 +671,7 @@ func ParseDir(dir string, cfg *Config) (*packages.Package, iter.Seq2[*Table, err
 							t := obj.Decl.(*ast.TypeSpec)
 							switch t.Type.(type) {
 							case *ast.StructType:
-								ft := &structField{
+								field := &structField{
 									name:  types.ExprString(vi),
 									t:     f.pkg.TypesInfo.TypeOf(fi.Type),
 									index: append(f.idx, i),
@@ -682,11 +681,11 @@ func ParseDir(dir string, cfg *Config) (*packages.Package, iter.Seq2[*Table, err
 									parent:   f.prev,
 									tag:      tag,
 								}
-								structFields = append(structFields, ft)
+								structFields = append(structFields, field)
 
 								q = append(q, typeQueue{
 									idx:  append(f.idx, i),
-									prev: ft,
+									prev: field,
 									t:    t.Type.(*ast.StructType),
 									pkg:  f.pkg,
 								})
@@ -746,39 +745,41 @@ func ParseDir(dir string, cfg *Config) (*packages.Package, iter.Seq2[*Table, err
 						}
 					}
 
-					// Every struct field
-					switch fv := fi.Type.(type) {
-					// Imported types
-					case *ast.SelectorExpr:
-						// If the field type is a Go imported enum,
-						// we will inspect it
-						importPkg, ok := f.pkg.Imports[types.ExprString(fv.X)]
-						if ok {
-							log.Println(importPkg)
-							// 	for _, file := range importPkg.Syntax {
-							// 		ast.Inspect(file, func(n ast.Node) bool {
-							// 			mapEnumIfExists(importPkg, n, enumMap)
-							// 			return true
-							// 		})
-							// 	}
-						}
-
-					// Local types
-					case *ast.Ident:
-						if fv.Obj != nil {
-
-						}
-					}
-
 					for j, n := range fi.Names {
-						structFields = append(structFields, &structField{
-							name:     types.ExprString(n),
+						field := &structField{
 							t:        f.pkg.TypesInfo.TypeOf(fi.Type),
-							index:    append(f.idx, i+j),
-							exported: n.IsExported(),
 							parent:   f.prev,
 							tag:      tag,
-						})
+							name:     types.ExprString(n),
+							index:    append(f.idx, i+j),
+							exported: n.IsExported(),
+						}
+						// Every struct field
+						switch fv := fi.Type.(type) {
+						// Imported types
+						case *ast.SelectorExpr:
+							// If the field type is a Go imported enum,
+							// we will inspect it
+							importPkg, ok := f.pkg.Imports[types.ExprString(fv.X)]
+							if ok {
+								if constValue, ok := findFirstConstValueInPackage(importPkg, fv.Sel.Name); ok {
+									field.defaultValue = constValue
+								}
+							}
+
+						// Local types
+						case *ast.Ident:
+							if fv.Obj != nil {
+								if constValue, ok := findFirstConstValueInPackage(pkg, fv.Obj.Name); ok {
+									field.defaultValue = constValue
+								}
+							}
+
+							// case *ast.StarExpr:
+							// If it's a pointer, we need to get the underlying type
+						}
+
+						structFields = append(structFields, field)
 					}
 				}
 			}
@@ -907,10 +908,11 @@ func ParseDir(dir string, cfg *Config) (*packages.Package, iter.Seq2[*Table, err
 
 				tag := parseTag(tagPaths)
 				column := &BasicColumn{
-					goInfo:   columnMap[f],
-					Readonly: tag.hasOpts(TagOptionReadonly),
-					name:     name,
-					pos:      pos,
+					goInfo:       columnMap[f],
+					Readonly:     tag.hasOpts(TagOptionReadonly),
+					defaultValue: f.defaultValue,
+					name:         name,
+					pos:          pos,
 				}
 
 				if tag.hasOpts(TagOptionAutoIncrement, TagOptionPK, TagOptionPKAlias) {
@@ -951,4 +953,30 @@ func ParseDir(dir string, cfg *Config) (*packages.Package, iter.Seq2[*Table, err
 			}
 		}
 	}, nil
+}
+
+func findFirstConstValueInPackage(pkg *packages.Package, typeName string) (*types.Const, bool) {
+	scope := pkg.Types.Scope()
+	constants := make([]*types.Const, 0, len(scope.Names()))
+
+	// 1. Collect all constants of the custom type
+	for _, name := range scope.Names() {
+		obj := scope.Lookup(name)
+		if constant, ok := obj.(*types.Const); ok {
+			if named, ok := constant.Type().(*types.Named); ok && named.Obj().Name() == typeName {
+				constants = append(constants, constant)
+			}
+		}
+	}
+
+	if len(constants) > 0 {
+		// 2. Sort by the global FileSet position
+		// This automatically handles file order (alphabetical) and line order.
+		sort.Slice(constants, func(i, j int) bool {
+			return constants[i].Pos() < constants[j].Pos()
+		})
+
+		return constants[0], true
+	}
+	return nil, false
 }

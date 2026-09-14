@@ -1,7 +1,11 @@
 package imported
 
-import "time"
+import (
+	"reflect"
+	"time"
+)
 
 type ImportedEnum struct {
 	Weekday time.Weekday
+	Kind    reflect.Kind
 }

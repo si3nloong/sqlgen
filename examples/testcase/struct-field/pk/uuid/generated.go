@@ -10,6 +10,13 @@ import (
 func (User) TableName() string {
 	return "user"
 }
+func (User) HasPK() {}
+func (v *User) SetPK(val uuid.UUID) {
+	v.ID = val
+}
+func (v User) PK() (string, int, any) {
+	return "id", 0, v.ID
+}
 func (User) Columns() []string {
 	return []string{"id", "name"} // 2
 }
@@ -25,11 +32,17 @@ func (v *User) Addrs() []any {
 		&v.Name, // 1 - name
 	}
 }
-func (User) InsertPlaceholders(row int) string {
+func (User) SQLInsertPlaceholders(row int) string {
 	return "(?,?)" // 2
 }
 func (v User) InsertOneStmt() (string, []any) {
 	return "INSERT INTO `user` (`id`,`name`) VALUES (?,?);", v.Values()
+}
+func (v User) FindOneByPKStmt() (string, []any) {
+	return "SELECT `id`,`name` FROM `user` WHERE `id` = ? LIMIT 1;", []any{v.ID}
+}
+func (v User) UpdateOneByPKStmt() (string, []any) {
+	return "UPDATE `user` SET `name` = ? WHERE `id` = ?;", []any{v.Name, v.ID}
 }
 func (v User) IDValue() any {
 	return v.ID
@@ -37,11 +50,9 @@ func (v User) IDValue() any {
 func (v User) NameValue() any {
 	return v.Name
 }
-func (v User) ColumnID() sequel.ColumnConvertClause[uuid.UUID] {
-	return sequel.Column("id", v.ID, func(val uuid.UUID) any {
-		return val
-	})
+func (v User) ColumnID() sequel.ColumnClause[uuid.UUID] {
+	return sequel.ValueColumn("id", v.ID)
 }
 func (v User) ColumnName() sequel.ColumnClause[string] {
-	return sequel.BasicColumn("name", v.Name)
+	return sequel.PrimitiveColumn("name", v.Name)
 }

@@ -13,5 +13,6 @@ type Car struct {
 	ID        PK `sql:",pk"`
 	No        string
 	Color     Color
+	Year      *int
 	ManucDate time.Time
 }

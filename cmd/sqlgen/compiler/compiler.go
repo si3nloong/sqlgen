@@ -241,13 +241,14 @@ type structCache struct {
 }
 
 type structField struct {
-	name     string
-	t        types.Type
-	index    []int
-	exported bool
-	embedded bool
-	parent   *structField
-	tag      reflect.StructTag
+	name         string
+	t            types.Type
+	index        []int
+	exported     bool
+	embedded     bool
+	defaultValue types.Object
+	parent       *structField
+	tag          reflect.StructTag
 }
 
 type typeQueue struct {

@@ -6,7 +6,7 @@ import (
 	"github.com/si3nloong/sqlgen/sequel"
 )
 
-func (A) InsertPlaceholders(row int) string {
+func (A) SQLInsertPlaceholders(row int) string {
 	return "(?)" // 1
 }
 func (v A) InsertOneStmt() (string, []any) {
@@ -16,5 +16,5 @@ func (v A) NameValue() any {
 	return v.Name
 }
 func (v A) ColumnName() sequel.ColumnClause[string] {
-	return sequel.BasicColumn("name", v.Name)
+	return sequel.PrimitiveColumn("name", v.Name)
 }

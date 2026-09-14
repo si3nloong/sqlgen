@@ -11,7 +11,10 @@ import (
 func (Slice) TableName() string {
 	return "slice"
 }
-func (Slice) HasPK()      {}
+func (Slice) HasPK() {}
+func (v *Slice) SetPK(val uint64) {
+	v.ID = val
+}
 func (Slice) IsAutoIncr() {}
 func (v *Slice) ScanAutoIncr(val int64) error {
 	v.ID = uint64(val)
@@ -63,10 +66,10 @@ func (v *Slice) Addrs() []any {
 		(*sqltype.Float64Slice[float64])(&v.F64List),        // 15 - f_64_list
 	}
 }
-func (Slice) InsertColumns() []string {
-	return []string{"bool_list", "str_list", "custom_str_list", "int_list", "int_8_list", "int_16_list", "int_32_list", "int_64_list", "uint_list", "uint_8_list", "uint_16_list", "uint_32_list", "uint_64_list", "f_32_list", "f_64_list"} // 15
+func (Slice) SQLInsertColumns() string {
+	return "`bool_list`,`str_list`,`custom_str_list`,`int_list`,`int_8_list`,`int_16_list`,`int_32_list`,`int_64_list`,`uint_list`,`uint_8_list`,`uint_16_list`,`uint_32_list`,`uint_64_list`,`f_32_list`,`f_64_list`"
 }
-func (Slice) InsertPlaceholders(row int) string {
+func (Slice) SQLInsertPlaceholders(row int) string {
 	return "(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)" // 15
 }
 func (v Slice) InsertOneStmt() (string, []any) {
@@ -127,82 +130,99 @@ func (v Slice) F64ListValue() any {
 	return (sqltype.Float64Slice[float64])(v.F64List)
 }
 func (v Slice) ColumnID() sequel.ColumnConvertClause[uint64] {
-	return sequel.Column("id", v.ID, func(val uint64) any {
-		return val
-	})
+	return sequel.Column("id", v.ID, convertUint64ToValue)
 }
 func (v Slice) ColumnBoolList() sequel.ColumnConvertClause[[]bool] {
-	return sequel.Column("bool_list", v.BoolList, func(val []bool) any {
-		return (sqltype.BoolSlice[bool])(val)
-	})
+	return sequel.Column("bool_list", v.BoolList, convertSliceboolToValue)
 }
 func (v Slice) ColumnStrList() sequel.ColumnConvertClause[[]string] {
-	return sequel.Column("str_list", v.StrList, func(val []string) any {
-		return (sqltype.StringSlice[string])(val)
-	})
+	return sequel.Column("str_list", v.StrList, convertSlicestringToValue)
 }
 func (v Slice) ColumnCustomStrList() sequel.ColumnConvertClause[[]customStr] {
-	return sequel.Column("custom_str_list", v.CustomStrList, func(val []customStr) any {
-		return (sqltype.StringSlice[customStr])(val)
-	})
+	return sequel.Column("custom_str_list", v.CustomStrList, convertSlicecustomStrToValue)
 }
 func (v Slice) ColumnIntList() sequel.ColumnConvertClause[[]int] {
-	return sequel.Column("int_list", v.IntList, func(val []int) any {
-		return (sqltype.IntSlice[int])(val)
-	})
+	return sequel.Column("int_list", v.IntList, convertSliceintToValue)
 }
 func (v Slice) ColumnInt8List() sequel.ColumnConvertClause[[]int8] {
-	return sequel.Column("int_8_list", v.Int8List, func(val []int8) any {
-		return (sqltype.Int8Slice[int8])(val)
-	})
+	return sequel.Column("int_8_list", v.Int8List, convertSliceint8ToValue)
 }
 func (v Slice) ColumnInt16List() sequel.ColumnConvertClause[[]int16] {
-	return sequel.Column("int_16_list", v.Int16List, func(val []int16) any {
-		return (sqltype.Int16Slice[int16])(val)
-	})
+	return sequel.Column("int_16_list", v.Int16List, convertSliceint16ToValue)
 }
 func (v Slice) ColumnInt32List() sequel.ColumnConvertClause[[]int32] {
-	return sequel.Column("int_32_list", v.Int32List, func(val []int32) any {
-		return (sqltype.Int32Slice[int32])(val)
-	})
+	return sequel.Column("int_32_list", v.Int32List, convertSliceint32ToValue)
 }
 func (v Slice) ColumnInt64List() sequel.ColumnConvertClause[[]int64] {
-	return sequel.Column("int_64_list", v.Int64List, func(val []int64) any {
-		return (sqltype.Int64Slice[int64])(val)
-	})
+	return sequel.Column("int_64_list", v.Int64List, convertSliceint64ToValue)
 }
 func (v Slice) ColumnUintList() sequel.ColumnConvertClause[[]uint] {
-	return sequel.Column("uint_list", v.UintList, func(val []uint) any {
-		return (sqltype.UintSlice[uint])(val)
-	})
+	return sequel.Column("uint_list", v.UintList, convertSliceuintToValue)
 }
 func (v Slice) ColumnUint8List() sequel.ColumnConvertClause[[]uint8] {
-	return sequel.Column("uint_8_list", v.Uint8List, func(val []uint8) any {
-		return (sqltype.Uint8Slice[uint8])(val)
-	})
+	return sequel.Column("uint_8_list", v.Uint8List, convertSliceuint8ToValue)
 }
 func (v Slice) ColumnUint16List() sequel.ColumnConvertClause[[]uint16] {
-	return sequel.Column("uint_16_list", v.Uint16List, func(val []uint16) any {
-		return (sqltype.Uint16Slice[uint16])(val)
-	})
+	return sequel.Column("uint_16_list", v.Uint16List, convertSliceuint16ToValue)
 }
 func (v Slice) ColumnUint32List() sequel.ColumnConvertClause[[]uint32] {
-	return sequel.Column("uint_32_list", v.Uint32List, func(val []uint32) any {
-		return (sqltype.Uint32Slice[uint32])(val)
-	})
+	return sequel.Column("uint_32_list", v.Uint32List, convertSliceuint32ToValue)
 }
 func (v Slice) ColumnUint64List() sequel.ColumnConvertClause[[]uint64] {
-	return sequel.Column("uint_64_list", v.Uint64List, func(val []uint64) any {
-		return (sqltype.Uint64Slice[uint64])(val)
-	})
+	return sequel.Column("uint_64_list", v.Uint64List, convertSliceuint64ToValue)
 }
 func (v Slice) ColumnF32List() sequel.ColumnConvertClause[[]float32] {
-	return sequel.Column("f_32_list", v.F32List, func(val []float32) any {
-		return (sqltype.Float32Slice[float32])(val)
-	})
+	return sequel.Column("f_32_list", v.F32List, convertSlicefloat32ToValue)
 }
 func (v Slice) ColumnF64List() sequel.ColumnConvertClause[[]float64] {
-	return sequel.Column("f_64_list", v.F64List, func(val []float64) any {
-		return (sqltype.Float64Slice[float64])(val)
-	})
+	return sequel.Column("f_64_list", v.F64List, convertSlicefloat64ToValue)
+}
+
+func convertUint64ToValue(val uint64) any {
+	return val
+}
+func convertSliceuintToValue(val []uint) any {
+	return (sqltype.UintSlice[uint])(val)
+}
+func convertSliceuint8ToValue(val []uint8) any {
+	return (sqltype.Uint8Slice[uint8])(val)
+}
+func convertSliceuint64ToValue(val []uint64) any {
+	return (sqltype.Uint64Slice[uint64])(val)
+}
+func convertSliceuint32ToValue(val []uint32) any {
+	return (sqltype.Uint32Slice[uint32])(val)
+}
+func convertSliceuint16ToValue(val []uint16) any {
+	return (sqltype.Uint16Slice[uint16])(val)
+}
+func convertSlicestringToValue(val []string) any {
+	return (sqltype.StringSlice[string])(val)
+}
+func convertSliceintToValue(val []int) any {
+	return (sqltype.IntSlice[int])(val)
+}
+func convertSliceint8ToValue(val []int8) any {
+	return (sqltype.Int8Slice[int8])(val)
+}
+func convertSliceint64ToValue(val []int64) any {
+	return (sqltype.Int64Slice[int64])(val)
+}
+func convertSliceint32ToValue(val []int32) any {
+	return (sqltype.Int32Slice[int32])(val)
+}
+func convertSliceint16ToValue(val []int16) any {
+	return (sqltype.Int16Slice[int16])(val)
+}
+func convertSlicefloat64ToValue(val []float64) any {
+	return (sqltype.Float64Slice[float64])(val)
+}
+func convertSlicefloat32ToValue(val []float32) any {
+	return (sqltype.Float32Slice[float32])(val)
+}
+func convertSlicecustomStrToValue(val []customStr) any {
+	return (sqltype.StringSlice[customStr])(val)
+}
+func convertSliceboolToValue(val []bool) any {
+	return (sqltype.BoolSlice[bool])(val)
 }

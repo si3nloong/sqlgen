@@ -32,7 +32,7 @@ func (v *B) Addrs() []any {
 		&v.N,                              // 3 - n
 	}
 }
-func (B) InsertPlaceholders(row int) string {
+func (B) SQLInsertPlaceholders(row int) string {
 	return "(?,?,?,?)" // 4
 }
 func (v B) InsertOneStmt() (string, []any) {
@@ -54,21 +54,21 @@ func (v B) NValue() any {
 	return v.N
 }
 func (v B) ColumnID() sequel.ColumnClause[int64] {
-	return sequel.BasicColumn("id", v.ID)
+	return sequel.PrimitiveColumn("id", v.ID)
 }
-func (v B) ColumnValue() sequel.ColumnConvertClause[anyType] {
-	return sequel.Column("value", v.Value, func(val anyType) any {
-		return val
-	})
+func (v B) ColumnValue() sequel.ColumnClause[anyType] {
+	return sequel.ValueColumn("value", v.Value)
 }
 func (v B) ColumnPtrValue() sequel.ColumnConvertClause[*anyType] {
-	return sequel.Column("ptr_value", v.PtrValue, func(val *anyType) any {
-		if val != nil {
-			return *val
-		}
-		return nil
-	})
+	return sequel.Column("ptr_value", v.PtrValue, convertPtranyTypeToValue)
 }
 func (v B) ColumnN() sequel.ColumnClause[string] {
-	return sequel.BasicColumn("n", v.N)
+	return sequel.PrimitiveColumn("n", v.N)
+}
+
+func convertPtranyTypeToValue(val *anyType) any {
+	if val != nil {
+		return *val
+	}
+	return nil
 }
