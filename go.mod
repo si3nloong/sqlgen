@@ -1,6 +1,6 @@
 module github.com/si3nloong/sqlgen
 
-go 1.25.11
+go 1.27
 
 require github.com/stretchr/testify v1.12.1
 

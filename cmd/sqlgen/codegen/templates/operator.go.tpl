@@ -30,18 +30,14 @@ func Or(clauses ...sequel.WhereClause) sequel.WhereClause {
 
 func Equal[T comparable](column sequel.ColumnClause[T], value T) sequel.WhereClause {
 	return func(w sequel.StmtWriter) {
+		w.WriteString(column.ColumnName())
+		w.WriteString(" = ")
 		switch vi := column.(type) {
 		case sequel.SQLColumnClause[T]:
-			w.WriteString(vi.ColumnName())
-			w.WriteString(" = ")
 			w.WriteString(vi.SQLColumn(w.Var(vi.Convert(value))))
 		case sequel.ColumnConvertClause[T]:
-			w.WriteString(vi.ColumnName())
-			w.WriteString(" = ")
 			w.WriteString(w.Var(vi.Convert(value)))
 		default:
-			w.WriteString(vi.ColumnName())
-			w.WriteString(" = ")
 			w.WriteString(w.Var(value))
 		}
 	}
@@ -49,18 +45,14 @@ func Equal[T comparable](column sequel.ColumnClause[T], value T) sequel.WhereCla
 
 func NotEqual[T comparable](column sequel.ColumnClause[T], value T) sequel.WhereClause {
 	return func(w sequel.StmtWriter) {
+		w.WriteString(column.ColumnName())
+		w.WriteString(" <> ")
 		switch vi := column.(type) {
 		case sequel.SQLColumnClause[T]:
-			w.WriteString(vi.ColumnName())
-			w.WriteString(" <> ")
 			w.WriteString(vi.SQLColumn(w.Var(vi.Convert(value))))
 		case sequel.ColumnConvertClause[T]:
-			w.WriteString(vi.ColumnName())
-			w.WriteString(" <> ")
 			w.WriteString(w.Var(vi.Convert(value)))
 		default:
-			w.WriteString(vi.ColumnName())
-			w.WriteString(" <> ")
 			w.WriteString(w.Var(value))
 		}
 	}
@@ -114,18 +106,14 @@ func NotIn[T any](column sequel.ColumnClause[T], values []T) sequel.WhereClause 
 
 func GreaterThan[T comparable](column sequel.ColumnClause[T], value T) sequel.WhereClause {
 	return func(w sequel.StmtWriter) {
+		w.WriteString(column.ColumnName())
+		w.WriteString(" > ")
 		switch vi := column.(type) {
 		case sequel.SQLColumnClause[T]:
-			w.WriteString(vi.ColumnName())
-			w.WriteString(" > ")
 			w.WriteString(vi.SQLColumn(w.Var(vi.Convert(value))))
 		case sequel.ColumnConvertClause[T]:
-			w.WriteString(vi.ColumnName())
-			w.WriteString(" > ")
 			w.WriteString(w.Var(vi.Convert(value)))
 		default:
-			w.WriteString(vi.ColumnName())
-			w.WriteString(" > ")
 			w.WriteString(w.Var(value))
 		}
 	}
@@ -133,18 +121,14 @@ func GreaterThan[T comparable](column sequel.ColumnClause[T], value T) sequel.Wh
 
 func GreaterThanOrEqual[T comparable](column sequel.ColumnClause[T], value T) sequel.WhereClause {
 	return func(w sequel.StmtWriter) {
+		w.WriteString(column.ColumnName())
+		w.WriteString(" >= ")
 		switch vi := column.(type) {
 		case sequel.SQLColumnClause[T]:
-			w.WriteString(vi.ColumnName())
-			w.WriteString(" >= ")
 			w.WriteString(vi.SQLColumn(w.Var(vi.Convert(value))))
 		case sequel.ColumnConvertClause[T]:
-			w.WriteString(vi.ColumnName())
-			w.WriteString(" >= ")
 			w.WriteString(w.Var(vi.Convert(value)))
 		default:
-			w.WriteString(vi.ColumnName())
-			w.WriteString(" >= ")
 			w.WriteString(w.Var(value))
 		}
 	}
@@ -152,18 +136,14 @@ func GreaterThanOrEqual[T comparable](column sequel.ColumnClause[T], value T) se
 
 func LessThan[T comparable](column sequel.ColumnClause[T], value T) sequel.WhereClause {
 	return func(w sequel.StmtWriter) {
+		w.WriteString(column.ColumnName())
+		w.WriteString(" < ")
 		switch vi := column.(type) {
 		case sequel.SQLColumnClause[T]:
-			w.WriteString(vi.ColumnName())
-			w.WriteString(" < ")
 			w.WriteString(vi.SQLColumn(w.Var(vi.Convert(value))))
 		case sequel.ColumnConvertClause[T]:
-			w.WriteString(vi.ColumnName())
-			w.WriteString(" < ")
 			w.WriteString(w.Var(vi.Convert(value)))
 		default:
-			w.WriteString(vi.ColumnName())
-			w.WriteString(" < ")
 			w.WriteString(w.Var(value))
 		}
 	}
@@ -171,18 +151,14 @@ func LessThan[T comparable](column sequel.ColumnClause[T], value T) sequel.Where
 
 func LessThanOrEqual[T comparable](column sequel.ColumnClause[T], value T) sequel.WhereClause {
 	return func(w sequel.StmtWriter) {
+		w.WriteString(column.ColumnName())
+		w.WriteString(" <= ")
 		switch vi := column.(type) {
 		case sequel.SQLColumnClause[T]:
-			w.WriteString(vi.ColumnName())
-			w.WriteString(" <= ")
 			w.WriteString(vi.SQLColumn(w.Var(vi.Convert(value))))
 		case sequel.ColumnConvertClause[T]:
-			w.WriteString(vi.ColumnName())
-			w.WriteString(" <= ")
 			w.WriteString(w.Var(vi.Convert(value)))
 		default:
-			w.WriteString(vi.ColumnName())
-			w.WriteString(" <= ")
 			w.WriteString(w.Var(value))
 		}
 	}
@@ -190,18 +166,14 @@ func LessThanOrEqual[T comparable](column sequel.ColumnClause[T], value T) seque
 
 func Like[T comparable](column sequel.ColumnClause[T], value T) sequel.WhereClause {
 	return func(w sequel.StmtWriter) {
+		w.WriteString(column.ColumnName())
+		w.WriteString(" LIKE ")
 		switch vi := column.(type) {
 		case sequel.SQLColumnClause[T]:
-			w.WriteString(vi.ColumnName())
-			w.WriteString(" LIKE ")
 			w.WriteString(vi.SQLColumn(w.Var(vi.Convert(value))))
 		case sequel.ColumnConvertClause[T]:
-			w.WriteString(vi.ColumnName())
-			w.WriteString(" LIKE ")
 			w.WriteString(w.Var(vi.Convert(value)))
 		default:
-			w.WriteString(vi.ColumnName())
-			w.WriteString(" LIKE ")
 			w.WriteString(w.Var(value))
 		}
 	}
@@ -209,18 +181,14 @@ func Like[T comparable](column sequel.ColumnClause[T], value T) sequel.WhereClau
 
 func NotLike[T comparable](column sequel.ColumnClause[T], value T) sequel.WhereClause {
 	return func(w sequel.StmtWriter) {
+		w.WriteString(column.ColumnName())
+		w.WriteString(" NOT LIKE ")
 		switch vi := column.(type) {
 		case sequel.SQLColumnClause[T]:
-			w.WriteString(vi.ColumnName())
-			w.WriteString(" NOT LIKE ")
 			w.WriteString(vi.SQLColumn(w.Var(vi.Convert(value))))
 		case sequel.ColumnConvertClause[T]:
-			w.WriteString(vi.ColumnName())
-			w.WriteString(" NOT LIKE ")
 			w.WriteString(w.Var(vi.Convert(value)))
 		default:
-			w.WriteString(vi.ColumnName())
-			w.WriteString(" NOT LIKE ")
 			w.WriteString(w.Var(value))
 		}
 	}
@@ -242,22 +210,18 @@ func IsNotNull[T any](column sequel.ColumnClause[T]) sequel.WhereClause {
 
 func Between[T comparable](column sequel.ColumnClause[T], from, to T) sequel.WhereClause {
 	return func(w sequel.StmtWriter) {
+		w.WriteString(column.ColumnName())
+		w.WriteString(" BETWEEN ")
 		switch vi := column.(type) {
 		case sequel.SQLColumnClause[T]:
-			w.WriteString(vi.ColumnName())
-			w.WriteString(" BETWEEN ")
 			w.WriteString(vi.SQLColumn(w.Var(vi.Convert(from))))
 			w.WriteString(" AND ")
 			w.WriteString(vi.SQLColumn(w.Var(vi.Convert(to))))
 		case sequel.ColumnConvertClause[T]:
-			w.WriteString(vi.ColumnName())
-			w.WriteString(" BETWEEN ")
 			w.WriteString(w.Var(vi.Convert(from)))
 			w.WriteString(" AND ")
 			w.WriteString(w.Var(vi.Convert(to)))
 		default:
-			w.WriteString(vi.ColumnName())
-			w.WriteString(" BETWEEN ")
 			w.WriteString(w.Var(from))
 			w.WriteString(" AND ")
 			w.WriteString(w.Var(to))
@@ -267,22 +231,18 @@ func Between[T comparable](column sequel.ColumnClause[T], from, to T) sequel.Whe
 
 func NotBetween[T comparable](column sequel.ColumnClause[T], from, to T) sequel.WhereClause {
 	return func(w sequel.StmtWriter) {
+		w.WriteString(column.ColumnName())
+		w.WriteString(" NOT BETWEEN ")
 		switch vi := column.(type) {
 		case sequel.SQLColumnClause[T]:
-			w.WriteString(vi.ColumnName())
-			w.WriteString(" NOT BETWEEN ")
 			w.WriteString(vi.SQLColumn(w.Var(vi.Convert(from))))
 			w.WriteString(" AND ")
 			w.WriteString(vi.SQLColumn(w.Var(vi.Convert(to))))
 		case sequel.ColumnConvertClause[T]:
-			w.WriteString(vi.ColumnName())
-			w.WriteString(" NOT BETWEEN ")
 			w.WriteString(w.Var(vi.Convert(from)))
 			w.WriteString(" AND ")
 			w.WriteString(w.Var(vi.Convert(to)))
 		default:
-			w.WriteString(vi.ColumnName())
-			w.WriteString(" NOT BETWEEN ")
 			w.WriteString(w.Var(from))
 			w.WriteString(" AND ")
 			w.WriteString(w.Var(to))
@@ -292,18 +252,14 @@ func NotBetween[T comparable](column sequel.ColumnClause[T], from, to T) sequel.
 
 func Set[T any](column sequel.ColumnClause[T], value T) sequel.SetClause {
 	return func(w sequel.StmtWriter) {
+		w.WriteString(column.ColumnName())
+		w.WriteString(" = ")
 		switch vi := column.(type) {
 		case sequel.SQLColumnClause[T]:
-			w.WriteString(vi.ColumnName())
-			w.WriteString(" = ")
 			w.WriteString(vi.SQLColumn(w.Var(vi.Convert(value))))
 		case sequel.ColumnConvertClause[T]:
-			w.WriteString(vi.ColumnName())
-			w.WriteString(" = ")
 			w.WriteString(w.Var(vi.Convert(value)))
 		default:
-			w.WriteString(vi.ColumnName())
-			w.WriteString(" = ")
 			w.WriteString(w.Var(value))
 		}
 	}

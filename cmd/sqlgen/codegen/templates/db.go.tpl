@@ -582,7 +582,8 @@ func UpsertOne[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Co
 		if !override {
 			stmt.WriteString("INSERT IGNORE INTO ")
 			stmt.WriteString(DbTable(model))
-			stmt.WriteString(" (" + strings.Join(columns, ","))
+			stmt.WriteString(" (")
+			stmt.WriteString(strings.Join(columns, ","))
 			stmt.WriteString(") VALUES (")
 			stmt.WriteString(strings.Repeat(",?", len(columns))[1:] + ");")
 		} else {
@@ -605,13 +606,13 @@ func UpsertOne[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Co
 				}
 				if first {
 					stmt.WriteString(columns[i])
-					stmt.WriteString(" =VALUES(")
+					stmt.WriteString("=VALUES(")
 					stmt.WriteString(columns[i])
 					stmt.WriteString(")")
 				} else {
 					stmt.WriteString(",")
 					stmt.WriteString(columns[i])
-					stmt.WriteString(" =VALUES(")
+					stmt.WriteString("=VALUES(")
 					stmt.WriteString(columns[i])
 					stmt.WriteString(")")
 				}
@@ -1564,76 +1565,78 @@ type SelectStmt struct {
 	Limit     uint16
 }
 
+// WriteSQL writes a complete SELECT statement. FromTable must be resolved by the caller.
+func (s SelectStmt) WriteSQL(w sequel.Stmt) error {
+	if s.FromTable == "" {
+		return fmt.Errorf("missing table name for SELECT statement")
+	}
+	w.WriteString("SELECT ")
+	if len(s.Select) > 0 {
+		w.WriteString(strings.Join(s.Select, ","))
+	} else {
+		w.WriteString("*")
+	}
+	w.WriteString(" FROM ")
+	w.WriteString(s.FromTable)
+	if s.Where != nil {
+		w.WriteString(" WHERE ")
+		s.Where(w)
+	}
+	if n := len(s.GroupBy); n > 0 {
+		w.WriteString(" GROUP BY ")
+		w.WriteString(s.GroupBy[0])
+		for i := 1; i < n; i++ {
+			w.WriteString(",")
+			w.WriteString(s.GroupBy[i])
+		}
+	}
+	if n := len(s.OrderBy); n > 0 {
+		w.WriteString(" ORDER BY ")
+		w.WriteString(s.OrderBy[0].ColumnName())
+		if !s.OrderBy[0].Asc() {
+			w.WriteString(" DESC")
+		}
+		for i := 1; i < n; i++ {
+			w.WriteString(",")
+			w.WriteString(s.OrderBy[i].ColumnName())
+			if !s.OrderBy[i].Asc() {
+				w.WriteString(" DESC")
+			}
+		}
+	}
+	if s.Limit > 0 {
+		w.WriteString(" LIMIT ")
+		w.WriteString(strconv.Itoa((int)(s.Limit)))
+	}
+	if s.Offset > 0 {
+		w.WriteString(" OFFSET ")
+		w.WriteString(strconv.FormatUint(s.Offset, 10))
+	}
+	w.WriteString(";")
+	return nil
+}
+
 func QueryStmt[T any, Ptr sequel.PtrScanner[T]](ctx context.Context, db sequel.DB, stmtFunc func(T) SelectStmt) ([]T, error) {
 	var v T
 	selectStmt := stmtFunc(v)
 	stmt := AcquireStmt()
-	stmt.WriteString("SELECT ")
-	if len(selectStmt.Select) > 0 {
-		stmt.WriteString(strings.Join(selectStmt.Select, ","))
-	} else {
-		switch vj := any(v).(type) {
-		case sequel.Columner:
-			stmt.WriteString(strings.Join(TableColumns(vj), ","))
-		default:
-			stmt.WriteString("*")
+	if len(selectStmt.Select) == 0 {
+		if cols, ok := any(v).(sequel.Columner); ok {
+			selectStmt.Select = TableColumns(cols)
 		}
 	}
 	if selectStmt.FromTable != "" {
-		stmt.WriteString(" FROM ")
-		stmt.WriteString(dbName(v))
-		stmt.WriteString(selectStmt.FromTable)
+		selectStmt.FromTable = dbName(v) + selectStmt.FromTable
+	} else if table, ok := any(v).(sequel.Tabler); ok {
+		selectStmt.FromTable = DbTable(table)
 	} else {
-		switch vj := any(v).(type) {
-		case sequel.Tabler:
-			stmt.WriteString(" FROM ")
-			stmt.WriteString(DbTable(vj))
-		default:
-			ReleaseStmt(stmt)
-			return nil, fmt.Errorf("missing table name for model %T", v)
-		}
+		ReleaseStmt(stmt)
+		return nil, fmt.Errorf("missing table name for model %T", v)
 	}
-	if selectStmt.Where != nil {
-		stmt.WriteString(" WHERE ")
-		selectStmt.Where(stmt)
+	if err := selectStmt.WriteSQL(stmt); err != nil {
+		ReleaseStmt(stmt)
+		return nil, err
 	}
-	if n := len(selectStmt.GroupBy); n > 0 {
-		stmt.WriteString(" GROUP BY ")
-		stmt.WriteString(selectStmt.GroupBy[0])
-		for i := 1; i < n; i++ {
-			stmt.WriteString(",")
-			stmt.WriteString(selectStmt.GroupBy[i])
-		}
-	}
-	if n := len(selectStmt.OrderBy); n > 0 {
-		if selectStmt.OrderBy[0].Asc() {
-			stmt.WriteString(" ORDER BY ")
-			stmt.WriteString(selectStmt.OrderBy[0].ColumnName())
-		} else {
-			stmt.WriteString(" ORDER BY ")
-			stmt.WriteString(selectStmt.OrderBy[0].ColumnName())
-			stmt.WriteString(" DESC")
-		}
-		for i := 1; i < n; i++ {
-			if selectStmt.OrderBy[i].Asc() {
-				stmt.WriteString(",")
-				stmt.WriteString(selectStmt.OrderBy[i].ColumnName())
-			} else {
-				stmt.WriteString(",")
-				stmt.WriteString(selectStmt.OrderBy[i].ColumnName())
-				stmt.WriteString(" DESC")
-			}
-		}
-	}
-	if selectStmt.Limit > 0 {
-		stmt.WriteString(" LIMIT ")
-		stmt.WriteString(strconv.Itoa((int)(selectStmt.Limit)))
-	}
-	if selectStmt.Offset > 0 {
-		stmt.WriteString(" OFFSET ")
-		stmt.WriteString(strconv.FormatUint(selectStmt.Offset, 10))
-	}
-	stmt.WriteString(";")
 	rows, err := db.QueryContext(ctx, stmt.Query(), stmt.Args()...)
 	ReleaseStmt(stmt)
 	if err != nil {
@@ -1756,6 +1759,93 @@ type DeleteStmt struct {
 	{{ end -}}
 }
 
+// WriteSQL writes a complete UPDATE statement. Table must be resolved by the caller.
+func (s UpdateStmt) WriteSQL(w sequel.Stmt) error {
+	if s.Table == "" {
+		return fmt.Errorf("missing table name for UPDATE statement")
+	}
+	w.WriteString("UPDATE ")
+	w.WriteString(s.Table)
+	if len(s.Set) > 0 {
+		w.WriteString(" SET ")
+		s.Set[0](w)
+		for i := 1; i < len(s.Set); i++ {
+			w.WriteString(",")
+			s.Set[i](w)
+		}
+	}
+	if s.Where != nil {
+		w.WriteString(" WHERE ")
+		s.Where(w)
+	}
+	if n := len(s.OrderBy); n > 0 {
+		if s.OrderBy[0].Asc() {
+			w.WriteString(" ORDER BY ")
+			w.WriteString(s.OrderBy[0].ColumnName())
+		} else {
+			w.WriteString(" ORDER BY ")
+			w.WriteString(s.OrderBy[0].ColumnName())
+			w.WriteString(" DESC")
+		}
+		for i := 1; i < n; i++ {
+			if s.OrderBy[i].Asc() {
+				w.WriteString(",")
+				w.WriteString(s.OrderBy[i].ColumnName())
+				w.WriteString(" ASC")
+			} else {
+				w.WriteString(",")
+				w.WriteString(s.OrderBy[i].ColumnName())
+				w.WriteString(" DESC")
+			}
+		}
+	}
+	{{ if ne driver "postgres" -}}
+	{{- /* postgres */ -}}
+	if s.Limit > 0 {
+		w.WriteString(" LIMIT ")
+		w.WriteString(strconv.Itoa((int)(s.Limit)))
+	}
+	{{ end -}}
+	w.WriteString(";")
+	return nil
+}
+
+// WriteSQL writes a complete DELETE FROM statement. FromTable must be resolved by the caller.
+func (s DeleteStmt) WriteSQL(w sequel.Stmt) error {
+	if s.FromTable == "" {
+		return fmt.Errorf("missing table name for DELETE FROM statement")
+	}
+	w.WriteString("DELETE FROM ")
+	w.WriteString(s.FromTable)
+	if s.Where != nil {
+		w.WriteString(" WHERE ")
+		s.Where(w)
+	}
+	if n := len(s.OrderBy); n > 0 {
+		w.WriteString(" ORDER BY ")
+		w.WriteString(s.OrderBy[0].ColumnName())
+		if !s.OrderBy[0].Asc() {
+			w.WriteString(" DESC")
+		}
+		for i := 1; i < n; i++ {
+			w.WriteString(",")
+			w.WriteString(s.OrderBy[i].ColumnName())
+			if !s.OrderBy[i].Asc() {
+				w.WriteString(" DESC")
+			}
+		}
+	}
+	{{ if ne driver "postgres" -}}
+	{{- /* postgres */ -}}
+	if s.Limit > 0 {
+		w.WriteString(" LIMIT ")
+		w.WriteString(strconv.Itoa((int)(s.Limit)))
+	}
+	{{ end -}}
+	w.WriteString(";")
+	return nil
+}
+
 func ExecStmt[T any, Stmt interface {
 	UpdateStmt | DeleteStmt
 }](ctx context.Context, db sequel.DB, stmtFunc func(T) Stmt) (sql.Result, error) {
@@ -1763,99 +1853,26 @@ func ExecStmt[T any, Stmt interface {
 	stmt := AcquireStmt()
 	defer ReleaseStmt(stmt)
 
+	var err error
 	switch vi := any(stmtFunc(v)).(type) {
 	case UpdateStmt:
 		if vt, ok := any(v).(sequel.Tabler); ok {
-			stmt.WriteString("UPDATE ")
-			stmt.WriteString(DbTable(vt))
+			vi.Table = DbTable(vt)
 		} else {
-			stmt.WriteString("UPDATE ")
-			stmt.WriteString(dbName(v))
-			stmt.WriteString(vi.Table)
+			vi.Table = dbName(v) + vi.Table
 		}
-		if len(vi.Set) > 0 {
-			stmt.WriteString(" SET ")
-			vi.Set[0](stmt)
-			for i := 1; i < len(vi.Set); i++ {
-				stmt.WriteString(",")
-				vi.Set[i](stmt)
-			}
-		}
-		if vi.Where != nil {
-			stmt.WriteString(" WHERE ")
-			vi.Where(stmt)
-		}
-		if n := len(vi.OrderBy); n > 0 {
-			if vi.OrderBy[0].Asc() {
-				stmt.WriteString(" ORDER BY ")
-				stmt.WriteString(vi.OrderBy[0].ColumnName())
-			} else {
-				stmt.WriteString(" ORDER BY ")
-				stmt.WriteString(vi.OrderBy[0].ColumnName())
-				stmt.WriteString(" DESC")
-			}
-			for i := 1; i < n; i++ {
-				if vi.OrderBy[i].Asc() {
-					stmt.WriteString(",")
-					stmt.WriteString(vi.OrderBy[i].ColumnName())
-					stmt.WriteString(" ASC")
-				} else {
-					stmt.WriteString(",")
-					stmt.WriteString(vi.OrderBy[i].ColumnName())
-					stmt.WriteString(" DESC")
-				}
-			}
-		}
-		{{ if ne driver "postgres" -}}
-		{{- /* postgres */ -}}
-		if vi.Limit > 0 {
-			stmt.WriteString(" LIMIT ")
-			stmt.WriteString(strconv.Itoa((int)(vi.Limit)))
-		}
-		{{ end -}}
-
+		err = vi.WriteSQL(stmt)
 	case DeleteStmt:
 		if vt, ok := any(v).(sequel.Tabler); ok {
-			stmt.WriteString("DELETE FROM ")
-			stmt.WriteString(DbTable(vt))
+			vi.FromTable = DbTable(vt)
 		} else {
-			stmt.WriteString("DELETE FROM ")
-			stmt.WriteString(dbName(v))
-			stmt.WriteString(vi.FromTable)
+			vi.FromTable = dbName(v) + vi.FromTable
 		}
-		if vi.Where != nil {
-			stmt.WriteString(" WHERE ")
-			vi.Where(stmt)
-		}
-		if n := len(vi.OrderBy); n > 0 {
-			if vi.OrderBy[0].Asc() {
-				stmt.WriteString(" ORDER BY ")
-				stmt.WriteString(vi.OrderBy[0].ColumnName())
-			} else {
-				stmt.WriteString(" ORDER BY ")
-				stmt.WriteString(vi.OrderBy[0].ColumnName())
-				stmt.WriteString(" DESC")
-			}
-			for i := 1; i < n; i++ {
-				if vi.OrderBy[i].Asc() {
-					stmt.WriteString(",")
-					stmt.WriteString(vi.OrderBy[i].ColumnName())
-				} else {
-					stmt.WriteString(",")
-					stmt.WriteString(vi.OrderBy[i].ColumnName())
-					stmt.WriteString(" DESC")
-				}
-			}
-		}
-		{{ if ne driver "postgres" -}}
-		{{- /* postgres */ -}}
-		if vi.Limit > 0 {
-			stmt.WriteString(" LIMIT ")
-			stmt.WriteString(strconv.Itoa((int)(vi.Limit)))
-		}
-		{{ end -}}
+		err = vi.WriteSQL(stmt)
 	}
-	stmt.WriteString(";")
+	if err != nil {
+		return nil, err
+	}
 	return db.ExecContext(ctx, stmt.Query(), stmt.Args()...)
 }
 

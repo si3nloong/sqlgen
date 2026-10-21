@@ -1,6 +1,6 @@
 module github.com/si3nloong/sqlgen/examples
 
-go 1.25.11
+go 1.27
 
 require (
 	cloud.google.com/go v0.123.0

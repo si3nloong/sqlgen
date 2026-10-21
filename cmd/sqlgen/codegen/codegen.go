@@ -276,6 +276,19 @@ func Generate(c *Config) error {
 		); err != nil {
 			return err
 		}
+
+		base := filepath.Base(cfg.Database.Filename)
+		ext := filepath.Ext(cfg.Database.Filename)
+		if err := renderTemplate(
+			generator,
+			"db.go127.go.tpl",
+			"",
+			cfg.Database.Package,
+			cfg.Database.Dir,
+			strings.TrimSuffix(base, ext)+"_go127"+ext,
+		); err != nil {
+			return err
+		}
 	}
 
 	if cfg.Database.Operator != nil {
