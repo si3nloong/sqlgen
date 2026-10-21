@@ -368,11 +368,10 @@ func UpsertOne[T sequel.KeyValuer, Ptr interface{
 			panic("unreachable")
 		}
 	}
-	stmt.WriteString(")")
 	if opt.doNothing {
-		stmt.WriteString(" DO NOTHING")
+		stmt.WriteString(") DO NOTHING")
 	} else {
-		stmt.WriteString(" DO UPDATE SET ")
+		stmt.WriteString(") DO UPDATE SET ")
 		omitDict := make(map[string]struct{})
 		noOfCols = len(columns)
 		if omitter, ok := any(model).(setOnUpsertOmitter); ok {
@@ -381,22 +380,26 @@ func UpsertOne[T sequel.KeyValuer, Ptr interface{
 		for i := range opt.omitFields {
 			omitDict[opt.omitFields[i]] = struct{}{}
 		}
-		first := true
-		for i := 0; i < noOfCols; i++ {
+		i := 0
+		// Write the first included column without a leading comma.
+		for ; i < noOfCols; i++ {
 			if _, ok := omitDict[columns[i]]; ok {
 				continue
 			}
-			if first {
-				stmt.WriteString(columns[i])
-				stmt.WriteString(" = EXCLUDED.")
-				stmt.WriteString(columns[i])
-			} else {
-				stmt.WriteString(",")
-				stmt.WriteString(columns[i])
-				stmt.WriteString(" = EXCLUDED.")
-				stmt.WriteString(columns[i])
+			stmt.WriteString(columns[i])
+			stmt.WriteString(" = EXCLUDED.")
+			stmt.WriteString(columns[i])
+			i++
+			break
+		}
+		for ; i < noOfCols; i++ {
+			if _, ok := omitDict[columns[i]]; ok {
+				continue
 			}
-			first = false
+			stmt.WriteString(",")
+			stmt.WriteString(columns[i])
+			stmt.WriteString(" = EXCLUDED.")
+			stmt.WriteString(columns[i])
 		}
 		clear(omitDict)
 	}
@@ -507,11 +510,10 @@ func Upsert[T interface {
 			panic("unreachable")
 		}
 	}
-	stmt.WriteString(")")
 	if opt.doNothing {
-		stmt.WriteString(" DO NOTHING")
+		stmt.WriteString(") DO NOTHING")
 	} else {
-		stmt.WriteString(" DO UPDATE SET ")
+		stmt.WriteString(") DO UPDATE SET ")
 		omitDict := make(map[string]struct{})
 		if omitter, ok := any(model).(setOnUpsertOmitter); ok {
 			opt.omitFields = append(opt.omitFields, omitter.OnUpsertOmitColumns()...)
@@ -525,16 +527,12 @@ func Upsert[T interface {
 			if _, ok := omitDict[columns[i]]; ok {
 				continue
 			}
-			if first {
-				stmt.WriteString(columns[i])
-				stmt.WriteString(" = EXCLUDED.")
-				stmt.WriteString(columns[i])
-			} else {
+			if !first {
 				stmt.WriteString(",")
-				stmt.WriteString(columns[i])
-				stmt.WriteString(" = EXCLUDED.")
-				stmt.WriteString(columns[i])
 			}
+			stmt.WriteString(columns[i])
+			stmt.WriteString(" = EXCLUDED.")
+			stmt.WriteString(columns[i])
 			first = false
 		}
 		clear(omitDict)
