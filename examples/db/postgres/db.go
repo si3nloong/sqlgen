@@ -167,9 +167,9 @@ type upsertOpts struct {
 }
 type UpsertOption func(*upsertOpts)
 
-func WithDoNothing(doNothing bool) UpsertOption {
+func WithDoNothing() UpsertOption {
 	return func(opt *upsertOpts) {
-		opt.doNothing = doNothing
+		opt.doNothing = true
 	}
 }
 
@@ -213,7 +213,6 @@ func UpsertOne[T sequel.KeyValuer, Ptr interface {
 		stmt.WriteString(DbTable(model))
 		stmt.WriteString(" (")
 		writej(stmt, columns)
-		stmt.WriteString(") VALUES ")
 	case sequel.PrimaryKeyer:
 		pkName, _, _ := v.PK()
 		opt.omitFields = append(opt.omitFields, pkName)
@@ -221,7 +220,6 @@ func UpsertOne[T sequel.KeyValuer, Ptr interface {
 		stmt.WriteString(DbTable(model))
 		stmt.WriteString(" (")
 		writej(stmt, columns)
-		stmt.WriteString(") VALUES ")
 	case sequel.CompositeKeyer:
 		keyNames, _, _ := v.CompositeKey()
 		opt.omitFields = append(opt.omitFields, keyNames...)
@@ -229,10 +227,10 @@ func UpsertOne[T sequel.KeyValuer, Ptr interface {
 		stmt.WriteString(DbTable(model))
 		stmt.WriteString(" (")
 		writej(stmt, columns)
-		stmt.WriteString(") VALUES ")
 	default:
 		panic("unreachable")
 	}
+	stmt.WriteString(") VALUES ")
 	stmt.WriteString(model.SQLInsertPlaceholders(0))
 	stmt.WriteString(" ON CONFLICT(")
 	if len(opt.duplicateKeys) > 0 {
@@ -254,7 +252,7 @@ func UpsertOne[T sequel.KeyValuer, Ptr interface {
 		}
 	}
 	if opt.doNothing {
-		stmt.WriteString(") DO NOTHING")
+		stmt.WriteString(") DO NOTHING RETURNING ")
 	} else {
 		stmt.WriteString(") DO UPDATE SET ")
 		omitDict := make(map[string]struct{})
@@ -287,8 +285,8 @@ func UpsertOne[T sequel.KeyValuer, Ptr interface {
 			stmt.WriteString(columns[i])
 		}
 		clear(omitDict)
+		stmt.WriteString(" RETURNING ")
 	}
-	stmt.WriteString(" RETURNING ")
 	writej(stmt, TableColumns(model))
 	stmt.WriteString(";")
 	return db.QueryRowContext(ctx, stmt.String(), values...).Scan(model.Addrs()...)
@@ -304,17 +302,17 @@ func Upsert[T interface {
 		return new(sequel.EmptyResult), nil
 	}
 
+	var opt upsertOpts
+	for i := range opts {
+		opts[i](&opt)
+	}
+
 	var (
 		model    = data[0]
 		columns  = model.Columns()
 		noOfCols = len(columns)
 		args     = make([]any, 0, noOfCols*noOfData)
-		opt      upsertOpts
 	)
-
-	for i := range opts {
-		opts[i](&opt)
-	}
 
 	var stmt = strpool.AcquireString()
 	switch v := any(model).(type) {
@@ -518,7 +516,7 @@ func UpdateByPK[T sequel.KeyValuer](ctx context.Context, db sequel.DB, model T) 
 		stmt.WriteString(" WHERE ")
 		stmt.WriteString(pkName)
 		stmt.WriteString(" = ")
-		stmt.WriteString(wrapVar(noOfColumn + 2))
+		stmt.WriteString(wrapVar(noOfColumn + 1))
 		stmt.WriteString(";")
 		result, err := db.ExecContext(ctx, stmt.String(), append(values, pk)...)
 		strpool.ReleaseString(stmt)
@@ -554,8 +552,6 @@ func UpdateByPK[T sequel.KeyValuer](ctx context.Context, db sequel.DB, model T) 
 		noOfKey := len(keyNames)
 		for i := 1; i < noOfKey; i++ {
 			stmt.WriteString(",")
-			stmt.WriteString(columns[i])
-			stmt.WriteString(" = ")
 			stmt.WriteString(wrapVar(noOfColumn + i + 1))
 		}
 		stmt.WriteString(");")

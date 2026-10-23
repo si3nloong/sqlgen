@@ -1,11 +1,13 @@
 package codegen
 
 import (
+	"fmt"
 	"go/ast"
 	"go/importer"
 	"go/parser"
 	"go/token"
 	"go/types"
+	"runtime"
 
 	_ "embed"
 
@@ -29,13 +31,21 @@ var (
 
 func init() {
 	pkgs, err := packages.Load(&packages.Config{
+		// Standard-library types must not depend on the caller's module or workspace.
+		Dir:  runtime.GOROOT(),
 		Mode: packages.NeedTypes,
-	}, "time", "sync", "database/sql...", "encoding")
+	}, "time", "database/sql", "database/sql/driver", "encoding")
 	if err != nil {
 		panic(err)
 	}
 
 	for _, p := range pkgs {
+		if len(p.Errors) > 0 {
+			panic(fmt.Errorf("load standard-library package %s: %v", p.ID, p.Errors))
+		}
+		if p.Types == nil || !p.Types.Complete() {
+			panic(fmt.Errorf("load standard-library package %s: incomplete type information", p.ID))
+		}
 		scope := p.Types.Scope()
 		switch p.ID {
 		case "database/sql/driver":
