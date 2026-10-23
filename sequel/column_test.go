@@ -1,10 +1,31 @@
 package sequel
 
 import (
+	"database/sql"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
+
+func TestValueColumn(t *testing.T) {
+	for _, tc := range []struct {
+		name  string
+		value sql.NullString
+		want  any
+	}{
+		{"valid", sql.NullString{String: "Alice", Valid: true}, "Alice"},
+		{"null", sql.NullString{}, nil},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			c := ValueColumn("name", tc.value)
+			require.Equal(t, "name", c.ColumnName())
+			require.Equal(t, tc.value, c.Value())
+			value, err := c.Value().Value()
+			require.NoError(t, err)
+			require.Equal(t, tc.want, value)
+		})
+	}
+}
 
 func TestColumn(t *testing.T) {
 	type Str string

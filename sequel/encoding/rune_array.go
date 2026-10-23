@@ -18,7 +18,7 @@ func RuneArrayScanner[T ~rune](v []T, size int) sql.Scanner {
 func (s *runeArrScanner[T]) Scan(v any) error {
 	switch vi := v.(type) {
 	case nil:
-		s.v = make([]T, s.size)
+		clear(s.v[:s.size])
 		return nil
 	case []byte:
 		i := int(0)
@@ -32,11 +32,13 @@ func (s *runeArrScanner[T]) Scan(v any) error {
 			vi = vi[size:]
 		}
 	case string:
-		if len(vi) > s.size {
-			return fmt.Errorf(`sequel/encoding: rune array overflow, should be %d, but it is %d`, s.size, len(vi))
+		if n := utf8.RuneCountInString(vi); n > s.size {
+			return fmt.Errorf(`sequel/encoding: rune array overflow, should be %d, but it is %d`, s.size, n)
 		}
-		for i := range vi {
-			s.v[i] = T(vi[i])
+		i := 0
+		for _, r := range vi {
+			s.v[i] = T(r)
+			i++
 		}
 	default:
 		return fmt.Errorf(`sequel/encoding: unsupported scan type %T for [%d]~rune`, vi, s.size)

@@ -95,3 +95,17 @@ func TestMarshalTimeList(t *testing.T) {
 		require.Equal(t, `[]`, MarshalTimeList([]time.Time{}))
 	})
 }
+
+func TestMarshalEmptySlices(t *testing.T) {
+	require.Equal(t, "[]", MarshalStringSlice([]string(nil)))
+	require.Equal(t, "[]", MarshalStringSlice([]string{}))
+	require.Equal(t, "[]", MarshalUintSlice([]uint(nil)))
+	require.Equal(t, "[]", MarshalUintSlice([]uint{}))
+}
+
+func TestMarshalTimeValues(t *testing.T) {
+	first := time.Date(2026, 1, 2, 3, 4, 5, 0, time.UTC)
+	second := time.Date(2026, 2, 3, 4, 5, 6, 0, time.FixedZone("offset", 8*60*60))
+	require.Equal(t, `["2026-01-02T03:04:05Z"]`, MarshalTimeList([]time.Time{first}))
+	require.Equal(t, `["2026-01-02T03:04:05Z","2026-02-03T04:05:06+08:00"]`, MarshalTimeList([]time.Time{first, second}))
+}

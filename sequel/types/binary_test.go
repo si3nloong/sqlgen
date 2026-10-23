@@ -63,3 +63,30 @@ func TestBinaryUnmarshaler(t *testing.T) {
 	// Compare the fields of yourInstance with the expected values
 	// Add assertions based on your specific implementation
 }
+
+func TestBinaryUnmarshalerRejectsUnsupportedTypes(t *testing.T) {
+	for _, tc := range []struct {
+		name  string
+		input any
+	}{
+		{"nil", nil},
+		{"string", "YWJjZA=="},
+		{"integer", int64(42)},
+		{"boolean", true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			v := base64Text("unchanged")
+			err := BinaryUnmarshaler(&v).Scan(tc.input)
+			require.EqualError(t, err, "sequel/types: binary must be []byte")
+			require.Equal(t, base64Text("unchanged"), v)
+		})
+	}
+}
+
+func TestBinaryUnmarshalerPropagatesDecodeError(t *testing.T) {
+	v := base64Text("unchanged")
+	err := BinaryUnmarshaler(&v).Scan([]byte("!invalid base64!"))
+	var decodeErr base64.CorruptInputError
+	require.ErrorAs(t, err, &decodeErr)
+	require.Equal(t, base64Text("unchanged"), v)
+}
