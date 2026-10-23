@@ -1,6 +1,7 @@
 package encoding
 
 import (
+	"database/sql"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -71,4 +72,13 @@ func TestBool(t *testing.T) {
 		require.NoError(t, v.Scan(false))
 		require.Equal(t, CBool(false), flag)
 	})
+}
+
+func TestBoolScannerConversions(t *testing.T) {
+	checkScanner(t, func(v *bool) sql.Scanner { return BoolScanner[bool](v) }, func(v **bool) sql.Scanner { return BoolScanner[bool](v) },
+		[]scanCase[bool]{{true, true}, {false, false}, {int64(2), true}, {int64(0), false}, {"true", true}, {[]byte("false"), false}}, []any{"invalid", []byte("invalid"), 1.5})
+	var b bool
+	require.Error(t, BoolScanner[bool](&b, true).Scan("true"))
+	require.NoError(t, BoolScanner[bool](&b, true).Scan(true))
+	require.True(t, b)
 }

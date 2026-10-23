@@ -10,50 +10,121 @@ import (
 func (Custom) TableName() string {
 	return "custom"
 }
+func (Custom) HasPK() {}
+func (v *Custom) SetPK(val int) {
+	v.ID = val
+}
+func (v Custom) PK() (string, int, any) {
+	return "id", 0, (int64)(v.ID)
+}
 func (Custom) Columns() []string {
-	return []string{"text", "e", "num"} // 3
+	return []string{"id", "text", "e", "ptr_str", "uint_16", "num"} // 6
 }
 func (v Custom) Values() []any {
 	return []any{
-		(string)(v.Str), // 0 - text
-		(int64)(v.Enum), // 1 - e
-		(int64)(v.Num),  // 2 - num
+		(int64)(v.ID),   // 0 - id
+		v.StrValue(),    // 1 - text
+		v.EnumValue(),   // 2 - e
+		v.PtrStrValue(), // 3 - ptr_str
+		v.Uint16Value(), // 4 - uint_16
+		(int64)(v.Num),  // 5 - num
 	}
 }
 func (v *Custom) Addrs() []any {
+	if v.PtrStr == nil {
+		v.PtrStr = new(longText)
+	}
 	return []any{
-		encoding.StringScanner[longText](&v.Str), // 0 - text
-		encoding.IntScanner[Enum](&v.Enum),       // 1 - e
-		encoding.Uint16Scanner[uint16](&v.Num),   // 2 - num
+		encoding.IntScanner[int](&v.ID),               // 0 - id
+		encoding.StringScanner[longText](&v.Str),      // 1 - text
+		encoding.IntScanner[Enum](&v.Enum),            // 2 - e
+		encoding.JSONScanner(&v.PtrStr),               // 3 - ptr_str
+		encoding.Uint16Scanner[uint16Enum](&v.Uint16), // 4 - uint_16
+		encoding.Uint16Scanner[uint16](&v.Num),        // 5 - num
 	}
 }
-func (Custom) InsertPlaceholders(row int) string {
-	return "(?,?,?)" // 3
+func (Custom) SQLInsertPlaceholders(row int) string {
+	return "(?,?,?,?,?,?)" // 6
 }
 func (v Custom) InsertOneStmt() (string, []any) {
-	return "INSERT INTO `custom` (`text`,`e`,`num`) VALUES (?,?,?);", v.Values()
+	return "INSERT INTO `custom` (`id`,`text`,`e`,`ptr_str`,`uint_16`,`num`) VALUES (?,?,?,?,?,?);", v.Values()
+}
+func (v Custom) FindOneByPKStmt() (string, []any) {
+	return "SELECT `id`,`text`,`e`,`ptr_str`,`uint_16`,`num` FROM `custom` WHERE `id` = ? LIMIT 1;", []any{(int64)(v.ID)}
+}
+func (v Custom) UpdateOneByPKStmt() (string, []any) {
+	return "UPDATE `custom` SET `text` = ?,`e` = ?,`ptr_str` = ?,`uint_16` = ?,`num` = ? WHERE `id` = ?;", []any{v.StrValue(), v.EnumValue(), v.PtrStrValue(), v.Uint16Value(), (int64)(v.Num), (int64)(v.ID)}
+}
+func (v Custom) IDValue() any {
+	return (int64)(v.ID)
 }
 func (v Custom) StrValue() any {
+	if v.Str == "" {
+		return (string)(otherStr)
+	}
 	return (string)(v.Str)
 }
 func (v Custom) EnumValue() any {
+	if v.Enum == 0 {
+		return (int64)(success)
+	}
 	return (int64)(v.Enum)
+}
+func (v Custom) PtrStrValue() any {
+	if v.PtrStr != nil {
+		return (string)(*v.PtrStr)
+	}
+	return nil
+}
+func (v Custom) Uint16Value() any {
+	return (int64)(v.Uint16)
 }
 func (v Custom) NumValue() any {
 	return (int64)(v.Num)
 }
+func (v Custom) ColumnID() sequel.ColumnConvertClause[int] {
+	return sequel.Column("id", v.ID, convertIntToValue)
+}
 func (v Custom) ColumnStr() sequel.ColumnConvertClause[longText] {
-	return sequel.Column("text", v.Str, func(val longText) any {
-		return (string)(val)
-	})
+	return sequel.Column("text", v.Str, convertLongTextToValue)
 }
 func (v Custom) ColumnEnum() sequel.ColumnConvertClause[Enum] {
-	return sequel.Column("e", v.Enum, func(val Enum) any {
-		return (int64)(val)
-	})
+	return sequel.Column("e", v.Enum, convertEnumToValue)
+}
+func (v Custom) ColumnPtrStr() sequel.ColumnConvertClause[*longText] {
+	return sequel.Column("ptr_str", v.PtrStr, convertPtrlongTextToValue)
+}
+func (v Custom) ColumnUint16() sequel.ColumnConvertClause[uint16Enum] {
+	return sequel.Column("uint_16", v.Uint16, convertUint16EnumToValue)
 }
 func (v Custom) ColumnNum() sequel.ColumnConvertClause[uint16] {
-	return sequel.Column("num", v.Num, func(val uint16) any {
-		return (int64)(val)
-	})
+	return sequel.Column("num", v.Num, convertUint16ToValue)
+}
+
+func convertUint16ToValue(val uint16) any {
+	return (int64)(val)
+}
+func convertUint16EnumToValue(val uint16Enum) any {
+	return (int64)(val)
+}
+func convertPtrlongTextToValue(val *longText) any {
+	if val != nil {
+		return (string)(*val)
+	}
+	return nil
+}
+func convertLongTextToValue(val longText) any {
+	if val == "" {
+		return (string)(otherStr)
+	}
+	return (string)(val)
+}
+func convertIntToValue(val int) any {
+	return (int64)(val)
+}
+func convertEnumToValue(val Enum) any {
+	if val == 0 {
+		return (int64)(success)
+	}
+	return (int64)(val)
 }

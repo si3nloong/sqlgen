@@ -43,12 +43,10 @@ func (f *float32Scanner[T, Addr]) Scan(v any) error {
 		case **T:
 			*(**T)(unsafe.Pointer(f.addr)) = nil
 			return nil
-		case *T:
+		default: // The destination is *T; the constraint permits only *T or **T.
 			var v T
 			*(*T)(unsafe.Pointer(f.addr)) = v
 			return nil
-		default:
-			panic("unreachable")
 		}
 	case float32:
 		val := T(vi)
@@ -56,11 +54,9 @@ func (f *float32Scanner[T, Addr]) Scan(v any) error {
 		case **T:
 			*(**T)(unsafe.Pointer(f.addr)) = &val
 			return nil
-		case *T:
+		default: // The destination is *T; the constraint permits only *T or **T.
 			*(*T)(unsafe.Pointer(f.addr)) = val
 			return nil
-		default:
-			panic("unreachable")
 		}
 	case float64:
 		val := T(vi)
@@ -68,11 +64,9 @@ func (f *float32Scanner[T, Addr]) Scan(v any) error {
 		case **T:
 			*(**T)(unsafe.Pointer(f.addr)) = &val
 			return nil
-		case *T:
+		default: // The destination is *T; the constraint permits only *T or **T.
 			*(*T)(unsafe.Pointer(f.addr)) = val
 			return nil
-		default:
-			panic("unreachable")
 		}
 	case int64:
 		val := T(vi)
@@ -80,11 +74,9 @@ func (f *float32Scanner[T, Addr]) Scan(v any) error {
 		case **T:
 			*(**T)(unsafe.Pointer(f.addr)) = &val
 			return nil
-		case *T:
+		default: // The destination is *T; the constraint permits only *T or **T.
 			*(*T)(unsafe.Pointer(f.addr)) = val
 			return nil
-		default:
-			panic("unreachable")
 		}
 	default:
 		if f.strictType {
@@ -102,11 +94,9 @@ func (f *float32Scanner[T, Addr]) Scan(v any) error {
 			case **T:
 				*(**T)(unsafe.Pointer(f.addr)) = &val
 				return nil
-			case *T:
+			default: // The destination is *T; the constraint permits only *T or **T.
 				*(*T)(unsafe.Pointer(f.addr)) = val
 				return nil
-			default:
-				panic("unreachable")
 			}
 		case string:
 			f32, err := strconv.ParseFloat(vi, 32)
@@ -118,11 +108,9 @@ func (f *float32Scanner[T, Addr]) Scan(v any) error {
 			case **T:
 				*(**T)(unsafe.Pointer(f.addr)) = &val
 				return nil
-			case *T:
+			default: // The destination is *T; the constraint permits only *T or **T.
 				*(*T)(unsafe.Pointer(f.addr)) = val
 				return nil
-			default:
-				panic("unreachable")
 			}
 		default:
 			return fmt.Errorf(`sequel/encoding: unable to scan %T to ~float32`, vi)
@@ -142,12 +130,10 @@ func (f *float64Scanner[T, Addr]) Scan(v any) error {
 		case **T:
 			*(**T)(unsafe.Pointer(f.addr)) = nil
 			return nil
-		case *T:
+		default: // The destination is *T; the constraint permits only *T or **T.
 			var v T
 			*(*T)(unsafe.Pointer(f.addr)) = v
 			return nil
-		default:
-			panic("unreachable")
 		}
 	case float32:
 		val := T(vi)
@@ -155,11 +141,9 @@ func (f *float64Scanner[T, Addr]) Scan(v any) error {
 		case **T:
 			*(**T)(unsafe.Pointer(f.addr)) = &val
 			return nil
-		case *T:
+		default: // The destination is *T; the constraint permits only *T or **T.
 			*(*T)(unsafe.Pointer(f.addr)) = val
 			return nil
-		default:
-			panic("unreachable")
 		}
 	case float64:
 		val := T(vi)
@@ -167,11 +151,9 @@ func (f *float64Scanner[T, Addr]) Scan(v any) error {
 		case **T:
 			*(**T)(unsafe.Pointer(f.addr)) = &val
 			return nil
-		case *T:
+		default: // The destination is *T; the constraint permits only *T or **T.
 			*(*T)(unsafe.Pointer(f.addr)) = val
 			return nil
-		default:
-			panic("unreachable")
 		}
 	case int64:
 		val := T(vi)
@@ -179,11 +161,9 @@ func (f *float64Scanner[T, Addr]) Scan(v any) error {
 		case **T:
 			*(**T)(unsafe.Pointer(f.addr)) = &val
 			return nil
-		case *T:
+		default: // The destination is *T; the constraint permits only *T or **T.
 			*(*T)(unsafe.Pointer(f.addr)) = val
 			return nil
-		default:
-			panic("unreachable")
 		}
 	default:
 		if f.strictType {
@@ -201,11 +181,9 @@ func (f *float64Scanner[T, Addr]) Scan(v any) error {
 			case **T:
 				*(**T)(unsafe.Pointer(f.addr)) = &val
 				return nil
-			case *T:
+			default: // The destination is *T; the constraint permits only *T or **T.
 				*(*T)(unsafe.Pointer(f.addr)) = val
 				return nil
-			default:
-				panic("unreachable")
 			}
 		case string:
 			f64, err := strconv.ParseFloat(vi, 64)
@@ -217,11 +195,9 @@ func (f *float64Scanner[T, Addr]) Scan(v any) error {
 			case **T:
 				*(**T)(unsafe.Pointer(f.addr)) = &val
 				return nil
-			case *T:
+			default: // The destination is *T; the constraint permits only *T or **T.
 				*(*T)(unsafe.Pointer(f.addr)) = val
 				return nil
-			default:
-				panic("unreachable")
 			}
 		default:
 			return fmt.Errorf(`sequel/encoding: unable to scan %T to ~float64`, vi)

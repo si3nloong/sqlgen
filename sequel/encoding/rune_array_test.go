@@ -40,3 +40,20 @@ func TestRunesArray(t *testing.T) {
 		require.Error(t, runes.Scan(rawValue))
 	})
 }
+
+func TestRuneArrayStringsAndReset(t *testing.T) {
+	for _, input := range []string{"abc", "开心🥳"} {
+		t.Run(input, func(t *testing.T) {
+			var dst [3]rune
+			scanner := RuneArrayScanner(dst[:], len(dst))
+			require.NoError(t, scanner.Scan(input))
+			require.Equal(t, []rune(input), dst[:])
+			require.Error(t, scanner.Scan(input+"x"))
+			require.Error(t, scanner.Scan(42))
+			require.NoError(t, scanner.Scan(nil))
+			require.Equal(t, [3]rune{}, dst)
+			require.NoError(t, scanner.Scan("xyz"))
+			require.Equal(t, [3]rune{'x', 'y', 'z'}, dst)
+		})
+	}
+}

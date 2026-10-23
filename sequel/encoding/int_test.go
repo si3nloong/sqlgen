@@ -1,6 +1,7 @@
 package encoding
 
 import (
+	"database/sql"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -84,4 +85,29 @@ func TestInteger(t *testing.T) {
 	// 		require.Nil(t, value)
 	// 	})
 	// })
+}
+
+func TestIntScannerConversions(t *testing.T) {
+	checkScanner(t, func(v *int) sql.Scanner { return IntScanner[int](v) }, func(v **int) sql.Scanner { return IntScanner[int](v) },
+		[]scanCase[int]{{int64(42), 42}, {[]byte("17"), 17}}, []any{"42", true, []byte("invalid"), []byte("18446744073709551616")})
+}
+
+func TestInt8ScannerConversions(t *testing.T) {
+	checkScanner(t, func(v *int8) sql.Scanner { return Int8Scanner[int8](v) }, func(v **int8) sql.Scanner { return Int8Scanner[int8](v) },
+		[]scanCase[int8]{{int64(42), 42}, {[]byte("17"), 17}}, []any{"42", true, []byte("invalid"), []byte("18446744073709551616")})
+}
+
+func TestInt16ScannerConversions(t *testing.T) {
+	checkScanner(t, func(v *int16) sql.Scanner { return Int16Scanner[int16](v) }, func(v **int16) sql.Scanner { return Int16Scanner[int16](v) },
+		[]scanCase[int16]{{int64(42), 42}, {[]byte("17"), 17}}, []any{"42", true, []byte("invalid"), []byte("18446744073709551616")})
+}
+
+func TestInt32ScannerConversions(t *testing.T) {
+	checkScanner(t, func(v *int32) sql.Scanner { return Int32Scanner[int32](v) }, func(v **int32) sql.Scanner { return Int32Scanner[int32](v) },
+		[]scanCase[int32]{{int64(42), 42}, {[]byte("17"), 17}}, []any{"42", true, []byte("invalid"), []byte("18446744073709551616")})
+}
+
+func TestInt64ScannerConversions(t *testing.T) {
+	checkScanner(t, func(v *int64) sql.Scanner { return Int64Scanner[int64](v) }, func(v **int64) sql.Scanner { return Int64Scanner[int64](v) },
+		[]scanCase[int64]{{int64(42), 42}, {[]byte("17"), 17}}, []any{"42", true, []byte("invalid"), []byte("18446744073709551616")})
 }

@@ -32,11 +32,9 @@ func (b *boolScanner[T, Ptr]) Scan(v any) error {
 		case **T:
 			*(**T)(unsafe.Pointer(b.addr)) = nil
 			return nil
-		case *T:
+		default: // The destination is *T; the constraint permits only *T or **T.
 			*(*T)(unsafe.Pointer(b.addr)) = T(false)
 			return nil
-		default:
-			panic("unreachable")
 		}
 	case bool:
 		val := T(vi)
@@ -44,11 +42,9 @@ func (b *boolScanner[T, Ptr]) Scan(v any) error {
 		case **T:
 			*(**T)(unsafe.Pointer(b.addr)) = &val
 			return nil
-		case *T:
+		default: // The destination is *T; the constraint permits only *T or **T.
 			*(*T)(unsafe.Pointer(b.addr)) = val
 			return nil
-		default:
-			panic("unreachable")
 		}
 	case int64:
 		val := T(vi != 0)
@@ -56,11 +52,9 @@ func (b *boolScanner[T, Ptr]) Scan(v any) error {
 		case **T:
 			*(**T)(unsafe.Pointer(b.addr)) = &val
 			return nil
-		case *T:
+		default: // The destination is *T; the constraint permits only *T or **T.
 			*(*T)(unsafe.Pointer(b.addr)) = val
 			return nil
-		default:
-			panic("unreachable")
 		}
 	default:
 		if b.strictType {
@@ -78,11 +72,9 @@ func (b *boolScanner[T, Ptr]) Scan(v any) error {
 			case **T:
 				*(**T)(unsafe.Pointer(b.addr)) = &val
 				return nil
-			case *T:
+			default: // The destination is *T; the constraint permits only *T or **T.
 				*(*T)(unsafe.Pointer(b.addr)) = val
 				return nil
-			default:
-				panic("unreachable")
 			}
 		case string:
 			f, err := strconv.ParseBool(vi)
@@ -94,11 +86,9 @@ func (b *boolScanner[T, Ptr]) Scan(v any) error {
 			case **T:
 				*(**T)(unsafe.Pointer(b.addr)) = &val
 				return nil
-			case *T:
+			default: // The destination is *T; the constraint permits only *T or **T.
 				*(*T)(unsafe.Pointer(b.addr)) = val
 				return nil
-			default:
-				panic("unreachable")
 			}
 		default:
 			return fmt.Errorf(`sequel/encoding: unable to scan %T to ~bool`, vi)

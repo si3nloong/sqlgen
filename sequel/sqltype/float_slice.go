@@ -37,11 +37,11 @@ func (a Float32Slice[T]) Value() (driver.Value, error) {
 
 // Scan implements the sql.Scanner interface.
 func (a *Float32Slice[T]) Scan(src interface{}) error {
-	switch src := src.(type) {
+	switch v := src.(type) {
 	case []byte:
-		return a.scanBytes(src)
+		return a.scanBytes(v)
 	case string:
-		return a.scanBytes([]byte(src))
+		return a.scanBytes([]byte(v))
 	case nil:
 		*a = nil
 		return nil
@@ -99,16 +99,15 @@ func (a Float64Slice[T]) Value() (driver.Value, error) {
 
 // Scan implements the sql.Scanner interface.
 func (a *Float64Slice[T]) Scan(src interface{}) error {
-	switch src := src.(type) {
+	switch v := src.(type) {
 	case []byte:
-		return a.scanBytes(src)
+		return a.scanBytes(v)
 	case string:
-		return a.scanBytes([]byte(src))
+		return a.scanBytes([]byte(v))
 	case nil:
 		*a = nil
 		return nil
 	}
-
 	return fmt.Errorf("sqltype: cannot convert %T to Float64Slice", src)
 }
 

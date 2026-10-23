@@ -35,11 +35,9 @@ func (s *strScanner[T, Ptr]) Scan(v any) error {
 		case **T:
 			*(**T)(unsafe.Pointer(s.addr)) = nil
 			return nil
-		case *T:
+		default: // The destination is *T; the constraint permits only *T or **T.
 			*(*T)(unsafe.Pointer(s.addr)) = T("")
 			return nil
-		default:
-			panic("unreachable")
 		}
 	case string:
 		val := T(vi)
@@ -47,11 +45,9 @@ func (s *strScanner[T, Ptr]) Scan(v any) error {
 		case **T:
 			*(**T)(unsafe.Pointer(s.addr)) = &val
 			return nil
-		case *T:
+		default: // The destination is *T; the constraint permits only *T or **T.
 			*(*T)(unsafe.Pointer(s.addr)) = val
 			return nil
-		default:
-			panic("unreachable")
 		}
 	case []byte:
 		val := T(vi)
@@ -59,11 +55,9 @@ func (s *strScanner[T, Ptr]) Scan(v any) error {
 		case **T:
 			*(**T)(unsafe.Pointer(s.addr)) = &val
 			return nil
-		case *T:
+		default: // The destination is *T; the constraint permits only *T or **T.
 			*(*T)(unsafe.Pointer(s.addr)) = val
 			return nil
-		default:
-			panic("unreachable")
 		}
 	default:
 		if s.strictType {
@@ -77,11 +71,9 @@ func (s *strScanner[T, Ptr]) Scan(v any) error {
 			case **T:
 				*(**T)(unsafe.Pointer(s.addr)) = &val
 				return nil
-			case *T:
+			default: // The destination is *T; the constraint permits only *T or **T.
 				*(*T)(unsafe.Pointer(s.addr)) = val
 				return nil
-			default:
-				panic("unreachable")
 			}
 		case int64:
 			val := T(strconv.FormatInt(vi, 10))
@@ -89,11 +81,9 @@ func (s *strScanner[T, Ptr]) Scan(v any) error {
 			case **T:
 				*(**T)(unsafe.Pointer(s.addr)) = &val
 				return nil
-			case *T:
+			default: // The destination is *T; the constraint permits only *T or **T.
 				*(*T)(unsafe.Pointer(s.addr)) = val
 				return nil
-			default:
-				panic("unreachable")
 			}
 		case float64:
 			val := T(strconv.FormatFloat(vi, 'f', -1, 64))
@@ -101,11 +91,9 @@ func (s *strScanner[T, Ptr]) Scan(v any) error {
 			case **T:
 				*(**T)(unsafe.Pointer(s.addr)) = &val
 				return nil
-			case *T:
+			default: // The destination is *T; the constraint permits only *T or **T.
 				*(*T)(unsafe.Pointer(s.addr)) = val
 				return nil
-			default:
-				panic("unreachable")
 			}
 		case time.Time:
 			val := T(vi.String())
@@ -113,11 +101,9 @@ func (s *strScanner[T, Ptr]) Scan(v any) error {
 			case **T:
 				*(**T)(unsafe.Pointer(s.addr)) = &val
 				return nil
-			case *T:
+			default: // The destination is *T; the constraint permits only *T or **T.
 				*(*T)(unsafe.Pointer(s.addr)) = val
 				return nil
-			default:
-				panic("unreachable")
 			}
 		default:
 			return fmt.Errorf(`sequel/encoding: unable to scan %T to ~string`, vi)

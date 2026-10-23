@@ -99,10 +99,7 @@ func renderTemplate(
 		return err
 	}
 	fileDest := filepath.Join(dstDir, dstFilename)
-	// formatted, err := format.Source([]byte(w.String()))
-	// if err != nil {
-	// 	return err
-	// }
+
 	formatted, err := imports.Process(fileDest, w.Bytes(), &imports.Options{Comments: true})
 	if err != nil {
 		return err

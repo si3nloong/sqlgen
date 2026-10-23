@@ -57,3 +57,9 @@ func TestBytesArray(t *testing.T) {
 		require.Error(t, bytes.Scan(`hello world`))
 	})
 }
+
+func TestByteArrayRejectsUnsupportedInput(t *testing.T) {
+	dst := [2]byte{'a', 'b'}
+	require.Error(t, ByteArrayScanner(dst[:], len(dst)).Scan(42))
+	require.Equal(t, [2]byte{'a', 'b'}, dst)
+}

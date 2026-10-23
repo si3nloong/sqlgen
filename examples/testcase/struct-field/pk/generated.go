@@ -13,39 +13,47 @@ func (Car) TableName() string {
 	return "car"
 }
 func (Car) HasPK() {}
+func (v *Car) SetPK(val PK) {
+	v.ID = val
+}
 func (v Car) PK() (string, int, any) {
 	return "id", 0, v.ID
 }
 func (Car) Columns() []string {
-	return []string{"id", "no", "color", "manuc_date"} // 4
+	return []string{"id", "no", "color", "year", "manuc_date"} // 5
 }
 func (v Car) Values() []any {
 	return []any{
-		v.ID,             // 0 - id
-		v.No,             // 1 - no
-		(int64)(v.Color), // 2 - color
-		v.ManucDate,      // 3 - manuc_date
+		v.ID,           // 0 - id
+		v.No,           // 1 - no
+		v.ColorValue(), // 2 - color
+		v.YearValue(),  // 3 - year
+		v.ManucDate,    // 4 - manuc_date
 	}
 }
 func (v *Car) Addrs() []any {
+	if v.Year == nil {
+		v.Year = new(int)
+	}
 	return []any{
 		encoding.Int64Scanner[PK](&v.ID),     // 0 - id
 		&v.No,                                // 1 - no
 		encoding.IntScanner[Color](&v.Color), // 2 - color
-		&v.ManucDate,                         // 3 - manuc_date
+		encoding.IntScanner[int](&v.Year),    // 3 - year
+		&v.ManucDate,                         // 4 - manuc_date
 	}
 }
-func (Car) InsertPlaceholders(row int) string {
-	return "(?,?,?,?)" // 4
+func (Car) SQLInsertPlaceholders(row int) string {
+	return "(?,?,?,?,?)" // 5
 }
 func (v Car) InsertOneStmt() (string, []any) {
-	return "INSERT INTO `car` (`id`,`no`,`color`,`manuc_date`) VALUES (?,?,?,?);", v.Values()
+	return "INSERT INTO `car` (`id`,`no`,`color`,`year`,`manuc_date`) VALUES (?,?,?,?,?);", v.Values()
 }
 func (v Car) FindOneByPKStmt() (string, []any) {
-	return "SELECT `id`,`no`,`color`,`manuc_date` FROM `car` WHERE `id` = ? LIMIT 1;", []any{v.ID}
+	return "SELECT `id`,`no`,`color`,`year`,`manuc_date` FROM `car` WHERE `id` = ? LIMIT 1;", []any{v.ID}
 }
 func (v Car) UpdateOneByPKStmt() (string, []any) {
-	return "UPDATE `car` SET `no` = ?,`color` = ?,`manuc_date` = ? WHERE `id` = ?;", []any{v.No, (int64)(v.Color), v.ManucDate, v.ID}
+	return "UPDATE `car` SET `no` = ?,`color` = ?,`year` = ?,`manuc_date` = ? WHERE `id` = ?;", []any{v.No, v.ColorValue(), v.YearValue(), v.ManucDate, v.ID}
 }
 func (v Car) IDValue() any {
 	return v.ID
@@ -56,30 +64,38 @@ func (v Car) NoValue() any {
 func (v Car) ColorValue() any {
 	return (int64)(v.Color)
 }
+func (v Car) YearValue() any {
+	if v.Year != nil {
+		return (int64)(*v.Year)
+	}
+	return nil
+}
 func (v Car) ManucDateValue() any {
 	return v.ManucDate
 }
-func (v Car) ColumnID() sequel.ColumnConvertClause[PK] {
-	return sequel.Column("id", v.ID, func(val PK) any {
-		return val
-	})
+func (v Car) ColumnID() sequel.ColumnClause[PK] {
+	return sequel.ValueColumn("id", v.ID)
 }
 func (v Car) ColumnNo() sequel.ColumnClause[string] {
-	return sequel.BasicColumn("no", v.No)
+	return sequel.PrimitiveColumn("no", v.No)
 }
 func (v Car) ColumnColor() sequel.ColumnConvertClause[Color] {
-	return sequel.Column("color", v.Color, func(val Color) any {
-		return (int64)(val)
-	})
+	return sequel.Column("color", v.Color, convertColorToValue)
+}
+func (v Car) ColumnYear() sequel.ColumnConvertClause[*int] {
+	return sequel.Column("year", v.Year, convertPtrintToValue)
 }
 func (v Car) ColumnManucDate() sequel.ColumnClause[time.Time] {
-	return sequel.BasicColumn("manuc_date", v.ManucDate)
+	return sequel.PrimitiveColumn("manuc_date", v.ManucDate)
 }
 
 func (House) TableName() string {
 	return "house"
 }
 func (House) HasPK() {}
+func (v *House) SetPK(val uint) {
+	v.ID = val
+}
 func (v House) PK() (string, int, any) {
 	return "id", 0, (int64)(v.ID)
 }
@@ -98,7 +114,7 @@ func (v *House) Addrs() []any {
 		&v.No,                             // 1 - no
 	}
 }
-func (House) InsertPlaceholders(row int) string {
+func (House) SQLInsertPlaceholders(row int) string {
 	return "(?,?)" // 2
 }
 func (v House) InsertOneStmt() (string, []any) {
@@ -117,18 +133,19 @@ func (v House) NoValue() any {
 	return v.No
 }
 func (v House) ColumnID() sequel.ColumnConvertClause[uint] {
-	return sequel.Column("id", v.ID, func(val uint) any {
-		return (int64)(val)
-	})
+	return sequel.Column("id", v.ID, convertUintToValue)
 }
 func (v House) ColumnNo() sequel.ColumnClause[string] {
-	return sequel.BasicColumn("no", v.No)
+	return sequel.PrimitiveColumn("no", v.No)
 }
 
 func (User) TableName() string {
 	return "user"
 }
 func (User) HasPK() {}
+func (v *User) SetPK(val int64) {
+	v.ID = val
+}
 func (v User) PK() (string, int, any) {
 	return "id", 0, v.ID
 }
@@ -151,7 +168,7 @@ func (v *User) Addrs() []any {
 		&v.Email,                                  // 3 - email
 	}
 }
-func (User) InsertPlaceholders(row int) string {
+func (User) SQLInsertPlaceholders(row int) string {
 	return "(?,?,?,?)" // 4
 }
 func (v User) InsertOneStmt() (string, []any) {
@@ -176,18 +193,33 @@ func (v User) EmailValue() any {
 	return v.Email
 }
 func (v User) ColumnID() sequel.ColumnClause[int64] {
-	return sequel.BasicColumn("id", v.ID)
+	return sequel.PrimitiveColumn("id", v.ID)
 }
 func (v User) ColumnName() sequel.ColumnConvertClause[LongText] {
-	return sequel.Column("name", v.Name, func(val LongText) any {
-		return (string)(val)
-	})
+	return sequel.Column("name", v.Name, convertLongTextToValue)
 }
 func (v User) ColumnAge() sequel.ColumnConvertClause[uint8] {
-	return sequel.Column("age", v.Age, func(val uint8) any {
-		return (int64)(val)
-	})
+	return sequel.Column("age", v.Age, convertUint8ToValue)
 }
 func (v User) ColumnEmail() sequel.ColumnClause[string] {
-	return sequel.BasicColumn("email", v.Email)
+	return sequel.PrimitiveColumn("email", v.Email)
+}
+
+func convertUintToValue(val uint) any {
+	return (int64)(val)
+}
+func convertUint8ToValue(val uint8) any {
+	return (int64)(val)
+}
+func convertPtrintToValue(val *int) any {
+	if val != nil {
+		return (int64)(*val)
+	}
+	return nil
+}
+func convertLongTextToValue(val LongText) any {
+	return (string)(val)
+}
+func convertColorToValue(val Color) any {
+	return (int64)(val)
 }

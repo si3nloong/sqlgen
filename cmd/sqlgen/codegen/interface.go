@@ -1,11 +1,13 @@
 package codegen
 
 import (
+	"fmt"
 	"go/ast"
 	"go/importer"
 	"go/parser"
 	"go/token"
 	"go/types"
+	"runtime"
 
 	_ "embed"
 
@@ -29,25 +31,34 @@ var (
 
 func init() {
 	pkgs, err := packages.Load(&packages.Config{
+		// Standard-library types must not depend on the caller's module or workspace.
+		Dir:  runtime.GOROOT(),
 		Mode: packages.NeedTypes,
-	}, "time", "sync", "database/sql...", "encoding")
+	}, "time", "database/sql", "database/sql/driver", "encoding")
 	if err != nil {
 		panic(err)
 	}
 
 	for _, p := range pkgs {
+		if len(p.Errors) > 0 {
+			panic(fmt.Errorf("load standard-library package %s: %v", p.ID, p.Errors))
+		}
+		if p.Types == nil || !p.Types.Complete() {
+			panic(fmt.Errorf("load standard-library package %s: incomplete type information", p.ID))
+		}
+		scope := p.Types.Scope()
 		switch p.ID {
 		case "database/sql/driver":
-			goSqlValuer = p.Types.Scope().Lookup("Valuer").Type().Underlying().(*types.Interface)
+			goSqlValuer = scope.Lookup("Valuer").Type().Underlying().(*types.Interface)
 		case "database/sql":
-			goSqlScanner = p.Types.Scope().Lookup("Scanner").Type().Underlying().(*types.Interface)
+			goSqlScanner = scope.Lookup("Scanner").Type().Underlying().(*types.Interface)
 		case "encoding":
-			binaryMarshaler = p.Types.Scope().Lookup("BinaryMarshaler").Type().Underlying().(*types.Interface)
-			binaryUnmarshaler = p.Types.Scope().Lookup("BinaryUnmarshaler").Type().Underlying().(*types.Interface)
-			textMarshaler = p.Types.Scope().Lookup("TextMarshaler").Type().Underlying().(*types.Interface)
-			textUnmarshaler = p.Types.Scope().Lookup("TextUnmarshaler").Type().Underlying().(*types.Interface)
+			binaryMarshaler = scope.Lookup("BinaryMarshaler").Type().Underlying().(*types.Interface)
+			binaryUnmarshaler = scope.Lookup("BinaryUnmarshaler").Type().Underlying().(*types.Interface)
+			textMarshaler = scope.Lookup("TextMarshaler").Type().Underlying().(*types.Interface)
+			textUnmarshaler = scope.Lookup("TextUnmarshaler").Type().Underlying().(*types.Interface)
 		case "time":
-			typeOfTime = p.Types.Scope().Lookup("Time").Type().(*types.Named).String()
+			typeOfTime = scope.Lookup("Time").Type().(*types.Named).String()
 		}
 	}
 
@@ -61,10 +72,11 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	sqlDatabaser = pkg.Scope().Lookup("Databaser").Type().Underlying().(*types.Interface)
-	sqlTabler = pkg.Scope().Lookup("Tabler").Type().Underlying().(*types.Interface)
-	sqlColumner = pkg.Scope().Lookup("Columner").Type().Underlying().(*types.Interface)
-	sqlQueryColumner = pkg.Scope().Lookup("SQLColumner").Type().Underlying().(*types.Interface)
-	sqlValuer = pkg.Scope().Lookup("Valuer").Type().Underlying().(*types.Interface)
-	sqlScanner = pkg.Scope().Lookup("Scanner").Type().Underlying().(*types.Interface)
+	scope := pkg.Scope()
+	sqlDatabaser = scope.Lookup("Databaser").Type().Underlying().(*types.Interface)
+	sqlTabler = scope.Lookup("Tabler").Type().Underlying().(*types.Interface)
+	sqlColumner = scope.Lookup("Columner").Type().Underlying().(*types.Interface)
+	sqlQueryColumner = scope.Lookup("SQLColumner").Type().Underlying().(*types.Interface)
+	sqlValuer = scope.Lookup("Valuer").Type().Underlying().(*types.Interface)
+	sqlScanner = scope.Lookup("Scanner").Type().Underlying().(*types.Interface)
 }
