@@ -1,6 +1,7 @@
 package encoding
 
 import (
+	"database/sql"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -42,4 +43,22 @@ func TestFloat64Scanner(t *testing.T) {
 			require.GreaterOrEqual(t, f, float64(0.0))
 		})
 	})
+}
+
+func TestFloat32ScannerConversions(t *testing.T) {
+	checkScanner(t, func(v *float32) sql.Scanner { return Float32Scanner[float32](v) }, func(v **float32) sql.Scanner { return Float32Scanner[float32](v) },
+		[]scanCase[float32]{{float32(1.5), 1.5}, {float64(-2.25), -2.25}, {int64(42), 42}, {"1.25", 1.25}, {[]byte("2.5"), 2.5}}, []any{true, "invalid", []byte("invalid")})
+	var f float32
+	require.Error(t, Float32Scanner[float32](&f, true).Scan("1.25"))
+	require.NoError(t, Float32Scanner[float32](&f, true).Scan(1.25))
+	require.Equal(t, float32(1.25), f)
+}
+
+func TestFloat64ScannerConversions(t *testing.T) {
+	checkScanner(t, func(v *float64) sql.Scanner { return Float64Scanner[float64](v) }, func(v **float64) sql.Scanner { return Float64Scanner[float64](v) },
+		[]scanCase[float64]{{float32(1.5), 1.5}, {float64(-2.25), -2.25}, {int64(42), 42}, {"1.25", 1.25}, {[]byte("2.5"), 2.5}}, []any{true, "invalid", []byte("invalid")})
+	var f float64
+	require.Error(t, Float64Scanner[float64](&f, true).Scan("1.25"))
+	require.NoError(t, Float64Scanner[float64](&f, true).Scan(1.25))
+	require.Equal(t, float64(1.25), f)
 }

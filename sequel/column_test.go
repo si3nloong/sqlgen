@@ -40,3 +40,16 @@ func TestColumn(t *testing.T) {
 		require.False(t, ob.Asc())
 	})
 }
+
+func TestSQLColumn(t *testing.T) {
+	c := SQLColumn("name", "Alice", func(p string) string { return "LOWER(" + p + ")" }, func(v string) any { return "converted:" + v })
+	require.Equal(t, "name", c.ColumnName())
+	require.Equal(t, "Alice", c.Value())
+	require.Equal(t, "LOWER($1)", c.SQLColumn("$1"))
+	require.Equal(t, "converted:Bob", c.Convert("Bob"))
+}
+
+func TestOrderByDescending(t *testing.T) {
+	require.True(t, OrderByColumn("id", false).Desc())
+	require.False(t, OrderByColumn("id", true).Desc())
+}

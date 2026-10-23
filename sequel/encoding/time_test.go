@@ -1,6 +1,7 @@
 package encoding
 
 import (
+	"database/sql"
 	"testing"
 	"time"
 
@@ -56,4 +57,10 @@ func TestTime(t *testing.T) {
 		})
 	})
 
+}
+
+func TestTimeScannerConversions(t *testing.T) {
+	now := time.Date(2026, 1, 2, 3, 4, 5, 0, time.UTC)
+	checkScanner(t, func(v *time.Time) sql.Scanner { return TimeScanner(v) }, func(v **time.Time) sql.Scanner { return TimeScanner(v) },
+		[]scanCase[time.Time]{{now, now}, {"2026-01-02T03:04:05Z", now}, {[]byte("2026-01-02 03:04:05"), now}, {int64(100), time.Unix(100, 0)}}, []any{"invalid", []byte("invalid"), true})
 }
