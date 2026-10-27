@@ -60,7 +60,7 @@ func (v Custom) IDValue() any {
 }
 func (v Custom) StrValue() any {
 	if v.Str == "" {
-		return (string)(otherStr)
+		return (string)(otherStr2)
 	}
 	return (string)(v.Str)
 }
@@ -115,7 +115,7 @@ func convertPtrlongTextToValue(val *longText) any {
 }
 func convertLongTextToValue(val longText) any {
 	if val == "" {
-		return (string)(otherStr)
+		return (string)(otherStr2)
 	}
 	return (string)(val)
 }

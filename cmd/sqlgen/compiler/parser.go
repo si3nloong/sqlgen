@@ -970,10 +970,17 @@ func findFirstConstValueInPackage(pkg *packages.Package, typeName string) (*type
 	}
 
 	if len(constants) > 0 {
-		// 2. Sort by the global FileSet position
-		// This automatically handles file order (alphabetical) and line order.
+		// Sort by filename and source order, independent of FileSet registration order.
 		sort.Slice(constants, func(i, j int) bool {
-			return constants[i].Pos() < constants[j].Pos()
+			left := pkg.Fset.PositionFor(constants[i].Pos(), false)
+			right := pkg.Fset.PositionFor(constants[j].Pos(), false)
+			if left.Filename != right.Filename {
+				return left.Filename < right.Filename
+			}
+			if left.Offset != right.Offset {
+				return left.Offset < right.Offset
+			}
+			return constants[i].Name() < constants[j].Name()
 		})
 
 		return constants[0], true

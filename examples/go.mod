@@ -6,10 +6,7 @@ require (
 	cloud.google.com/go v0.123.0
 	github.com/go-sql-driver/mysql v1.10.1
 	github.com/gofrs/uuid/v5 v5.5.1
-	github.com/golang-migrate/migrate/v4 v4.20.1
 	github.com/google/uuid v1.6.0
-	github.com/jaswdr/faker v1.19.1
-	github.com/lib/pq v1.12.3
 	github.com/mattn/go-sqlite3 v1.14.52
 	github.com/ory/dockertest/v3 v3.12.0
 	github.com/paulmach/orb v0.13.0
@@ -46,6 +43,7 @@ require (
 	github.com/jackc/puddle/v2 v2.2.2 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/leodido/go-urn v1.5.0 // indirect
+	github.com/lib/pq v1.12.3 // indirect
 	github.com/moby/docker-image-spec v1.3.1 // indirect
 	github.com/moby/sys/user v0.3.0 // indirect
 	github.com/moby/term v0.5.2 // indirect

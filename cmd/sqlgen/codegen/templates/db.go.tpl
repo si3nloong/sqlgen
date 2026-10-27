@@ -29,7 +29,7 @@ func InsertOne[T sequel.ColumnValuer, Ptr interface {
 		stmt.WriteString(" VALUES ")
 		stmt.WriteString(v.SQLInsertPlaceholders(0))
 		stmt.WriteString(" RETURNING ")
-		writej(stmt, TableColumns(model))
+		writeJoin(stmt, TableColumns(model))
 		stmt.WriteString(";")
 		row := db.QueryRowContext(ctx, stmt.String(), v.SQLInsertValues()...)
 		strpool.ReleaseString(stmt) // Cleanup
@@ -100,7 +100,7 @@ func InsertOne[T sequel.ColumnValuer, Ptr interface {
 		stmt.WriteString("INSERT INTO ")
 		stmt.WriteString(DbTable(model))
 		stmt.WriteString(" (")
-		writej(stmt, columns)
+		writeJoin(stmt, columns)
 		stmt.WriteString(") VALUES (")
 		stmt.WriteString(strings.Repeat("{{ quoteVar 1 }},", len(columns) - 1))
 		stmt.WriteString("{{ quoteVar 1 }});")
@@ -146,7 +146,7 @@ func Insert[T sequel.ColumnValuer, Ptr sequel.PtrScanner[T]](ctx context.Context
 			args = append(args, data[i].Values()...)
 		}
 		stmt.WriteString(" RETURNING ")
-		writej(stmt, columns)
+		writeJoin(stmt, columns)
 		stmt.WriteString(";")
 		rows, err = db.QueryContext(ctx, stmt.String(), args...)
 		args = nil // Cleanup
@@ -156,7 +156,7 @@ func Insert[T sequel.ColumnValuer, Ptr sequel.PtrScanner[T]](ctx context.Context
 		stmt.WriteString("INSERT INTO ")
 		stmt.WriteString(DbTable(model))
 		stmt.WriteString(" (")
-		writej(stmt, columns)
+		writeJoin(stmt, columns)
 		stmt.WriteString(") VALUES ({{ quoteVar 1 }}")
 		for i := 1; i < noOfCols; i++ {
 			stmt.WriteString(",")
@@ -175,7 +175,7 @@ func Insert[T sequel.ColumnValuer, Ptr sequel.PtrScanner[T]](ctx context.Context
 			args = append(args, data[i].Values()...)
 		}
 		stmt.WriteString(" RETURNING ")
-		writej(stmt, columns)
+		writeJoin(stmt, columns)
 		stmt.WriteString(";")
 		rows, err = db.QueryContext(ctx, stmt.String(), args...)
 		args = nil // Cleanup
@@ -224,7 +224,13 @@ func Insert[T sequel.ColumnValuer](ctx context.Context, db sequel.DB, data []T) 
 		stmt.WriteString("INSERT INTO ")
 		stmt.WriteString(DbTable(model))
 		stmt.WriteString(" (")
-		writej(stmt, columns)
+		// Prefer the generated insert list, which quotes reserved identifiers
+		// and already excludes the auto-increment key.
+		if inserter, ok := any(model).(interface{ SQLInsertColumns() string }); ok {
+			stmt.WriteString(inserter.SQLInsertColumns())
+		} else {
+			writeJoin(stmt, columns)
+		}
 		stmt.WriteString(") VALUES ")
 		stmt.WriteString(placeholder)
 		values := data[0].Values()
@@ -249,7 +255,13 @@ func Insert[T sequel.ColumnValuer](ctx context.Context, db sequel.DB, data []T) 
 		stmt.WriteString("INSERT INTO ")
 		stmt.WriteString(DbTable(model))
 		stmt.WriteString(" (")
-		writej(stmt, columns)
+		// Prefer the generated insert list, which quotes reserved identifiers
+		// and already excludes the auto-increment key.
+		if inserter, ok := any(model).(interface{ SQLInsertColumns() string }); ok {
+			stmt.WriteString(inserter.SQLInsertColumns())
+		} else {
+			writeJoin(stmt, columns)
+		}
 		stmt.WriteString(") VALUES ")
 		stmt.WriteString(placeholder)
 		args = append(args, data[0].Values()...)
@@ -327,21 +339,21 @@ func UpsertOne[T sequel.KeyValuer, Ptr interface{
 		stmt.WriteString("INSERT INTO ")
 		stmt.WriteString(DbTable(model))
 		stmt.WriteString(" (")
-		writej(stmt, columns)
+		writeJoin(stmt, columns)
 	case sequel.PrimaryKeyer:
 		pkName, _, _ := v.PK()
 		opt.omitFields = append(opt.omitFields, pkName)
 		stmt.WriteString("INSERT INTO ")
 		stmt.WriteString(DbTable(model))
 		stmt.WriteString(" (")
-		writej(stmt, columns)
+		writeJoin(stmt, columns)
 	case sequel.CompositeKeyer:
 		keyNames, _, _ := v.CompositeKey()
 		opt.omitFields = append(opt.omitFields, keyNames...)
 		stmt.WriteString("INSERT INTO ")
 		stmt.WriteString(DbTable(model))
 		stmt.WriteString(" (")
-		writej(stmt, columns)
+		writeJoin(stmt, columns)
 	default:
 		panic("unreachable")
 	}
@@ -349,19 +361,19 @@ func UpsertOne[T sequel.KeyValuer, Ptr interface{
 	stmt.WriteString(model.SQLInsertPlaceholders(0))
 	stmt.WriteString(" ON CONFLICT(")
 	if len(opt.duplicateKeys) > 0 {
-		writej(stmt, opt.duplicateKeys)
+		writeJoin(stmt, opt.duplicateKeys)
 	} else {
 		switch vi := any(model).(type) {
 		case duplicateKeyer:
 			keys := vi.DuplicateKeys()
 			opt.omitFields = append(opt.omitFields, keys...)
-			writej(stmt, keys)
+			writeJoin(stmt, keys)
 		case sequel.PrimaryKeyer:
 			pkName, _, _ := vi.PK()
 			stmt.WriteString(pkName)
 		case sequel.CompositeKeyer:
 			names, _, _ := vi.CompositeKey()
-			writej(stmt, names)
+			writeJoin(stmt, names)
 		default:
 			panic("unreachable")
 		}
@@ -402,7 +414,7 @@ func UpsertOne[T sequel.KeyValuer, Ptr interface{
 		clear(omitDict)
 		stmt.WriteString(" RETURNING ")		
 	}
-	writej(stmt, TableColumns(model))
+	writeJoin(stmt, TableColumns(model))
 	stmt.WriteString(";")
 	return db.QueryRowContext(ctx, stmt.String(), values...).Scan(model.Addrs()...)
 }
@@ -487,13 +499,13 @@ func Upsert[T interface {
 	}
 	stmt.WriteString(" ON CONFLICT(")
 	if len(opt.duplicateKeys) > 0 {
-		writej(stmt, opt.duplicateKeys)
+		writeJoin(stmt, opt.duplicateKeys)
 	} else {
 		switch vi := any(model).(type) {
 		case duplicateKeyer:
 			keys := vi.DuplicateKeys()
 			opt.omitFields = append(opt.omitFields, keys...)
-			writej(stmt, keys)
+			writeJoin(stmt, keys)
 		case sequel.PrimaryKeyer:
 			pkName, _, _ := vi.PK()
 			stmt.WriteString(pkName)
@@ -503,7 +515,7 @@ func Upsert[T interface {
 			// for i := len(idxs) - 1; i >= 0; i-- {
 			// 	columns = append(columns[:idxs[i]], columns[idxs[i]+1:]...)
 			// }
-			writej(stmt, names)
+			writeJoin(stmt, names)
 		default:
 			panic("unreachable")
 		}
@@ -536,7 +548,7 @@ func Upsert[T interface {
 		clear(omitDict)
 	}
 	stmt.WriteString(" RETURNING ")
-	writej(stmt, TableColumns(model))
+	writeJoin(stmt, TableColumns(model))
 	stmt.WriteString(";")
 	rows, err := db.QueryContext(ctx, stmt.String(), args...)
 	strpool.ReleaseString(stmt) // Deallocate statement
@@ -571,7 +583,7 @@ func UpsertOne[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Co
 			stmt.WriteString("INSERT IGNORE INTO ")
 			stmt.WriteString(DbTable(model))
 			stmt.WriteString(" (")
-			writej(stmt, columns)
+			writeJoin(stmt, columns)
 			stmt.WriteString(") VALUES (")
 			stmt.WriteString(strings.Repeat(",?", len(columns))[1:] + ");")
 		} else {
@@ -583,7 +595,7 @@ func UpsertOne[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Co
 			stmt.WriteString("INSERT INTO ")
 			stmt.WriteString(DbTable(model))
 			stmt.WriteString(" (")
-			writej(stmt, columns)
+			writeJoin(stmt, columns)
 			stmt.WriteString(") VALUES (")
 			stmt.WriteString(strings.Repeat(",?", noOfCols)[1:])
 			stmt.WriteString(") ON DUPLICATE KEY UPDATE ")
@@ -634,7 +646,7 @@ func UpsertOne[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Co
 			stmt.WriteString("INSERT IGNORE INTO ")
 			stmt.WriteString(DbTable(model))
 			stmt.WriteString(" (")
-			writej(stmt, columns)
+			writeJoin(stmt, columns)
 			stmt.WriteString(") VALUES (")
 			stmt.WriteString(strings.Repeat(",?", len(columns))[1:])
 			stmt.WriteString(");")
@@ -647,7 +659,7 @@ func UpsertOne[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Co
 			stmt.WriteString("INSERT INTO ")
 			stmt.WriteString(DbTable(model))
 			stmt.WriteString(" (")
-			writej(stmt, columns)
+			writeJoin(stmt, columns)
 			stmt.WriteString(") VALUES (")
 			stmt.WriteString(strings.Repeat(",?", noOfCols)[1:])
 			stmt.WriteString(") ON DUPLICATE KEY UPDATE ")
@@ -678,7 +690,7 @@ func UpsertOne[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Co
 		columns := model.Columns()
 		if !override {
 			stmt.WriteString("INSERT IGNORE INTO " + DbTable(model) + " (")
-			writej(stmt, columns)
+			writeJoin(stmt, columns)
 			stmt.WriteString(") VALUES (" + strings.Repeat(",?", len(columns))[1:] + ");")
 		} else {
 			dict := make(map[string]struct{}, len(names)+len(omittedFields))
@@ -690,7 +702,7 @@ func UpsertOne[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Co
 			}
 			noOfCols := len(columns)
 			stmt.WriteString("INSERT INTO " + DbTable(model) + " (")
-			writej(stmt, columns)
+			writeJoin(stmt, columns)
 			stmt.WriteString(") VALUES (" + strings.Repeat(",?", noOfCols)[1:] + ") ON DUPLICATE KEY UPDATE ")
 			first := true
 			for _, column := range columns {
@@ -746,13 +758,13 @@ func Upsert[T interface {
 			stmt.WriteString("INSERT INTO ")
 			stmt.WriteString(DbTable(model))
 			stmt.WriteString(" (")
-			writej(stmt, columns)
+			writeJoin(stmt, columns)
 			stmt.WriteString(") VALUES ")
 		} else {
 			stmt.WriteString("INSERT IGNORE INTO ")
 			stmt.WriteString(DbTable(model))
 			stmt.WriteString(" (")
-			writej(stmt, columns)
+			writeJoin(stmt, columns)
 			stmt.WriteString(") VALUES ")
 		}
 		placeholder := ",(" + strings.Repeat(",?", noOfCols)[1:] + ")"
@@ -773,13 +785,13 @@ func Upsert[T interface {
 			stmt.WriteString("INSERT INTO ")
 			stmt.WriteString(DbTable(model))
 			stmt.WriteString(" (")
-			writej(stmt, columns)
+			writeJoin(stmt, columns)
 			stmt.WriteString(") VALUES ")
 		} else {
 			stmt.WriteString("INSERT IGNORE INTO ")
 			stmt.WriteString(DbTable(model))
 			stmt.WriteString(" (")
-			writej(stmt, columns)
+			writeJoin(stmt, columns)
 			stmt.WriteString(") VALUES ")
 		}
 		stmt.WriteString(model.SQLInsertPlaceholders(0))
@@ -794,13 +806,13 @@ func Upsert[T interface {
 			stmt.WriteString("INSERT INTO ")
 			stmt.WriteString(DbTable(model))
 			stmt.WriteString(" (")
-			writej(stmt, columns)
+			writeJoin(stmt, columns)
 			stmt.WriteString(") VALUES ")
 		} else {
 			stmt.WriteString("INSERT IGNORE INTO ")
 			stmt.WriteString(DbTable(model))
 			stmt.WriteString(" (")
-			writej(stmt, columns)
+			writeJoin(stmt, columns)
 			stmt.WriteString(") VALUES ")
 		}
 		stmt.WriteString(model.SQLInsertPlaceholders(0))
@@ -860,7 +872,7 @@ func FindByPK[T sequel.KeyScanner, Ptr sequel.KeyPtrScanner[T]](ctx context.Cont
 		pkName, _, pk := v.PK()
 		stmt := strpool.AcquireString()
 		stmt.WriteString("SELECT ")
-		writej(stmt, TableColumns(model))
+		writeJoin(stmt, TableColumns(model))
 		stmt.WriteString(" FROM ")
 		stmt.WriteString(DbTable(model))
 		stmt.WriteString(" WHERE ")
@@ -874,11 +886,11 @@ func FindByPK[T sequel.KeyScanner, Ptr sequel.KeyPtrScanner[T]](ctx context.Cont
 		{{ if isStaticVar -}}
 		stmt := strpool.AcquireString()
 		stmt.WriteString("SELECT ")
-		writej(stmt, TableColumns(model))
+		writeJoin(stmt, TableColumns(model))
 		stmt.WriteString(" FROM ")
 		stmt.WriteString(DbTable(model))
 		stmt.WriteString(" WHERE (")
-		writej(stmt, keyNames)
+		writeJoin(stmt, keyNames)
 		stmt.WriteString(") = ({{ quoteVar 1 }}")
 		stmt.WriteString(strings.Repeat(",{{ quoteVar 1 }}", len(keyNames) - 1))
 		stmt.WriteString(") LIMIT 1;")
@@ -888,11 +900,11 @@ func FindByPK[T sequel.KeyScanner, Ptr sequel.KeyPtrScanner[T]](ctx context.Cont
 		{{ else -}}
 		stmt := strpool.AcquireString()
 		stmt.WriteString("SELECT ")
-		writej(stmt, TableColumns(model))
+		writeJoin(stmt, TableColumns(model))
 		stmt.WriteString(" FROM ")
 		stmt.WriteString(DbTable(model))
 		stmt.WriteString(" WHERE (")
-		writej(stmt, keyNames)
+		writeJoin(stmt, keyNames)
 		stmt.WriteString(") = ({{ quoteVar 1 }}")
 		noOfKeys := len(keyNames)
 		for i := 1; i < noOfKeys; i++ {
@@ -975,7 +987,7 @@ func UpdateByPK[T sequel.KeyValuer](ctx context.Context, db sequel.DB, model T) 
 			stmt.WriteString(wrapVar(i + 1))
 		}
 		stmt.WriteString(" WHERE (")
-		writej(stmt, keyNames)
+		writeJoin(stmt, keyNames)
 		stmt.WriteString(") = (")
 		stmt.WriteString(wrapVar(noOfColumn + 1))
 		noOfKey := len(keyNames)
@@ -1016,7 +1028,7 @@ func DeleteByPK[T sequel.KeyValuer](ctx context.Context, db sequel.DB, model T) 
 		stmt.WriteString("DELETE FROM ")
 		stmt.WriteString(DbTable(model))
 		stmt.WriteString(" WHERE (")
-		writej(stmt, keyNames)
+		writeJoin(stmt, keyNames)
 		stmt.WriteString(") = ({{ quoteVar 1 }}")
 		stmt.WriteString(strings.Repeat(",{{ quoteVar 1 }}", len(keyNames)-1))
 		stmt.WriteString(");")
@@ -1028,7 +1040,7 @@ func DeleteByPK[T sequel.KeyValuer](ctx context.Context, db sequel.DB, model T) 
 		stmt.WriteString("DELETE FROM ")
 		stmt.WriteString(DbTable(model))
 		stmt.WriteString(" WHERE (")
-		writej(stmt, keyNames)
+		writeJoin(stmt, keyNames)
 		stmt.WriteString(") = ({{ quoteVar 1 }}")
 		noOfKey := len(keyNames)
 		for i := 1; i < noOfKey; i++ {
@@ -1070,7 +1082,7 @@ func LockByPK[T sequel.KeyScanner, Ptr sequel.KeyPtrScanner[T]](ctx context.Cont
 	case sequel.PrimaryKeyer:
 		pkName, _, pk := v.PK()
 		stmt.WriteString("SELECT ")
-		writej(stmt, TableColumns(model))
+		writeJoin(stmt, TableColumns(model))
 		stmt.WriteString(" FROM ")
 		stmt.WriteString(DbTable(model))
 		stmt.WriteString(" WHERE ")
@@ -1084,12 +1096,12 @@ func LockByPK[T sequel.KeyScanner, Ptr sequel.KeyPtrScanner[T]](ctx context.Cont
 	case sequel.CompositeKeyer:
 		keyNames, _, keys := v.CompositeKey()
 		stmt.WriteString("SELECT ")
-		writej(stmt, TableColumns(model))
+		writeJoin(stmt, TableColumns(model))
 		stmt.WriteString(" FROM ")
 		stmt.WriteString(DbTable(model))
 		stmt.WriteString(" WHERE ")
 		stmt.WriteString("(")
-		writej(stmt, keyNames)
+		writeJoin(stmt, keyNames)
 		{{ if isStaticVar -}}
 		stmt.WriteString(") = ({{ quoteVar 1 }}"+strings.Repeat(",{{ quoteVar 1 }}", len(keyNames)-1)+") LIMIT 1 ")
 		{{ else -}}
@@ -1161,7 +1173,7 @@ func (r *Pager[T, Ptr]) Prev(ctx context.Context, db sequel.DB, cursor ...T) ite
 			}
 
 			stmt.WriteString("SELECT ")
-			writej(stmt, TableColumns(v))
+			writeJoin(stmt, TableColumns(v))
 			stmt.WriteString(" FROM ")
 			stmt.WriteString(DbTable(v))
 
@@ -1217,7 +1229,7 @@ func (r *Pager[T, Ptr]) Prev(ctx context.Context, db sequel.DB, cursor ...T) ite
 					case sequel.CompositeKeyer:
 						pkNames, _, vals := vi.CompositeKey()
 						stmt.WriteString("((")
-						writej(stmt, pkNames)
+						writeJoin(stmt, pkNames)
 						stmt.WriteString(") <= ")
 						stmt.WriteString(stmt.Vars(vals))
 						stmt.WriteString(")")
@@ -1256,7 +1268,7 @@ func (r *Pager[T, Ptr]) Prev(ctx context.Context, db sequel.DB, cursor ...T) ite
 				case sequel.CompositeKeyer:
 					pkNames, _, _ := vi.CompositeKey()
 					stmt.WriteString("(")
-					writej(stmt, pkNames)
+					writeJoin(stmt, pkNames)
 					stmt.WriteString(")")
 					stmt.WriteString(suffix)
 				case sequel.PrimaryKeyer:
@@ -1273,7 +1285,7 @@ func (r *Pager[T, Ptr]) Prev(ctx context.Context, db sequel.DB, cursor ...T) ite
 				case sequel.CompositeKeyer:
 					pkNames, _, _ := vi.CompositeKey()
 					stmt.WriteString("(")
-					writej(stmt, pkNames)
+					writeJoin(stmt, pkNames)
 					stmt.WriteString(") DESC")
 				case sequel.PrimaryKeyer:
 					pkName, _, _ := vi.PK()
@@ -1358,7 +1370,7 @@ func (r *Pager[T, Ptr]) Next(ctx context.Context, db sequel.DB, cursor ...T) ite
 			}
 
 			stmt.WriteString("SELECT ")
-			writej(stmt, TableColumns(v))
+			writeJoin(stmt, TableColumns(v))
 			stmt.WriteString(" FROM ")
 			stmt.WriteString(DbTable(v))
 			if r.stmt.Where != nil || len(r.stmt.OrderBy) > 0 || hasCursor {
@@ -1422,7 +1434,7 @@ func (r *Pager[T, Ptr]) Next(ctx context.Context, db sequel.DB, cursor ...T) ite
 					case sequel.CompositeKeyer:
 						pkNames, _, vals := vi.CompositeKey()
 						stmt.WriteString("((")
-						writej(stmt, pkNames)
+						writeJoin(stmt, pkNames)
 						stmt.WriteString(") >= ")
 						stmt.WriteString(stmt.Vars(vals))
 						stmt.WriteString(")")
@@ -1461,7 +1473,7 @@ func (r *Pager[T, Ptr]) Next(ctx context.Context, db sequel.DB, cursor ...T) ite
 				case sequel.CompositeKeyer:
 					pkNames, _, _ := vi.CompositeKey()
 					stmt.WriteString("(")
-					writej(stmt, pkNames)
+					writeJoin(stmt, pkNames)
 					stmt.WriteString(")")
 					stmt.WriteString(suffix)
 				case sequel.PrimaryKeyer:
@@ -1478,7 +1490,7 @@ func (r *Pager[T, Ptr]) Next(ctx context.Context, db sequel.DB, cursor ...T) ite
 				case sequel.CompositeKeyer:
 					pkNames, _, _ := vi.CompositeKey()
 					stmt.WriteString("(")
-					writej(stmt, pkNames)
+					writeJoin(stmt, pkNames)
 					stmt.WriteString(") ASC")
 				case sequel.PrimaryKeyer:
 					pkName, _, _ := vi.PK()
@@ -1551,7 +1563,7 @@ func (s SelectStmt) WriteSQL(w sequel.Stmt) error {
 	}
 	w.WriteString("SELECT ")
 	if len(s.Select) > 0 {
-		writej(w, s.Select)
+		writeJoin(w, s.Select)
 	} else {
 		w.WriteString("*")
 	}
@@ -1655,7 +1667,7 @@ func (s SelectOneStmt) WriteSQL(w sequel.Stmt) error {
 	}
 	w.WriteString("SELECT ")
 	if len(s.Select) > 0 {
-		writej(w, s.Select)
+		writeJoin(w, s.Select)
 	} else {
 		w.WriteString("*")
 	}
@@ -2075,8 +2087,8 @@ func strf(v any) string {
 	}
 }
 
-// writej writes comma-separated strings without creating an intermediate string.
-func writej(w io.StringWriter, values []string) {
+// writeJoin writes comma-separated strings without creating an intermediate string.
+func writeJoin(w io.StringWriter, values []string) {
 	if len(values) == 0 {
 		return
 	}
