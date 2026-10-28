@@ -14,7 +14,10 @@ type (
 	ConvertFunc[T any] func(T) any
 	QueryFunc          func(placeholder string) string
 	WhereClause        func(StmtWriter)
-	SetClause          func(StmtWriter)
+	// JoinClause writes a JOIN, including its leading space, using the shared
+	// statement writer. SQL validity is checked by the database.
+	JoinClause func(StmtWriter)
+	SetClause  func(StmtWriter)
 )
 
 type DB interface {
@@ -101,6 +104,10 @@ type Inserter interface {
 	SQLInsertColumns() string
 	SQLInsertValues() []any
 	SQLInsertPlaceholders(row int) string
+}
+
+type ConflictColumner interface {
+	ConflictColumns() []string
 }
 
 type ColumnValuer interface {

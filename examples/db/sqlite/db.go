@@ -410,7 +410,7 @@ func Upsert[T interface {
 	if override {
 		stmt.WriteString(" ON DUPLICATE KEY UPDATE ")
 		// Don't update primary key when we do upsert
-		omitDict := map[string]struct{}{}
+		omitDict := make(map[string]struct{}, len(omittedFields))
 		for i := range omittedFields {
 			omitDict[omittedFields[i]] = struct{}{}
 		}
@@ -545,16 +545,27 @@ func DeleteByPK[T sequel.KeyValuer](ctx context.Context, db sequel.DB, model T) 
 	}
 }
 
-type LockMode string
-
-func (l LockMode) LockMode() string {
-	return (string)(l)
-}
+type LockMode uint
 
 const (
-	LockForUpdate LockMode = "FOR UPDATE"
-	LockForShare  LockMode = "FOR SHARE"
+	LockForUpdate LockMode = iota
+	LockForShare
 )
+
+const lockModeNames = "FOR UPDATEFOR SHARE"
+
+var lockModeIndex = [...]uint8{0, 10, 19}
+
+func (l LockMode) String() string {
+	if l >= LockMode(len(lockModeIndex)-1) {
+		return "LockMode(" + strconv.FormatUint(uint64(l), 10) + ")"
+	}
+	return lockModeNames[lockModeIndex[l]:lockModeIndex[l+1]]
+}
+
+func (l LockMode) LockMode() string {
+	return l.String()
+}
 
 func LockByPK[T sequel.KeyScanner, Ptr sequel.KeyPtrScanner[T]](ctx context.Context, tx *sql.Tx, model Ptr, locker sequel.RowLevelLocker) error {
 	stmt := strpool.AcquireString()
@@ -653,8 +664,8 @@ func (r *Pager[T, Ptr]) Prev(ctx context.Context, db sequel.DB, cursor ...T) ite
 					r.stmt.Where(stmt)
 				}
 				if n := len(r.stmt.OrderBy); n > 0 {
-					colDict := make(map[string]int)
 					columns := v.Columns()
+					colDict := make(map[string]int, len(columns))
 					values := v.Values()
 					for i := range columns {
 						colDict[columns[i]] = i
@@ -850,8 +861,8 @@ func (r *Pager[T, Ptr]) Next(ctx context.Context, db sequel.DB, cursor ...T) ite
 				}
 
 				if len(r.stmt.OrderBy) > 0 {
-					colDict := make(map[string]int)
 					columns := v.Columns()
+					colDict := make(map[string]int, len(columns))
 					values := v.Values()
 					for i := range columns {
 						colDict[columns[i]] = i
@@ -1016,9 +1027,52 @@ func (r *Pager[T, Ptr]) Next(ctx context.Context, db sequel.DB, cursor ...T) ite
 	}
 }
 
+// ColumnRef is a trusted SQL column expression, optionally qualified by a table
+// or alias. It is not a bound value and must not contain untrusted input.
+type ColumnRef string
+
+func (r ColumnRef) ColumnName() string { return string(r) }
+
+// OnColumn builds a column equality predicate for a JOIN ON clause.
+// Neither column is bound as a parameter.
+// Generated model columns and ColumnRef both satisfy this interface.
+func OnColumn(left, right interface{ ColumnName() string }) sequel.WhereClause {
+	return func(w sequel.StmtWriter) {
+		w.WriteString(left.ColumnName() + " = " + right.ColumnName())
+	}
+}
+
+// joinClause accepts trusted SQL table expressions, including aliases.
+func joinClause(operator, table string, on sequel.WhereClause) sequel.JoinClause {
+	return func(w sequel.StmtWriter) {
+		w.WriteString(" " + operator + " JOIN ")
+		w.WriteString(table)
+		if on != nil {
+			w.WriteString(" ON ")
+			on(w)
+		}
+	}
+}
+
+func InnerJoin(table string, on sequel.WhereClause) sequel.JoinClause {
+	return joinClause("INNER", table, on)
+}
+func LeftJoin(table string, on sequel.WhereClause) sequel.JoinClause {
+	return joinClause("LEFT", table, on)
+}
+func RightJoin(table string, on sequel.WhereClause) sequel.JoinClause {
+	return joinClause("RIGHT", table, on)
+}
+func FullJoin(table string, on sequel.WhereClause) sequel.JoinClause {
+	return joinClause("FULL", table, on)
+}
+
+func CrossJoin(table string) sequel.JoinClause { return joinClause("CROSS", table, nil) }
+
 type SelectStmt struct {
 	Select    []string
 	FromTable string
+	Joins     []sequel.JoinClause
 	Where     sequel.WhereClause
 	OrderBy   []sequel.OrderByClause
 	GroupBy   []string
@@ -1026,11 +1080,38 @@ type SelectStmt struct {
 	Limit     uint16
 }
 
+// Join returns a copy with joins appended, preserving their order.
+func (s SelectStmt) Join(joins ...sequel.JoinClause) SelectStmt {
+	s.Joins = append(append([]sequel.JoinClause(nil), s.Joins...), joins...)
+	return s
+}
+
+func (s SelectStmt) InnerJoin(table string, on sequel.WhereClause) SelectStmt {
+	return s.Join(InnerJoin(table, on))
+}
+
+func (s SelectStmt) LeftJoin(table string, on sequel.WhereClause) SelectStmt {
+	return s.Join(LeftJoin(table, on))
+}
+
+func (s SelectStmt) RightJoin(table string, on sequel.WhereClause) SelectStmt {
+	return s.Join(RightJoin(table, on))
+}
+
+func (s SelectStmt) FullJoin(table string, on sequel.WhereClause) SelectStmt {
+	return s.Join(FullJoin(table, on))
+}
+
+func (s SelectStmt) CrossJoin(table string) SelectStmt {
+	return s.Join(CrossJoin(table))
+}
+
 // WriteSQL writes a complete SELECT statement. FromTable must be resolved by the caller.
 func (s SelectStmt) WriteSQL(w sequel.Stmt) error {
 	if s.FromTable == "" {
 		return fmt.Errorf("missing table name for SELECT statement")
 	}
+
 	w.WriteString("SELECT ")
 	if len(s.Select) > 0 {
 		writeJoin(w, s.Select)
@@ -1039,6 +1120,9 @@ func (s SelectStmt) WriteSQL(w sequel.Stmt) error {
 	}
 	w.WriteString(" FROM ")
 	w.WriteString(s.FromTable)
+	for _, join := range s.Joins {
+		join(w)
+	}
 	if s.Where != nil {
 		w.WriteString(" WHERE ")
 		s.Where(w)
@@ -1082,8 +1166,11 @@ func QueryStmt[T any, Ptr sequel.PtrScanner[T]](ctx context.Context, db sequel.D
 	selectStmt := stmtFunc(v)
 	stmt := AcquireStmt()
 	if len(selectStmt.Select) == 0 {
-		if cols, ok := any(v).(sequel.Columner); ok {
-			selectStmt.Select = TableColumns(cols)
+		switch vi := any(v).(type) {
+		case sequel.SQLColumner:
+			selectStmt.Select = vi.SQLColumns()
+		case sequel.Columner:
+			selectStmt.Select = vi.Columns()
 		}
 	}
 	if selectStmt.FromTable != "" {
@@ -1125,9 +1212,36 @@ func QueryStmt[T any, Ptr sequel.PtrScanner[T]](ctx context.Context, db sequel.D
 type SelectOneStmt struct {
 	Select    []string
 	FromTable string
+	Joins     []sequel.JoinClause
 	Where     sequel.WhereClause
 	OrderBy   []sequel.OrderByClause
 	GroupBy   []string
+}
+
+// Join returns a copy with joins appended, preserving their order.
+func (s SelectOneStmt) Join(joins ...sequel.JoinClause) SelectOneStmt {
+	s.Joins = append(append([]sequel.JoinClause(nil), s.Joins...), joins...)
+	return s
+}
+
+func (s SelectOneStmt) InnerJoin(table string, on sequel.WhereClause) SelectOneStmt {
+	return s.Join(InnerJoin(table, on))
+}
+
+func (s SelectOneStmt) LeftJoin(table string, on sequel.WhereClause) SelectOneStmt {
+	return s.Join(LeftJoin(table, on))
+}
+
+func (s SelectOneStmt) RightJoin(table string, on sequel.WhereClause) SelectOneStmt {
+	return s.Join(RightJoin(table, on))
+}
+
+func (s SelectOneStmt) FullJoin(table string, on sequel.WhereClause) SelectOneStmt {
+	return s.Join(FullJoin(table, on))
+}
+
+func (s SelectOneStmt) CrossJoin(table string) SelectOneStmt {
+	return s.Join(CrossJoin(table))
 }
 
 // WriteSQL writes a SELECT statement limited to one row. FromTable must be resolved by the caller.
@@ -1135,6 +1249,7 @@ func (s SelectOneStmt) WriteSQL(w sequel.Stmt) error {
 	if s.FromTable == "" {
 		return fmt.Errorf("missing table name for SELECT statement")
 	}
+
 	w.WriteString("SELECT ")
 	if len(s.Select) > 0 {
 		writeJoin(w, s.Select)
@@ -1143,6 +1258,9 @@ func (s SelectOneStmt) WriteSQL(w sequel.Stmt) error {
 	}
 	w.WriteString(" FROM ")
 	w.WriteString(s.FromTable)
+	for _, join := range s.Joins {
+		join(w)
+	}
 	if s.Where != nil {
 		w.WriteString(" WHERE ")
 		s.Where(w)
