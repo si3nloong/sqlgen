@@ -178,7 +178,7 @@ func (v User) ColumnExtraInfo() sequel.ColumnConvertClause[UserExtraInfoInlineSt
 	return sequel.Column("extra_info", v.ExtraInfo, convertUserExtraInfoInlineStructToValue)
 }
 func (v User) ColumnNicknames() sequel.ColumnConvertClause[[2]string] {
-	return sequel.Column("nicknames", v.Nicknames, convert2stringToValue)
+	return sequel.Column("nicknames", v.Nicknames, convert2StringToValue)
 }
 func (v User) ColumnSlice() sequel.ColumnConvertClause[[]float64] {
 	return sequel.Column("slice", v.Slice, convertSlicefloat64ToValue)
@@ -238,6 +238,6 @@ func convertHouseUnitTypeToValue(val HouseUnitType) any {
 func convertAddressToValue(val Address) any {
 	return encoding.JSONValue(val)
 }
-func convert2stringToValue(val [2]string) any {
+func convert2StringToValue(val [2]string) any {
 	return encoding.JSONValue(val)
 }

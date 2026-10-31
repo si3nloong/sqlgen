@@ -640,9 +640,7 @@ func UpsertOne[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Co
 		pkName, _, _ := v.PK()
 		columns := model.Columns()
 		if !override {
-			stmt.WriteString("INSERT IGNORE INTO ")
-			stmt.WriteString(DbTable(model))
-			stmt.WriteString(" (")
+			stmt.WriteString("INSERT IGNORE INTO " + DbTable(model) + " (")
 			writeJoin(stmt, columns)
 			stmt.WriteString(") VALUES (")
 			stmt.WriteString(strings.Repeat(",?", len(columns))[1:])
@@ -653,9 +651,7 @@ func UpsertOne[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Co
 				omitDict[omittedFields[i]] = struct{}{}
 			}
 			noOfCols := len(columns)
-			stmt.WriteString("INSERT INTO ")
-			stmt.WriteString(DbTable(model))
-			stmt.WriteString(" (")
+			stmt.WriteString("INSERT INTO " + DbTable(model) + " (")
 			writeJoin(stmt, columns)
 			stmt.WriteString(") VALUES (")
 			stmt.WriteString(strings.Repeat(",?", noOfCols)[1:])
@@ -688,7 +684,9 @@ func UpsertOne[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Co
 		if !override {
 			stmt.WriteString("INSERT IGNORE INTO " + DbTable(model) + " (")
 			writeJoin(stmt, columns)
-			stmt.WriteString(") VALUES (" + strings.Repeat(",?", len(columns))[1:] + ");")
+			stmt.WriteString(") VALUES (")
+			stmt.WriteString(strings.Repeat(",?", len(columns))[1:])
+			stmt.WriteString(");")
 		} else {
 			dict := make(map[string]struct{}, len(names)+len(omittedFields))
 			for _, name := range names {
@@ -700,7 +698,9 @@ func UpsertOne[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Co
 			noOfCols := len(columns)
 			stmt.WriteString("INSERT INTO " + DbTable(model) + " (")
 			writeJoin(stmt, columns)
-			stmt.WriteString(") VALUES (" + strings.Repeat(",?", noOfCols)[1:] + ") ON DUPLICATE KEY UPDATE ")
+			stmt.WriteString(") VALUES (")
+			stmt.WriteString(strings.Repeat(",?", noOfCols)[1:])
+			stmt.WriteString(") ON DUPLICATE KEY UPDATE ")
 			first := true
 			for _, column := range columns {
 				if _, ok := dict[column]; ok {

@@ -53,28 +53,28 @@ func (v Array) StrValue() any {
 	return encoding.JSONValue(v.Str)
 }
 func (v Array) ColumnTuple() sequel.ColumnConvertClause[[2]byte] {
-	return sequel.Column("tuple", v.Tuple, convert2byteToValue)
+	return sequel.Column("tuple", v.Tuple, convert2ByteToValue)
 }
 func (v Array) ColumnRunes() sequel.ColumnConvertClause[[4]rune] {
-	return sequel.Column("runes", v.Runes, convert4runeToValue)
+	return sequel.Column("runes", v.Runes, convert4RuneToValue)
 }
 func (v Array) ColumnBytes() sequel.ColumnConvertClause[[10]byte] {
-	return sequel.Column("bytes", v.Bytes, convert10byteToValue)
+	return sequel.Column("bytes", v.Bytes, convert10ByteToValue)
 }
 func (v Array) ColumnFixedSize() sequel.ColumnConvertClause[[10]byte] {
-	return sequel.Column("fixed_size", v.FixedSize, convert10byteToValue)
+	return sequel.Column("fixed_size", v.FixedSize, convert10ByteToValue)
 }
 func (v Array) ColumnStr() sequel.ColumnConvertClause[[100]Str] {
 	return sequel.Column("str", v.Str, convert100StrToValue)
 }
 
-func convert4runeToValue(val [4]rune) any {
+func convert4RuneToValue(val [4]rune) any {
 	return string(val[:])
 }
-func convert2byteToValue(val [2]byte) any {
+func convert2ByteToValue(val [2]byte) any {
 	return val[:]
 }
-func convert10byteToValue(val [10]byte) any {
+func convert10ByteToValue(val [10]byte) any {
 	return val[:]
 }
 func convert100StrToValue(val [100]Str) any {
