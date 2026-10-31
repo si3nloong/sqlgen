@@ -192,3 +192,71 @@ func main() {
         }
     }
 ```
+
+### JOIN queries
+
+Both generated `SelectStmt` and `SelectOneStmt` support ordered joins. Use
+`sequel.JoinClause` callbacks, convenience helpers, or chainable statement methods.
+Each callback writes SQL using the same statement writer as `WhereClause`. Regenerate your database package to expose the
+new statement fields and methods.
+
+```go
+on := db.OnColumn(
+    db.ColumnRef("users.id"),
+    db.ColumnRef("o.user_id"),
+)
+
+// Composable callbacks returned by convenience helpers.
+stmt := db.SelectStmt{
+    Select:    []string{"users.id", "users.name"},
+    FromTable: "users",
+    Joins: []sequel.JoinClause{
+        db.LeftJoin("orders AS o", on),
+    },
+}
+
+// Equivalent chainable form; methods return a copy.
+stmt = (db.SelectStmt{
+    Select:    []string{"users.id", "users.name"},
+    FromTable: "users",
+}).LeftJoin("orders AS o", on)
+```
+
+Available helpers and statement methods are `InnerJoin`, `LeftJoin`, `RightJoin`,
+`FullJoin`, and `CrossJoin`. `CrossJoin` takes only a table.
+The statement's `Join(joins...)` method appends callbacks in order.
+`sequel.JoinClause` is shared; JOIN helpers belong to each generated driver package.
+MySQL does not generate the `FullJoin` helper or statement
+methods. PostgreSQL and SQLite generate them; joins still require support from
+your database version.
+
+The `on` argument accepts existing `WhereClause` callbacks and generated `And`/`Or` helpers.
+Use `OnColumn` to compare two columns, and existing value predicates (or
+`w.Var(value)` in a callback) to bind values. JOIN and WHERE values share the same
+placeholder sequence. Keep optional-side filters in `On` when unmatched rows
+should remain in an outer join.
+
+Table names, aliases, and `ColumnRef` are trusted SQL text, just like `FromTable`
+and `Select`; supply any dialect-specific identifier quoting yourself. Never use
+user input as identifier text. Generated model columns also work with
+`OnColumn`, but qualify columns when names occur in multiple tables.
+
+Pass the resulting statement through `QueryStmt` or `QueryOneStmt`. Explicitly
+select columns in the order expected by the destination's `Addrs()` method.
+To return fields from multiple tables, use a result type implementing that
+scanner contract. Outer-joined fields must accept SQL NULL (for example through
+`sql.NullString`). JOINs do not automatically populate nested models or collapse
+multiple result rows into one parent.
+
+Custom callbacks can be mixed with the built-in helpers. Include a leading space
+and use `w.Var` for bound values:
+
+```go
+custom := sequel.JoinClause(func(w sequel.StmtWriter) {
+    w.WriteString(" LEFT JOIN orders AS o ON o.user_id = users.id AND o.status = ")
+    w.WriteString(w.Var("paid"))
+})
+stmt = stmt.Join(custom)
+```
+
+Callbacks render directly; the database validates SQL during execution.

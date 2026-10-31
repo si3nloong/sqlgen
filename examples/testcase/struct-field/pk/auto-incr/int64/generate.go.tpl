@@ -9,7 +9,10 @@ import (
 func (Model) TableName() string {
 	return "model"
 }
-func (Model) HasPK()      {}
+func (Model) HasPK() {}
+func (v *Model) SetPK(val int64) {
+	v.ID = val
+}
 func (Model) IsAutoIncr() {}
 func (v *Model) ScanAutoIncr(val int64) error {
 	v.ID = int64(val)
@@ -38,5 +41,5 @@ func (v Model) IDValue() any {
 	return v.ID
 }
 func (v Model) ColumnID() sequel.ColumnClause[int64] {
-	return sequel.BasicColumn("id", v.ID)
+	return sequel.PrimitiveColumn("id", v.ID)
 }

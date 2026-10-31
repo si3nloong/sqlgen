@@ -11,6 +11,10 @@ func (Composite) TableName() string {
 	return "composite"
 }
 func (Composite) HasPK() {}
+func (v *Composite) SetPK(val1 string, val2 uuid.UUID) {
+	v.Col1 = val1
+	v.Col3 = val2
+}
 func (v Composite) CompositeKey() ([]string, []int, []any) {
 	return []string{"col_1", "col_3"}, []int{1, 3}, []any{v.Col1, v.Col3}
 }
@@ -33,7 +37,7 @@ func (v *Composite) Addrs() []any {
 		&v.Col3, // 3 - col_3
 	}
 }
-func (Composite) InsertPlaceholders(row int) string {
+func (Composite) SQLInsertPlaceholders(row int) string {
 	return "(?,?,?,?)" // 4
 }
 func (v Composite) InsertOneStmt() (string, []any) {
@@ -58,16 +62,14 @@ func (v Composite) Col3Value() any {
 	return v.Col3
 }
 func (v Composite) ColumnFlag() sequel.ColumnClause[bool] {
-	return sequel.BasicColumn("flag", v.Flag)
+	return sequel.PrimitiveColumn("flag", v.Flag)
 }
 func (v Composite) ColumnCol1() sequel.ColumnClause[string] {
-	return sequel.BasicColumn("col_1", v.Col1)
+	return sequel.PrimitiveColumn("col_1", v.Col1)
 }
 func (v Composite) ColumnCol2() sequel.ColumnClause[bool] {
-	return sequel.BasicColumn("col_2", v.Col2)
+	return sequel.PrimitiveColumn("col_2", v.Col2)
 }
-func (v Composite) ColumnCol3() sequel.ColumnConvertClause[uuid.UUID] {
-	return sequel.Column("col_3", v.Col3, func(val uuid.UUID) any {
-		return val
-	})
+func (v Composite) ColumnCol3() sequel.ColumnClause[uuid.UUID] {
+	return sequel.ValueColumn("col_3", v.Col3)
 }

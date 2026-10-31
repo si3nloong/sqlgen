@@ -3,6 +3,7 @@ package sequel
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"io"
 )
 
@@ -13,7 +14,10 @@ type (
 	ConvertFunc[T any] func(T) any
 	QueryFunc          func(placeholder string) string
 	WhereClause        func(StmtWriter)
-	SetClause          func(StmtWriter)
+	// JoinClause writes a JOIN, including its leading space, using the shared
+	// statement writer. SQL validity is checked by the database.
+	JoinClause func(StmtWriter)
+	SetClause  func(StmtWriter)
 )
 
 type DB interface {
@@ -97,7 +101,13 @@ type Inserter interface {
 	Tabler
 	Columner
 	Valuer
-	InsertPlaceholders(row int) string
+	SQLInsertColumns() string
+	SQLInsertValues() []any
+	SQLInsertPlaceholders(row int) string
+}
+
+type ConflictColumner interface {
+	ConflictColumns() []string
 }
 
 type ColumnValuer interface {
@@ -136,9 +146,10 @@ type RowLevelLocker interface {
 type StmtWriter interface {
 	io.Writer
 	io.StringWriter
+	fmt.Formatter
 	Quote(v string) string
 	Var(v any) string
-	// Vars will group the valus in parenthesis
+	// Vars will group the values in parenthesis
 	Vars(vals []any) string
 }
 

@@ -31,7 +31,7 @@ func (v *Array) Addrs() []any {
 		encoding.JSONScanner(&v.Str),                  // 4 - str
 	}
 }
-func (Array) InsertPlaceholders(row int) string {
+func (Array) SQLInsertPlaceholders(row int) string {
 	return "(?,?,?,?,?)" // 5
 }
 func (v Array) InsertOneStmt() (string, []any) {
@@ -53,27 +53,30 @@ func (v Array) StrValue() any {
 	return encoding.JSONValue(v.Str)
 }
 func (v Array) ColumnTuple() sequel.ColumnConvertClause[[2]byte] {
-	return sequel.Column("tuple", v.Tuple, func(val [2]byte) any {
-		return val[:]
-	})
+	return sequel.Column("tuple", v.Tuple, convert2ByteToValue)
 }
 func (v Array) ColumnRunes() sequel.ColumnConvertClause[[4]rune] {
-	return sequel.Column("runes", v.Runes, func(val [4]rune) any {
-		return string(val[:])
-	})
+	return sequel.Column("runes", v.Runes, convert4RuneToValue)
 }
 func (v Array) ColumnBytes() sequel.ColumnConvertClause[[10]byte] {
-	return sequel.Column("bytes", v.Bytes, func(val [10]byte) any {
-		return val[:]
-	})
+	return sequel.Column("bytes", v.Bytes, convert10ByteToValue)
 }
 func (v Array) ColumnFixedSize() sequel.ColumnConvertClause[[10]byte] {
-	return sequel.Column("fixed_size", v.FixedSize, func(val [10]byte) any {
-		return val[:]
-	})
+	return sequel.Column("fixed_size", v.FixedSize, convert10ByteToValue)
 }
 func (v Array) ColumnStr() sequel.ColumnConvertClause[[100]Str] {
-	return sequel.Column("str", v.Str, func(val [100]Str) any {
-		return encoding.JSONValue(val)
-	})
+	return sequel.Column("str", v.Str, convert100StrToValue)
+}
+
+func convert4RuneToValue(val [4]rune) any {
+	return string(val[:])
+}
+func convert2ByteToValue(val [2]byte) any {
+	return val[:]
+}
+func convert10ByteToValue(val [10]byte) any {
+	return val[:]
+}
+func convert100StrToValue(val [100]Str) any {
+	return encoding.JSONValue(val)
 }

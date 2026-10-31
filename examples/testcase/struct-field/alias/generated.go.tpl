@@ -14,6 +14,9 @@ func (AliasStruct) TableName() string {
 	return "alias_struct"
 }
 func (AliasStruct) HasPK() {}
+func (v *AliasStruct) SetPK(val int64) {
+	v.ID = val
+}
 func (v AliasStruct) PK() (string, int, any) {
 	return "Id", 1, v.pk.ID
 }
@@ -44,7 +47,7 @@ func (v *AliasStruct) Addrs() []any {
 		encoding.TimeScanner(&v.model.Updated), // 7 - updated
 	}
 }
-func (AliasStruct) InsertPlaceholders(row int) string {
+func (AliasStruct) SQLInsertPlaceholders(row int) string {
 	return "(?,?,?,?,?,?,?,?)" // 8
 }
 func (v AliasStruct) InsertOneStmt() (string, []any) {
@@ -81,40 +84,28 @@ func (v AliasStruct) UpdatedValue() any {
 	return (time.Time)(v.model.Updated)
 }
 func (v AliasStruct) ColumnB() sequel.ColumnClause[float64] {
-	return sequel.BasicColumn("b", v.B)
+	return sequel.PrimitiveColumn("b", v.B)
 }
 func (v AliasStruct) ColumnID() sequel.ColumnClause[int64] {
-	return sequel.BasicColumn("Id", v.pk.ID)
+	return sequel.PrimitiveColumn("Id", v.pk.ID)
 }
 func (v AliasStruct) ColumnHeader() sequel.ColumnConvertClause[aliasStr] {
-	return sequel.Column("header", v.Header, func(val aliasStr) any {
-		return (string)(val)
-	})
+	return sequel.Column("header", v.Header, convertAliasStrToValue)
 }
 func (v AliasStruct) ColumnRaw() sequel.ColumnConvertClause[sql.RawBytes] {
-	return sequel.Column("raw", v.Raw, func(val sql.RawBytes) any {
-		return val
-	})
+	return sequel.Column("raw", v.Raw, convertSqlRawBytesToValue)
 }
 func (v AliasStruct) ColumnText() sequel.ColumnConvertClause[customStr] {
-	return sequel.Column("text", v.Text, func(val customStr) any {
-		return (string)(val)
-	})
+	return sequel.Column("text", v.Text, convertCustomStrToValue)
 }
-func (v AliasStruct) ColumnNullStr() sequel.ColumnConvertClause[sql.NullString] {
-	return sequel.Column("null_str", v.NullStr, func(val sql.NullString) any {
-		return val
-	})
+func (v AliasStruct) ColumnNullStr() sequel.ColumnClause[sql.NullString] {
+	return sequel.ValueColumn("null_str", v.NullStr)
 }
 func (v AliasStruct) ColumnCreated() sequel.ColumnConvertClause[DT] {
-	return sequel.Column("created", v.model.Created, func(val DT) any {
-		return (time.Time)(val)
-	})
+	return sequel.Column("created", v.model.Created, convertDtToValue)
 }
 func (v AliasStruct) ColumnUpdated() sequel.ColumnConvertClause[DT] {
-	return sequel.Column("updated", v.model.Updated, func(val DT) any {
-		return (time.Time)(val)
-	})
+	return sequel.Column("updated", v.model.Updated, convertDtToValue)
 }
 
 func (B) TableName() string {
@@ -133,7 +124,7 @@ func (v *B) Addrs() []any {
 		&v.Name, // 0 - name
 	}
 }
-func (B) InsertPlaceholders(row int) string {
+func (B) SQLInsertPlaceholders(row int) string {
 	return "(?)" // 1
 }
 func (v B) InsertOneStmt() (string, []any) {
@@ -143,7 +134,7 @@ func (v B) NameValue() any {
 	return v.Name
 }
 func (v B) ColumnName() sequel.ColumnClause[string] {
-	return sequel.BasicColumn("name", v.Name)
+	return sequel.PrimitiveColumn("name", v.Name)
 }
 
 func (C) TableName() string {
@@ -162,7 +153,7 @@ func (v *C) Addrs() []any {
 		&v.ID, // 0 - id
 	}
 }
-func (C) InsertPlaceholders(row int) string {
+func (C) SQLInsertPlaceholders(row int) string {
 	return "(?)" // 1
 }
 func (v C) InsertOneStmt() (string, []any) {
@@ -172,5 +163,18 @@ func (v C) IDValue() any {
 	return v.ID
 }
 func (v C) ColumnID() sequel.ColumnClause[int64] {
-	return sequel.BasicColumn("id", v.ID)
+	return sequel.PrimitiveColumn("id", v.ID)
+}
+
+func convertSqlRawBytesToValue(val sql.RawBytes) any {
+	return val
+}
+func convertDtToValue(val DT) any {
+	return (time.Time)(val)
+}
+func convertCustomStrToValue(val customStr) any {
+	return (string)(val)
+}
+func convertAliasStrToValue(val aliasStr) any {
+	return (string)(val)
 }

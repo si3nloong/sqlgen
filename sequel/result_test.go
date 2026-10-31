@@ -26,3 +26,19 @@ func TestEmptyResult(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, int64(0), affected)
 }
+
+func TestRowsAffectedResultContract(t *testing.T) {
+	for _, count := range []int64{0, 1, 100} {
+		r := NewRowsAffectedResult(count)
+		got, err := r.RowsAffected()
+		require.NoError(t, err)
+		require.Equal(t, count, got)
+		id, err := r.LastInsertId()
+		require.NoError(t, err)
+		require.Zero(t, id)
+	}
+	r := result{lastID: 42}
+	id, err := r.LastInsertId()
+	require.NoError(t, err)
+	require.Equal(t, int64(42), id)
+}

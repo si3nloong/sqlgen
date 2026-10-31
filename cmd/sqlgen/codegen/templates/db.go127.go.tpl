@@ -1,0 +1,116 @@
+{{- reserveImport "context" }}
+{{- reserveImport "database/sql" }}
+{{- reserveImport "github.com/si3nloong/sqlgen/sequel" }}
+
+// SqlDB provides database helpers bound to a connection.
+type SqlDB struct {
+	conn *sql.Conn
+}
+
+func NewDB(conn *sql.Conn) *SqlDB {
+	return &SqlDB{conn: conn}
+}
+
+{{ if eq driver "postgres" -}}
+
+func (s *SqlDB) InsertOne[T sequel.ColumnValuer, Ptr interface {
+	sequel.ColumnValuer
+	sequel.PtrScanner[T]
+}](ctx context.Context, model Ptr) error {
+	return InsertOne[T, Ptr](ctx, s.conn, model)
+}
+
+{{ else }}
+
+func (s *SqlDB) InsertOne[T sequel.ColumnValuer, Ptr interface {
+	sequel.ColumnValuer
+	sequel.PtrScanner[T]
+}](ctx context.Context, model Ptr) (sql.Result, error) {
+	return InsertOne[T, Ptr](ctx, s.conn, model)
+}
+
+{{ end }}
+
+{{ if eq driver "postgres" -}}
+
+func (s *SqlDB) Insert[T sequel.ColumnValuer, Ptr sequel.PtrScanner[T]](ctx context.Context, data []T) (sql.Result, error) {
+	return Insert[T, Ptr](ctx, s.conn, data)
+}
+
+{{ else }}
+
+func (s *SqlDB) Insert[T sequel.ColumnValuer](ctx context.Context, data []T) (sql.Result, error) {
+	return Insert[T](ctx, s.conn, data)
+}
+
+{{ end }}
+
+{{ if eq driver "postgres" -}}
+
+func (s *SqlDB) UpsertOne[T sequel.KeyValuer, Ptr interface{
+	sequel.KeyValueScanner[T]
+	sequel.Inserter
+}](ctx context.Context, model Ptr, opts ...UpsertOption) error {
+	return UpsertOne[T, Ptr](ctx, s.conn, model, opts...)
+}
+
+func (s *SqlDB) Upsert[T interface {
+	sequel.Keyer
+	sequel.Inserter
+}, Ptr sequel.PtrScanner[T]](ctx context.Context, data []T, opts ...UpsertOption) (sql.Result, error) {
+	return Upsert[T, Ptr](ctx, s.conn, data, opts...)
+}
+
+{{ else }}
+
+func (s *SqlDB) UpsertOne[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](ctx context.Context, model Ptr, override bool, omittedFields ...string) (sql.Result, error) {
+	return UpsertOne[T, Ptr](ctx, s.conn, model, override, omittedFields...)
+}
+
+func (s *SqlDB) Upsert[T interface {
+	sequel.Keyer
+	sequel.Inserter
+}, Ptr sequel.PtrScanner[T]](ctx context.Context, data []T, override bool, omittedFields ...string) (sql.Result, error) {
+	return Upsert[T, Ptr](ctx, s.conn, data, override, omittedFields...)
+}
+
+{{ end }}
+
+func (s *SqlDB) FindByPK[T sequel.KeyScanner, Ptr sequel.KeyPtrScanner[T]](ctx context.Context, model Ptr) error {
+	return FindByPK[T, Ptr](ctx, s.conn, model)
+}
+
+func (s *SqlDB) UpdateByPK[T sequel.KeyValuer](ctx context.Context, model T) (sql.Result, error) {
+	return UpdateByPK[T](ctx, s.conn, model)
+}
+
+func (s *SqlDB) DeleteByPK[T sequel.KeyValuer](ctx context.Context, model T) (sql.Result, error) {
+	return DeleteByPK[T](ctx, s.conn, model)
+}
+
+func (s *SqlDB) LockByPK[T sequel.KeyScanner, Ptr sequel.KeyPtrScanner[T]](ctx context.Context, model Ptr, locker sequel.RowLevelLocker) error {
+	tx, err := s.conn.BeginTx(ctx, &sql.TxOptions{})
+    if err != nil {
+        return err
+    }
+    defer tx.Rollback()
+	return LockByPK[T, Ptr](ctx, tx, model, locker)
+}
+
+func (s *SqlDB) Paginate[T sequel.KeyValuer, Ptr sequel.KeyValueScanner[T]](stmt PaginateStmt) *Pager[T, Ptr] {
+	return Paginate[T, Ptr](stmt)
+}
+
+func (s *SqlDB) QueryStmt[T any, Ptr sequel.PtrScanner[T]](ctx context.Context, stmtFunc func(T) SelectStmt) ([]T, error) {
+	return QueryStmt[T, Ptr](ctx, s.conn, stmtFunc)
+}
+
+func (s *SqlDB) QueryOneStmt[T any, Ptr sequel.PtrScanner[T]](ctx context.Context, stmtFunc func(T) SelectOneStmt) (Ptr, error) {
+	return QueryOneStmt[T, Ptr](ctx, s.conn, stmtFunc)
+}
+
+func (s *SqlDB) ExecStmt[T any, Stmt interface {
+	UpdateStmt | DeleteStmt
+}](ctx context.Context, stmtFunc func(T) Stmt) (sql.Result, error) {
+	return ExecStmt[T, Stmt](ctx, s.conn, stmtFunc)
+}

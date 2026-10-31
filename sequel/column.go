@@ -1,23 +1,31 @@
 package sequel
 
 import (
+	"database/sql/driver"
 	"time"
 )
 
-type BasicTypes interface {
+type PrimitiveTypes interface {
 	string | bool | int64 | float64 | []byte | time.Time
 }
 
 func Column[T any](columnName string, value T, convert ConvertFunc[T]) ColumnConvertClause[T] {
-	return column[T]{
+	return &column[T]{
 		name:    columnName,
 		value:   value,
 		convert: convert,
 	}
 }
 
-func BasicColumn[T BasicTypes](columnName string, value T) ColumnClause[T] {
-	return basicColumn[T]{
+func PrimitiveColumn[T PrimitiveTypes](columnName string, value T) ColumnClause[T] {
+	return &primitiveColumn[T]{
+		name:  columnName,
+		value: value,
+	}
+}
+
+func ValueColumn[T driver.Valuer](columnName string, value T) ColumnClause[T] {
+	return &primitiveColumn[T]{
 		name:  columnName,
 		value: value,
 	}
@@ -29,26 +37,26 @@ func SQLColumn[T any](columnName string, value T, sqlValue QueryFunc, convert Co
 	c.value = value
 	c.convert = convert
 	c.sqlValuer = sqlValue
-	return c
+	return &c
 }
 
 func OrderByColumn(columnName string, asc bool) OrderByClause {
-	return orderByColumn{
+	return &orderByColumn{
 		column: columnName,
 		asc:    asc,
 	}
 }
 
-type basicColumn[T BasicTypes] struct {
+type primitiveColumn[T any] struct {
 	name  string
 	value T
 }
 
-func (c basicColumn[T]) ColumnName() string {
+func (c primitiveColumn[T]) ColumnName() string {
 	return c.name
 }
 
-func (c basicColumn[T]) Value() T {
+func (c primitiveColumn[T]) Value() T {
 	return c.value
 }
 
@@ -62,7 +70,7 @@ func (c column[T]) ColumnName() string {
 	return c.name
 }
 
-func (c column[T]) Convert(v T) any {
+func (c *column[T]) Convert(v T) any {
 	return c.convert(v)
 }
 
@@ -75,7 +83,7 @@ type sqlColumn[T any] struct {
 	sqlValuer QueryFunc
 }
 
-func (c sqlColumn[T]) SQLColumn(placeholder string) string {
+func (c *sqlColumn[T]) SQLColumn(placeholder string) string {
 	return c.sqlValuer(placeholder)
 }
 

@@ -55,12 +55,10 @@ func (u *unsignedIntScanner[T, Addr]) Scan(v any) error {
 		case **T:
 			*(**T)(unsafe.Pointer(u.addr)) = nil
 			return nil
-		case *T:
+		default: // The destination is *T; the constraint permits only *T or **T.
 			var v T
 			*(*T)(unsafe.Pointer(u.addr)) = v
 			return nil
-		default:
-			panic("unreachable")
 		}
 	case []byte:
 		m, err := strconv.ParseUint(unsafe.String(unsafe.SliceData(vi), len(vi)), 10, u.bitSize)
@@ -72,11 +70,9 @@ func (u *unsignedIntScanner[T, Addr]) Scan(v any) error {
 		case **T:
 			*(**T)(unsafe.Pointer(u.addr)) = &val
 			return nil
-		case *T:
+		default: // The destination is *T; the constraint permits only *T or **T.
 			*(*T)(unsafe.Pointer(u.addr)) = val
 			return nil
-		default:
-			panic("unreachable")
 		}
 	case int64:
 		val := T(vi)
@@ -84,11 +80,9 @@ func (u *unsignedIntScanner[T, Addr]) Scan(v any) error {
 		case **T:
 			*(**T)(unsafe.Pointer(u.addr)) = &val
 			return nil
-		case *T:
+		default: // The destination is *T; the constraint permits only *T or **T.
 			*(*T)(unsafe.Pointer(u.addr)) = val
 			return nil
-		default:
-			panic("unreachable")
 		}
 	default:
 		return fmt.Errorf(`sequel/encoding: unable to scan %T to ~uint`, vi)
